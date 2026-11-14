@@ -264,7 +264,8 @@ def generate_manifest_and_readme(plugin_root: Path, upstream_sha: str) -> None:
     write_utf8(plugin_root / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     readme = (
         "# TDQ Workflow — Google Antigravity Native Plugin (`v0.97.0`)\n\n"
-        "Spec-driven engineering workflow compiled for Google Antigravity (`agy`).\n\n"
+        "Spec-driven engineering workflow compiled for Google Antigravity (`agy`).\n"
+        "Forked and improved from upstream [TDQ-Workflow](https://github.com/TDQUOC/TDQ-Workflow.git) (`v0.97.0` @ `b423ee06`). Details: `UPSTREAM-TRACE.md`.\n\n"
         "- **Hooks:** `hooks.json` at plugin root (`SessionStart`, `PreInvocation`, `PreToolUse`, `PostToolUse`, `PostInvocation`, `Stop`).\n"
         "- **Rules:** 2-tier `rules/AGENTS.md` + `rules/lang-*.md` (`glob`) + `rules/domain-*.md` (`model_decision`).\n"
         f"- **Skills ({len(skills)}):** {', '.join(skills)}.\n"
