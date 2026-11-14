@@ -626,5 +626,6 @@ def _agy_mcp_candidate_files():
     return [
         os.path.join(plugin_root, "mcp_config.json"),
         os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
+        os.path.expanduser("~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json"),
         os.path.expanduser("~/.gemini/config/plugins/tdq-workflow/mcp_config.json"),
     ]

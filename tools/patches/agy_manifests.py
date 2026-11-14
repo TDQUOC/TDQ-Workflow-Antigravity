@@ -46,9 +46,10 @@ def _default_lsp_command() -> str:
 def generate_plugin_json(plugin_root: Path) -> None:
     """Write Antigravity-native plugin.json at plugin root (no userConfig/variables trap)."""
     payload = {
-        "name": "tdq-workflow",
-        "displayName": "TDQ Workflow",
+        "name": "tdq-workflow-agy",
+        "displayName": "TDQ Workflow (Antigravity)",
         "version": PLUGIN_VERSION,
+        "repository": "https://github.com/TDQUOC/TDQ-Workflow-Antigravity",
         "description": (
             "Spec-driven engineering workflow for Google Antigravity: intake -> spec -> plan -> "
             "implement -> QC -> report. Includes 24 [TDQ:*] lifecycle gates, LSP-first 3-tier "
@@ -62,7 +63,7 @@ def generate_plugin_json(plugin_root: Path) -> None:
         ],
         "author": {"name": "TDQ"},
         "license": "MIT",
-        "keywords": ["tdq-workflow", "spec-driven", "sdd", "lsp", "qc", "hooks", "antigravity"],
+        "keywords": ["tdq-workflow-agy", "tdq-workflow", "spec-driven", "sdd", "lsp", "qc", "hooks", "antigravity"],
     }
     write_utf8(plugin_root / "plugin.json", json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
 
@@ -87,10 +88,10 @@ def generate_logo_svg(plugin_root: Path) -> None:
 
 
 def _hook_cmd(script_name: str, event_name: str) -> Dict[str, str]:
-    """Return Antigravity hook handler entry using relative path and explicit UTF-8."""
+    """Return Antigravity hook handler entry using unquoted relative path for Windows cmd /c safety."""
     return {
         "type": "command",
-        "command": f'py -3 -X utf8 "hooks/scripts/{script_name}" --event {event_name}',
+        "command": f"py -3 -X utf8 hooks/scripts/{script_name} --event {event_name}",
     }
 
 
@@ -252,7 +253,7 @@ def generate_manifest_and_readme(plugin_root: Path, upstream_sha: str) -> None:
     skills = sorted(d.name for d in (plugin_root / "skills").iterdir() if d.is_dir())
     agents = sorted(f.name for f in (plugin_root / "agents").glob("*.md"))
     manifest = {
-        "name": "tdq-workflow",
+        "name": "tdq-workflow-agy",
         "version": PLUGIN_VERSION,
         "host": "antigravity",
         "upstream_commit": upstream_sha,
@@ -263,7 +264,7 @@ def generate_manifest_and_readme(plugin_root: Path, upstream_sha: str) -> None:
     }
     write_utf8(plugin_root / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     readme = (
-        "# TDQ Workflow — Google Antigravity Native Plugin (`v0.97.0`)\n\n"
+        "# TDQ Workflow (`tdq-workflow-agy`) — Google Antigravity Native Plugin (`v0.97.0`)\n\n"
         "Spec-driven engineering workflow compiled for Google Antigravity (`agy`).\n"
         "Forked and improved from upstream [TDQ-Workflow](https://github.com/TDQUOC/TDQ-Workflow.git) (`v0.97.0` @ `b423ee06`). Details: `UPSTREAM-TRACE.md`.\n\n"
         "- **Hooks:** `hooks.json` at plugin root (`SessionStart`, `PreInvocation`, `PreToolUse`, `PostToolUse`, `PostInvocation`, `Stop`).\n"

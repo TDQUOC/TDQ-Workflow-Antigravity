@@ -114,7 +114,7 @@ _AGY_PAYLOAD_KEYS = (
     "conversation_id", "conversationId", "trajectory_id", "transcriptPath",
     "workingDirectory", "user_message", "agent_step_idx", "toolName", "toolInput",
     "workspacePaths", "toolCall", "stepIdx", "invocationNum", "executionNum",
-    "terminationReason", "lastUserInput",
+    "terminationReason", "lastUserInput", "continuationActive", "hookEventName",
 )
 TERMINAL_STOP_REASONS = frozenset({
     "USER_CANCELED", "ERROR", "MAX_INVOCATIONS", "MAX_FORCED_INVOCATIONS",
@@ -203,6 +203,39 @@ def _flush_agy_stdout():
     """Single-JSON stdout emitter called via atexit for Antigravity hook protocol."""
     if not _RUNTIME_STATE["is_agy"]:
         return
+    ev = _RUNTIME_STATE["event"]
+    text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
+
+    if ev == "PreToolUse":
+        if _RUNTIME_STATE["deny_reason"]:
+            out = {"decision": "deny", "reason": _RUNTIME_STATE["deny_reason"]}
+        else:
+            out = {"decision": "allow"}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+
+    if ev == "PostToolUse":
+        sys.stdout.write("{}\n")
+        sys.stdout.flush()
+        return
+
+    if ev in ("SessionStart", "PreInvocation", "PostInvocation"):
+        out = {"injectSteps": [{"systemMessage": {"systemMessage": text}}]} if text else {}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+
+    if ev == "Stop":
+        if _RUNTIME_STATE["stop_reason"]:
+            out = {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
+        else:
+            out = {"decision": "allow"}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+
+    # Legacy union fallback when invoked without --event or hookEventName
     if _RUNTIME_STATE["deny_reason"]:
         reason = _RUNTIME_STATE["deny_reason"]
         payload = {
@@ -224,16 +257,12 @@ def _flush_agy_stdout():
         sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
         sys.stdout.flush()
         return
-    if _RUNTIME_STATE["context_lines"] and _RUNTIME_STATE["event"] in (
-        "SessionStart", "PreInvocation", "PostInvocation", None
-    ):
-        text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
-        if text:
-            sys.stdout.write(json.dumps({
-                "additionalContext": text,
-                "injectSteps": [{"systemMessage": {"systemMessage": text}}],
-            }, ensure_ascii=False) + "\n")
-            sys.stdout.flush()
+    if text:
+        sys.stdout.write(json.dumps({
+            "additionalContext": text,
+            "injectSteps": [{"systemMessage": {"systemMessage": text}}],
+        }, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
 
 
 def _ensure_atexit():
@@ -245,6 +274,8 @@ def _ensure_atexit():
 def normalize_payload(raw):
     """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
     event = _parse_event_flag()
+    if event is None and isinstance(raw, dict) and raw.get("hookEventName"):
+        event = str(raw.get("hookEventName"))
     agy = _is_antigravity_payload(raw, event=event)
     _RUNTIME_STATE.update({
         "event": event,
@@ -257,6 +288,8 @@ def normalize_payload(raw):
         return {}
     payload = dict(raw)
     if agy:
+        if not payload.get("hook_event_name") and event:
+            payload["hook_event_name"] = event
         tool_call = payload.get("toolCall") if isinstance(payload.get("toolCall"), dict) else {}
         tname = str(payload.get("tool_name") or payload.get("toolName") or tool_call.get("name") or "")
         if tname.startswith("CORTEX_STEP_TYPE_"):
@@ -303,6 +336,8 @@ def normalize_payload(raw):
             payload["tool_input"] = tinput
         if not payload.get("prompt") and isinstance(payload.get("lastUserInput"), str) and payload["lastUserInput"].strip():
             payload["prompt"] = payload["lastUserInput"]
+        if "continuationActive" in payload and "stop_hook_active" not in payload:
+            payload["stop_hook_active"] = bool(payload["continuationActive"])
 
     expected = {"cwd": str, "session_id": str, "tool_name": str,
                 "hook_event_name": str, "prompt": str, "source": str,

@@ -2025,7 +2025,9 @@ def is_antigravity_host():
     if os.environ.get("TDQ_HOST") == "antigravity":
         return True
     norm = os.path.abspath(__file__).replace("\\", "/").lower()
-    return any(m in norm for m in ("/.gemini/config/plugins/", "/plugins/tdq-workflow/", "/antigravity_portable/"))
+    return any(m in norm for m in (
+        "/.gemini/config/plugins/", "/plugins/tdq-workflow-agy/", "/plugins/tdq-workflow/", "/antigravity_portable/"
+    ))
 
 
 def _sync_agy_guard_ghim(duong, goc=None):

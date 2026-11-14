@@ -2,11 +2,13 @@
 [CmdletBinding()]
 param(
     [switch]$DryRun,
-    [switch]$NoEnable
+    [switch]$NoEnable,
+    [switch]$Update
 )
 $params = @()
 if ($DryRun) { $params += "--dry-run" }
 if ($NoEnable) { $params += "--no-enable" }
+if ($Update) { $params += "--update" }
 
 if (Get-Command py -ErrorAction SilentlyContinue) {
     py -3 "$PSScriptRoot\install.py" @params

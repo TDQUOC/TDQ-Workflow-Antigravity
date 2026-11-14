@@ -22,15 +22,15 @@ Kho mã nguồn này được fork và phát triển độc lập nhằm tối �
 * **Nhánh Mặc Định / Phát Hành (Release Branch):** `main`
 * **Nhánh Phát Triển (Development Branch):** `dev`
 * **Release Tag:** `v0.97.0`
-* **Plugin Bundle Bản Địa:** `plugins/tdq-workflow/` (chuẩn Antigravity 2.0 Plugin Specification)
+* **Plugin ID & Bundle Bản Địa:** `tdq-workflow-agy` tại `plugins/tdq-workflow-agy/` (chuẩn Antigravity 2.0 Plugin Specification)
 
 ---
 
 ## 3. CÁC HẠNG MỤC CẢI TIẾN & KHÁC BIỆT CHÍNH SO VỚI GỐC
 
-Toàn bộ các cải tiến dưới đây đã vượt qua bộ kiểm thử **4.196 tests (0 failed)**, **15/15 gates Antigravity**, và **150 files CLEAN**:
+Toàn bộ các cải tiến dưới đây đã vượt qua bộ kiểm thử **pytest đầy đủ (0 failed)**, **15/15 gates Antigravity**, và **portable CLEAN**:
 
-1. **Bộ Đóng Gói Native Antigravity Plugin (`plugins/tdq-workflow/`):**
+1. **Bộ Đóng Gói Native Antigravity Plugin (`plugins/tdq-workflow-agy/`):**
    - Đạt chuẩn `agy plugin validate --strict --json` với **0 error / 0 warning**.
    - Cung cấp đủ **6 agents**, **6 hooks**, **3 mcpServers** (lsp, chrome-devtools, tavily-primary), **10 rules** (2-tier), và **12 skills** (75 files, khôi phục đủ cả 2 browser skills).
 2. **Hệ Thống Dual-Protocol Hooks (`hooks/scripts/_common.py`):**
@@ -56,7 +56,7 @@ Toàn bộ các cải tiến dưới đây đã vượt qua bộ kiểm thử **
 
 ## 4. HƯỚNG DẪN CÀI ĐẶT BẢN PHÁT HÀNH USER-LEVEL TRÊN MÁY KHÁC
 
-Bản phát hành này được thiết kế để **cài đặt trực tiếp vào cấp tài khoản người dùng (User-Level)** tại `~/.gemini/config/plugins/tdq-workflow` (tự động nhận diện trên mọi workspace).
+Bản phát hành này được thiết kế để **cài đặt trực tiếp vào cấp tài khoản người dùng (User-Level)** tại `~/.gemini/config/plugins/tdq-workflow-agy` (tự động nhận diện trên mọi workspace).
 
 ### Cách 1: Cài Đặt User-Level 1 Lệnh (One-Click Installer — Khuyên dùng)
 ```bash
@@ -70,22 +70,28 @@ cd TDQ-Workflow-Antigravity
 # Trên macOS / Linux:
 ./install.sh
 # hoặc: python3 install.py
+
+# Cập nhật nhanh khi repo có bản phát hành mới:
+.\install.ps1 -Update
+# hoặc: py -3 install.py --update
+# hoặc trên macOS / Linux: ./install.sh --update
 ```
-*Script tự động copy plugin vào `~/.gemini/config/plugins/tdq-workflow`, điều chỉnh lệnh runtime tương thích với OS, chạy `agy plugin validate` xác nhận 0 lỗi và tự động kích hoạt plugin.*
+*Script tự động copy plugin vào `~/.gemini/config/plugins/tdq-workflow-agy`, điều chỉnh lệnh runtime tương thích với OS, chạy `agy plugin validate` xác nhận 0 lỗi và tự động kích hoạt plugin.*
 
 ### Cách 2: Cài Đặt User-Level Qua CLI Antigravity (`agy`)
 ```bash
 git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
-agy plugin install ./TDQ-Workflow-Antigravity/plugins/tdq-workflow
-agy plugin enable tdq-workflow
+agy plugin install ./TDQ-Workflow-Antigravity/plugins/tdq-workflow-agy
+agy plugin enable tdq-workflow-agy
 ```
+> *Lưu ý:* `agy plugin install` cài bản sao từ thư mục cục bộ và chưa tự động đồng bộ từ URL Git từ xa, vì vậy hãy chạy `install.py --update` (`.\install.ps1 -Update` / `./install.sh --update`) khi cập nhật lên phiên bản mới.
 
-### Cách 3: Workspace Plugin Discovery (Dành cho 1 dự án cụ thể)
+### Cách 3: Plugin Discovery (`plugins.json`) ở Cấp Global hoặc Workspace
 Clone kho mã nguồn hoặc thêm submodule vào dự án của bạn:
 ```bash
 git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
 ```
-Trong tệp `.agents/plugins.json` tại thư mục gốc dự án của bạn, khai báo:
+Khai báo trong `~/.gemini/config/plugins.json` (cấp toàn cục người dùng) hoặc `.agents/plugins.json` tại thư mục gốc dự án:
 ```json
 {
   "entries": [

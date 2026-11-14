@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Compile TDQ-Workflow v0.97.0 source into plugins/tdq-workflow/."""
+"""Compile TDQ-Workflow v0.97.0 source into plugins/tdq-workflow-agy/."""
 import argparse
 import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -18,7 +19,7 @@ DEFAULT_UPSTREAM = (
     if (WORKSPACE_ROOT / "portable_src").is_dir() and (WORKSPACE_ROOT / "hooks" / "scripts").is_dir()
     else _EXTERNAL_UPSTREAM
 )
-PLUGIN_OUT = WORKSPACE_ROOT / "plugins" / "tdq-workflow"
+PLUGIN_OUT = WORKSPACE_ROOT / "plugins" / "tdq-workflow-agy"
 
 
 def _upstream_sha(upstream: Path) -> str:
@@ -36,47 +37,49 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         raise FileNotFoundError(f"Upstream TDQ-Workflow repo not found at {upstream}")
 
     sha = _upstream_sha(upstream)
-    common_utils.force_writable_rmtree(output)
-    output.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        stage = Path(tmpdir)
 
-    # 1. Copy runtime assets cleanly from upstream read-only source
-    n_scripts = common_utils.copy_clean_tree(
-        upstream / "scripts", output / "scripts", exclude_names=common_utils.EXCLUDED_SCRIPTS
-    )
-    n_hooks = common_utils.copy_clean_tree(upstream / "hooks" / "scripts", output / "hooks" / "scripts")
-    n_skills = common_utils.copy_clean_tree(upstream / "skills", output / "skills")
-    cp_skill = upstream / "portable_src" / "skills" / "tdq-checkportable"
-    if cp_skill.is_dir():
-        n_skills += common_utils.copy_clean_tree(cp_skill, output / "skills" / "tdq-checkportable")
-    n_agents = common_utils.copy_clean_tree(upstream / "agents", output / "agents")
+        # 1. Copy runtime assets cleanly from upstream read-only source
+        n_scripts = common_utils.copy_clean_tree(
+            upstream / "scripts", stage / "scripts", exclude_names=common_utils.EXCLUDED_SCRIPTS
+        )
+        n_hooks = common_utils.copy_clean_tree(upstream / "hooks" / "scripts", stage / "hooks" / "scripts")
+        n_skills = common_utils.copy_clean_tree(upstream / "skills", stage / "skills")
+        cp_skill = upstream / "portable_src" / "skills" / "tdq-checkportable"
+        if cp_skill.is_dir():
+            n_skills += common_utils.copy_clean_tree(cp_skill, stage / "skills" / "tdq-checkportable")
+        n_agents = common_utils.copy_clean_tree(upstream / "agents", stage / "agents")
 
-    # 2. Apply CLI & host fixes (NEW-01..NEW-28 + hotfix + AGY parsers)
-    cli_fixes_a.apply_all(output / "scripts")
-    cli_fixes_b.apply_all(output / "scripts")
+        # 2. Apply CLI & host fixes (NEW-01..NEW-28 + hotfix + AGY parsers)
+        cli_fixes_a.apply_all(stage / "scripts")
+        cli_fixes_b.apply_all(stage / "scripts")
 
-    # 3. Generate Antigravity native plugin manifests, hooks.json, mcp_config.json, 2-tier rules
-    agy_manifests.generate_plugin_json(output)
-    agy_manifests.generate_logo_svg(output)
-    agy_manifests.generate_hooks_json(output)
-    agy_manifests.generate_mcp_config(output)
-    agy_manifests.generate_two_tier_rules(output)
+        # 3. Generate Antigravity native plugin manifests, hooks.json, mcp_config.json, 2-tier rules
+        agy_manifests.generate_plugin_json(stage)
+        agy_manifests.generate_logo_svg(stage)
+        agy_manifests.generate_hooks_json(stage)
+        agy_manifests.generate_mcp_config(stage)
+        agy_manifests.generate_two_tier_rules(stage)
 
-    # 4. Translate 12 skills (M01-M20), 6 subagents, and relock token-budget.json
-    skills_and_agents.transform_skills(output)
-    skills_and_agents.transform_agents(output)
-    agy_hooks.apply_all(output / "hooks" / "scripts")
-    skills_and_agents.relock_token_budget(output)
+        # 4. Translate 12 skills (M01-M20), 6 subagents, and relock token-budget.json
+        skills_and_agents.transform_skills(stage)
+        skills_and_agents.transform_agents(stage)
+        agy_hooks.apply_all(stage / "hooks" / "scripts")
+        skills_and_agents.relock_token_budget(stage)
 
-    # 5. Emit final manifest.json & README.md
-    agy_manifests.generate_manifest_and_readme(output, sha)
+        # 5. Emit final manifest.json & README.md
+        agy_manifests.generate_manifest_and_readme(stage, sha)
 
-    # 6. Immediate AST & Markdown byte-budget checks
-    py_count, ast_errors = common_utils.verify_all_py_ast(output)
-    if ast_errors:
-        raise RuntimeError("Python AST errors:\n" + "\n".join(ast_errors))
-    md_count, md_violations = common_utils.check_md_byte_budgets(output)
-    if md_violations:
-        raise RuntimeError("Markdown byte budget exceeded:\n" + "\n".join(md_violations))
+        # 6. Immediate AST & Markdown byte-budget checks before syncing to live output dir
+        py_count, ast_errors = common_utils.verify_all_py_ast(stage)
+        if ast_errors:
+            raise RuntimeError("Python AST errors:\n" + "\n".join(ast_errors))
+        md_count, md_violations = common_utils.check_md_byte_budgets(stage)
+        if md_violations:
+            raise RuntimeError("Markdown byte budget exceeded:\n" + "\n".join(md_violations))
+
+        common_utils.sync_tree_inplace(stage, output)
 
     return {
         "upstream": str(upstream),

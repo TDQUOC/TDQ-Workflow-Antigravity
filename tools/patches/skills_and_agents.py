@@ -21,10 +21,10 @@ M01_M20_REPLACEMENTS: Tuple[Tuple[str, str], ...] = (
     ("AskUserQuestion", "ask_question"),
     ("UserPromptSubmit", "PreInvocation"),
     ("SubagentStart", "PreInvocation"),
-    ("mcp__lsp__", "mcp_tdq-workflow_lsp_"),
-    ("mcp__plugin_tdq-workflow_lsp__", "mcp_tdq-workflow_lsp_"),
-    ("mcp__chrome-devtools__", "mcp_tdq-workflow_chrome-devtools_"),
-    ("mcp__tavily-primary__", "mcp_tdq-workflow_tavily-primary_"),
+    ("mcp__lsp__", "mcp_tdq-workflow-agy_lsp_"),
+    ("mcp__plugin_tdq-workflow_lsp__", "mcp_tdq-workflow-agy_lsp_"),
+    ("mcp__chrome-devtools__", "mcp_tdq-workflow-agy_chrome-devtools_"),
+    ("mcp__tavily-primary__", "mcp_tdq-workflow-agy_tavily-primary_"),
 )
 
 # Strictly verified Antigravity 2.0 subagent specs (model in {inherit, flash_lite, flash, pro},

@@ -67,14 +67,17 @@ def _parse_event_flag(argv=None):
     return None
 
 
-def _is_antigravity_payload(raw):
-    if _RUNTIME_STATE["event"]:
+def _is_antigravity_payload(raw, event=None):
+    if event or _RUNTIME_STATE["event"]:
         return True
     if os.environ.get("TDQ_HOST") == "antigravity":
         return True
     if not isinstance(raw, dict):
         return False
-    if any(k in raw for k in ("conversation_id", "conversationId", "trajectory_id", "transcriptPath", "agent_step_idx")):
+    if any(k in raw for k in (
+        "conversation_id", "conversationId", "trajectory_id", "transcriptPath",
+        "agent_step_idx", "workspacePaths", "toolCall", "continuationActive", "hookEventName",
+    )):
         return True
     tname = str(raw.get("tool_name") or raw.get("toolName") or "")
     return tname in _AGY_TOOLS or (tname.startswith("mcp_") and not tname.startswith("mcp__"))
@@ -108,12 +111,22 @@ def normalize_payload(raw):
         return {}
     out = dict(raw)
     event = _parse_event_flag()
+    if event is None and out.get("hookEventName"):
+        event = str(out.get("hookEventName"))
     if event:
         _RUNTIME_STATE["event"] = event
-    _RUNTIME_STATE["is_agy"] = _is_antigravity_payload(raw)
+    _RUNTIME_STATE["is_agy"] = _is_antigravity_payload(raw, event=event)
+    if _RUNTIME_STATE["is_agy"]:
+        if not out.get("hook_event_name") and event:
+            out["hook_event_name"] = event
+        if "continuationActive" in out and "stop_hook_active" not in out:
+            out["stop_hook_active"] = bool(out["continuationActive"])
+        if not out.get("prompt") and isinstance(out.get("lastUserInput"), str) and out["lastUserInput"].strip():
+            out["prompt"] = out["lastUserInput"]
 
-    tname = str(out.get("tool_name") or out.get("toolName") or "")
-    tinput = out.get("tool_input") or out.get("toolInput") or out.get("arguments") or out.get("input") or {}
+    tool_call = out.get("toolCall") if isinstance(out.get("toolCall"), dict) else {}
+    tname = str(out.get("tool_name") or out.get("toolName") or tool_call.get("name") or "")
+    tinput = out.get("tool_input") or out.get("toolInput") or tool_call.get("args") or out.get("arguments") or out.get("input") or {}
     if isinstance(tinput, str):
         try:
             tinput = json.loads(tinput)
@@ -169,6 +182,29 @@ def _flush_agy_stdout():
     """Single-JSON stdout emitter called via atexit for Antigravity hook protocol."""
     if not _RUNTIME_STATE["is_agy"]:
         return
+    ev = _RUNTIME_STATE["event"]
+    text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
+
+    if ev == "PreToolUse":
+        out = {"decision": "deny", "reason": _RUNTIME_STATE["deny_reason"]} if _RUNTIME_STATE["deny_reason"] else {"decision": "allow"}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+    if ev == "PostToolUse":
+        sys.stdout.write("{}\n")
+        sys.stdout.flush()
+        return
+    if ev in ("SessionStart", "PreInvocation", "PostInvocation"):
+        out = {"injectSteps": [{"systemMessage": {"systemMessage": text}}]} if text else {}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+    if ev == "Stop":
+        out = {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]} if _RUNTIME_STATE["stop_reason"] else {"decision": "allow"}
+        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+        return
+
     if _RUNTIME_STATE["deny_reason"]:
         reason = _RUNTIME_STATE["deny_reason"]
         payload = {
@@ -183,17 +219,19 @@ def _flush_agy_stdout():
             },
         }
         sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
         return
     if _RUNTIME_STATE["stop_reason"]:
         payload = {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
         sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
         return
-    if _RUNTIME_STATE["context_lines"] and _RUNTIME_STATE["event"] in (
-        "SessionStart", "PreInvocation", "PostInvocation", None
-    ):
-        text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
-        if text:
-            sys.stdout.write(json.dumps({"additionalContext": text}, ensure_ascii=False) + "\n")
+    if text:
+        sys.stdout.write(json.dumps({
+            "additionalContext": text,
+            "injectSteps": [{"systemMessage": {"systemMessage": text}}],
+        }, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
 
 
 def _ensure_atexit():

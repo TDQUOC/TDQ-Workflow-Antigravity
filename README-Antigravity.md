@@ -4,29 +4,29 @@ Hệ sinh thái đóng gói và kiểm chứng **TDQ-Workflow (`v0.97.0` — nh�
 
 ## Cấu Trúc Workspace & Công Cụ Chính
 
-- **`plugins/tdq-workflow/`** — Plugin Antigravity đã biên dịch hoàn chỉnh (`plugin.json`, `hooks.json`, `mcp_config.json`, `manifest.json`, `rules/`, `skills/`, `agents/`, `hooks/scripts/`, `scripts/`).
+- **`plugins/tdq-workflow-agy/`** — Plugin Antigravity (`tdq-workflow-agy`) đã biên dịch hoàn chỉnh (`plugin.json`, `hooks.json`, `mcp_config.json`, `manifest.json`, `rules/`, `skills/`, `agents/`, `hooks/scripts/`, `scripts/`).
 - **`.agents/plugins.json`** — Cấu hình discovery cục bộ trỏ `./plugins` để thử nghiệm trong workspace mà không chạm `~/.gemini/config/config.json`.
-- **`tools/build_agy_plugin.py`** — Trình biên dịch từ kho gốc `ForAgentCode/TDQ-Workflow` sang `plugins/tdq-workflow/` kèm toàn bộ bản vá tương thích Antigravity + Windows (`tools/patches/`).
-- **`tools/install_agy_plugin.py`** — Trình cài đặt an toàn vào `~/.gemini/config/plugins/tdq-workflow` (hỗ trợ `--dry-run`, `--target`, `--sync-local-mcp`).
+- **`tools/build_agy_plugin.py`** — Trình biên dịch sang `plugins/tdq-workflow-agy/` kèm toàn bộ bản vá tương thích Antigravity + Windows (`tools/patches/`).
+- **`tools/install_agy_plugin.py`** — Trình cài đặt an toàn vào `~/.gemini/config/plugins/tdq-workflow-agy` (hỗ trợ `--dry-run`, `--target`, `--sync-local-mcp`).
 - **`tools/run_full_verification.py`** — Bộ chạy kiểm chứng tổng lực `V1–V6` và xuất bằng chứng JSON thực nghiệm ra [`docs/verification_evidence.json`](./docs/verification_evidence.json).
-- **`tests/`** — Bộ test `pytest` (`14/14 PASSED`) xác thực validator chính chủ, `EC-01..14`, `NEW-01..28`, stress test NTFS 8 tiến trình (`320/320` zero-loss), live `agent-lsp.exe` stdio JSON-RPC và E2E 10 bước toàn vòng đời.
+- **`tests/`** — Bộ test `pytest` xác thực validator chính chủ, `EC-01..14`, `NEW-01..28`, stress test NTFS 8 tiến trình (`320/320` zero-loss), live `agent-lsp.exe` stdio JSON-RPC và E2E 10 bước toàn vòng đời.
 
 ## Lệnh Build, Kiểm Chứng & Cài Đặt Nhanh (PowerShell)
 
 ```powershell
-# 1. Biên dịch lại plugin sạch từ mã nguồn của nhánh AntigravityBranch_Improve
+# 1. Biên dịch lại plugin sạch từ mã nguồn hiện tại
 $env:PYTHONDONTWRITEBYTECODE='1'; py -3 -B tools/build_agy_plugin.py
 
-# 2. Chạy trình kiểm định chính chủ Antigravity & toàn bộ 14 tests kiểm chứng Antigravity
-agy.EXE plugin validate plugins/tdq-workflow --strict --json
+# 2. Chạy trình kiểm định chính chủ Antigravity & bộ test kiểm chứng Antigravity
+agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json
 py -3 -B -m pytest tests/test_agy_plugin_validate.py tests/test_cli_fixes_new01_28.py tests/test_e2e_workflow.py tests/test_hooks_dual_protocol.py tests/test_ntfs_concurrency.py -v --basetemp=.pytest_tmp
 
 # 3. Sinh báo cáo bằng chứng thực nghiệm JSON
 $env:PYTHONDONTWRITEBYTECODE='1'; py -3 -B tools/run_full_verification.py
 
-# 4. Cài đặt thử / đồng bộ vào plugin store người dùng (chưa bật mặc định)
+# 4. Cài đặt / cập nhật User-Level vào ~/.gemini/config/plugins/tdq-workflow-agy
 py -3 tools/install_agy_plugin.py --dry-run
-# py -3 tools/install_agy_plugin.py --sync-local-mcp
+# py -3 install.py --update
 ```
 
 ## Tài Liệu Kiểm Chứng & Báo Cáo Thực Nghiệm (`docs/`)

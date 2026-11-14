@@ -20,7 +20,8 @@ project is not a git repo) → it falls back to exactly the old behaviour.
 import json
 import os
 
-from _common import TERMINAL_STOP_REASONS, emit_context, is_agy, payload_cwd, read_payload, stop_block, turn_rows
+import _common
+from _common import TERMINAL_STOP_REASONS, emit_context, is_agy, payload_cwd, queue_remind, read_payload, stop_block, turn_rows
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
 from tdq_state import (BOOKKEEPING_PATHS, _TASK_LINE, _info, _warn,  # noqa: E402
@@ -241,7 +242,10 @@ def _chan_chua_xong(cwd, state, payload=None):
                      "Finish plan or declare a genuine blocker with "
                      "`tdq_state.py pause --loai <kind> --ly-do \"<why>\"`.")
         if is_agy():
-            emit_context([stuck_msg])
+            if _common._RUNTIME_STATE.get("event") == "Stop":
+                queue_remind(cwd, payload or {}, "STOP", stuck_msg)
+            else:
+                emit_context([stuck_msg])
         else:
             print(json.dumps({"hookSpecificOutput": {
                 "hookEventName": "Stop",
@@ -359,7 +363,10 @@ def main():
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS - 1].rstrip() + "…"
     if is_agy():
-        emit_context([text])
+        if _common._RUNTIME_STATE.get("event") == "Stop":
+            queue_remind(cwd, payload, "STOP", text)
+        else:
+            emit_context([text])
     else:
         print(json.dumps({
             "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": text}

@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow"
+PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 SCRIPTS_DIR = PLUGIN_DIR / "scripts"
 HOOKS_DIR = PLUGIN_DIR / "hooks" / "scripts"
 UPSTREAM_REPO = Path(r"C:\Users\admin\Documents\Projects\ForAgentCode\TDQ-Workflow")
@@ -169,7 +169,9 @@ def main() -> int:
 
     # 1. Build check
     build_res = _run([sys.executable, "-B", "tools/build_agy_plugin.py"])
-    build_json = json.loads(build_res["stdout"]) if build_res["returncode"] == 0 else {}
+    if build_res["returncode"] != 0:
+        raise RuntimeError(f"build_agy_plugin.py failed ({build_res['returncode']}):\n{build_res['stderr']}\n{build_res['stdout']}")
+    build_json = json.loads(build_res["stdout"])
 
     # 2. Validator & staged install
     val_res = _run([agy, "plugin", "validate", str(PLUGIN_DIR), "--strict", "--json"])

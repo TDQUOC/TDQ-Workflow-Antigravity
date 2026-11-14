@@ -9,14 +9,14 @@ from pathlib import Path
 import pytest
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow"
+PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 SCRIPTS_DIR = PLUGIN_DIR / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 
 def _load_plugin_script(name: str):
-    """Load a module strictly from plugins/tdq-workflow/scripts to prevent sys.modules shadowing."""
+    """Load a module strictly from plugins/tdq-workflow-agy/scripts to prevent sys.modules shadowing."""
     if sys.path[0] != str(SCRIPTS_DIR):
         sys.path.insert(0, str(SCRIPTS_DIR))
     mod_name = f"_agy_plugin_{name}"
@@ -85,7 +85,7 @@ def test_new02_03_04_lsp_module_and_search_rules():
         "call_mcp_tool",
         {"ServerName": "lsp", "ToolName": "find_symbol", "Arguments": {"query": "foo"}},
     )
-    res2 = search_rules.la_goi_khai_niem("mcp_tdq-workflow_lsp_go_to_definition", {})
+    res2 = search_rules.la_goi_khai_niem("mcp_tdq-workflow-agy_lsp_go_to_definition", {})
     res3 = search_rules.la_goi_khai_niem("mcp_graphify_query_graph", {})
     assert res1 and res2 and res3
     assert "run_command" in search_rules.CONG_CU_SHELL
@@ -207,7 +207,7 @@ def test_new15_to_new28_transcript_eval_hosts_test_isolation_tokens(tmp_path):
     assert "(?:python3|py -3)" in cs_src and tdq_checkstatus is not None
 
     agy_dirs = skill_inventory._agy_plugin_skill_dirs(str(tmp_path), str(WORKSPACE))
-    assert any(name == "tdq-workflow" for name, _ in agy_dirs)
+    assert any(name == "tdq-workflow-agy" for name, _ in agy_dirs)
 
     # Verify token counter & token_budget --kiem both succeed
     counter = skill_tokens._load_counter() if hasattr(skill_tokens, "_load_counter") else None

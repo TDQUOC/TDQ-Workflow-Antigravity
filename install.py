@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""TDQ-Workflow Antigravity User-Level Plugin Installer.
+"""TDQ-Workflow Antigravity User-Level Plugin Installer (`tdq-workflow-agy`).
 
 Installs the TDQ-Workflow native plugin directly into the user-level configuration directory:
-  Windows: %USERPROFILE%\\.gemini\\config\\plugins\\tdq-workflow
-  macOS/Linux: ~/.gemini/config/plugins/tdq-workflow
+  Windows: %USERPROFILE%\\.gemini\\config\\plugins\\tdq-workflow-agy
+  macOS/Linux: ~/.gemini/config/plugins/tdq-workflow-agy
 
 Usage:
   python install.py
-  python install.py --enable
+  python install.py --update
   python install.py --dry-run
 """
 import argparse
@@ -21,30 +21,48 @@ import sys
 from pathlib import Path
 
 
+PLUGIN_NAME = "tdq-workflow-agy"
 ROOT_DIR = Path(__file__).resolve().parent
-PLUGIN_SRC = ROOT_DIR / "plugins" / "tdq-workflow"
+PLUGIN_SRC = ROOT_DIR / "plugins" / PLUGIN_NAME
 USER_PLUGINS_DIR = Path.home() / ".gemini" / "config" / "plugins"
-TARGET_DIR = USER_PLUGINS_DIR / "tdq-workflow"
-
-
-def _clean_remove(path: Path) -> None:
-    if path.is_dir():
-        def _on_exc(fn, p, _e):
-            try:
-                os.chmod(p, stat.S_IWRITE)
-                fn(p)
-            except Exception:
-                pass
-        shutil.rmtree(path, onexc=_on_exc)
-    elif path.exists():
-        path.unlink(missing_ok=True)
+TARGET_DIR = USER_PLUGINS_DIR / PLUGIN_NAME
 
 
 def _copy_tree(src: Path, dst: Path) -> int:
-    _clean_remove(dst)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(src, dst)
-    return sum(1 for _ in dst.rglob("*") if _.is_file())
+    """Sync plugin files in-place without removing dst root (avoids WinError 32)."""
+    dst.mkdir(parents=True, exist_ok=True)
+    expected_files, expected_dirs, count = set(), set(), 0
+    for root, dirs, files in os.walk(src):
+        rel_root = Path(root).relative_to(src)
+        if rel_root != Path("."):
+            expected_dirs.add(rel_root)
+        out_dir = dst / rel_root
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for d in dirs:
+            expected_dirs.add(rel_root / d if rel_root != Path(".") else Path(d))
+        for name in files:
+            rel_file = rel_root / name if rel_root != Path(".") else Path(name)
+            expected_files.add(rel_file)
+            target_file = out_dir / name
+            if target_file.exists():
+                os.chmod(target_file, stat.S_IWRITE)
+            shutil.copy2(Path(root) / name, target_file)
+            count += 1
+    for root, _dirs, files in os.walk(dst, topdown=False):
+        rel_root = Path(root).relative_to(dst)
+        for name in files:
+            rel_file = rel_root / name if rel_root != Path(".") else Path(name)
+            if rel_file not in expected_files:
+                stale = Path(root) / name
+                os.chmod(stale, stat.S_IWRITE)
+                stale.unlink()
+        if rel_root != Path(".") and rel_root not in expected_dirs:
+            try:
+                os.chmod(Path(root), stat.S_IWRITE)
+                Path(root).rmdir()
+            except PermissionError:
+                pass
+    return count
 
 
 def _adjust_hooks_for_platform(installed_dir: Path) -> None:
@@ -67,22 +85,58 @@ def _adjust_hooks_for_platform(installed_dir: Path) -> None:
     hooks_file.write_text(text, encoding="utf-8")
 
 
+def _find_agy_cli() -> str:
+    if platform.system() == "Windows":
+        found = shutil.which("agy.EXE") or shutil.which("agy.exe") or shutil.which("agy")
+        if found:
+            return found
+        fallback = Path.home() / "AppData" / "Local" / "Programs" / "Antigravity" / "bin" / "agy.EXE"
+        if fallback.is_file():
+            return str(fallback)
+        return "agy.exe"
+    return shutil.which("agy") or "agy"
+
+
 def _run_agy_command(*args) -> subprocess.CompletedProcess:
-    agy_cmd = "agy.exe" if platform.system() == "Windows" else "agy"
+    agy_cmd = _find_agy_cli()
+    kw = {"capture_output": True, "text": True, "encoding": "utf-8", "errors": "replace", "timeout": 30}
+    if platform.system() == "Windows":
+        kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
     try:
-        return subprocess.run([agy_cmd, *args], capture_output=True, text=True, timeout=30)
+        return subprocess.run([agy_cmd, *args], **kw)
     except FileNotFoundError:
-        # Try full path or fall back
         return subprocess.CompletedProcess([agy_cmd, *args], returncode=127, stdout="", stderr="agy CLI not found on PATH")
 
 
+def _git_pull_ff_only(repo_root: Path) -> bool:
+    print("\n0. Pulling latest updates from git remote (git pull --ff-only)...")
+    kw = {"cwd": str(repo_root), "capture_output": True, "text": True, "encoding": "utf-8", "errors": "replace", "timeout": 60}
+    if platform.system() == "Windows":
+        kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    try:
+        proc = subprocess.run(["git", "-C", str(repo_root), "pull", "--ff-only"], **kw)
+    except FileNotFoundError:
+        print("   [ERROR] git CLI not found on PATH.", file=sys.stderr)
+        return False
+    if proc.returncode != 0:
+        print(f"   [ERROR] git pull --ff-only failed ({proc.returncode}): {proc.stderr.strip() or proc.stdout.strip()}", file=sys.stderr)
+        return False
+    print(f"   [OK] {proc.stdout.strip() or 'Repository is up to date.'}")
+    return True
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Install TDQ-Workflow native plugin to user-level Antigravity.")
-    parser.add_argument("--src", type=Path, default=PLUGIN_SRC, help="Source plugin directory (default: ./plugins/tdq-workflow)")
-    parser.add_argument("--target", type=Path, default=TARGET_DIR, help="Target user-level directory (default: ~/.gemini/config/plugins/tdq-workflow)")
+    parser = argparse.ArgumentParser(description=f"Install {PLUGIN_NAME} native plugin to user-level Antigravity.")
+    parser.add_argument("--src", type=Path, default=PLUGIN_SRC, help=f"Source plugin directory (default: ./plugins/{PLUGIN_NAME})")
+    parser.add_argument("--target", type=Path, default=TARGET_DIR, help=f"Target user-level directory (default: ~/.gemini/config/plugins/{PLUGIN_NAME})")
     parser.add_argument("--dry-run", action="store_true", help="Simulate installation without writing to disk")
     parser.add_argument("--no-enable", action="store_true", help="Do not automatically enable the plugin after install")
+    parser.add_argument("--update", action="store_true", help="Run 'git pull --ff-only' in the repository before reinstalling")
     args = parser.parse_args()
+
+    if args.update and not args.dry_run:
+        if not _git_pull_ff_only(ROOT_DIR):
+            return 1
 
     src = args.src.resolve()
     target = args.target.resolve()
@@ -93,13 +147,15 @@ def main() -> int:
         return 1
 
     print("==================================================================")
-    print("TDQ-Workflow Antigravity User-Level Installer")
+    print(f"TDQ-Workflow Antigravity User-Level Installer ({PLUGIN_NAME})")
     print("==================================================================")
     print(f"Source Plugin: {src}")
     print(f"Target (User-Level): {target}")
     print(f"Operating System: {platform.system()} ({platform.release()})")
 
     if args.dry_run:
+        if args.update:
+            print("[DRY-RUN] Would run: git -C <repo> pull --ff-only")
         print("[DRY-RUN] Verification complete. No files were copied.")
         return 0
 
@@ -116,9 +172,8 @@ def main() -> int:
     if val_proc.returncode == 0:
         try:
             val_data = json.loads(val_proc.stdout)
-            findings = val_data.get("findings", [])
             comps = val_data.get("components", {})
-            print(f"   [OK] Validation passed: 0 errors, 0 warnings.")
+            print("   [OK] Validation passed: 0 errors, 0 warnings.")
             print(f"        Components: {comps.get('skills', 0)} skills, {comps.get('agents', 0)} agents, "
                   f"{comps.get('rules', 0)} rules, {comps.get('mcpServers', 0)} MCP servers, {comps.get('hooks', 0)} hooks.")
         except Exception:
@@ -127,18 +182,18 @@ def main() -> int:
         print(f"   [NOTE] agy CLI check skipped or returned {val_proc.returncode} ({val_proc.stderr.strip()}).")
 
     if not args.no_enable:
-        print("\n4. Enabling plugin in Antigravity...")
-        enable_proc = _run_agy_command("plugin", "enable", "tdq-workflow")
+        print(f"\n4. Enabling plugin '{PLUGIN_NAME}' in Antigravity...")
+        enable_proc = _run_agy_command("plugin", "enable", PLUGIN_NAME)
         if enable_proc.returncode == 0:
-            print("   [OK] Plugin 'tdq-workflow' is now ENABLED.")
+            print(f"   [OK] Plugin '{PLUGIN_NAME}' is now ENABLED.")
         else:
-            print(f"   [NOTE] Could not run 'agy plugin enable tdq-workflow' ({enable_proc.stderr.strip()}).")
-            print("          You can enable it manually in Antigravity UI or with: agy plugin enable tdq-workflow")
+            print(f"   [NOTE] Could not run 'agy plugin enable {PLUGIN_NAME}' ({enable_proc.stderr.strip()}).")
+            print(f"          You can enable it manually in Antigravity UI or with: agy plugin enable {PLUGIN_NAME}")
 
     print("\n==================================================================")
     print("INSTALLATION SUCCESSFUL!")
     print("==================================================================")
-    print(f"The TDQ-Workflow plugin is now installed at user-level:")
+    print(f"The {PLUGIN_NAME} plugin is now installed at user-level:")
     print(f"  {target}")
     print("\nIt will automatically load in any Antigravity workspace.")
     print("To check status anytime: agy plugin list")

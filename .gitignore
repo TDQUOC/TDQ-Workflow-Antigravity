@@ -77,6 +77,7 @@ docs/tdq/artifacts/**/trials/env/
 .pytest_tmp/
 .tmp*/
 docs/tdq/.tdq-runtime/
+docs/tdq/.tdq-*.lock
 *.bak
 *.local.json
 *.corrupt-*

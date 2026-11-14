@@ -232,14 +232,15 @@ def main():
     kb = so.st_size // 1024
     if _common.is_agy():
         _common.remind_force(cwd, payload, "READ", _tao_thong_diep(ten, kb, dau, cuoi, lap_count))
-    print(_common.json.dumps({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "allow",
-            "permissionDecisionReason": "TDQ: a reminder, not a block.",
-            "additionalContext": _common.trim(_tao_thong_diep(ten, kb, dau, cuoi, lap_count)),
-        }
-    }, ensure_ascii=False))
+    else:
+        print(_common.json.dumps({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "permissionDecisionReason": "TDQ: a reminder, not a block.",
+                "additionalContext": _common.trim(_tao_thong_diep(ten, kb, dau, cuoi, lap_count)),
+            }
+        }, ensure_ascii=False))
     sys.exit(0)
 
 

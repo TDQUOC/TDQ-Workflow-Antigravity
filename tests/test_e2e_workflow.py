@@ -9,7 +9,7 @@ import threading
 from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow"
+PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 SCRIPTS_DIR = PLUGIN_DIR / "scripts"
 HOOKS_DIR = PLUGIN_DIR / "hooks" / "scripts"
 
@@ -116,7 +116,7 @@ def test_v5_live_mcp_agent_lsp_stdio_and_7_companion_extensions():
 
 
 def test_v6_full_10_step_e2e_pipeline(tmp_path):
-    """V6: Execute full 10-step TDQ workflow inside an isolated repo strictly via plugins/tdq-workflow."""
+    """V6: Execute full 10-step TDQ workflow inside an isolated repo strictly via plugins/tdq-workflow-agy."""
     repo = tmp_path / "calc_app"
     (repo / "src").mkdir(parents=True)
     (repo / "tests").mkdir(parents=True)

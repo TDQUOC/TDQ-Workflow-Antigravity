@@ -31,6 +31,46 @@ def force_writable_rmtree(path: Path) -> None:
     shutil.rmtree(path, onexc=_on_exc)
 
 
+def sync_tree_inplace(src: Path, dst: Path) -> int:
+    """Sync src contents into dst without removing dst itself (avoids WinError 32 on live plugin dir)."""
+    dst.mkdir(parents=True, exist_ok=True)
+    expected_files = set()
+    expected_dirs = set()
+    count = 0
+    for root, dirs, files in os.walk(src):
+        rel_root = Path(root).relative_to(src)
+        if rel_root != Path("."):
+            expected_dirs.add(rel_root)
+        out_dir = dst / rel_root
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for d in dirs:
+            expected_dirs.add(rel_root / d if rel_root != Path(".") else Path(d))
+        for name in files:
+            rel_file = rel_root / name if rel_root != Path(".") else Path(name)
+            expected_files.add(rel_file)
+            target_file = out_dir / name
+            if target_file.exists():
+                os.chmod(target_file, stat.S_IWRITE)
+            shutil.copy2(Path(root) / name, target_file)
+            count += 1
+    for root, _dirs, files in os.walk(dst, topdown=False):
+        rel_root = Path(root).relative_to(dst)
+        for name in files:
+            rel_file = rel_root / name if rel_root != Path(".") else Path(name)
+            if rel_file not in expected_files:
+                stale = Path(root) / name
+                os.chmod(stale, stat.S_IWRITE)
+                stale.unlink()
+        if rel_root != Path(".") and rel_root not in expected_dirs:
+            stale_dir = Path(root)
+            try:
+                os.chmod(stale_dir, stat.S_IWRITE)
+                stale_dir.rmdir()
+            except PermissionError:
+                pass
+    return count
+
+
 def copy_clean_tree(src: Path, dst: Path, exclude_names: Iterable[str] = ()) -> int:
     """Copy directory tree excluding caches and explicitly skipped filenames."""
     skip = {"__pycache__", ".pytest_cache", ".ruff_cache"} | set(exclude_names)

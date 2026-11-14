@@ -1,25 +1,20 @@
 #!/usr/bin/env python3
-"""Safe installer for the compiled plugins/tdq-workflow Antigravity plugin."""
+"""Safe installer for the compiled plugins/tdq-workflow-agy Antigravity plugin."""
 import argparse
 import json
-import os
-import shutil
-import stat
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from patches.common_utils import sync_tree_inplace
 
-DEFAULT_SRC = Path(__file__).resolve().parent.parent / "plugins" / "tdq-workflow"
-DEFAULT_DST = Path.home() / ".gemini" / "config" / "plugins" / "tdq-workflow"
+
+DEFAULT_SRC = Path(__file__).resolve().parent.parent / "plugins" / "tdq-workflow-agy"
+DEFAULT_DST = Path.home() / ".gemini" / "config" / "plugins" / "tdq-workflow-agy"
 
 
 def _copy_plugin(src: Path, dst: Path) -> int:
-    if dst.exists():
-        def _on_exc(fn, p, _e):
-            os.chmod(p, stat.S_IWRITE)
-            fn(p)
-        shutil.rmtree(dst, onexc=_on_exc)
-    shutil.copytree(src, dst)
-    return sum(1 for _ in dst.rglob("*") if _.is_file())
+    return sync_tree_inplace(src, dst)
 
 
 def _sync_local_mcp(dst: Path) -> dict:
@@ -45,7 +40,7 @@ def _sync_local_mcp(dst: Path) -> dict:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Install tdq-workflow native Antigravity plugin.")
+    ap = argparse.ArgumentParser(description="Install tdq-workflow-agy native Antigravity plugin.")
     ap.add_argument("--src", type=Path, default=DEFAULT_SRC)
     ap.add_argument("--target", type=Path, default=DEFAULT_DST)
     ap.add_argument("--dry-run", action="store_true")

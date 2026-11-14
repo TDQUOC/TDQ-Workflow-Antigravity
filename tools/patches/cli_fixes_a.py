@@ -91,6 +91,7 @@ def _agy_mcp_candidate_files():
     return [
         os.path.join(plugin_root, "mcp_config.json"),
         os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
+        os.path.expanduser("~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json"),
         os.path.expanduser("~/.gemini/config/plugins/tdq-workflow/mcp_config.json"),
     ]
 '''
@@ -297,6 +298,7 @@ def is_antigravity_host():
         return True
     norm = os.path.abspath(__file__).replace("\\\\", "/").lower()
     return ("/.gemini/config/plugins/" in norm
+            or "/plugins/tdq-workflow-agy/" in norm
             or "/plugins/tdq-workflow/" in norm
             or "/antigravity_portable/" in norm)
 

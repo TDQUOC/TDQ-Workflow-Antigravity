@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow"
+PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 SCRIPTS_DIR = PLUGIN_DIR / "scripts"
 HOOKS_DIR = PLUGIN_DIR / "hooks" / "scripts"
 REAL_SUBAGENT_TRANSCRIPT = Path(
