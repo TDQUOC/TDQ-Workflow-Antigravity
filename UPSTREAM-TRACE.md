@@ -54,11 +54,33 @@ Toàn bộ các cải tiến dưới đây đã vượt qua bộ kiểm thử **
 
 ---
 
-## 4. HƯỚNG DẪN CÀI ĐẶT TRÊN MÁY KHÁC QUA GIT / MARKETPLACE
+## 4. HƯỚNG DẪN CÀI ĐẶT BẢN PHÁT HÀNH USER-LEVEL TRÊN MÁY KHÁC
 
-Người dùng hoặc đồng đội trên máy khác có thể cài đặt plugin từ repo này theo 4 cách:
+Bản phát hành này được thiết kế để **cài đặt trực tiếp vào cấp tài khoản người dùng (User-Level)** tại `~/.gemini/config/plugins/tdq-workflow` (tự động nhận diện trên mọi workspace).
 
-### Cách 1: Workspace Plugin Discovery (Khuyên dùng khi phát triển dự án)
+### Cách 1: Cài Đặt User-Level 1 Lệnh (One-Click Installer — Khuyên dùng)
+```bash
+git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
+cd TDQ-Workflow-Antigravity
+
+# Trên Windows (PowerShell / CMD):
+.\install.ps1
+# hoặc: py -3 install.py
+
+# Trên macOS / Linux:
+./install.sh
+# hoặc: python3 install.py
+```
+*Script tự động copy plugin vào `~/.gemini/config/plugins/tdq-workflow`, điều chỉnh lệnh runtime tương thích với OS, chạy `agy plugin validate` xác nhận 0 lỗi và tự động kích hoạt plugin.*
+
+### Cách 2: Cài Đặt User-Level Qua CLI Antigravity (`agy`)
+```bash
+git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
+agy plugin install ./TDQ-Workflow-Antigravity/plugins/tdq-workflow
+agy plugin enable tdq-workflow
+```
+
+### Cách 3: Workspace Plugin Discovery (Dành cho 1 dự án cụ thể)
 Clone kho mã nguồn hoặc thêm submodule vào dự án của bạn:
 ```bash
 git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
@@ -70,26 +92,6 @@ Trong tệp `.agents/plugins.json` tại thư mục gốc dự án của bạn, 
     { "path": "./TDQ-Workflow-Antigravity/plugins" }
   ]
 }
-```
-*Antigravity sẽ tự động nhận diện và kích hoạt `tdq-workflow` cho riêng workspace đó mà không cần can thiệp cấu hình toàn cục.*
-
-### Cách 2: Cài Đặt Toàn Cục Tự Động (1 Lệnh Qua Installer)
-```bash
-git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
-cd TDQ-Workflow-Antigravity
-py -3 tools/install_agy_plugin.py
-```
-*Script sẽ tự động sao chép plugin vào `~/.gemini/config/plugins/tdq-workflow`, đồng bộ cấu hình MCP cục bộ và chạy `agy plugin validate` để xác nhận thành công.*
-
-### Cách 3: Sinh Gói Cài Đặt Di Động Tại Chỗ (`--sinh-agy`)
-```bash
-py -3 -B scripts/build_portable.py --sinh-agy --dich "$HOME/.gemini/config/plugins/tdq-workflow"
-```
-*Lệnh này sinh ra đúng 150 tệp đã được ánh xạ chính xác đường dẫn thư mục nhà của máy đích, không bị lỗi nướng cứng đường dẫn.*
-
-### Cách 4: Sử Dụng CLI Antigravity
-```bash
-agy plugin install ./plugins/tdq-workflow
 ```
 
 ---

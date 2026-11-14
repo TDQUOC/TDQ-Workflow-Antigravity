@@ -71,6 +71,7 @@ RELEASE_EXCLUDE_PATHS = frozenset({".agents/plugins.json"})
 RELEASE_EXCLUDE_FILES = frozenset({
     ".DS_Store", "CHANGELOG-archive.md", "pyrightconfig.json",
     "state.json", ".tdq-turn.jsonl", "README-Antigravity.md",
+    "UPSTREAM-TRACE.md", "install.py", "install.ps1", "install.sh",
 })
 RELEASE_EXCLUDE_SCRIPTS = frozenset({
     "canvas_a4_ch4_ch7.py", "canvas_a4_rebuild.py", "canvas_draw.py",
