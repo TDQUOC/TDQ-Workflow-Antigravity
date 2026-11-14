@@ -1,7 +1,7 @@
 # TDQ-Workflow — Hệ Điều Hành Spec-Driven & Kiến Trúc Tương Tác Cho AI Coding Agents
 
-![Version](https://img.shields.io/badge/version-0.89.0-2563eb?style=for-the-badge)
-![Tests](https://img.shields.io/badge/tests-3991%20passed-16a34a?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.97.0-2563eb?style=for-the-badge)
+![Tests](https://img.shields.io/badge/tests-4196%20passed-16a34a?style=for-the-badge)
 ![Search](https://img.shields.io/badge/search-3--tier%20LSP%20%C2%B7%20Graphify%20%C2%B7%20Grep-0d9488?style=for-the-badge)
 ![Visual BA](https://img.shields.io/badge/archify-2--tier%20Personal%20BA%20%26%20Master%20Map-7c3aed?style=for-the-badge)
 ![Hosts](https://img.shields.io/badge/hosts-Claude%20%C2%B7%20Codex%20%C2%B7%20OpenCode%20%C2%B7%20Antigravity-ea580c?style=for-the-badge)
@@ -9,6 +9,8 @@
 **TDQ-Workflow** biến AI Agent từ một công cụ sinh mã tự phát thành một **Kỹ sư Phần mềm & Chuyên gia Phân tích Nghiệp vụ (Personal BA)** làm đúng ngay từ lần triển khai đầu tiên.
 
 Mọi yêu cầu đều đi qua chu trình kỷ luật: **Khảo sát 3 chiều (LSP + Graphify + Grep) → Phỏng vấn → Đặc tả & Archify HTML → Bạn duyệt bằng chat**. Sau đó, hệ thống lập **Kế hoạch Red-Green → Thực thi qua Git Worktree → Kiểm định QC Loop → Báo cáo nghiệm thu**.
+
+> **Nguồn gốc & Truy vết Upstream:** Kho mã nguồn này phát triển độc lập cho Google Antigravity 2.0 từ bản gốc [TDQ-Workflow](https://github.com/TDQUOC/TDQ-Workflow.git) (`v0.97.0` @ `b423ee06`). Xem toàn bộ lịch sử cải tiến, mã băm commit và hướng dẫn đồng bộ tại [UPSTREAM-TRACE.md](UPSTREAM-TRACE.md).
 
 ---
 
@@ -140,6 +142,42 @@ Mọi nền tảng đều đọc **cùng một thư mục `skills/` duy nhất**
 | **Codex** | `.agents/plugins/marketplace.json` + `.codex-plugin/plugin.json` | `codex plugin marketplace add TDQUOC/TDQ-Workflow` rồi `codex plugin add tdq-workflow@tdq-local` |
 | **OpenCode** | `.opencode/plugins/tdq-workflow.js` | Khai báo trong `opencode.json` (xem chi tiết tại [`.opencode/INSTALL.md`](.opencode/INSTALL.md)) |
 | **Antigravity** | `plugins/tdq-workflow/` (Native v0.97.0, 0 findings `agy plugin validate`) | `python3 scripts/build_portable.py --sinh-agy` hoặc `py -3 -B tools/build_agy_plugin.py` + `py -3 tools/install_agy_plugin.py --sync-local-mcp` (xem [`README-Antigravity.md`](README-Antigravity.md)) |
+
+### Cài đặt Plugin TDQ-Workflow cho Google Antigravity trên máy khác
+
+Bạn có thể thêm plugin vào Antigravity từ repository này theo 4 cách tiện lợi:
+
+1. **Workspace Discovery (Khai báo trong dự án — Khuyên dùng):**
+   Clone repo vào máy hoặc đưa vào submodule dự án:
+   ```bash
+   git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
+   ```
+   Khai báo trong `.agents/plugins.json` của workspace bạn đang làm việc:
+   ```json
+   {
+     "entries": [
+       { "path": "./TDQ-Workflow-Antigravity/plugins" }
+     ]
+   }
+   ```
+   *Antigravity tự động kích hoạt plugin `tdq-workflow` cho workspace mà không cần đụng cấu hình toàn cục.*
+
+2. **Cài đặt toàn cục 1 lệnh (Installer tự động):**
+   ```bash
+   git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
+   cd TDQ-Workflow-Antigravity
+   py -3 tools/install_agy_plugin.py
+   ```
+
+3. **Sinh bundle tại chỗ theo thư mục nhà máy đích:**
+   ```bash
+   py -3 -B scripts/build_portable.py --sinh-agy --dich "$HOME/.gemini/config/plugins/tdq-workflow"
+   ```
+
+4. **Qua lệnh CLI của Antigravity:**
+   ```bash
+   agy plugin install ./plugins/tdq-workflow
+   ```
 
 ### Cấu hình tự động cập nhật cho Claude Code
 
