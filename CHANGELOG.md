@@ -2,6 +2,14 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.97.1 — 2026-11-16
+
+Đặt lại mặc định và mức dự phòng fail-closed của luật tinh gọn Ponytail (`muc_gat`) từ `ultra` về `full` (`2026-11-16-0058-dat-mac-dinh-ponytail-full`).
+
+- `scripts/tdq_state.py` & `hooks/scripts/luat_gon.py`: Đổi `MUC_GAT_MAC_DINH` và `MUC_MAC_DINH` từ `ultra` về `full`; giữ nguyên các mức đặt tường minh `lite|full|ultra|off` và mặc định `muc_qc = full` độc lập.
+- `skills/tdq-build/references/rules/chung.md`: Cập nhật nhãn `(the default)` và câu dự phòng trong bảng cường độ về `full`, tái tạo khóa `docs/tdq/token-budget.json`.
+- `plugins/tdq-workflow-agy/`: Biên dịch đồng bộ gói plugin bản địa Antigravity `v0.97.1` và cập nhật bộ unit test `tests/test_state_muc_gat.py`, `tests/test_luat_gon.py`.
+
 ## 0.97.0 — 2026-11-11
 
 Cấu trúc Self-Contained Task Block 8 trường, Rule R15 trong doc_lint và cơ chế tự động gọi model tier thấp (Haiku) ở implement (`2026-11-11-0230-task-block-va-model-tier-thap`).
@@ -469,30 +477,7 @@ TDQ-Workflow và claudecodeui, không lumen vẫn trúng 11/12 và 10/12 (trư�
   trên Windows, sandbox `read-only`/`workspace-write` chặn mọi tiến trình, kể cả tiến trình hook
   (`docs/tdq/research/2026-10-07-2041-hook-codex.md`).
 
-## 0.57.0 — 2026-10-05
-
-Một luật chạy test, một nguồn. Bước trung gian chỉ chạy test trong vùng chạm, trọn bộ dồn về
-hai cổng. Trước bản này `tdq-build` ("EXACTLY ONCE"), khuôn plan ("sau mỗi phase chạy toàn bộ")
-và `qc.md` (mỗi vòng sửa) nói ba kiểu khác nhau. Báo cáo:
-`docs/tdq/reports/2026-10-03-1907-test-vung-cham-buoc-trung-gian.md`.
-
-- **Bước trung gian chạy `scripts/tdq_test.py vung-cham`.** Nó chọn vùng chạm cộng bán kính ảnh
-  hưởng: test nhắc đường dẫn/tên file, import bắc cầu đọc bằng AST, test quét thư mục cha. Trọn
-  bộ chỉ ở 2 cổng: QC-F1 (thay lần "xong implement") và sau vòng sửa QC cuối nếu có sửa.
-- **Không chắc thì chạy hết.** Bán kính ≥ 60% số module, hoặc file mã/loại không rõ ngoài
-  `scripts/ hooks/ skills/ tests/ agents/` → trọn bộ trong một tiến trình. File dữ liệu (.md,
-  .json…) chỉ kéo theo test nhắc đường dẫn của nó.
-- **Đo trên repo này.** Sửa `stop_gate.py` → 16/129 module, 51,6 s (trọn bộ ~420 s). Sửa hub
-  `tdq_state.py` → 98/129 module → trọn bộ.
-- **Sổ sách.** `tdq_test.py tron-bo` ghi sổ, và có sổ bán kính bỏ sót (QC-F1 đỏ ở module bán kính
-  chưa chọn); report in số lần, xem bằng `tdq_test.py so`. `next` nhắc khi số lần trọn bộ vượt
-  ngân sách 2 (3 sau một lần trọn bộ đỏ) — chỉ nhắc, không chặn.
-- **Test chạy được từ PowerShell.** Bỏ lệnh shell `true` khỏi 5 module test (trước: 26 fail +
-  1 error).
-- **Trung thực về tiết kiệm.** Nền cũ trung bình 7,4 lần trọn bộ/request (59 lần/8 request). Hai
-  request gần nhất đã chỉ 2–3 lần, nên lợi chính là khoá luật cho khỏi trôi ngược.
-
 ## Lịch sử cũ hơn
 
-Bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`; bản 0.36.0 trở xuống:
-`docs/CHANGELOG-archive.md`. Tách để giữ file chính dưới 500 dòng; chữ nghĩa giữ nguyên.
+Bản 0.57.0: `docs/CHANGELOG-archive-3.md`; bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`;
+bản 0.36.0 trở xuống: `docs/CHANGELOG-archive.md`. Tách để giữ file chính dưới 500 dòng; chữ nghĩa giữ nguyên.

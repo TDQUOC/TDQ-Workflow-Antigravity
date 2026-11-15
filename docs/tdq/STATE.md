@@ -1,11 +1,11 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-16T01:27:23+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-16T01:36:09+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
 | Request | 2026-11-16-0058-dat-mac-dinh-ponytail-full |
 | Lane | quick |
-| Phase | report |
+| Phase | idle |
 | Spec | (none) |
 | Plan | docs/tdq/plan/2026-11-16-0058-dat-mac-dinh-ponytail-full.md — ⏳ awaiting approval |
 | Quick approval | ✔ approved |
@@ -15,13 +15,13 @@ Updated: 2026-11-16T01:27:23+07:00 · Project: C:\Users\admin\Documents\Projects
 | Run mode | (not settled) |
 
 ## Where we are
-QC has PASSed. Forbidden: Committing or pushing before the user asks for it.
+Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.
 
 ## What comes next
-Write docs/tdq/reports/<slug>.html + Markdown: before/after state & flow, what was tested & actual test results; ask about commit.
+Wait for a new request from the user.
 ```
-python3 scripts/tdq_state.py set phase=idle
+python3 scripts/tdq_state.py init <YYYY-MM-DD-HHMM-slug> <nhanh|chuyen-sau> [--lang <code>]
 ```
-Done when: The report is written and the user has been asked about committing
+Done when: A new request is open
 
 > Write state only through `python3 scripts/tdq_state.py …`. Unsure where you stand → run `tdq_state.py next`.

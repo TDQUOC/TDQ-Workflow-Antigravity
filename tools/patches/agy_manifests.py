@@ -8,7 +8,7 @@ from typing import Dict, List
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
-PLUGIN_VERSION = "0.97.0"
+PLUGIN_VERSION = "0.97.1"
 
 
 def _default_lsp_args() -> List[str]:
@@ -264,7 +264,7 @@ def generate_manifest_and_readme(plugin_root: Path, upstream_sha: str) -> None:
     }
     write_utf8(plugin_root / "manifest.json", json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     readme = (
-        "# TDQ Workflow (`tdq-workflow-agy`) — Google Antigravity Native Plugin (`v0.97.0`)\n\n"
+        f"# TDQ Workflow (`tdq-workflow-agy`) — Google Antigravity Native Plugin (`v{PLUGIN_VERSION}`)\n\n"
         "Spec-driven engineering workflow compiled for Google Antigravity (`agy`).\n"
         "Forked and improved from upstream [TDQ-Workflow](https://github.com/TDQUOC/TDQ-Workflow.git) (`v0.97.0` @ `b423ee06`). Details: `UPSTREAM-TRACE.md`.\n\n"
         "- **Hooks:** `hooks.json` at plugin root (`SessionStart`, `PreInvocation`, `PreToolUse`, `PostToolUse`, `PostInvocation`, `Stop`).\n"

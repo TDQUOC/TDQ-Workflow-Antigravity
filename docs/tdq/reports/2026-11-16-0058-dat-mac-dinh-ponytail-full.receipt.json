@@ -11,7 +11,7 @@
     "bytes": 3301
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
     "sha256": "e4669fc7e2e4933c0ca3b6f164b6b644c760abc47b734f91b8b651913ea78be8",
     "bytes": 1234302
   },
@@ -112,11 +112,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2279,
+  "durationMs": 2163,
   "browserCheck": {
     "requested": false,
     "ran": false

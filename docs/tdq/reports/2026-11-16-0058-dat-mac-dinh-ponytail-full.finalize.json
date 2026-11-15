@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-15T18:27:10.750Z",
+  "startedAt": "2026-11-15T18:36:02.494Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-0058-dat-mac-dinh-ponytail-full\\bao-cao.archify.md",
     "sha256": "070710e9993a2313aecb205d640e8801f50d7cf6b0cd7c318808e496b27b06ab",
     "bytes": 3301
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
     "sha256": "e4669fc7e2e4933c0ca3b6f164b6b644c760abc47b734f91b8b651913ea78be8",
     "bytes": 1234302
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\10772_1794767229489\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\34092_1794767761254\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-0058-dat-mac-dinh-ponytail-full\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1162,
+      "durationMs": 1133,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\10772_1794767229489\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\34092_1794767761254\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-0058-dat-mac-dinh-ponytail-full\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "8e808ffa-2eba-4f85-b473-fa9a875a4543",
+        "receiptId": "61bb4612-14bd-413d-b413-a855754e8db7",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-0058-dat-mac-dinh-ponytail-full\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
         "explainer": {
-          "preparedSha256": "00f8d485b870e52c1927fe89f6ac15ad790946b25f9f88310d0b2fbbfd7946b7",
+          "preparedSha256": "5f55177fa6bffd53f88f077f92bee7794585852d3cf663527c9a98ccdd5eb5dc",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -226,17 +226,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 608,
+      "durationMs": 549,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\10772_1794767229489\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\34092_1794767761254\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
         "family": "explainer",
         "artifact": {
           "sha256": "e4669fc7e2e4933c0ca3b6f164b6b644c760abc47b734f91b8b651913ea78be8",
@@ -286,7 +286,7 @@
               "id": "bao-cao-truoc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-IJG4hF\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-VMDs1z\\child.html",
                 "artifact": {
                   "sha256": "fadf7258c7e29b8f92d4b1cc45ee77047c63a966fd4d9082d804bc11d598bc7e",
                   "bytes": 809612
@@ -411,7 +411,7 @@
               "id": "bao-cao-sau",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-oAoSnb\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-B9nYeu\\child.html",
                 "artifact": {
                   "sha256": "a1819db53b1471dcb92e0e190b2a9fded25299857d5e23071a59ba7b5e8b910b",
                   "bytes": 809757
@@ -536,7 +536,7 @@
               "id": "bao-cao-kiem-thu",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-qctUh9\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-yzN94q\\child.html",
                 "artifact": {
                   "sha256": "eff1be1334b6a24d1183b6e0d836ed051ce0040f68cbc304a8d30f7b46c7ec9a",
                   "bytes": 809531
@@ -661,7 +661,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "8e808ffa-2eba-4f85-b473-fa9a875a4543"
+        "deliveryReceiptId": "61bb4612-14bd-413d-b413-a855754e8db7"
       }
     }
   },
@@ -755,12 +755,12 @@
     }
   ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-15T18:27:13.029Z",
-  "durationMs": 2279,
+  "finishedAt": "2026-11-15T18:36:04.658Z",
+  "durationMs": 2163,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

@@ -1,6 +1,6 @@
 # TDQ-Workflow — Hệ Điều Hành Spec-Driven & Kiến Trúc Tương Tác Cho AI Coding Agents
 
-![Version](https://img.shields.io/badge/version-0.97.0-2563eb?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.97.1-2563eb?style=for-the-badge)
 ![Tests](https://img.shields.io/badge/tests-4196%20passed-16a34a?style=for-the-badge)
 ![Search](https://img.shields.io/badge/search-3--tier%20LSP%20%C2%B7%20Graphify%20%C2%B7%20Grep-0d9488?style=for-the-badge)
 ![Visual BA](https://img.shields.io/badge/archify-2--tier%20Personal%20BA%20%26%20Master%20Map-7c3aed?style=for-the-badge)
@@ -141,7 +141,7 @@ Mọi nền tảng đều đọc **cùng một thư mục `skills/` duy nhất**
 | **Claude Code** | `.claude-plugin/` | `/plugin marketplace add TDQUOC/TDQ-Workflow` rồi `/plugin install tdq-workflow@tdq-local` |
 | **Codex** | `.agents/plugins/marketplace.json` + `.codex-plugin/plugin.json` | `codex plugin marketplace add TDQUOC/TDQ-Workflow` rồi `codex plugin add tdq-workflow@tdq-local` |
 | **OpenCode** | `.opencode/plugins/tdq-workflow.js` | Khai báo trong `opencode.json` (xem chi tiết tại [`.opencode/INSTALL.md`](.opencode/INSTALL.md)) |
-| **Antigravity** | `plugins/tdq-workflow-agy/` (Native `tdq-workflow-agy` v0.97.0, 0 findings `agy plugin validate`) | `python install.py` (User-Level) hoặc `python3 scripts/build_portable.py --sinh-agy` (xem hướng dẫn chi tiết bên dưới) |
+| **Antigravity** | `plugins/tdq-workflow-agy/` (Native `tdq-workflow-agy` v0.97.1, 0 findings `agy plugin validate`) | `python install.py` (User-Level) hoặc `python3 scripts/build_portable.py --sinh-agy` (xem hướng dẫn chi tiết bên dưới) |
 
 ### Cài Đặt Bản Phát Hành User-Level Cho Google Antigravity Trên Máy Khác
 
@@ -175,7 +175,7 @@ git clone https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git
 agy plugin install ./TDQ-Workflow-Antigravity/plugins/tdq-workflow-agy
 agy plugin enable tdq-workflow-agy
 ```
-> *Lưu ý cập nhật trên Antigravity:* `agy plugin install` cài bản sao từ thư mục cục bộ và chưa hỗ trợ tự động cập nhật trực tiếp từ URL Git từ xa, nên hãy chạy `py -3 install.py --update` (`.\install.ps1 -Update` / `./install.sh --update`) khi muốn kéo bản mới nhất về `~/.gemini/config/plugins/tdq-workflow-agy`.
+> *Lưu ý cập nhật trên Antigravity:* `agy plugin install` cài bản sao từ thư mục cục bộ và chưa hỗ trợ tự động cập nhật từ URL Git từ xa. Hãy chạy `py -3 install.py --update` (`.\install.ps1 -Update` / `./install.sh --update`) khi muốn kéo bản mới nhất về `~/.gemini/config/plugins/tdq-workflow-agy`.
 
 #### Cách 3: Khai báo Discovery (`plugins.json`) ở cấp Global hoặc Workspace
 Để trỏ trực tiếp tới thư mục `plugins/` (hỗ trợ đồng bộ ngay khi `git pull`), khai báo trong `~/.gemini/config/plugins.json` (cấp người dùng toàn cục) hoặc `.agents/plugins.json` (cấp workspace):

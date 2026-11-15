@@ -43,5 +43,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 **Rủi ro hồi quy:** Thấp — chỉ đổi giá trị mặc định/fallback `muc_gat` sang `full`; bốn mức tường minh `lite|full|ultra|off` và mặc định `muc_qc=full` được giữ độc lập qua `test_state_muc_gat` và `test_state_muc_qc`.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-16-0058-dat-mac-dinh-ponytail-full.manifest.json -->
-<!-- manifest_digest: d23c3ad02a834252ebc9fc0aea9d0c2f372678f59523f484ff86784afe7f8d87 -->
+<!-- manifest_digest: 902a53df4e56932a07d81cb7a191afc46ec953f37bf601802419808cb82a2bf9 -->
 <!-- tdq-archify-binding:end -->

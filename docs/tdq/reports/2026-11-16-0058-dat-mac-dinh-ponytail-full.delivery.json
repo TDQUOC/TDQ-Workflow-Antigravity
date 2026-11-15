@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "8e808ffa-2eba-4f85-b473-fa9a875a4543",
+  "receiptId": "61bb4612-14bd-413d-b413-a855754e8db7",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-0058-dat-mac-dinh-ponytail-full\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.dc514767023b4e16bb734d80344d3372.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-0058-dat-mac-dinh-ponytail-full.79d5183f22204d48afdd2479bf5cb1cb.html",
   "specification": {
     "sha256": "070710e9993a2313aecb205d640e8801f50d7cf6b0cd7c318808e496b27b06ab",
     "bytes": 3301
@@ -15,7 +15,7 @@
     "bytes": 1234302
   },
   "explainer": {
-    "preparedSha256": "00f8d485b870e52c1927fe89f6ac15ad790946b25f9f88310d0b2fbbfd7946b7",
+    "preparedSha256": "5f55177fa6bffd53f88f077f92bee7794585852d3cf663527c9a98ccdd5eb5dc",
     "dependencies": [
       {
         "kind": "diagram-spec",
