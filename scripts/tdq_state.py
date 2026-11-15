@@ -163,11 +163,11 @@ def normalize_doc_lang(raw):
 
 
 VALID_MUC_GAT = ("lite", "full", "ultra", "off")
-MUC_GAT_MAC_DINH = "ultra"
+MUC_GAT_MAC_DINH = "full"
 
 
 def normalize_muc_gat(raw):
-    """Normalize lean intensity; missing or invalid values default to `ultra`.
+    """Normalize lean intensity; missing or invalid values default to `full`.
 
     Fail closed: an empty key, invalid type or None cannot disable the law.
     Explicit valid levels, including `off`, remain unchanged; see the intensity
@@ -180,7 +180,7 @@ def normalize_muc_gat(raw):
 
 
 def muc_gat_hieu_luc(state):
-    """Read lean intensity from state; absent state or key defaults to `ultra`."""
+    """Read lean intensity from state; absent state or key defaults to `full`."""
     return normalize_muc_gat((state or {}).get("muc_gat"))
 
 
