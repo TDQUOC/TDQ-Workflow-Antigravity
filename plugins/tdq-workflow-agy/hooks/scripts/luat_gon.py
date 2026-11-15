@@ -9,7 +9,7 @@ Hai hàm thuần, không class, không state:
     doc_than_luat(goc)            -> khối luật thô, hoặc "" kèm một dòng cảnh báo ra stderr
     loc_than_luat(than, muc_gat)  -> khối đã lọc theo `lite|full|ultra|off`
 
-Fail closed: unknown, empty or None levels use `ultra`. Only an explicit
+Fail closed: unknown, empty or None levels use `full`. Only an explicit
 `muc_gat=off` disables the law (see the intensity table in chung.md).
 """
 import os as _tdq_os, sys as _tdq_sys
@@ -37,7 +37,7 @@ CAT_THEO_MUC = {
     "full": (MUC_VI_DU, MUC_ULTRA),
     "ultra": (),
 }
-MUC_MAC_DINH = "ultra"
+MUC_MAC_DINH = "full"
 
 
 def doc_than_luat(goc):
