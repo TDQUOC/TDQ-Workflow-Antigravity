@@ -62133,11 +62133,11 @@
     },
     {
       "id": "tools_build_agy_plugin_rationale_2",
-      "label": "Compile TDQ-Workflow v0.97.1 source into plugins/tdq-workflow-agy/.",
+      "label": "Compile TDQ-Workflow v0.97.2 source into plugins/tdq-workflow-agy/.",
       "_origin": "ast",
       "community": 94,
       "file_type": "rationale",
-      "norm_label": "compile tdq-workflow v0.97.1 source into plugins/tdq-workflow-agy/.",
+      "norm_label": "compile tdq-workflow v0.97.2 source into plugins/tdq-workflow-agy/.",
       "source_file": "tools/build_agy_plugin.py",
       "source_location": "L2"
     },
@@ -62213,11 +62213,11 @@
     },
     {
       "id": "tools_patches_init_rationale_1",
-      "label": "Modular patchers compiling TDQ-Workflow v0.97.1 into the Antigravity native\u2026",
+      "label": "Modular patchers compiling TDQ-Workflow v0.97.2 into the Antigravity native\u2026",
       "_origin": "ast",
       "community": 94,
       "file_type": "rationale",
-      "norm_label": "modular patchers compiling tdq-workflow v0.97.1 into the antigravity native...",
+      "norm_label": "modular patchers compiling tdq-workflow v0.97.2 into the antigravity native...",
       "source_file": "tools/patches/__init__.py",
       "source_location": "L1"
     },
@@ -244210,5 +244210,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "b30cc0bda99da8a35f1e0a986a3fc6f8813289dd"
+  "built_at_commit": "2b20903c32145dc3a8bc56d3b360c04634b6879c"
 }

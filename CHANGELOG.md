@@ -2,6 +2,15 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.97.2 — 2026-11-17
+
+Sửa triệt để lỗi `lsp_gate.py` chặn nhầm `call_mcp_tool` và chuẩn hoá giải gói MCP/nhận diện TDQ LSP về một nguồn thuần duy nhất (`2026-11-16-1953-fix-lsp-gate-mcp-routing`).
+
+- `scripts/search_rules.py` & `tools/patches/cli_fixes_a.py`: Hợp nhất giải gói `call_mcp_tool` (hỗ trợ đến 3 tầng JSON `Arguments`) và bộ nhận diện tập đóng `TDQ_LSP_SERVER_RE`, `_AGY_TDQ_LSP_PREFIX_RE`, `TDQ_LSP_TOOL_RE`, `ten_lenh_tdq_lsp`, `la_tool_tdq_lsp`, từ chối server ngoài `other_lsp`.
+- `hooks/scripts/_common.py` & `tools/patches/agy_hooks.py`: Tái sử dụng `chuan_hoa_cong_cu_mcp` qua `_extract_raw_tool_container` và `_RUNTIME_STATE["tool_args_present"]` (`has_tool_args()`) để phân biệt thiếu khoá/JSON hỏng (fail-open `allow`) với `start_lsp` gửi `Arguments: {}` rỗng tường minh (fail-closed `[TDQ:LSP]`).
+- `hooks/scripts/lsp_gate.py`, `hooks/scripts/search_observe.py` & `scripts/search_replay.py`: Tách `_phan_xu_lenh` định tuyến chặt 3 nhánh (`start_lsp`, `blast_radius`, công cụ ngoài/op khác `allow`), và lọc telemetry LSP chặt bằng `la_tool_tdq_lsp`.
+- `plugins/tdq-workflow-agy/`: Biên dịch đồng bộ gói plugin bản địa Antigravity `v0.97.2` (`0` lỗi/cảnh báo `agy plugin validate`) cùng trọn bộ `4.246` test (`0` fail) và 2 vòng `tdq-qc-tester` (`ultra`) PASS.
+
 ## 0.97.1 — 2026-11-16
 
 Đặt lại mặc định và mức dự phòng fail-closed của luật tinh gọn Ponytail (`muc_gat`) từ `ultra` về `full` (`2026-11-16-0058-dat-mac-dinh-ponytail-full`).

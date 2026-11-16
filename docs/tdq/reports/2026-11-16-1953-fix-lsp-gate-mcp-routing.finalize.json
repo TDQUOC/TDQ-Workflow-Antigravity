@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-16T19:37:38.920Z",
+  "startedAt": "2026-11-16T20:05:34.009Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\report.archify.md",
     "sha256": "13c5d3c9a4762f844744b86390d0f3205306a2a2c27c5675a924c52b331122f1",
     "bytes": 3521
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
     "sha256": "1c4e78869009619ad147fc88372f9b385934c6c086635e65dbfd472e17e15872",
     "bytes": 1230629
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28720_1794857857464\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\40008_1794859532583\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\report.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1165,
+      "durationMs": 1301,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28720_1794857857464\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\40008_1794859532583\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\report.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "d43d9e07-3f0c-4815-abb3-c1d64c17ab23",
+        "receiptId": "a3ed06d8-d306-477e-8c7b-e74771a05cc2",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\report.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
         "explainer": {
-          "preparedSha256": "92486a433e5a162a0870918d6b8784296eed7fae8b7bfc688e63b92ccb5ecea7",
+          "preparedSha256": "e39c2f3c68efa89c21b5944c5acff2fd2a1ae149a3dedf288b884c919fd89fca",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -140,17 +140,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 598,
+      "durationMs": 646,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28720_1794857857464\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\40008_1794859532583\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
         "family": "explainer",
         "artifact": {
           "sha256": "1c4e78869009619ad147fc88372f9b385934c6c086635e65dbfd472e17e15872",
@@ -200,7 +200,7 @@
               "id": "bao-cao-truoc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-HjPR4v\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-r0uyuf\\child.html",
                 "artifact": {
                   "sha256": "78820f42d12408956891fe4651b1a250614c43d60534f3673e492fc9f830d002",
                   "bytes": 809847
@@ -325,7 +325,7 @@
               "id": "bao-cao-sau",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-W4TZNr\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-p4iPSj\\child.html",
                 "artifact": {
                   "sha256": "be6f46dc7d00bf0f0cd0083ca7ec59a80e63810799094daa432f2921ac3c263e",
                   "bytes": 809773
@@ -450,7 +450,7 @@
               "id": "bao-cao-kiem-thu",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-k3oqYP\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ZG91BG\\child.html",
                 "artifact": {
                   "sha256": "b7f317d01db44009179f03bd0acab6e6fcb55d277a4908af7c5e0b454e9388b8",
                   "bytes": 809597
@@ -575,7 +575,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "d43d9e07-3f0c-4815-abb3-c1d64c17ab23"
+        "deliveryReceiptId": "a3ed06d8-d306-477e-8c7b-e74771a05cc2"
       }
     }
   },
@@ -585,12 +585,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-16T19:37:41.194Z",
-  "durationMs": 2273,
+  "finishedAt": "2026-11-16T20:05:36.476Z",
+  "durationMs": 2467,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

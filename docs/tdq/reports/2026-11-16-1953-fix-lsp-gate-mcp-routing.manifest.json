@@ -1191,7 +1191,7 @@
     "plugins/tdq-workflow-agy/assets/logo.svg": "01453f2dfac2b0d3d08d0af36675b7fbcf292bc741b62261d0595131bb374af6",
     "plugins/tdq-workflow-agy/docs/tdq/token-budget.json": "3fb9104e7cf0514e522cc5cbca649ef94d8996d630003413e1add6932dbe81d7",
     "plugins/tdq-workflow-agy/hooks.json": "702016092eebc86de1e1a63ffd5ab7cde39ec17fa445ad15bae1fcf2ed489a11",
-    "plugins/tdq-workflow-agy/hooks/scripts/_common.py": "c4d74b2f278dcd2560de2121e6b7727f38c107ac2b0192a4475d6adb42f056ae",
+    "plugins/tdq-workflow-agy/hooks/scripts/_common.py": "447cb16d13046e438b2397014548e15d2a096e12eb081f5145f0973250fc759b",
     "plugins/tdq-workflow-agy/hooks/scripts/agy_pretooluse_gate.py": "5aaa2dadd35a8c8f1d54a04079adada630b5037e7bc71ab162106f0edfaf9c56",
     "plugins/tdq-workflow-agy/hooks/scripts/agy_stop_gate.py": "1b4c2907505ab7c54e579bd6a7ec063f10db41e91d8c522a650bcced833b4513",
     "plugins/tdq-workflow-agy/hooks/scripts/ask_gate.py": "f79fd1576b8b2b26264453aea91c0f8314a48765b5c75754fd4e78344a73ebca",
@@ -1199,20 +1199,20 @@
     "plugins/tdq-workflow-agy/hooks/scripts/codex_edit_gate.py": "6c60f42b3893e1722d7f0c835239f795e96c4a8753b3e4ec5d3b28e478cac8c1",
     "plugins/tdq-workflow-agy/hooks/scripts/doc_file_gate.py": "525adfd40aea83dc7306b4f1b1f7dc9db0c922a2d1dfe74894c5f99316177843",
     "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py": "8a01b026f74642653fc5eec688d199d4b003c9f26d87c3778b0865a55b26f02c",
-    "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py": "d47677fb59ae898dc68e4fe8c267e7d96f14baf24ab19e2975bc8cbc9ea0c122",
+    "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py": "d936e201765e3b39f348a4e241c15d9ef9f3a8ccac00dd7e46ead054411da3ea",
     "plugins/tdq-workflow-agy/hooks/scripts/luat_gon.py": "4e269c69f702229187aa1ba53c0de630111eb17c2bed9f66955eee949f5134fb",
     "plugins/tdq-workflow-agy/hooks/scripts/post_invocation.py": "f35bca19f2f58f1eaf327e2a31c6da6e9e76dd01f72eb0af67a55089c2a0e1d6",
     "plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py": "fc1e2ad7fb4989c83cf8cb13de508608d0baccacde58a94bb0f4abe91863df3c",
     "plugins/tdq-workflow-agy/hooks/scripts/read_gate.py": "81f15e7aa3ae9b72383442bf4fb725f7c2a92d8d8b2e8732afbaab84927a6304",
     "plugins/tdq-workflow-agy/hooks/scripts/search_gate.py": "cbd3a5ec563d137f6a740d1602daf5746bb6cd95c37992cb927b16582b127bfd",
-    "plugins/tdq-workflow-agy/hooks/scripts/search_observe.py": "cd2a6001e3dbf4b310ea42b062e324707c147b942ca60a81087d12f567a1fc97",
+    "plugins/tdq-workflow-agy/hooks/scripts/search_observe.py": "cbd1d75beb1dd6fce2dc7826585a4459921caee57657c283557dae9ea7a5251a",
     "plugins/tdq-workflow-agy/hooks/scripts/session_start.py": "4e76056aaa8ba6d9e645fb090f384de87ada3b8a001d3828248943a24c87d26d",
     "plugins/tdq-workflow-agy/hooks/scripts/stop_batch_checker.py": "3ee471126d013944fa1f982971793ce618d96b017c26ad2812291fba74bb70ca",
     "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py": "22ec798b7f1277a187081c3bee0770e7621a6f1b7e06006c482f1e3b9e309936",
     "plugins/tdq-workflow-agy/hooks/scripts/strategic_compact_gate.py": "016ff996a89368905795ebd4fa38ca81e2d55ad5b95b7fdcef4535cc97c57b77",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "a4ce7beace5033d13cec0d772c4fdcf5e90274da04de3f163cfd1b4a7ab0cfd1",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_start.py": "a641214b2af6d0f9806e311dd2c37fb3f7e9813351d2ccf191dc8000b00de8bf",
-    "plugins/tdq-workflow-agy/manifest.json": "63860b40942541b3a8fdbb2959e4f22e2958264308b04a1683805799fdbaed7c",
+    "plugins/tdq-workflow-agy/manifest.json": "3ba93b945444f99c2ef535c592fc6db1cb882f4eecf0290c7b1f77d9f20d905c",
     "plugins/tdq-workflow-agy/mcp_config.json": "a57528098063231b167df408b63da1469b2435fc2a3ecebeefe76e9e966b6d2c",
     "plugins/tdq-workflow-agy/plugin.json": "6a7b5c452fcdfd8d690fea4f3ef34e8b909256f06fa766f1d56e44aedab19c7b",
     "plugins/tdq-workflow-agy/rules/AGENTS.md": "1cf037bbae8ae4b5c54643fbfff2e1d17eec0bf6ca6b1e9f1867f0a08c891440",
@@ -1779,7 +1779,7 @@
       "bytes": 3521
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.html",
       "sha256": "1c4e78869009619ad147fc88372f9b385934c6c086635e65dbfd472e17e15872",
       "bytes": 1230629
     },
@@ -1796,11 +1796,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.87246c35b4884e7f882f0fc5928a010e.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 2273,
+    "durationMs": 2467,
     "browserCheck": {
       "requested": false,
       "ran": false

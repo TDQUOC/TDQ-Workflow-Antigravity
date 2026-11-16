@@ -49,5 +49,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 **Rủi ro hồi quy:** Thấp — matcher `hooks.json` giữ nguyên để không bỏ lọt `call_mcp_tool`, fail-open khi thiếu khoá hoặc JSON hỏng vẫn được giữ nguyên qua `test_common.py` và `test_lsp_gate.py` (`payload_hong`), toàn bộ hàm mới đều đạt `C901 <= 10` và độ trễ hook đo thực tế `66.23–69.68 ms <= 200 ms`.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-16-1953-fix-lsp-gate-mcp-routing.manifest.json -->
-<!-- manifest_digest: f0c5a6392dc8f734683b64205aa75c88f3edb7a3526ff64ad345445e1d32d503 -->
+<!-- manifest_digest: 07bcf38ab7817c55bc6028ddf4afedeb3a4a5d0c2c541be277182658502f24fd -->
 <!-- tdq-archify-binding:end -->
