@@ -1,0 +1,142 @@
+{
+  "slug": "2026-11-16-1953-fix-lsp-gate-mcp-routing",
+  "plan_file": "docs\\tdq\\plan\\2026-11-16-1953-fix-lsp-gate-mcp-routing.md",
+  "plan_sha": "feae4219345039bc411433ae9b75c61d1f7ccb2dafcf5d8b517d605aa66a8cff",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "e3f30a895ce094d7af9b06ef18679ef0b9537b070a2c4aaf5b420a87a87336ae",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/search_rules.py",
+        "tests/test_search_rules.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/cli_fixes_a.py"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_hook_windows.py",
+        "hooks/scripts/_common.py"
+      ],
+      "dot": 4
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_hooks.py"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_lsp_gate.py",
+        "hooks/scripts/lsp_gate.py"
+      ],
+      "dot": 6
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_search_observe.py",
+        "hooks/scripts/search_observe.py"
+      ],
+      "dot": 5
+    },
+    "T4.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/build_agy_plugin.py",
+        "plugins/tdq-workflow-agy/manifest.json",
+        "hooks/scripts/lsp_gate.py"
+      ],
+      "dot": 7
+    },
+    "T4.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "tests/test_hooks_dual_protocol.py",
+        "tests/test_cli_fixes_new01_28.py",
+        "plugins/tdq-workflow-agy/scripts/search_rules.py"
+      ],
+      "dot": 8
+    },
+    "T4.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-16-1953-fix-lsp-gate-mcp-routing/chrome-devtools-smoke.md",
+        "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py"
+      ],
+      "dot": 9
+    },
+    "T5.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 7
+    },
+    "T5.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 10
+    },
+    "QC1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_hook_windows.py"
+      ],
+      "dot": 11
+    },
+    "QC1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/patches/agy_hooks.py",
+        "hooks/scripts/_common.py",
+        "tests/test_agy_hooks.py"
+      ],
+      "dot": 2
+    },
+    "QC1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/search_replay.py",
+        "hooks/scripts/lsp_gate.py",
+        "tests/test_search_replay.py"
+      ],
+      "dot": 3
+    },
+    "QC1.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "plugins/tdq-workflow-agy/manifest.json",
+        "docs/tdq/.tdq-test.jsonl",
+        "tools/build_agy_plugin.py",
+        "scripts/tdq_test.py"
+      ],
+      "dot": 1
+    }
+  }
+}

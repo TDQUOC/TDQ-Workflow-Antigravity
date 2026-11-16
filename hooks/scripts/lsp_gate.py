@@ -27,7 +27,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _common  # noqa: E402
-from search_rules import trang_thai_lsp  # noqa: E402
+from search_rules import ten_lenh_tdq_lsp, trang_thai_lsp  # noqa: E402
 from search_observe import doc_so, khoa_hien_tai  # noqa: E402
 
 MA = "TDQ:LSP"
@@ -126,6 +126,23 @@ def phan_xu_blast_radius(cwd, tool_input, rows=None):
     return []
 
 
+def _phan_xu_lenh(cwd, phien, op, tool_input):
+    """Route a TDQ LSP call to blast_radius, start_lsp, or allow."""
+    if op == "blast_radius":
+        khoa = khoa_hien_tai(cwd, phien)
+        rows = doc_so(cwd, khoa, phien)
+        dong = phan_xu_blast_radius(cwd, tool_input, rows)
+        _log(f"blast_radius files={len(tool_input.get('changed_files') or [])} · {'deny' if dong else 'allow'}")
+        return dong
+    if op == "start_lsp":
+        dong = phan_xu(cwd, tool_input)
+        _log(f"language_id={tool_input.get('language_id')!r} root={tool_input.get('root_dir')!r} · "
+             f"{'deny' if dong else 'allow'}")
+        return dong
+    _log(f"tdq-lsp op={op} — allow")
+    return []
+
+
 def main():
     try:
         payload = _common.read_payload()
@@ -136,23 +153,17 @@ def main():
     except Exception as loi:  # noqa: BLE001 — a broken payload must never block the tool
         _log(f"cannot read payload ({loi}) — silent")
         sys.exit(0)
-    if not isinstance(tool_input, dict) or not tool_input:
-        # Unreadable or empty payload: nothing to judge. Denying here would block a correct call
-        # because of a transport fault (measured 2026-10-08 with a shell-mangled JSON payload).
+    op = ten_lenh_tdq_lsp(tool_name)
+    if op is None:
+        _log(f"non-tdq-lsp tool={tool_name!r} — allow")
+        sys.exit(0)
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+    if not (_common.has_tool_args() or tool_input):
+        # Empty/broken payload: fail-open (measured 2026-10-08 on mangled JSON).
         _log("payload without tool_input — silent")
         sys.exit(0)
-
-    dong = []
-    if "blast_radius" in tool_name:
-        khoa = khoa_hien_tai(cwd, phien)
-        rows = doc_so(cwd, khoa, phien)
-        dong = phan_xu_blast_radius(cwd, tool_input, rows)
-        _log(f"blast_radius files={len(tool_input.get('changed_files') or [])} · {'deny' if dong else 'allow'}")
-    else:
-        dong = phan_xu(cwd, tool_input)
-        _log(f"language_id={tool_input.get('language_id')!r} root={tool_input.get('root_dir')!r} · "
-             f"{'deny' if dong else 'allow'}")
-
+    dong = _phan_xu_lenh(cwd, phien, op, tool_input)
     if dong:
         _common.block(cwd, payload, MA, dong, day_du=True)
     sys.exit(0)

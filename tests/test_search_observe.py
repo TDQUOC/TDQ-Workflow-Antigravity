@@ -299,6 +299,75 @@ class TelemetryLSP(BaseSo):
             self.assertTrue(any(h["command"].endswith('search_observe.py"')
                                 for m in post_obs for h in m["hooks"]), (ten, post_obs))
 
+    def test_bo_qua_lsp_ket_qua_cho_server_ngoai_other_lsp(self):
+        khoa = self.mo_request()
+        for payload in (
+            {
+                "hook_event_name": "PostToolUseFailure",
+                "tool_name": "mcp__other_lsp__find_symbol",
+                "tool_input": {"query": "foo"},
+                "error": "timed out",
+            },
+            {
+                "hook_event_name": "PostToolUseFailure",
+                "tool_name": "mcp_other_lsp_find_symbol",
+                "tool_input": {"query": "foo"},
+                "error": "timed out",
+            },
+            {
+                "hook_event_name": "PostToolUseFailure",
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "other_lsp",
+                    "ToolName": "find_references",
+                    "Arguments": {"symbol": "bar"},
+                },
+                "error": "timed out",
+            },
+        ):
+            rc, _out, err = run_hook(
+                HOOK, dict(payload, session_id=PHIEN, cwd=self.cwd),
+                env={"TDQ_PROJECT_DIR": self.cwd, "TDQ_LOG": "0"},
+            )
+            self.assertEqual(rc, 0, err)
+        rows = self.rows(khoa)
+        self.assertEqual([r for r in rows if r.get("loai") == "lsp_ket_qua"], [])
+        self.assertEqual([r for r in rows if r.get("loai") == "khai_niem"], [])
+
+    def test_ghi_lsp_ket_qua_cho_tdq_workflow_agy_lsp_lazy_va_eager(self):
+        khoa = self.mo_request()
+        for payload in (
+            {
+                "hook_event_name": "PostToolUse",
+                "tool_name": "call_mcp_tool",
+                "tool_use_id": "call-agy-1",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "find_references",
+                    "Arguments": {"file_path": "a.py"},
+                },
+                "tool_response": {"references": ["a.py:1"]},
+            },
+            {
+                "hook_event_name": "PostToolUseFailure",
+                "tool_name": "mcp_tdq-workflow-agy_lsp_blast_radius",
+                "tool_input": {"changed_files": ["a.py"]},
+                "error": "timed out after 90000ms",
+            },
+        ):
+            rc, _out, err = run_hook(
+                HOOK, dict(payload, session_id=PHIEN, cwd=self.cwd),
+                env={"TDQ_PROJECT_DIR": self.cwd, "TDQ_LOG": "0"},
+            )
+            self.assertEqual(rc, 0, err)
+        rows = self.rows(khoa)
+        lsp_rows = [r for r in rows if r.get("loai") == "lsp_ket_qua"]
+        khai_rows = [r for r in rows if r.get("loai") == "khai_niem"]
+        self.assertEqual(len(lsp_rows), 2, rows)
+        self.assertEqual(lsp_rows[0]["outcome"], "ok")
+        self.assertEqual(lsp_rows[1]["outcome"], "timeout")
+        self.assertTrue(any(r.get("cong_cu") == "lsp:find_references" for r in khai_rows))
+
 
 class LogService(BaseSo):
     def test_log_tat_duoc_bang_bien_moi_truong(self):

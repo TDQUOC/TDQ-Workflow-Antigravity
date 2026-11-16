@@ -136,6 +136,118 @@ class BlastRadiusGate(unittest.TestCase):
         self.assertIsNone(ra)
 
 
+class McpRoutingVaLog(unittest.TestCase):
+    def setUp(self):
+        self.cwd = tempfile.mkdtemp(prefix="tdq-lsp-routing-")
+        self.addCleanup(shutil.rmtree, self.cwd, True)
+        os.makedirs(os.path.join(self.cwd, "docs", "tdq"), exist_ok=True)
+        with open(os.path.join(self.cwd, "docs", "tdq", ".tdq-lsp-module.json"), "w", encoding="utf-8") as fh:
+            json.dump({"module": {"python:.": {"lang": "python", "goc": "."}}}, fh)
+
+    def goi_agy(self, payload, log="0"):
+        full = dict(payload, cwd=self.cwd, session_id="phien-routing", hookEventName="PreToolUse")
+        rc, out, err = run_hook(HOOK, full, env={"TDQ_LOG": log, "TDQ_PROJECT_DIR": self.cwd})
+        self.assertEqual(rc, 0, err)
+        return json.loads(out), err
+
+    def test_allow_chrome_devtools_tavily_other_lsp_va_lsp_query(self):
+        cases = (
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "chrome-devtools",
+                    "ToolName": "select_page",
+                    "Arguments": {"bringToFront": True, "pageId": 1},
+                },
+            },
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {"ServerName": "chrome-devtools", "ToolName": "list_pages", "Arguments": {}},
+            },
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_tavily-primary",
+                    "ToolName": "tavily_search",
+                    "Arguments": {"query": "tdq workflow"},
+                },
+            },
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "find_references",
+                    "Arguments": {"file_path": "a.py"},
+                },
+            },
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "find_symbol",
+                    "Arguments": {"query": "foo"},
+                },
+            },
+            {
+                "tool_name": "mcp_tdq-workflow-agy_lsp_find_symbol",
+                "tool_input": {"query": "foo"},
+            },
+            {
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "other_lsp",
+                    "ToolName": "start_lsp",
+                    "Arguments": {"root_dir": self.cwd},
+                },
+            },
+            {
+                "tool_name": "mcp_other_lsp_start_lsp",
+                "tool_input": {"root_dir": self.cwd},
+            },
+        )
+        for case in cases:
+            out, _err = self.goi_agy(case)
+            self.assertEqual(out.get("decision"), "allow", (case, out))
+
+    def test_deny_start_lsp_voi_arguments_rong_tuong_minh(self):
+        for args in ({}, "{}"):
+            out, _err = self.goi_agy({
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "start_lsp",
+                    "Arguments": args,
+                },
+            })
+            self.assertEqual(out.get("decision"), "deny", (args, out))
+            self.assertIn("[TDQ:LSP]", out.get("reason", ""))
+
+    def test_allow_fail_open_khi_arguments_hong_hoac_thieu_khoa(self):
+        for tinp in (
+            {"ServerName": "tdq-workflow-agy_lsp", "ToolName": "start_lsp", "Arguments": "{bad json"},
+            {"ServerName": "tdq-workflow-agy_lsp", "ToolName": "start_lsp"},
+        ):
+            out, _err = self.goi_agy({"tool_name": "call_mcp_tool", "tool_input": tinp})
+            self.assertEqual(out.get("decision"), "allow", (tinp, out))
+
+    def test_log_service_bat_mac_dinh_va_tat_bang_tdq_log_0(self):
+        payload = {
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "chrome-devtools",
+                "ToolName": "select_page",
+                "Arguments": {"bringToFront": True, "pageId": 1},
+            },
+        }
+        out_on, err_on = self.goi_agy(payload, log="1")
+        self.assertEqual(out_on.get("decision"), "allow")
+        self.assertRegex(err_on, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] lsp_gate:")
+        self.assertIn("non-tdq-lsp", err_on)
+
+        out_off, err_off = self.goi_agy(payload, log="0")
+        self.assertEqual(out_off.get("decision"), "allow")
+        self.assertEqual(err_off, "")
+
 
 if __name__ == "__main__":
     unittest.main()

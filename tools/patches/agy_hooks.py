@@ -25,6 +25,7 @@ from tdq_state import (  # noqa: E402
     PHASE_TABLE, effective_lane, load, render_next, resolve_project_dir,
     turn_log_append, turn_log_path, turn_log_read as _state_turn_log_read,
 )
+from search_rules import chuan_hoa_cong_cu_mcp  # noqa: E402
 
 CODES = (
     "EDIT", "TEST", "TICK", "DIRTY", "LOG", "READ", "SEARCH", "NO-PLAN-MODE",
@@ -56,7 +57,13 @@ _RUNTIME_STATE = {
     "stop_reason": None,
     "context_lines": [],
     "registered": False,
+    "tool_args_present": False,
 }
+
+
+def has_tool_args():
+    """Return True when the active payload carried a valid tool argument dict."""
+    return bool(_RUNTIME_STATE.get("tool_args_present"))
 
 
 def _parse_event_flag(argv=None):
@@ -89,24 +96,26 @@ def is_agy():
 
 
 def _unwrap_call_mcp(tool_name, tool_input):
-    if tool_name != "call_mcp_tool" or not isinstance(tool_input, dict):
-        return tool_name, tool_input
-    srv = str(tool_input.get("ServerName") or tool_input.get("server") or "").strip()
-    tname = str(tool_input.get("ToolName") or tool_input.get("tool") or "").strip()
-    args = tool_input.get("Arguments") or tool_input.get("arguments") or {}
-    if isinstance(args, str):
-        try:
-            args = json.loads(args)
-        except ValueError:
-            args = {}
-    if srv and tname:
-        norm_srv = "lsp" if "lsp" in srv.lower() else srv
-        return f"mcp__{norm_srv}__{tname}", args if isinstance(args, dict) else {}
-    return tool_name, tool_input
+    tname, tinput, _ = chuan_hoa_cong_cu_mcp(tool_name, tool_input)
+    return tname, tinput
+
+
+def _extract_raw_tool_container(payload, tool_call):
+    """Return (raw_container, container_key_present) across AGY/Claude aliases."""
+    for key in ("tool_input", "toolInput"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    if "args" in tool_call and tool_call["args"] is not None:
+        return tool_call["args"], True
+    for key in ("arguments", "input"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    return None, False
 
 
 def normalize_payload(raw):
     """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
+    _RUNTIME_STATE["tool_args_present"] = False
     if not isinstance(raw, dict):
         return {}
     out = dict(raw)
@@ -126,23 +135,18 @@ def normalize_payload(raw):
 
     tool_call = out.get("toolCall") if isinstance(out.get("toolCall"), dict) else {}
     tname = str(out.get("tool_name") or out.get("toolName") or tool_call.get("name") or "")
-    tinput = out.get("tool_input") or out.get("toolInput") or tool_call.get("args") or out.get("arguments") or out.get("input") or {}
-    if isinstance(tinput, str):
-        try:
-            tinput = json.loads(tinput)
-        except ValueError:
-            tinput = {}
-    if not isinstance(tinput, dict):
-        tinput = {}
-    tinput = dict(tinput)
 
-    tname, tinput = _unwrap_call_mcp(tname, tinput)
+    raw_container, container_found = _extract_raw_tool_container(out, tool_call)
+    new_tname, tinput, args_present = chuan_hoa_cong_cu_mcp(
+        tname, raw_container if container_found else None
+    )
 
-    # Normalize Antigravity tool aliases cleanly while keeping original field names available
-    if tname.startswith("mcp_") and not tname.startswith("mcp__") and "_lsp_" in tname:
-        op = tname.split("_lsp_", 1)[1]
+    if tname != "call_mcp_tool" and new_tname != tname:
         out["original_tool_name"] = tname
-        tname = f"mcp__lsp__{op}"
+
+    has_args = bool(container_found and args_present)
+    tinput = dict(tinput) if isinstance(tinput, dict) else {}
+    tname = new_tname
 
     # File path normalization (TargetFile / Path / AbsolutePath / TargetDir -> file_path)
     if "file_path" not in tinput:
@@ -175,6 +179,8 @@ def normalize_payload(raw):
 
     out["tool_name"] = tname
     out["tool_input"] = tinput
+    # _tool_args_present tracked in _RUNTIME_STATE so payload dict stays unpolluted
+    _RUNTIME_STATE["tool_args_present"] = bool(has_args)
     return out
 
 

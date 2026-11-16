@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d291098d-0231-438d-bcac-6b01ddcc1711",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing-preview.7f101be70381430193a18a34f55b3670.html",
+  "specification": {
+    "sha256": "b0429eeb3d2fdcd1a4539389d5b53f89d6889a683bd0486d1dbc2f252e9a6487",
+    "bytes": 2177
+  },
+  "artifact": {
+    "sha256": "7f5781a39160c56ee972dc05e5565c074896f340014101d936b134315593fb03",
+    "bytes": 856327
+  },
+  "explainer": {
+    "preparedSha256": "33d309a8eb4ab9f6671008a64b2af9cfdf3b69ad478645aa114fd4fc6ae518ce",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "luong-truoc",
+        "inline": true,
+        "sha256": "730b447f9da904f9cd7c52d72b851432eda968ceeb62140829486dae1746c661",
+        "bytes": 1159
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "luong-sau",
+        "inline": true,
+        "sha256": "fe5c855d2d98251bfc89b0ab2de2a7f88e61e809372a16f659e3a327c0a1906e",
+        "bytes": 1124
+      }
+    ]
+  }
+}

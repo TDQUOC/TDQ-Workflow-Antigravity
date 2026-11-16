@@ -6,8 +6,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 WORKSPACE = Path(__file__).resolve().parent.parent
 PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 SCRIPTS_DIR = PLUGIN_DIR / "scripts"
@@ -88,6 +86,19 @@ def test_new02_03_04_lsp_module_and_search_rules():
     res2 = search_rules.la_goi_khai_niem("mcp_tdq-workflow-agy_lsp_go_to_definition", {})
     res3 = search_rules.la_goi_khai_niem("mcp_graphify_query_graph", {})
     assert res1 and res2 and res3
+    assert search_rules.la_goi_khai_niem(
+        "call_mcp_tool",
+        {"ServerName": "other_lsp", "ToolName": "find_symbol", "Arguments": {}},
+    ) is None
+    assert search_rules.la_goi_khai_niem("mcp_other_lsp_find_symbol", {}) is None
+    assert search_rules.chuan_hoa_cong_cu_mcp(
+        "call_mcp_tool",
+        {
+            "ServerName": "tdq-workflow-agy_lsp",
+            "ToolName": "find_symbol",
+            "Arguments": json.dumps(json.dumps({"query": "bar"})),
+        },
+    ) == ("mcp__lsp__find_symbol", {"query": "bar"}, True)
     assert "run_command" in search_rules.CONG_CU_SHELL
 
     # Trailing Windows backslash inside quotes must not swallow closing quote or hang

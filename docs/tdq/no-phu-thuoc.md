@@ -18,3 +18,4 @@ Ghi kèm tên máy vì một món có thể thiếu trên máy này mà đủ tr
 - 2026-10-11 · DESKTOP-QNBEKDT · tầng graphify không trả lời được: quá 60s
 - 2026-10-19 · DESKTOP-QNBEKDT · không thể tự cài shim `python3` tự động (cần cấp quyền PATH)
 - 2026-10-19 · DESKTOP-QNBEKDT · hook dry-run thất bại: hook vẫn dính lỗi 'Python was not found' từ Microsoft Store stub
+- 2026-11-16 · DESKTOP-QNBEKDT · bậc 7 (đồ thị graphify): lệnh có ký tự của shell — không chạy chuỗi ghép, hãy khai từng lệnh một — `cd c:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity && graphify extract . --code-only`
