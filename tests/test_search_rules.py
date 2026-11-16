@@ -549,6 +549,76 @@ class GoiKhaiNiem(unittest.TestCase):
             self.assertIsNotNone(sr.la_goi_khai_niem(ten, {}), ten)
         self.assertIsNone(sr.la_goi_khai_niem("mcp__other_lsp__find_symbol", {}))
 
+    def test_chuan_hoa_mcp_va_nhan_dien_tdq_lsp(self):
+        """T1.1: Chuẩn hoá call_mcp_tool, eager AGY và nhận diện TDQ LSP chặt chẽ."""
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {"ServerName": "tdq-workflow-agy_lsp", "ToolName": "start_lsp", "Arguments": "{}"},
+            ),
+            ("mcp__lsp__start_lsp", {}, True),
+        )
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "find_symbol",
+                    "Arguments": json.dumps(json.dumps({"query": "foo"})),
+                },
+            ),
+            ("mcp__lsp__find_symbol", {"query": "foo"}, True),
+        )
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {"ServerName": "tdq-workflow-agy_lsp", "ToolName": "start_lsp", "Arguments": "{bad"},
+            ),
+            ("mcp__lsp__start_lsp", {}, False),
+        )
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {"ServerName": "tdq-workflow-agy_lsp", "ToolName": "start_lsp"},
+            ),
+            ("mcp__lsp__start_lsp", {}, False),
+        )
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {"ServerName": "chrome-devtools", "ToolName": "select_page", "Arguments": {"pageId": 1}},
+            ),
+            ("mcp__chrome-devtools__select_page", {"pageId": 1}, True),
+        )
+        self.assertEqual(
+            sr.chuan_hoa_cong_cu_mcp(
+                "call_mcp_tool",
+                {"ServerName": "other_lsp", "ToolName": "find_symbol", "Arguments": {}},
+            ),
+            ("mcp__other_lsp__find_symbol", {}, True),
+        )
+        self.assertIsNone(
+            sr.la_goi_khai_niem(
+                "call_mcp_tool",
+                {"ServerName": "other_lsp", "ToolName": "find_symbol", "Arguments": {}},
+            )
+        )
+        self.assertIsNone(sr.la_goi_khai_niem("mcp_other_lsp_find_symbol", {}))
+
+        self.assertFalse(sr.la_tool_tdq_lsp("mcp__other_lsp__find_symbol"))
+        self.assertFalse(sr.la_tool_tdq_lsp("mcp__chrome-devtools__select_page"))
+        self.assertFalse(sr.la_tool_tdq_lsp("mcp_other_lsp_find_symbol"))
+        self.assertEqual(sr.ten_lenh_tdq_lsp("mcp__lsp__start_lsp"), "start_lsp")
+        self.assertEqual(
+            sr.ten_lenh_tdq_lsp("mcp__plugin_tdq-workflow_lsp__blast_radius"),
+            "blast_radius",
+        )
+        self.assertEqual(
+            sr.ten_lenh_tdq_lsp("mcp_tdq-workflow-agy_lsp_find_references"),
+            "find_references",
+        )
+        self.assertEqual(sr.ten_lenh_tdq_lsp("lsp.find_symbol"), "find_symbol")
+
     def test_mo_khoa_bi_chan_khong_an_vao_cua_so(self):
         tt = sr.trang_thai([{"loai": "khai_niem"},
                             {"loai": "tim", "cho_phep": False, "tinh_cua_so": False},
