@@ -25,6 +25,7 @@ from tdq_state import (  # noqa: E402
     PHASE_TABLE, effective_lane, load, render_next, resolve_project_dir,
     turn_log_append, turn_log_path, turn_log_read as _state_turn_log_read,
 )
+from search_rules import chuan_hoa_cong_cu_mcp  # noqa: E402
 
 CODES = (
     "EDIT", "TEST", "TICK", "DIRTY", "LOG", "READ", "SEARCH", "NO-PLAN-MODE",
@@ -89,20 +90,8 @@ def is_agy():
 
 
 def _unwrap_call_mcp(tool_name, tool_input):
-    if tool_name != "call_mcp_tool" or not isinstance(tool_input, dict):
-        return tool_name, tool_input
-    srv = str(tool_input.get("ServerName") or tool_input.get("server") or "").strip()
-    tname = str(tool_input.get("ToolName") or tool_input.get("tool") or "").strip()
-    args = tool_input.get("Arguments") or tool_input.get("arguments") or {}
-    if isinstance(args, str):
-        try:
-            args = json.loads(args)
-        except ValueError:
-            args = {}
-    if srv and tname:
-        norm_srv = "lsp" if "lsp" in srv.lower() else srv
-        return f"mcp__{norm_srv}__{tname}", args if isinstance(args, dict) else {}
-    return tool_name, tool_input
+    tname, tinput, _ = chuan_hoa_cong_cu_mcp(tool_name, tool_input)
+    return tname, tinput
 
 
 def normalize_payload(raw):
@@ -126,23 +115,53 @@ def normalize_payload(raw):
 
     tool_call = out.get("toolCall") if isinstance(out.get("toolCall"), dict) else {}
     tname = str(out.get("tool_name") or out.get("toolName") or tool_call.get("name") or "")
-    tinput = out.get("tool_input") or out.get("toolInput") or tool_call.get("args") or out.get("arguments") or out.get("input") or {}
-    if isinstance(tinput, str):
-        try:
-            tinput = json.loads(tinput)
-        except ValueError:
-            tinput = {}
-    if not isinstance(tinput, dict):
-        tinput = {}
-    tinput = dict(tinput)
 
-    tname, tinput = _unwrap_call_mcp(tname, tinput)
+    container_found = False
+    raw_container = None
+    for k in ("tool_input", "toolInput"):
+        if k in out:
+            raw_container = out[k]
+            container_found = True
+            break
+    if not container_found and "args" in tool_call:
+        raw_container = tool_call["args"]
+        container_found = True
+    if not container_found:
+        for k in ("arguments", "input"):
+            if k in out:
+                raw_container = out[k]
+                container_found = True
+                break
 
-    # Normalize Antigravity tool aliases cleanly while keeping original field names available
-    if tname.startswith("mcp_") and not tname.startswith("mcp__") and "_lsp_" in tname:
-        op = tname.split("_lsp_", 1)[1]
+    outer_present = False
+    if container_found:
+        parsed_c = raw_container
+        if isinstance(parsed_c, str):
+            for _ in range(3):
+                try:
+                    parsed_c = json.loads(parsed_c)
+                except Exception:
+                    parsed_c = None
+                    break
+                if isinstance(parsed_c, dict) or not isinstance(parsed_c, str):
+                    break
+        if isinstance(parsed_c, dict):
+            outer_present = True
+
+    new_tname, tinput, args_present = chuan_hoa_cong_cu_mcp(
+        tname, raw_container if container_found else None
+    )
+
+    if tname != "call_mcp_tool" and new_tname != tname:
         out["original_tool_name"] = tname
-        tname = f"mcp__lsp__{op}"
+
+    if tname == "call_mcp_tool":
+        has_args = args_present
+    else:
+        has_args = outer_present
+
+    tinput = dict(tinput) if isinstance(tinput, dict) else {}
+    tname = new_tname
 
     # File path normalization (TargetFile / Path / AbsolutePath / TargetDir -> file_path)
     if "file_path" not in tinput:
@@ -175,6 +194,7 @@ def normalize_payload(raw):
 
     out["tool_name"] = tname
     out["tool_input"] = tinput
+    out["_tool_args_present"] = bool(has_args)
     return out
 
 
