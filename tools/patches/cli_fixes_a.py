@@ -105,37 +105,104 @@ def _patch_search_rules(scripts_dir: Path) -> None:
     path = scripts_dir / "search_rules.py"
     text = read_utf8(path)
     if "_ORIG_LA_GOI_KHAI_NIEM" in text:
-        return
+        if "TDQ_LSP_SERVER_RE" in text:
+            return
+        text = text[:text.index("_ORIG_LA_GOI_KHAI_NIEM")].rstrip() + "\n"
     if "import sys\n" not in text:
         text = text.replace("import re\n", "import re\nimport sys\n", 1)
+    if "import json\n" not in text:
+        text = text.replace("import re\n", "import re\nimport json\n", 1)
     # Append dual-host Antigravity normalizer that safely adapts AGY tool names + call_mcp_tool
-    addon = '''
+    addon = r'''
 _ORIG_LA_GOI_KHAI_NIEM = la_goi_khai_niem
 _AGY_LSP_OPS = (
     "go_to_definition", "find_symbol", "find_references", "find_callers",
     "list_symbols", "open_document", "blast_radius", "get_diagnostics",
     "start_lsp", "inspect_symbol", "explore",
 )
+TDQ_LSP_SERVER_RE = re.compile(
+    r"^(?:(?:plugin_)?tdq-workflow(?:-agy)?_)?lsp$", re.IGNORECASE
+)
+_AGY_TDQ_LSP_PREFIX_RE = re.compile(
+    r"^mcp_((?:(?:plugin_)?tdq-workflow(?:-agy)?_)?lsp)_(.+)$", re.IGNORECASE
+)
+TDQ_LSP_TOOL_RE = re.compile(
+    r"^(?:mcp__(?:(?:(?:plugin_)?tdq-workflow(?:-agy)?_)?lsp)__|lsp\.)(.+)$",
+    re.IGNORECASE,
+)
+LSP = TDQ_LSP_TOOL_RE
+
+
+def _decode_json_dict(raw):
+    """Decode dict or up to 3 layers of JSON string into a dict."""
+    if isinstance(raw, dict):
+        return dict(raw), True
+    if isinstance(raw, str):
+        val = raw
+        for _ in range(3):
+            try:
+                val = json.loads(val)
+            except Exception:
+                return {}, False
+            if isinstance(val, dict):
+                return dict(val), True
+            if not isinstance(val, str):
+                return {}, False
+    return {}, False
+
+
+def chuan_hoa_cong_cu_mcp(ten_tool, tool_input):
+    """Unwrap call_mcp_tool and eager Antigravity names into canonical MCP forms."""
+    ten = str(ten_tool or "")
+    inp, has_inp = _decode_json_dict(tool_input)
+    if ten == "call_mcp_tool" and has_inp:
+        srv = str(inp.get("ServerName") or inp.get("server") or "")
+        tname = str(inp.get("ToolName") or inp.get("tool") or "")
+        if "Arguments" in inp:
+            raw_args = inp["Arguments"]
+            args_dict, has_args = _decode_json_dict(raw_args)
+        elif "arguments" in inp:
+            raw_args = inp["arguments"]
+            args_dict, has_args = _decode_json_dict(raw_args)
+        else:
+            args_dict, has_args = {}, False
+        if TDQ_LSP_SERVER_RE.match(srv) and tname:
+            return f"mcp__lsp__{tname}", args_dict, has_args
+        if srv and tname:
+            return f"mcp__{srv}__{tname}", args_dict, has_args
+    m = _AGY_TDQ_LSP_PREFIX_RE.match(ten)
+    if m:
+        return f"mcp__lsp__{m.group(2)}", inp, has_inp
+    return ten, inp, has_inp
+
+
+def ten_lenh_tdq_lsp(ten_tool):
+    """Extract TDQ LSP operation name if tool belongs to TDQ LSP, else None."""
+    ten = str(ten_tool or "")
+    m = TDQ_LSP_TOOL_RE.match(ten)
+    if m:
+        return m.group(1)
+    m2 = _AGY_TDQ_LSP_PREFIX_RE.match(ten)
+    if m2:
+        return m2.group(2)
+    return None
+
+
+def la_tool_tdq_lsp(ten_tool):
+    """True if ten_tool belongs strictly to TDQ LSP server."""
+    return ten_lenh_tdq_lsp(ten_tool) is not None
 
 
 def _agy_unwrap_tool(ten_tool, tool_input):
     """Unwrap call_mcp_tool and normalize Antigravity single-underscore MCP names."""
-    ten = str(ten_tool or "")
-    inp = tool_input if isinstance(tool_input, dict) else {}
-    if ten == "call_mcp_tool":
-        srv = str(inp.get("ServerName") or inp.get("server") or "").lower()
-        tname = str(inp.get("ToolName") or inp.get("tool") or "")
-        if "lsp" in srv and tname:
-            return f"mcp__lsp__{tname}", inp.get("Arguments") or inp.get("arguments") or inp
-        if srv and tname:
-            return f"mcp__{srv}__{tname}", inp.get("Arguments") or inp.get("arguments") or inp
-    if ten.startswith("mcp_") and not ten.startswith("mcp__") and "_lsp_" in ten:
-        return f"mcp__lsp__{ten.rsplit('_lsp_', 1)[1]}", inp
-    return ten, inp
+    return chuan_hoa_cong_cu_mcp(ten_tool, tool_input)[:2]
 
 
 def la_goi_khai_niem(ten_tool, tool_input):
     ten, inp = _agy_unwrap_tool(ten_tool, tool_input)
+    m = TDQ_LSP_TOOL_RE.match(ten)
+    if m:
+        ten = f"mcp__lsp__{m.group(1)}"
     res = _ORIG_LA_GOI_KHAI_NIEM(ten, inp)
     if res:
         return res
