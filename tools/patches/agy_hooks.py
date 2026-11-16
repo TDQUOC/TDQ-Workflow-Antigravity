@@ -57,7 +57,13 @@ _RUNTIME_STATE = {
     "stop_reason": None,
     "context_lines": [],
     "registered": False,
+    "tool_args_present": False,
 }
+
+
+def has_tool_args():
+    """Return True when the active payload carried a valid tool argument dict."""
+    return bool(_RUNTIME_STATE.get("tool_args_present"))
 
 
 def _parse_event_flag(argv=None):
@@ -94,8 +100,22 @@ def _unwrap_call_mcp(tool_name, tool_input):
     return tname, tinput
 
 
+def _extract_raw_tool_container(payload, tool_call):
+    """Return (raw_container, container_key_present) across AGY/Claude aliases."""
+    for key in ("tool_input", "toolInput"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    if "args" in tool_call and tool_call["args"] is not None:
+        return tool_call["args"], True
+    for key in ("arguments", "input"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    return None, False
+
+
 def normalize_payload(raw):
     """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
+    _RUNTIME_STATE["tool_args_present"] = False
     if not isinstance(raw, dict):
         return {}
     out = dict(raw)
@@ -116,38 +136,7 @@ def normalize_payload(raw):
     tool_call = out.get("toolCall") if isinstance(out.get("toolCall"), dict) else {}
     tname = str(out.get("tool_name") or out.get("toolName") or tool_call.get("name") or "")
 
-    container_found = False
-    raw_container = None
-    for k in ("tool_input", "toolInput"):
-        if k in out:
-            raw_container = out[k]
-            container_found = True
-            break
-    if not container_found and "args" in tool_call:
-        raw_container = tool_call["args"]
-        container_found = True
-    if not container_found:
-        for k in ("arguments", "input"):
-            if k in out:
-                raw_container = out[k]
-                container_found = True
-                break
-
-    outer_present = False
-    if container_found:
-        parsed_c = raw_container
-        if isinstance(parsed_c, str):
-            for _ in range(3):
-                try:
-                    parsed_c = json.loads(parsed_c)
-                except Exception:
-                    parsed_c = None
-                    break
-                if isinstance(parsed_c, dict) or not isinstance(parsed_c, str):
-                    break
-        if isinstance(parsed_c, dict):
-            outer_present = True
-
+    raw_container, container_found = _extract_raw_tool_container(out, tool_call)
     new_tname, tinput, args_present = chuan_hoa_cong_cu_mcp(
         tname, raw_container if container_found else None
     )
@@ -155,11 +144,7 @@ def normalize_payload(raw):
     if tname != "call_mcp_tool" and new_tname != tname:
         out["original_tool_name"] = tname
 
-    if tname == "call_mcp_tool":
-        has_args = args_present
-    else:
-        has_args = outer_present
-
+    has_args = bool(container_found and args_present)
     tinput = dict(tinput) if isinstance(tinput, dict) else {}
     tname = new_tname
 
@@ -194,7 +179,8 @@ def normalize_payload(raw):
 
     out["tool_name"] = tname
     out["tool_input"] = tinput
-    out["_tool_args_present"] = bool(has_args)
+    # _tool_args_present tracked in _RUNTIME_STATE so payload dict stays unpolluted
+    _RUNTIME_STATE["tool_args_present"] = bool(has_args)
     return out
 
 

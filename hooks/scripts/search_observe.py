@@ -29,7 +29,6 @@ Env: TDQ_PROJECT_DIR anchors the project; TDQ_LOG=0 silences the log.
 """
 import json
 import os
-import re
 import sys
 import time
 from datetime import datetime
@@ -47,7 +46,8 @@ HAN_PHIEN_GIAY = 6 * 3600
 # The tokenizer, the concept-call recognizer and the state builder live in
 # `scripts/search_rules.py` (pure): the replay tool shares them, so the live ledger and the
 # replay can never disagree on what counts (they did, until QC round 1 of 2026-10-03).
-from search_rules import TOKEN, la_goi_khai_niem, phan_loai_ket_qua_lsp, trang_thai  # noqa: E402,F401
+from search_rules import (TOKEN, la_goi_khai_niem, la_tool_tdq_lsp,  # noqa: E402,F401
+                          phan_loai_ket_qua_lsp, trang_thai)
 
 
 def _log(message):
@@ -178,7 +178,7 @@ def main():
 
     # PostToolUse or PostToolUseFailure
     if su_kien in ("PostToolUse", "PostToolUseFailure"):
-        if "lsp" in tool_name.lower():
+        if la_tool_tdq_lsp(tool_name):
             outcome = phan_loai_ket_qua_lsp(su_kien, payload)
             now = time.time()
             rows = doc_so(cwd, khoa, phien)

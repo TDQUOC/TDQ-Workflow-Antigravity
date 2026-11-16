@@ -262,3 +262,83 @@ def test_ec15_protojson_toolcall_workspacepaths_and_terminal_stop(tmp_path):
     )
     assert sg_cont.returncode == 0
     assert json.loads(sg_cont.stdout.strip())["decision"] == "allow"
+
+
+def test_ec16_lsp_gate_mcp_routing_and_empty_args(tmp_path):
+    """EC-16: Compiled plugin lsp_gate allows Chrome/Tavily/LSP queries/other_lsp, denies empty start_lsp."""
+    repo = tmp_path / "repo_lsp"
+    repo.mkdir()
+    _init_git_repo(repo)
+    (repo / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
+    (repo / "docs" / "tdq" / ".tdq-lsp-module.json").write_text(
+        json.dumps({"module": {"python:.": {"lang": "python", "goc": "."}}}),
+        encoding="utf-8",
+    )
+
+    allow_cases = [
+        ("chrome-devtools", "select_page", {"bringToFront": True, "pageId": 1}),
+        ("chrome-devtools", "list_pages", {}),
+        ("chrome-devtools", "click", {"pageId": 1, "uid": "btn-1", "dblClick": False}),
+        ("chrome-devtools", "navigate_page", {"pageId": 1, "type": "url", "url": "https://example.com"}),
+        ("tdq-workflow-agy_tavily-primary", "tavily_search", {"query": "tdq workflow"}),
+        ("tdq-workflow-agy_lsp", "find_references", {"file_path": "app.py", "line": 1, "character": 1}),
+        ("other_lsp", "start_lsp", {"root_dir": str(repo)}),
+    ]
+    for srv, tool, args in allow_cases:
+        res = _run_hook(
+            "lsp_gate.py",
+            {
+                "workspacePaths": [str(repo)],
+                "conversation_id": "conv-ec16",
+                "tool_name": "call_mcp_tool",
+                "tool_input": {"ServerName": srv, "ToolName": tool, "Arguments": args},
+            },
+            event="PreToolUse",
+            cwd=PLUGIN_DIR,
+        )
+        assert res.returncode == 0
+        assert json.loads(res.stdout.strip())["decision"] == "allow", (srv, tool, res.stdout)
+
+    deny_cases = [
+        {},
+        "{}",
+        json.dumps(json.dumps({"root_dir": str(repo)})),
+    ]
+    for bad_args in deny_cases:
+        deny_res = _run_hook(
+            "lsp_gate.py",
+            {
+                "workspacePaths": [str(repo)],
+                "conversation_id": "conv-ec16",
+                "tool_name": "call_mcp_tool",
+                "tool_input": {
+                    "ServerName": "tdq-workflow-agy_lsp",
+                    "ToolName": "start_lsp",
+                    "Arguments": bad_args,
+                },
+            },
+            event="PreToolUse",
+            cwd=PLUGIN_DIR,
+        )
+        assert deny_res.returncode == 0
+        body = json.loads(deny_res.stdout.strip())
+        assert body["decision"] == "deny", (bad_args, body)
+        assert "[TDQ:LSP]" in body["reason"]
+
+    broken_res = _run_hook(
+        "lsp_gate.py",
+        {
+            "workspacePaths": [str(repo)],
+            "conversation_id": "conv-ec16",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "tdq-workflow-agy_lsp",
+                "ToolName": "start_lsp",
+                "Arguments": "{broken",
+            },
+        },
+        event="PreToolUse",
+        cwd=PLUGIN_DIR,
+    )
+    assert broken_res.returncode == 0
+    assert json.loads(broken_res.stdout.strip())["decision"] == "allow"

@@ -179,13 +179,15 @@ def phan_tich_lsp_telemetry(duong):
                 if ban_ghi.get("type") == "assistant" and isinstance(msg.get("content"), list):
                     for c in msg["content"]:
                         if isinstance(c, dict) and c.get("type") == "tool_use":
-                            name = str(c.get("name") or "")
-                            if "lsp" in name.lower():
+                            ten_cong_cu, _inp, _ok = search_rules.chuan_hoa_cong_cu_mcp(
+                                c.get("name"), c.get("input")
+                            )
+                            if search_rules.la_tool_tdq_lsp(ten_cong_cu):
                                 call_id = c.get("id")
                                 if call_id:
                                     pending_use[call_id] = {
-                                        "name": name,
-                                        "ts": float(ban_ghi.get("timestamp") or 0)
+                                        "name": ten_cong_cu,
+                                        "ts": float(ban_ghi.get("timestamp") or 0),
                                     }
                 elif ban_ghi.get("type") == "user" and isinstance(msg.get("content"), list):
                     for c in msg["content"]:

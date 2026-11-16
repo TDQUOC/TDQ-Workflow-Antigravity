@@ -9,6 +9,7 @@
     "Source file modified: hooks/scripts/ask_gate.py",
     "Source file modified: hooks/scripts/bash_gate.py",
     "Source file modified: hooks/scripts/edit_gate.py",
+    "Source file modified: hooks/scripts/lsp_gate.py",
     "Source file modified: hooks/scripts/luat_gon.py",
     "Source file modified: hooks/scripts/prompt_context.py",
     "Source file modified: hooks/scripts/read_gate.py",
@@ -19,6 +20,7 @@
     "Source file modified: scripts/doc_lint.py",
     "Source file modified: scripts/lsp_module.py",
     "Source file modified: scripts/scan_block_symbols.py",
+    "Source file modified: scripts/search_replay.py",
     "Source file modified: scripts/search_rules.py",
     "Source file modified: scripts/skill_inventory.py",
     "Source file modified: scripts/tdq_checkportable.py",
@@ -59,5 +61,5 @@
     "Source file modified: skills/tdq-spec/references/spec-template.md",
     "Source file modified: tests/test_context_hooks.py"
   ],
-  "checked_at": "2026-11-15T18:38:02Z"
+  "checked_at": "2026-11-16T19:42:54Z"
 }

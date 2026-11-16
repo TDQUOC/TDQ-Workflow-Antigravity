@@ -189,6 +189,33 @@ class TestLspTelemetryReplay(unittest.TestCase):
             self.assertEqual(kq["tong_so"], 1)
             self.assertEqual(kq["dem_outcome"]["ok"], 1)
 
+    def test_bo_qua_other_lsp_va_giai_goi_call_mcp_tool(self):
+        dong = [
+            {"type": "user", "message": {"content": "check references"}},
+            {"type": "assistant", "message": {"content": [
+                {"type": "tool_use", "id": "call-other", "name": "mcp__other_lsp__find_symbol",
+                 "input": {"query": "foo"}},
+                {"type": "tool_use", "id": "call-tdq", "name": "call_mcp_tool",
+                 "input": {
+                     "ServerName": "tdq-workflow-agy_lsp",
+                     "ToolName": "find_references",
+                     "Arguments": "{\"symbol\": \"saveFile\"}",
+                 }},
+            ]}},
+            {"type": "user", "message": {"content": [
+                {"type": "tool_result", "tool_use_id": "call-other", "content": "error: fail"},
+                {"type": "tool_result", "tool_use_id": "call-tdq", "content": "## references [1]\nsrc/a.ts:10"},
+            ]}},
+        ]
+        with tempfile.TemporaryDirectory() as d:
+            duong = os.path.join(d, "lsp_mixed.jsonl")
+            with open(duong, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(json.dumps(x) for x in dong))
+            kq = search_replay.phan_tich_lsp_telemetry(duong)
+            self.assertEqual(kq["tong_so"], 1)
+            self.assertEqual(kq["dem_outcome"]["ok"], 1)
+            self.assertEqual(kq["dem_outcome"]["error"], 0)
+
     def test_cli_lsp_telemetry_json(self):
         p = _chay(FIXTURE, "--lsp-telemetry", "--json", env={"TDQ_LOG": "0"})
         self.assertEqual(p.returncode, 0, p.stderr)

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d43d9e07-3f0c-4815-abb3-c1d64c17ab23",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-16-1953-fix-lsp-gate-mcp-routing\\report.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-16-1953-fix-lsp-gate-mcp-routing.a2d27705c0fd487395045b9c99b6a87e.html",
+  "specification": {
+    "sha256": "13c5d3c9a4762f844744b86390d0f3205306a2a2c27c5675a924c52b331122f1",
+    "bytes": 3521
+  },
+  "artifact": {
+    "sha256": "1c4e78869009619ad147fc88372f9b385934c6c086635e65dbfd472e17e15872",
+    "bytes": 1230629
+  },
+  "explainer": {
+    "preparedSha256": "92486a433e5a162a0870918d6b8784296eed7fae8b7bfc688e63b92ccb5ecea7",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-truoc",
+        "inline": true,
+        "sha256": "a4b37d7270807dcc7ce91e072fa2df14c9d083ea9bd5c48cfd745f45089fa664",
+        "bytes": 1140
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-sau",
+        "inline": true,
+        "sha256": "7026dc73d5bbf8c4ed5c22d4d7e4759358b8ec0747b36f529f38896638d1d755",
+        "bytes": 1126
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-kiem-thu",
+        "inline": true,
+        "sha256": "55bd88ea714b26b1923aeefdc68c2fe16ba25143e90fc51a5a5fb468a4a1575f",
+        "bytes": 1077
+      }
+    ]
+  }
+}

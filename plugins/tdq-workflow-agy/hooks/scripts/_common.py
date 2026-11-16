@@ -31,6 +31,7 @@ import utf8_io  # noqa: E402,F401 — stdout/stderr become UTF-8 the moment this
 import tdq_state  # noqa: E402 — kept so other modules can `from _common import tdq_state`
 from tdq_state import (VALID_MODES, mode_label, resolve_project_dir,  # noqa: E402
                        turn_log_append, turn_log_read)
+from search_rules import chuan_hoa_cong_cu_mcp  # noqa: E402
 
 # 0.2.0 dropped the hard gate; 0.3.0 dropped the approval slash command too — the user
 # approves in plain chat.
@@ -126,7 +127,13 @@ _RUNTIME_STATE = {
     "stop_reason": None,
     "context_lines": [],
     "registered": False,
+    "tool_args_present": False,
 }
+
+
+def has_tool_args():
+    """Return True when the active payload carried a valid tool argument dict."""
+    return bool(_RUNTIME_STATE.get("tool_args_present"))
 
 
 def _parse_event_flag(argv=None):
@@ -161,20 +168,9 @@ def _agy_active(payload=None):
 
 
 def _unwrap_call_mcp(tool_name, tool_input):
-    if tool_name != "call_mcp_tool" or not isinstance(tool_input, dict):
-        return tool_name, tool_input
-    srv = str(tool_input.get("ServerName") or tool_input.get("server") or "").strip()
-    tname = str(tool_input.get("ToolName") or tool_input.get("tool") or "").strip()
-    args = tool_input.get("Arguments") or tool_input.get("arguments") or {}
-    if isinstance(args, str):
-        try:
-            args = json.loads(args)
-        except ValueError:
-            args = {}
-    if srv and tname:
-        norm_srv = "lsp" if "lsp" in srv.lower() else srv
-        return f"mcp__{norm_srv}__{tname}", args if isinstance(args, dict) else {}
-    return tool_name, tool_input
+    """Delegate call_mcp_tool and eager AGY unwrapping to scripts/search_rules.py."""
+    tname, tinput, _has_args = chuan_hoa_cong_cu_mcp(tool_name, tool_input)
+    return tname, tinput
 
 
 def extract_workspace_path(payload):
@@ -270,6 +266,19 @@ def _ensure_atexit():
         _RUNTIME_STATE["registered"] = True
 
 
+def _extract_raw_tool_container(payload, tool_call):
+    """Return (raw_container, container_key_present) across AGY/Claude aliases."""
+    for key in ("tool_input", "toolInput"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    if "args" in tool_call and tool_call["args"] is not None:
+        return tool_call["args"], True
+    for key in ("arguments", "input"):
+        if key in payload and payload[key] is not None:
+            return payload[key], True
+    return None, False
+
+
 def normalize_payload(raw):
     """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
     event = _parse_event_flag()
@@ -282,30 +291,25 @@ def normalize_payload(raw):
         "deny_reason": None,
         "stop_reason": None,
         "context_lines": [],
+        "tool_args_present": False,
     })
     if not isinstance(raw, dict):
         return {}
     payload = dict(raw)
+    has_args = "tool_input" in payload and isinstance(payload["tool_input"], dict)
     if agy:
         if not payload.get("hook_event_name") and event:
             payload["hook_event_name"] = event
         tool_call = payload.get("toolCall") if isinstance(payload.get("toolCall"), dict) else {}
-        tname = str(payload.get("tool_name") or payload.get("toolName") or tool_call.get("name") or "")
-        if tname.startswith("CORTEX_STEP_TYPE_"):
-            tname = tname[len("CORTEX_STEP_TYPE_"):].lower()
-        tinput = (payload.get("tool_input") or payload.get("toolInput") or tool_call.get("args")
-                  or payload.get("arguments") or payload.get("input") or {})
-        if isinstance(tinput, str):
-            try:
-                tinput = json.loads(tinput)
-            except ValueError:
-                tinput = {}
+        orig_tname = str(payload.get("tool_name") or payload.get("toolName") or tool_call.get("name") or "")
+        if orig_tname.startswith("CORTEX_STEP_TYPE_"):
+            orig_tname = orig_tname[len("CORTEX_STEP_TYPE_"):].lower()
+        raw_container, has_container = _extract_raw_tool_container(payload, tool_call)
+        tname, tinput, args_present = chuan_hoa_cong_cu_mcp(orig_tname, raw_container)
+        has_args = bool(has_container and args_present)
+        if orig_tname != "call_mcp_tool" and tname != orig_tname:
+            payload["original_tool_name"] = orig_tname
         tinput = dict(tinput) if isinstance(tinput, dict) else {}
-        tname, tinput = _unwrap_call_mcp(tname, tinput)
-        if tname.startswith("mcp_") and not tname.startswith("mcp__") and "_lsp_" in tname:
-            op = tname.split("_lsp_", 1)[1]
-            payload["original_tool_name"] = tname
-            tname = f"mcp__lsp__{op}"
         if "file_path" not in tinput:
             for alias in ("TargetFile", "Path", "AbsolutePath", "path", "target_file"):
                 if isinstance(tinput.get(alias), str) and tinput[alias].strip():
@@ -348,6 +352,8 @@ def normalize_payload(raw):
             if field == "tool_input":
                 payload["tool_input"] = {}
                 payload.pop("tool_name", None)
+                has_args = False
+    _RUNTIME_STATE["tool_args_present"] = bool(has_args)
     _sanitize_tool_input(payload)
     return payload
 

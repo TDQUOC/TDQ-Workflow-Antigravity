@@ -184,5 +184,114 @@ class SauHookSongTest(unittest.TestCase):
                 sys.path.pop(0)
 
 
+class TestCommonMcpNormalization(unittest.TestCase):
+    """Verify _common.normalize_payload unifies MCP naming and _tool_args_present."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, HOOKS)
+        try:
+            import _common
+            cls._common = _common
+        finally:
+            if sys.path and sys.path[0] == HOOKS:
+                sys.path.pop(0)
+
+    def setUp(self):
+        self._saved_runtime_state = dict(self._common._RUNTIME_STATE)
+        self._saved_runtime_state["context_lines"] = list(
+            self._saved_runtime_state.get("context_lines") or []
+        )
+
+    def tearDown(self):
+        self._common._RUNTIME_STATE.clear()
+        self._common._RUNTIME_STATE.update(self._saved_runtime_state)
+
+    def test_runtime_state_restored_after_teardown(self):
+        saved_is_agy = self._saved_runtime_state.get("is_agy")
+        self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {"ServerName": "chrome-devtools", "ToolName": "list_pages", "Arguments": {}},
+        })
+        self.assertIs(self._common._RUNTIME_STATE["is_agy"], True)
+        self.tearDown()
+        self.assertIs(self._common._RUNTIME_STATE["is_agy"], saved_is_agy)
+
+    def test_unwrap_chrome_devtools_and_tavily_keeps_server_name(self):
+        out = self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "chrome-devtools",
+                "ToolName": "select_page",
+                "Arguments": {"bringToFront": True, "pageId": 1},
+            },
+        })
+        self.assertEqual(out["tool_name"], "mcp__chrome-devtools__select_page")
+        self.assertEqual(out["tool_input"], {"bringToFront": True, "pageId": 1})
+        self.assertNotIn("_tool_args_present", out)
+        self.assertIs(self._common.has_tool_args(), True)
+
+    def test_unwrap_other_lsp_never_maps_to_tdq_lsp(self):
+        out_lazy = self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {"ServerName": "other_lsp", "ToolName": "find_symbol", "Arguments": {}},
+        })
+        self.assertEqual(out_lazy["tool_name"], "mcp__other_lsp__find_symbol")
+        out_eager = self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "mcp_other_lsp_find_symbol",
+            "tool_input": {"query": "foo"},
+        })
+        self.assertEqual(out_eager["tool_name"], "mcp_other_lsp_find_symbol")
+
+    def test_tool_args_present_distinguishes_empty_dict_from_missing_or_broken(self):
+        out_empty = self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "tdq-workflow-agy_lsp",
+                "ToolName": "start_lsp",
+                "Arguments": {},
+            },
+        })
+        self.assertEqual(out_empty["tool_name"], "mcp__lsp__start_lsp")
+        self.assertEqual(out_empty["tool_input"], {})
+        self.assertNotIn("_tool_args_present", out_empty)
+        self.assertIs(self._common.has_tool_args(), True)
+
+        self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "tdq-workflow-agy_lsp",
+                "ToolName": "start_lsp",
+                "Arguments": "{}",
+            },
+        })
+        self.assertIs(self._common.has_tool_args(), True)
+
+        out_broken = self._common.normalize_payload({
+            "hookEventName": "PreToolUse",
+            "tool_name": "call_mcp_tool",
+            "tool_input": {
+                "ServerName": "tdq-workflow-agy_lsp",
+                "ToolName": "start_lsp",
+                "Arguments": "{bad json",
+            },
+        })
+        self.assertEqual(out_broken["tool_name"], "mcp__lsp__start_lsp")
+        self.assertIs(self._common.has_tool_args(), False)
+
+        out_missing_claude = self._common.normalize_payload({
+            "tool_name": "mcp__lsp__start_lsp",
+            "cwd": ".",
+        })
+        self.assertNotIn("_tool_args_present", out_missing_claude)
+        self.assertIs(self._common.has_tool_args(), False)
+
+
 if __name__ == "__main__":
     unittest.main()
