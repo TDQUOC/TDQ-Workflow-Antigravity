@@ -70,7 +70,7 @@
     {
       "id": "skills",
       "type": "frontend",
-      "label": "11 Skills & 6 Agents",
+      "label": "12 Skills & 6 Agents",
       "sublabel": "intake · spec · plan · build",
       "tag": "cognitive",
       "pos": [
@@ -251,7 +251,7 @@
       "title": "Unified Multi-Host Architecture",
       "items": [
         "Claude Code, Codex, OpenCode, and Antigravity share one canonical skills/ and hooks/ codebase",
-        "11 Skills and 6 specialized Sub-Agents drive Intake, Spec, Plan, Build, and QC"
+        "12 Skills and 6 specialized Sub-Agents drive Intake, Spec, Plan, Build, and QC"
       ]
     },
     {

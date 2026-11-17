@@ -1,13 +1,13 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-17T03:05:38+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-17T18:31:50+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-16-1953-fix-lsp-gate-mcp-routing |
+| Request | 2026-11-17-0325-tich-hop-rtk-antigravity |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-16-1953-fix-lsp-gate-mcp-routing.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-16-1953-fix-lsp-gate-mcp-routing.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-17-0325-tich-hop-rtk-antigravity.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-17-0325-tich-hop-rtk-antigravity.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |

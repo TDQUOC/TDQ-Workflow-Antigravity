@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "ok": false,
+  "ok": true,
   "command": "finalize",
-  "status": "fail",
+  "status": "pass",
   "type": "architecture",
   "quality": "showcase",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\tdq\\models\\runtime-verification.json",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
     "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
     "bytes": 4891
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\runtime-verification.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
     "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
     "bytes": 822816
   },
@@ -19,22 +19,31 @@
     "validate": "pass",
     "deliver": "pass",
     "check": "pass",
-    "browser-check": "fail"
+    "browser-check": "pass"
   },
-  "failedStage": "browser-check",
   "diagnostics": [
     {
-      "code": "viewer/browser-check-runtime",
-      "severity": "error",
-      "message": "browser-check could not complete its Chrome inspection.",
+      "code": "i18n/locale-fallback",
+      "severity": "warning",
+      "message": "meta.locale \"vi\" has no bundled catalog and no usable meta.translations; the Viewer chrome and <html lang> fall back to English.",
       "subject": {
-        "artifact": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\runtime-verification.html"
+        "diagramType": "architecture",
+        "path": "/meta/locale"
       },
       "evidence": {
-        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nWindows browser startup may have relaunched before connecting to the DevTools pipe. Retry from a non-elevated PowerShell opened normally, outside an elevated or compatibility-mode parent. Archify does not disable browser de-elevation or the sandbox to preserve pipe handles.\nChrome transport: Node v24.19.0, libuv 1.52.1, win32; pid=30780, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+        "locale": "vi",
+        "bundledLocales": [
+          "en",
+          "zh-CN",
+          "zh-TW",
+          "es",
+          "ko",
+          "ar"
+        ]
       },
       "supportedFixes": [
-        "resolve the reported Chrome inspection error, then rerun browser-check"
+        "Supply meta.translations for this locale.",
+        "Use a bundled locale: en, zh-CN, zh-TW, es, ko, ar."
       ]
     }
   ],
@@ -44,14 +53,43 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\runtime-verification.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\runtime-verification.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\runtime-verification.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.browser-check.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 1376,
+  "durationMs": 3043,
   "browserCheck": {
     "requested": true,
-    "ran": false
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "c7",
+            "from": "transcript",
+            "to": "cache",
+            "label": "hash / phân tích / tính lại",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 3,
+          "stretch": 1.181
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "transcript → cache needs 3 bends: move node transcript or cache so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
   }
 }

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "1dfcf8a1-1562-4725-a33a-889a1ed6c07e",
+  "receiptId": "5d14e8c4-af57-4606-8902-435da8003ec5",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\tdq\\models\\overview.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.html",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\overview.json",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\overview.html",
   "specification": {
-    "sha256": "ed30328c54254bf706c559243e72e0834623f3b8393b6347caef34f64b3faba7",
+    "sha256": "36422966c09ac48c600469ed0ceb2646dc6de7506a1397018ea71ed0da95b746",
     "bytes": 6456
   },
   "artifact": {
-    "sha256": "804d1ff75b4ee35e24cb3c64fbeef786a69373d79924ea0817850e6b526931f9",
+    "sha256": "4372081ce53baebbb84cafbbe973154e7e04a5c9017d5e0cb0149ff903ce9dcc",
     "bytes": 826497
   }
 }

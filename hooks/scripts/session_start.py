@@ -260,12 +260,39 @@ def main():
         f"`python3 {os.path.join(GOC_PLUGIN, 'scripts', 'tdq_setup.py')}` (hoặc gọi skill tdq-setup)."
         if can_setup else ""
     )
+    nhac_rtk = ""
+    try:
+        import rtk_integration
+        if (
+            not rtk_integration.is_prompt_muted()
+            and not already_reminded(cwd, payload, "SETUP-RTK")
+        ):
+            st_rtk = rtk_integration.probe_rtk(cwd=cwd)
+            if not st_rtk.get("valid") or not rtk_integration.locate_rg_binary():
+                turn_log_append(cwd, "remind", session=session_id(payload),
+                                code="SETUP-RTK", event="SessionStart")
+                import os as _os
+                import sys as _sys
+                from datetime import datetime as _dt
+                if _os.environ.get("TDQ_LOG", "1") != "0":
+                    _stamp = _dt.now().isoformat(timespec="seconds")
+                    print(
+                        f"[{_stamp}] session_start: SETUP-RTK missing rtk/rg",
+                        file=_sys.stderr,
+                    )
+                nhac_rtk = (
+                    "[TDQ:SETUP] Missing rtk/rg for token savings — ask user permission to run "
+                    "py -3 scripts/tdq_setup.py --with-rtk (or --mute-rtk-prompt to hide)."
+                )
+    except Exception:  # noqa: BLE001 — optional reminder must never fail SessionStart
+        pass
     nhac = [n for n in (
         thong_bao_update_plugin,
         thong_bao_update_nen,
         loi_cap_nhat,
         "[TDQ] Đã tự động cập nhật instruction và cấu hình cho phiên bản mới." if da_cap_nhat_ver else "",
         nhac_setup,
+        nhac_rtk,
         "" if shutil.which("graphify") else
         "[TDQ] graphify is not installed (optional): uv tool install graphifyy",
         nhac_devtool,

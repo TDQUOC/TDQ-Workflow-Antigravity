@@ -208,6 +208,23 @@
             ]
           },
           {
+            "id": "step-command-gate-rtk",
+            "text": "Gộp cổng run_command và nén RTK cộng sinh",
+            "detail": "command_gate gộp search + bash + rtk rewrite qua overwrite.CommandLine",
+            "sources": [
+              {
+                "path": "hooks/scripts/command_gate.py",
+                "line": 40,
+                "end_line": 98
+              },
+              {
+                "path": "scripts/rtk_integration.py",
+                "line": 248,
+                "end_line": 522
+              }
+            ]
+          },
+          {
             "id": "step-edit-gate",
             "text": "Cổng bảo vệ ghi file theo pha và bản đồ phân công",
             "detail": "Kiểm tra trạng thái duyệt, tick plan và SHA-256 team map",

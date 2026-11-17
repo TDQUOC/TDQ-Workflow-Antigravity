@@ -362,5 +362,79 @@ class TestNhacTranOutput(unittest.TestCase):
             self.assertNotIn('"deny"', out, cmd)
 
 
+class TestEvalHelpers(unittest.TestCase):
+    """In-process `eval_bash` and `eval_search` contracts for collapsed gate."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = self._tmp.name
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_eval_bash_suppress_output_remind_skips_tdq_output(self):
+        sys.path.insert(0, HOOKS)
+        try:
+            import _common
+            import bash_gate
+        finally:
+            if sys.path and sys.path[0] == HOOKS:
+                sys.path.pop(0)
+        payload = {
+            "cwd": self.cwd,
+            "session_id": "eval-bash-suppress",
+            "hook_event_name": "PreToolUse",
+            "tool_name": "run_command",
+            "tool_input": {"command": "git diff"},
+        }
+        buf = io.StringIO()
+        with mock.patch("sys.stdout", buf):
+            ok = bash_gate.eval_bash(payload, suppress_output_remind=True)
+        self.assertTrue(ok)
+        rows = _common.turn_rows(self.cwd, payload)
+        self.assertFalse(any(r.get("code") == "TDQ:OUTPUT" for r in rows))
+
+    def test_eval_search_blocks_shell_grep_and_allows_git_status(self):
+        sys.path.insert(0, HOOKS)
+        try:
+            import _common
+            import search_gate
+        finally:
+            if sys.path and sys.path[0] == HOOKS:
+                sys.path.pop(0)
+        saved = dict(_common._RUNTIME_STATE)
+        saved["context_lines"] = list(saved.get("context_lines") or [])
+        saved["overwrite"] = dict(saved.get("overwrite") or {})
+        try:
+            allow_payload = _common.begin_collapsed_session({
+                "cwd": self.cwd,
+                "session_id": "eval-search-allow",
+                "hookEventName": "PreToolUse",
+                "tool_name": "run_command",
+                "toolInput": {"CommandLine": "git status"},
+            })
+            self.assertTrue(search_gate.eval_search(allow_payload))
+
+            deny_payload = _common.normalize_payload({
+                "cwd": self.cwd,
+                "session_id": "eval-search-deny",
+                "hookEventName": "PreToolUse",
+                "tool_name": "run_command",
+                "toolInput": {"CommandLine": "grep -rn foo scripts/"},
+            })
+            _common.begin_collapsed_session(deny_payload)
+            with self.assertRaises(SystemExit):
+                search_gate.eval_search(deny_payload)
+            buf = io.StringIO()
+            with mock.patch("sys.stdout", buf):
+                _common._flush_agy_stdout()
+            data = json.loads(buf.getvalue())
+            self.assertEqual(data["decision"], "deny")
+            self.assertIn("TDQ:SEARCH", data["reason"])
+        finally:
+            _common._RUNTIME_STATE.clear()
+            _common._RUNTIME_STATE.update(saved)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,156 @@
+{
+  "slug": "2026-11-17-0325-tich-hop-rtk-antigravity",
+  "plan_file": "docs\\tdq\\plan\\2026-11-17-0325-tich-hop-rtk-antigravity.md",
+  "plan_sha": "1f874e185e2cf9ccc42cf48380f89a2cb327f84401c672012b23a7d642780a40",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "e1b384a4da65b77ef1603f88518f5ec7c2a9086949adce2b031fa62a358af01a",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/rtk_integration.py",
+        "scripts/tdq_setup.py",
+        "tests/test_rtk_integration.py",
+        ".tdq-runtime/rtk-probe.json"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_search_rules.py",
+        "scripts/search_rules.py",
+        "tools/patches/cli_fixes_a.py"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_hook_windows.py",
+        "hooks/scripts/_common.py",
+        "tools/patches/agy_hooks.py"
+      ],
+      "dot": 5
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_bash_gate.py",
+        "hooks/scripts/bash_gate.py",
+        "hooks/scripts/search_gate.py"
+      ],
+      "dot": 6
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/command_gate.py",
+        "tools/patches/agy_manifests.py",
+        "tests/test_command_gate.py"
+      ],
+      "dot": 7
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_installer_rtk_trigger.py",
+        "tools/install_agy_plugin.py"
+      ],
+      "dot": 2
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_tdq_setup_rtk.py",
+        "tests/test_setup_status.py",
+        "scripts/tdq_setup.py",
+        "scripts/tdq_lsp.py",
+        "scripts/setup_status.py",
+        "hooks/scripts/session_start.py"
+      ],
+      "dot": 6
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/build_agy_plugin.py",
+        "tests/test_hooks_dual_protocol.py",
+        "plugins/tdq-workflow-agy/hooks.json"
+      ],
+      "dot": 8
+    },
+    "T4.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 9
+    },
+    "T5.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "T5.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "QC1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "QC1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/patches/common_utils.py",
+        "hooks/scripts/command_gate.py",
+        "tools/install_agy_plugin.py"
+      ],
+      "dot": 3
+    },
+    "QC1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_setup.py",
+        "hooks/scripts/session_start.py",
+        "tests/test_tdq_setup_rtk.py"
+      ],
+      "dot": 3
+    },
+    "QC1.5": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/rtk_integration.py",
+        "scripts/setup_status.py",
+        "tests/test_hooks_dual_protocol.py",
+        ".cmd/.bat",
+        "scripts/search_rules.py",
+        "tools/patches/cli_fixes_a.py"
+      ],
+      "dot": 4
+    },
+    "QC1.4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}

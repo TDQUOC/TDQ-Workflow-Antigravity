@@ -5336,17 +5336,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="242" y="268" class="t-frontend" font-size="7" text-anchor="middle">2 hooks</text>
         </g>
 
-        <g id="node-hk_pre_gates" data-node-id="hk_pre_gates" data-node-label="6 PreTool Hard Gates" tabindex="0" role="button" aria-label="Focus 6 PreTool Hard Gates, search · lsp · edit · bash · ask, Context &amp; Blocking Gates › PreTool &amp; PostTool" aria-pressed="false" data-node-kind="security" data-node-sublabel="search · lsp · edit · bash · ask" data-node-tag="deny on violation" data-node-context="Context &amp; Blocking Gates › PreTool &amp; PostTool">
-          <title>6 PreTool Hard Gates · search · lsp · edit · bash · ask · Context &amp; Blocking Gates › PreTool &amp; PostTool · deny on violation</title>
+        <g id="node-hk_pre_gates" data-node-id="hk_pre_gates" data-node-label="PreTool Hard Gates" tabindex="0" role="button" aria-label="Focus PreTool Hard Gates, command_gate · lsp · edit · ask, Context &amp; Blocking Gates › PreTool &amp; PostTool" aria-pressed="false" data-node-kind="security" data-node-sublabel="command_gate · lsp · edit · ask" data-node-tag="deny + rtk overwrite" data-node-context="Context &amp; Blocking Gates › PreTool &amp; PostTool">
+          <title>PreTool Hard Gates · command_gate · lsp · edit · ask · Context &amp; Blocking Gates › PreTool &amp; PostTool · deny + rtk overwrite</title>
           <rect x="348" y="212" width="148" height="68" rx="8" class="c-mask"/>
           <rect x="348" y="212" width="148" height="68" rx="8" class="c-security" data-animate="node" style="--step:3" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(354 218) scale(0.6875)">
             <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
             <path d="m5.8 8 1.5 1.5 3-3"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="422" y="244.2" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">6 PreTool Hard Gates</text>
-          <text data-detail="context" x="422" y="258.2" class="t-muted" font-size="7.2" text-anchor="middle">search · lsp · edit · bash · ask</text>
-        <text data-detail="fine" x="422" y="270.8" class="t-security" font-size="7" text-anchor="middle">deny on violation</text>
+          <text data-node-label="" data-detail-anchor="" x="426.4" y="233" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">PreTool Hard Gates</text>
+          <text data-detail="context" x="422" y="250" class="t-muted" font-size="7.5" text-anchor="middle">command_gate · lsp · edit · ask</text>
+        <text data-detail="fine" x="422" y="268" class="t-security" font-size="7" text-anchor="middle">deny + rtk overwrite</text>
         </g>
 
         <g id="node-hk_stop_gate" data-node-id="hk_stop_gate" data-node-label="stop_gate.py" tabindex="0" role="button" aria-label="Focus stop_gate.py, Verify-by-Effect check, Context &amp; Blocking Gates › Stop Verification" aria-pressed="false" data-node-kind="security" data-node-sublabel="Verify-by-Effect check" data-node-tag="block if unverified" data-node-context="Context &amp; Blocking Gates › Stop Verification">
@@ -5613,11 +5613,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       <div class="card">
         <div class="card-header">
           <div class="card-dot rose"></div>
-          <h3>PreToolUse Hard Gates</h3>
+          <h3>PreToolUse Hard Gates &amp; RTK Collapse</h3>
         </div>
         <ul>
-          <li>search_gate and lsp_gate enforce 3-tier search order before allowing Grep</li>
-          <li>edit_gate, bash_gate, and ask_gate protect unapproved specs, state.json, and chat-only UX</li>
+          <li>command_gate collapses search_gate, bash_gate, and rtk_integration rewrite (overwrite.CommandLine) in one process</li>
+          <li>lsp_gate, edit_gate, and ask_gate protect 3-tier search order, unapproved specs, state.json, and chat-only UX</li>
         </ul>
       </div>
 

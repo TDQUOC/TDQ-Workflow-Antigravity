@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "ok": false,
+  "ok": true,
   "command": "finalize",
-  "status": "fail",
+  "status": "pass",
   "type": "architecture",
   "quality": "showcase",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\tdq\\models\\optimization-report.json",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\optimization-report.json",
     "sha256": "ef83b7effbcb1c3b7062f61cad2b58a9a3f657ee3b5add9ed9d4b2fc4acce2ac",
     "bytes": 4466
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\optimization-report.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\optimization-report.html",
     "sha256": "25e0219714bb2065bc3b7394b6f06a8ec4af1c8ac1b7b6c0521a39db0cda34f5",
     "bytes": 820910
   },
@@ -19,22 +19,31 @@
     "validate": "pass",
     "deliver": "pass",
     "check": "pass",
-    "browser-check": "fail"
+    "browser-check": "pass"
   },
-  "failedStage": "browser-check",
   "diagnostics": [
     {
-      "code": "viewer/browser-check-runtime",
-      "severity": "error",
-      "message": "browser-check could not complete its Chrome inspection.",
+      "code": "i18n/locale-fallback",
+      "severity": "warning",
+      "message": "meta.locale \"vi\" has no bundled catalog and no usable meta.translations; the Viewer chrome and <html lang> fall back to English.",
       "subject": {
-        "artifact": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\optimization-report.html"
+        "diagramType": "architecture",
+        "path": "/meta/locale"
       },
       "evidence": {
-        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nWindows browser startup may have relaunched before connecting to the DevTools pipe. Retry from a non-elevated PowerShell opened normally, outside an elevated or compatibility-mode parent. Archify does not disable browser de-elevation or the sandbox to preserve pipe handles.\nChrome transport: Node v24.19.0, libuv 1.52.1, win32; pid=39084, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=true, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+        "locale": "vi",
+        "bundledLocales": [
+          "en",
+          "zh-CN",
+          "zh-TW",
+          "es",
+          "ko",
+          "ar"
+        ]
       },
       "supportedFixes": [
-        "resolve the reported Chrome inspection error, then rerun browser-check"
+        "Supply meta.translations for this locale.",
+        "Use a bundled locale: en, zh-CN, zh-TW, es, ko, ar."
       ]
     }
   ],
@@ -44,14 +53,14 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\optimization-report.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\optimization-report.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\optimization-report.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\optimization-report.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\optimization-report.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\optimization-report.browser-check.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 1391,
+  "durationMs": 2982,
   "browserCheck": {
     "requested": true,
-    "ran": false
+    "ran": true
   }
 }

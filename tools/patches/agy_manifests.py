@@ -114,8 +114,8 @@ def generate_hooks_json(plugin_root: Path) -> None:
             "PreToolUse": [
                 {"matcher": "edit_file|write_to_file|write_file|replace_file_content|multi_replace_file_content|notebook_edit", "hooks": [_hook_cmd("edit_gate.py", "PreToolUse")]},
                 {"matcher": "read_file|view_file", "hooks": [_hook_cmd("read_gate.py", "PreToolUse")]},
-                {"matcher": "run_command", "hooks": [_hook_cmd("bash_gate.py", "PreToolUse")]},
-                {"matcher": "run_command|grep_search|find_by_name|list_dir|search_directory|find_file|list_directory", "hooks": [_hook_cmd("search_gate.py", "PreToolUse")]},
+                {"matcher": "run_command", "hooks": [_hook_cmd("command_gate.py", "PreToolUse")]},
+                {"matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory", "hooks": [_hook_cmd("search_gate.py", "PreToolUse")]},
                 {"matcher": "mcp_.*lsp_.*|call_mcp_tool", "hooks": [_hook_cmd("lsp_gate.py", "PreToolUse"), _hook_cmd("search_observe.py", "PreToolUse")]},
                 {"matcher": "ask_question|ask_user_question", "hooks": [_hook_cmd("ask_gate.py", "PreToolUse")]},
                 {"matcher": "invoke_subagent|swarm|define_subagent", "hooks": [_hook_cmd("subagent_dispatch_gate.py", "PreToolUse")]},
@@ -198,6 +198,7 @@ Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-
 ## 4. User-Facing Presentation & 6-Symbol Whitelist
 - Whitelisted symbols in user-facing blocks: `➤`, `·`, `—`, `→`, `–`, `…` (emojis and box-drawing characters are strictly banned per `user-facing-block-vi-du.md`).
 - Reports require 4 sections: **Before Request**, **After Request**, **What Was Tested**, **Test Result** + Archify HTML (`docs/tdq/reports/<slug>.html`).
+- RTK CLI compression: when `rtk` rewrites noisy command output, recover lossless lines via `rtk recall <hash>`; need an explicit unfiltered pass → use `rtk bypass <cmd>`.
 """
     write_utf8(rules_dir / "AGENTS.md", agents_md)
 

@@ -70,19 +70,15 @@ def _adjust_hooks_for_platform(installed_dir: Path) -> None:
     hooks_file = installed_dir / "hooks.json"
     if not hooks_file.is_file():
         return
-    text = hooks_file.read_text(encoding="utf-8")
-    is_win = platform.system() == "Windows"
-    py_prefix = "py -3" if is_win else "python3"
-    
-    # Replace prefix if different
-    if is_win:
+    text = hooks_file.read_text(encoding="utf-8").replace("\r\n", "\n")
+    if platform.system() == "Windows":
         text = text.replace("python3 -X utf8", "py -3 -X utf8")
         text = text.replace("python3 ", "py -3 ")
     else:
         text = text.replace("py -3 -X utf8", "python3 -X utf8")
         text = text.replace("py -3 ", "python3 ")
-    
-    hooks_file.write_text(text, encoding="utf-8")
+    with open(hooks_file, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
 
 
 def _find_agy_cli() -> str:
@@ -125,6 +121,70 @@ def _git_pull_ff_only(repo_root: Path) -> bool:
     return True
 
 
+def _prompt_rtk_install(args, stdin_tty=None, ask_fn=input) -> bool:
+    """Return True when --with-rtk is passed or interactive user approves."""
+    if getattr(args, "with_rtk", False):
+        return True
+    is_tty = bool(stdin_tty) if stdin_tty is not None else bool(sys.stdin.isatty())
+    if not is_tty:
+        return False
+    print("\n   Optional token-saving tools missing (rtk + rg).")
+    print(
+        "   Sources: github.com/rtk-ai/rtk & BurntSushi/ripgrep"
+        " (SHA256-verified -> ~/.local/bin)"
+    )
+    try:
+        ans = ask_fn("   Install rtk + rg user-level now? [y/N]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return ans in ("y", "yes")
+
+
+def _handle_rtk_trigger(
+    args, src: Path | None = None, stdin_tty=None, ask_fn=input
+) -> int:
+    """Detect rtk/rg after install and ask consent before user-level setup."""
+    tools_dir = str(ROOT_DIR / "tools")
+    if tools_dir not in sys.path:
+        sys.path.insert(0, tools_dir)
+    from patches.common_utils import import_rtk_integration
+
+    rtk_mod = import_rtk_integration(ROOT_DIR, src)
+    if getattr(args, "skip_rtk", False):
+        print("   [NOTE] RTK/rg trigger skipped (--skip-rtk).")
+        return 0
+    st_rtk = rtk_mod.probe_rtk(cwd=str(ROOT_DIR))
+    rg_bin = rtk_mod.locate_rg_binary()
+    if st_rtk.get("valid") and rg_bin:
+        if not getattr(args, "dry_run", False):
+            rtk_mod.ensure_rtk_config()
+        print(f"   [OK] rtk ({st_rtk.get('version')}) & rg ready.")
+        return 0
+    if getattr(args, "dry_run", False):
+        msg = (
+            "Would install SHA256-verified rtk + rg into ~/.local/bin."
+            if getattr(args, "with_rtk", False)
+            else "Missing rtk/rg detected; run with --with-rtk or approve prompt."
+        )
+        print(f"[DRY-RUN] {msg}")
+        return 0
+    if not _prompt_rtk_install(args, stdin_tty=stdin_tty, ask_fn=ask_fn):
+        print(
+            "   [NOTE] rtk/rg not installed. Install with permission anytime:"
+            " py -3 install.py --with-rtk"
+        )
+        return 0
+    res = rtk_mod.install_rtk_and_rg(approve=True)
+    if res.get("ok"):
+        print(
+            f"   [OK] Installed rtk ({res.get('rtk_version')})"
+            f" & rg ({res.get('rg_version')})."
+        )
+        return 0
+    print(f"   [WARN] rtk/rg install failed: {res.get('reason')}", file=sys.stderr)
+    return 1 if getattr(args, "with_rtk", False) else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=f"Install {PLUGIN_NAME} native plugin to user-level Antigravity.")
     parser.add_argument("--src", type=Path, default=PLUGIN_SRC, help=f"Source plugin directory (default: ./plugins/{PLUGIN_NAME})")
@@ -132,6 +192,16 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Simulate installation without writing to disk")
     parser.add_argument("--no-enable", action="store_true", help="Do not automatically enable the plugin after install")
     parser.add_argument("--update", action="store_true", help="Run 'git pull --ff-only' in the repository before reinstalling")
+    parser.add_argument(
+        "--with-rtk",
+        action="store_true",
+        help="Download and install SHA256-verified rtk + rg into ~/.local/bin",
+    )
+    parser.add_argument(
+        "--skip-rtk",
+        action="store_true",
+        help="Skip rtk + rg installation check/prompt",
+    )
     args = parser.parse_args()
 
     if args.update and not args.dry_run:
@@ -156,6 +226,7 @@ def main() -> int:
     if args.dry_run:
         if args.update:
             print("[DRY-RUN] Would run: git -C <repo> pull --ff-only")
+        _handle_rtk_trigger(args, src=src)
         print("[DRY-RUN] Verification complete. No files were copied.")
         return 0
 
@@ -190,6 +261,9 @@ def main() -> int:
             print(f"   [NOTE] Could not run 'agy plugin enable {PLUGIN_NAME}' ({enable_proc.stderr.strip()}).")
             print(f"          You can enable it manually in Antigravity UI or with: agy plugin enable {PLUGIN_NAME}")
 
+    print("\n5. Checking optional token-saving tools (rtk + rg)...")
+    rtk_rc = _handle_rtk_trigger(args, src=src)
+
     print("\n==================================================================")
     print("INSTALLATION SUCCESSFUL!")
     print("==================================================================")
@@ -198,7 +272,7 @@ def main() -> int:
     print("\nIt will automatically load in any Antigravity workspace.")
     print("To check status anytime: agy plugin list")
     print("==================================================================")
-    return 0
+    return rtk_rc
 
 
 if __name__ == "__main__":

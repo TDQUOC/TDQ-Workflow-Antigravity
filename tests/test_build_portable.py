@@ -31,11 +31,14 @@ PHASE1_RUNTIME_MODULES = {
 # Current O4 and eval suite modules are required in live packaging, but may not yet exist in Git HEAD.
 APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
+    "rtk_integration",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
     # Shipped in v0.87.0 (9827127), before the v0.88.0 quick-lane budget increase.
     "skills/tdq-conventions/references/ultracode.md",
+    # Approved 2026-11-17-0325-tich-hop-rtk-antigravity collapsed PreToolUse gate.
+    "hooks/scripts/command_gate.py",
 }
 
 

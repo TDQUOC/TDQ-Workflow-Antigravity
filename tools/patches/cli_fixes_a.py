@@ -100,12 +100,96 @@ def _agy_mcp_candidate_files():
     write_utf8(path, text)
 
 
+_RTK_WIN_RE_SNIPPET = r'''_WIN_PATH_OR_QUOTE = re.compile(
+    r"""'[^']*'|"[^"\\]*(?:\\.[^"\\]*)*"|((?:^|(?<=[\s({]))[A-Za-z]:\\[^\s'"]*)"""
+)
+
+
+'''
+_RTK_WIN_GUARD_SNIPPET = r'''    if ":\\" in phan:
+        phan = _WIN_PATH_OR_QUOTE.sub(
+            lambda m: m.group(1).replace("\\", "\\\\") if m.group(1) else m.group(0),
+            phan,
+        )
+'''
+_RTK_STRIP_SNIPPET = r'''def _strip_rtk_prefix(argv: list[str]) -> list[str]:
+    """Strip rtk binary, flags, bypass/proxy + trailing flags, and map `read`."""
+    if not argv:
+        return argv
+    ten = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().lstrip("({")
+    for ext in (".exe", ".cmd", ".bat"):
+        ten = ten.removesuffix(ext)
+    if ten != "rtk":
+        return argv
+
+    def _skip_flags(seq):
+        i = 0
+        while i < len(seq) and seq[i].startswith("-"):
+            tok = seq[i]
+            i += 2 if (tok in RTK_WRAPPER_FLAGS_VAL and i + 1 < len(seq)) else 1
+            if tok == "--":
+                break
+        return seq[i:]
+
+    rest = _skip_flags(argv[1:])
+    head = rest[0].lower() if rest else ""
+    if head in ("bypass", "proxy"):
+        return _skip_flags(rest[1:])
+    if head == "read":
+        return ["cat"] + rest[1:]
+    return rest
+
+
+'''
+
+
+_TIEN_TO_LINE = (
+    'TIEN_TO = {"sudo", "command", "nice", "exec", "builtin", "noglob", "nohup"}\n'
+)
+_RTK_SEARCH_RULE_STEPS = (
+    ("RTK_WRAPPER_FLAGS_VAL", [(
+        _TIEN_TO_LINE,
+        _TIEN_TO_LINE
+        + 'RTK_WRAPPER_FLAGS_VAL = {"--db-path", "-c", "--config", "-t", "--type"}\n',
+    )]),
+    ("_WIN_PATH_OR_QUOTE", [
+        ("def _tach_tu(phan, ngan_sach=None):\n",
+         _RTK_WIN_RE_SNIPPET + "def _tach_tu(phan, ngan_sach=None):\n"),
+        ("    try:\n        return shlex.split(phan, posix=True)\n",
+         _RTK_WIN_GUARD_SNIPPET
+         + "    try:\n        return shlex.split(phan, posix=True)\n"),
+    ]),
+    ("def _strip_rtk_prefix", [(
+        "def _chuan_hoa(argv):\n",
+        _RTK_STRIP_SNIPPET + "def _chuan_hoa(argv):\n",
+    )]),
+    ("_strip_rtk_prefix(argv)", [(
+        "        else:\n            break\n    if not argv:",
+        "        else:\n            stripped = _strip_rtk_prefix(argv)\n"
+        "            if stripped is not argv:\n                argv = stripped\n"
+        "            else:\n                break\n    if not argv:",
+    )]),
+)
+
+
+def _sync_rtk_search_rules(text: str) -> str:
+    """Idempotently ensure rtk wrapper normalization & Windows path support."""
+    for marker, pairs in _RTK_SEARCH_RULE_STEPS:
+        if marker not in text and all(old in text for old, _ in pairs):
+            for old, new in pairs:
+                text = text.replace(old, new, 1)
+    return text
+
+
 def _patch_search_rules(scripts_dir: Path) -> None:
     """NEW-03 & NEW-04: Antigravity MCP single-underscore & run_command/PS classification."""
     path = scripts_dir / "search_rules.py"
-    text = read_utf8(path)
+    orig_text = read_utf8(path)
+    text = _sync_rtk_search_rules(orig_text)
     if "_ORIG_LA_GOI_KHAI_NIEM" in text:
         if "TDQ_LSP_SERVER_RE" in text:
+            if text != orig_text:
+                write_utf8(path, text)
             return
         text = text[:text.index("_ORIG_LA_GOI_KHAI_NIEM")].rstrip() + "\n"
     if "import sys\n" not in text:

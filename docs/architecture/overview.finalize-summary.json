@@ -1,57 +1,41 @@
 {
   "schemaVersion": 1,
-  "ok": false,
+  "ok": true,
   "command": "finalize",
-  "status": "fail",
+  "status": "pass",
   "type": "architecture",
   "quality": "showcase",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\tdq\\models\\overview.json",
-    "sha256": "ed30328c54254bf706c559243e72e0834623f3b8393b6347caef34f64b3faba7",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\overview.json",
+    "sha256": "36422966c09ac48c600469ed0ceb2646dc6de7506a1397018ea71ed0da95b746",
     "bytes": 6456
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.html",
-    "sha256": "804d1ff75b4ee35e24cb3c64fbeef786a69373d79924ea0817850e6b526931f9",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\overview.html",
+    "sha256": "4372081ce53baebbb84cafbbe973154e7e04a5c9017d5e0cb0149ff903ce9dcc",
     "bytes": 826497
   },
   "gates": {
     "validate": "pass",
     "deliver": "pass",
     "check": "pass",
-    "browser-check": "fail"
+    "browser-check": "pass"
   },
-  "failedStage": "browser-check",
-  "diagnostics": [
-    {
-      "code": "viewer/browser-check-runtime",
-      "severity": "error",
-      "message": "browser-check could not complete its Chrome inspection.",
-      "subject": {
-        "artifact": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.html"
-      },
-      "evidence": {
-        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nWindows browser startup may have relaunched before connecting to the DevTools pipe. Retry from a non-elevated PowerShell opened normally, outside an elevated or compatibility-mode parent. Archify does not disable browser de-elevation or the sandbox to preserve pipe handles.\nChrome transport: Node v24.19.0, libuv 1.52.1, win32; pid=40396, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
-      },
-      "supportedFixes": [
-        "resolve the reported Chrome inspection error, then rerun browser-check"
-      ]
-    }
-  ],
+  "diagnostics": [],
   "diagnosticSummary": {
-    "total": 1,
-    "shown": 1,
+    "total": 0,
+    "shown": 0,
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\ForAgentCode\\TDQ-Workflow\\docs\\.staging.42a9652f3fcc4f52a07c30266cf57006\\overview.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\overview.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\overview.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\overview.browser-check.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 1347,
+  "durationMs": 2820,
   "browserCheck": {
     "requested": true,
-    "ran": false
+    "ran": true
   }
 }

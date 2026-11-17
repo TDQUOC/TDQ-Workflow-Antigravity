@@ -133,11 +133,27 @@ class ThuDependency(unittest.TestCase):
         with mock.patch.object(setup_status, "_run_tool", self._gia_lap({})):
             hang = setup_status.thu_dependency()
         self.assertEqual([h["ten"] for h in hang],
-                         ["graphify", "agent-lsp"])
+                         ["graphify", "agent-lsp", "rtk", "rg"])
         for h in hang:
             self.assertFalse(h["co"])
             self.assertEqual(h["ban"], "chưa cài")
             self.assertTrue(h["goi_y"], h["ten"])
+
+    def test_rtk_collision_guard_reports_rust_type_kit(self):
+        def fake_tool(binary, args, goi_y="", timeout=None):
+            if binary == "rtk" and args == ["gain"]:
+                return {"co": True, "chay_duoc": True, "duong_dan": "/bin/rtk", "ma": 2,
+                        "ra": "", "loi": "error: unexpected argument", "chi_tiet": "", "goi_y": goi_y}
+            if binary == "rtk":
+                return {"co": True, "chay_duoc": True, "duong_dan": "/bin/rtk", "ma": 0,
+                        "ra": "rtk 0.25.0", "loi": "", "chi_tiet": "", "goi_y": goi_y}
+            return {"co": False, "chay_duoc": False, "duong_dan": "", "ma": None,
+                    "ra": "", "loi": "", "chi_tiet": "chưa cài", "goi_y": goi_y}
+
+        with mock.patch.object(setup_status, "_run_tool", fake_tool):
+            hang = {h["ten"]: h for h in setup_status.thu_dependency()}
+        self.assertFalse(hang["rtk"]["co"])
+        self.assertIn("trùng tên Rust Type Kit", hang["rtk"]["chi_tiet"])
 
     def test_goi_y_cai_agent_lsp_lay_tu_tdq_lsp(self):
         """Gợi ý cài phải là lệnh THẬT: chép tay sẽ lệch khi tdq_lsp đổi cách cài."""

@@ -129,6 +129,8 @@ _RUNTIME_STATE = {
     "context_lines": [],
     "registered": False,
     "tool_args_present": False,
+    "overwrite": {},
+    "collapsed_payload": None,
 }
 
 
@@ -207,6 +209,8 @@ def _flush_agy_stdout():
             out = {"decision": "deny", "reason": _RUNTIME_STATE["deny_reason"]}
         else:
             out = {"decision": "allow"}
+            if _RUNTIME_STATE.get("overwrite"):
+                out["overwrite"] = dict(_RUNTIME_STATE["overwrite"])
         sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
         sys.stdout.flush()
         return
@@ -359,9 +363,37 @@ def normalize_payload(raw):
     return payload
 
 
+def set_overwrite(fields):
+    """Merge Antigravity PreToolUse `overwrite` fields (e.g. CommandLine)."""
+    if not isinstance(fields, dict) or not fields:
+        return
+    cur = _RUNTIME_STATE.setdefault("overwrite", {})
+    for key, val in fields.items():
+        if isinstance(key, str) and val is not None:
+            cur[key] = val
+
+
+def begin_collapsed_session(payload):
+    """Normalize once (if needed) and cache payload for in-process gates."""
+    raw = dict(payload) if isinstance(payload, dict) else {}
+    norm = normalize_payload(raw) if _RUNTIME_STATE.get("event") is None else raw
+    _RUNTIME_STATE["collapsed_payload"] = dict(norm)
+    _RUNTIME_STATE["overwrite"] = {}
+    return dict(norm)
+
+
+def end_collapsed_session():
+    """Clear cached collapsed payload while keeping overwrite/deny state."""
+    _RUNTIME_STATE["collapsed_payload"] = None
+
+
 def read_payload():
     """Read an object payload and discard ill-typed protocol fields."""
     _ensure_atexit()
+    cached = _RUNTIME_STATE.get("collapsed_payload")
+    if cached is not None:
+        return dict(cached)
+    _RUNTIME_STATE["overwrite"] = {}
     try:
         payload = json.load(sys.stdin)
     except (ValueError, OSError, UnicodeError):

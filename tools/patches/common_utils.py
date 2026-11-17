@@ -4,8 +4,9 @@ import io
 import os
 import shutil
 import stat
+import sys
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 
 EXCLUDED_SCRIPTS = {
@@ -189,3 +190,18 @@ def make_rule_markdown(filename: str, frontmatter: Dict[str, str], body: str) ->
             fm.append(f"{key}: {val}")
     fm.append("---")
     return "\n".join(fm) + "\n\n" + body.strip() + "\n"
+
+
+def import_rtk_integration(
+    root_dir: Path, src: Optional[Path] = None
+):
+    """Import rtk_integration from repo scripts or plugin scripts."""
+    candidates = [str(Path(root_dir) / "scripts")]
+    if src is not None:
+        candidates.append(str(Path(src) / "scripts"))
+    for cand in candidates:
+        if cand not in sys.path and os.path.isdir(cand):
+            sys.path.insert(0, cand)
+    import rtk_integration
+
+    return rtk_integration

@@ -1889,7 +1889,53 @@ def parse_args(argv):
                     help="chỉ kiểm tra môi trường Node.js >= 18 và gói Archify")
     ap.add_argument("--update-plugin", action="store_true",
                     help="kiểm tra và cập nhật plugin tdq-workflow từ remote marketplace")
+    ap.add_argument("--with-rtk", action="store_true",
+                    help="tải và cài user-level rtk + rg kiểm SHA256 (cần sự đồng ý của user)")
+    ap.add_argument("--check-rtk", action="store_true",
+                    help="kiểm tra trạng thái rtk + rg (Collision Guard) không chạm máy")
+    ap.add_argument("--mute-rtk-prompt", action="store_true",
+                    help="tắt dòng nhắc [TDQ:SETUP] thiếu rtk/rg lúc SessionStart")
+    ap.add_argument("--unmute-rtk-prompt", action="store_true",
+                    help="bật lại dòng nhắc [TDQ:SETUP] thiếu rtk/rg lúc SessionStart")
     return ap.parse_args(argv)
+
+
+def _in_rtk_check(rtk_mod, project):
+    st = rtk_mod.probe_rtk(cwd=project)
+    rg = rtk_mod.locate_rg_binary()
+    lbl = "trùng tên Rust Type Kit" if st.get("collision") else (
+        st.get("version") if st.get("valid") else st.get("reason")
+    )
+    ok = bool(st.get("valid"))
+    _log(f"rtk check · valid={ok} label={lbl} rg={rg or 'missing'}")
+    print(f"rtk · valid={ok} ({lbl}) | rg={rg or 'thiếu'} | muted={rtk_mod.is_prompt_muted()}")
+    return 0 if (ok and rg) else 1
+
+
+def _xu_ly_rtk_flags(args, project):
+    """Handle RTK CLI flags; return int exit code or None to continue."""
+    flags = (args.mute_rtk_prompt, args.unmute_rtk_prompt, args.check_rtk, args.with_rtk)
+    if not any(flags):
+        return None
+    if getattr(args, "khong_log", False):
+        os.environ["TDQ_LOG"] = "0"
+    import rtk_integration
+    if args.mute_rtk_prompt or args.unmute_rtk_prompt:
+        muted = bool(args.mute_rtk_prompt)
+        path = rtk_integration.set_prompt_muted(muted)
+        _log(f"rtk prompt · {'muted' if muted else 'unmuted'} ({path})")
+        print(f"rtk prompt · {'đã tắt' if muted else 'đã bật lại'} ({path})")
+        return 0
+    if args.check_rtk:
+        return _in_rtk_check(rtk_integration, project)
+    res = rtk_integration.install_rtk_and_rg(approve=True)
+    if res.get("ok"):
+        _log(f"rtk install · ĐẠT rtk={res.get('rtk_version')} rg={res.get('rg_version')}")
+        print(f"rtk · ĐẠT rtk={res.get('rtk_version')} ({res.get('rtk_path')}), rg={res.get('rg_version')} ({res.get('rg_path')}), cfg={res.get('config_path')}")
+        return 0
+    _log(f"rtk install · THẤT BẠI: {res.get('reason')}")
+    print(f"rtk · THẤT BẠI: {res.get('reason')}")
+    return 1
 
 
 def _khai_codex_mac_dinh():
@@ -1918,6 +1964,9 @@ def main(argv, khai_codex=None):
         # chính file này thì user gõ nó vẫn nghe một nửa tiếng ồn.
         os.environ["TDQ_LOG"] = "0"
     project = tdq_lsp._project_dir()
+    rtk_rc = _xu_ly_rtk_flags(args, project)
+    if rtk_rc is not None:
+        return rtk_rc
     if args.kiem_archify:
         ok, chi_tiet = kiem_tra_archify(project)
         if ok:
