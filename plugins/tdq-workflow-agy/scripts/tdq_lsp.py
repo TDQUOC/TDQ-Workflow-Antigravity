@@ -738,9 +738,38 @@ def kiem_mot_lenh(project, *, cache_mode="off", request=None, handoff=None, stat
     if thieu:
         print("Script này KHÔNG tự cài: `python3 scripts/tdq_setup.py` tự cài phần thiếu, "
               "rồi chạy kịch bản của bậc 8.")
+    _in_cong_cu_bo_tro(project)
     _log(f"done · {len(thieu)} bậc thiếu · {len(canh_bao)} cảnh báo · {len(truot)} tầng trượt")
     rc = EXIT_THIEU if thieu else (EXIT_SMOKE if truot else EXIT_OK)
     return rc, bac, smoke
+
+
+def kiem_tra_cong_cu_bo_tro(project=None):
+    """Non-blocking diagnostic for optional RTK + ripgrep binaries (outside 8 LSP rungs)."""
+    import rtk_integration
+    proj = project or _project_dir()
+    rtk_info = rtk_integration.probe_rtk(cwd=proj)
+    rg_path = rtk_integration.locate_rg_binary()
+    return {"rtk": rtk_info, "rg_path": rg_path}
+
+
+def _in_cong_cu_bo_tro(project):
+    """Print optional RTK + ripgrep status line without affecting 8-rung exit codes."""
+    try:
+        bo_tro = kiem_tra_cong_cu_bo_tro(project)
+    except Exception:  # noqa: BLE001 — optional diagnostic must never break tdq_lsp
+        return
+    rtk = bo_tro["rtk"]
+    if rtk.get("collision"):
+        rtk_txt = "trùng tên Rust Type Kit (cần cài rtk thật)"
+    elif rtk.get("valid"):
+        rtk_txt = f"sẵn sàng ({rtk.get('version', '?')})"
+    else:
+        rtk_txt = "chưa cài"
+    rg_txt = f"sẵn sàng ({bo_tro['rg_path']})" if bo_tro.get("rg_path") else "chưa cài"
+    print(f"Công cụ bổ trợ (RTK): rtk={rtk_txt} · rg={rg_txt}")
+    if not rtk.get("valid") or not bo_tro.get("rg_path"):
+        print("→ Xin quyền user để cài RTK + rg: `py -3 scripts/tdq_setup.py --with-rtk`")
 
 
 def cmd_kiem(args):

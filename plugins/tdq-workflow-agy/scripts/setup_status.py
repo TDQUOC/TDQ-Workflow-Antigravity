@@ -54,6 +54,8 @@ CONG_CU = (
     # Single source of truth: `tdq_lsp` is the module that owns the ladder, so the install
     # command lives there and is never re-typed here.
     ("agent-lsp", ["--version"], tdq_lsp.INSTALL_AGENT_LSP),
+    ("rtk", ["--version"], "py -3 scripts/tdq_setup.py --with-rtk"),
+    ("rg", ["--version"], "py -3 scripts/tdq_setup.py --with-rtk"),
 )
 
 # How long any single external command may take. `agent-lsp doctor` starts 14 real language
@@ -134,6 +136,10 @@ def _run_tool(binary, args, goi_y="", timeout=TIMEOUT_MAC_DINH, env=None):
     Every captured stream goes through `mask_secrets` before it leaves this function.
     """
     duong_dan = shutil.which(binary)
+    if not duong_dan and binary in ("rtk", "rg"):
+        import rtk_integration
+        duong_dan = (rtk_integration.locate_rtk_binary()
+                     if binary == "rtk" else rtk_integration.locate_rg_binary()) or ""
     if not duong_dan:
         _log(f"{binary}: not installed")
         return {"co": False, "chay_duoc": False, "duong_dan": "", "ma": None,
@@ -209,12 +215,20 @@ def thu_dependency():
             ban = "chưa cài"
         else:
             ban = _dong_dau(ket_qua["ra"]) or _dong_dau(ket_qua["loi"]) or "không đọc được"
+        co = ket_qua["co"]
+        chi_tiet = ket_qua["chi_tiet"]
+        if ten == "rtk" and co:
+            gain_res = _run_tool("rtk", ["gain"], goi_y=goi_y)
+            if not gain_res.get("chay_duoc") or gain_res.get("ma", 0) != 0:
+                co = False
+                chi_tiet = "trùng tên Rust Type Kit"
+                ban = f"{ban} ({chi_tiet})" if ban != "không đọc được" else chi_tiet
         hang.append({
             "ten": ten,
-            "co": ket_qua["co"],
+            "co": co,
             "ban": ban,
             "duong_dan": ket_qua["duong_dan"],
-            "chi_tiet": ket_qua["chi_tiet"],
+            "chi_tiet": chi_tiet,
             "goi_y": goi_y,
         })
     return hang

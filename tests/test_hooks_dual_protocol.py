@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -342,3 +343,170 @@ def test_ec16_lsp_gate_mcp_routing_and_empty_args(tmp_path):
     )
     assert broken_res.returncode == 0
     assert json.loads(broken_res.stdout.strip())["decision"] == "allow"
+
+
+def _make_fake_rtk_shim(bin_dir: Path) -> None:
+    """Create an isolated fake rtk shim supporting --version, gain, and rewrite."""
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    helper_py = bin_dir / "fake_rtk_impl.py"
+    helper_py.write_text(
+        "import sys\n"
+        "args = sys.argv[1:]\n"
+        "if args == ['--version']:\n"
+        "    print('rtk 0.30.0')\n"
+        "elif args == ['gain']:\n"
+        "    print('total saved: 0')\n"
+        "elif len(args) >= 2 and args[0] == 'rewrite':\n"
+        "    cmd = args[2] if args[1] == '--' and len(args) >= 3 else args[1]\n"
+        "    if cmd.startswith('git '):\n"
+        "        print('rtk ' + cmd)\n"
+        "        sys.exit(3)\n"
+        "    sys.exit(1)\n",
+        encoding="utf-8",
+    )
+    if os.name == "nt":
+        shim = bin_dir / "rtk.cmd"
+        shim.write_text(f'@echo off\r\n"{sys.executable}" "{helper_py}" %*\r\n', encoding="utf-8")
+    else:
+        shim = bin_dir / "rtk"
+        shim.write_text(f"#!/bin/sh\nexec \"{sys.executable}\" \"{helper_py}\" \"$@\"\n", encoding="utf-8")
+        os.chmod(shim, 0o755)
+
+
+def test_ec17_command_gate_rtk_collapse_and_setup_notice(tmp_path):
+    """EC-17: Compiled command_gate collapses search+bash+rtk, and session_start emits [TDQ:SETUP] once."""
+    repo = tmp_path / "repo_ec17"
+    repo.mkdir()
+    _init_git_repo(repo)
+
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    fake_bin = tmp_path / "fake_bin"
+    _make_fake_rtk_shim(fake_bin)
+
+    base_paths = [os.path.dirname(sys.executable)]
+    for tool_name in ("py", "cmd", "git"):
+        found = shutil.which(tool_name)
+        if found:
+            tool_dir = os.path.dirname(found)
+            if tool_dir not in base_paths:
+                base_paths.append(tool_dir)
+    if os.name == "nt":
+        sys_root = os.environ.get("SystemRoot", r"C:\Windows")
+        for win_dir in (sys_root, os.path.join(sys_root, "System32")):
+            if win_dir not in base_paths:
+                base_paths.append(win_dir)
+    else:
+        for posix_dir in ("/usr/bin", "/bin"):
+            if posix_dir not in base_paths:
+                base_paths.append(posix_dir)
+    clean_path = os.pathsep.join(base_paths)
+
+    isolated_env = {
+        "HOME": str(fake_home),
+        "USERPROFILE": str(fake_home),
+        "APPDATA": str(fake_home / "AppData" / "Roaming"),
+        "LOCALAPPDATA": str(fake_home / "AppData" / "Local"),
+        "XDG_CONFIG_HOME": str(fake_home / ".config"),
+        "TDQ_RTK_BIN": "",
+        "PATH": clean_path,
+    }
+    rtk_env = {**isolated_env, "PATH": str(fake_bin) + os.pathsep + clean_path}
+
+    # 1. rtk bypass grep foo src/ -> denied by collapsed search_gate with [TDQ:SEARCH]
+    bypass_res = _run_hook(
+        "command_gate.py",
+        {
+            "workspacePaths": [str(repo)],
+            "conversation_id": "conv-ec17-search",
+            "tool_name": "run_command",
+            "tool_input": {"CommandLine": "rtk bypass grep foo src/"},
+        },
+        event="PreToolUse",
+        cwd=PLUGIN_DIR,
+        extra_env=rtk_env,
+    )
+    assert bypass_res.returncode == 0
+    bypass_body = json.loads(bypass_res.stdout.strip())
+    assert bypass_body["decision"] == "deny"
+    assert "[TDQ:SEARCH]" in bypass_body["reason"]
+    assert "overwrite" not in bypass_body
+
+    # 2. git checkout -b claude-bad -> [TDQ:GIT] recorded in turn ledger & denied on AGY PreToolUse
+    bad_branch_cmd = "git checkout -b " + "claude" + "-bad"
+    git_res = _run_hook(
+        "command_gate.py",
+        {
+            "workspacePaths": [str(repo)],
+            "conversation_id": "conv-ec17-git",
+            "tool_name": "run_command",
+            "tool_input": {"CommandLine": bad_branch_cmd},
+        },
+        event="PreToolUse",
+        cwd=PLUGIN_DIR,
+        extra_env=rtk_env,
+    )
+    assert git_res.returncode == 0
+    git_body = json.loads(git_res.stdout.strip())
+    assert git_body["decision"] == "deny"
+    assert "[TDQ:GIT]" in git_body["reason"]
+    assert "overwrite" not in git_body
+    git_rows = _common.turn_rows(str(repo), {"cwd": str(repo), "conversation_id": "conv-ec17-git"})
+    assert any(r.get("code") == "TDQ:GIT" for r in git_rows)
+
+    # 3. git status with fake rtk shim -> allow + overwrite.CommandLine = "rtk git status"
+    status_res = _run_hook(
+        "command_gate.py",
+        {
+            "workspacePaths": [str(repo)],
+            "conversation_id": "conv-ec17-rtk",
+            "tool_name": "run_command",
+            "tool_input": {"CommandLine": "git status"},
+        },
+        event="PreToolUse",
+        cwd=PLUGIN_DIR,
+        extra_env=rtk_env,
+    )
+    assert status_res.returncode == 0
+    assert json.loads(status_res.stdout.strip()) == {
+        "decision": "allow",
+        "overwrite": {"CommandLine": "rtk git status"},
+    }
+
+    # 4. Compiled session_start.py without rtk on PATH emits [TDQ:SETUP] --with-rtk once, skips when muted
+    ss1 = _run_hook(
+        "session_start.py",
+        {"workspacePaths": [str(repo)], "conversation_id": "conv-ec17-ss1"},
+        event="SessionStart",
+        cwd=PLUGIN_DIR,
+        extra_env=isolated_env,
+    )
+    assert ss1.returncode == 0
+    msg1 = json.loads(ss1.stdout.strip())["injectSteps"][0]["systemMessage"]["systemMessage"]
+    assert "[TDQ:SETUP]" in msg1
+    assert "--with-rtk" in msg1
+
+    ss2 = _run_hook(
+        "session_start.py",
+        {"workspacePaths": [str(repo)], "conversation_id": "conv-ec17-ss1"},
+        event="SessionStart",
+        cwd=PLUGIN_DIR,
+        extra_env=isolated_env,
+    )
+    assert ss2.returncode == 0
+    msg2 = json.loads(ss2.stdout.strip())["injectSteps"][0]["systemMessage"]["systemMessage"]
+    assert "--with-rtk" not in msg2
+
+    prefs_file = fake_home / ".gemini" / "config" / "tdq-rtk-prefs.json"
+    prefs_file.parent.mkdir(parents=True, exist_ok=True)
+    prefs_file.write_text(json.dumps({"mute_prompt": True}) + "\n", encoding="utf-8")
+    ss_muted = _run_hook(
+        "session_start.py",
+        {"workspacePaths": [str(repo)], "conversation_id": "conv-ec17-ss2"},
+        event="SessionStart",
+        cwd=PLUGIN_DIR,
+        extra_env=isolated_env,
+    )
+    assert ss_muted.returncode == 0
+    msg_muted = json.loads(ss_muted.stdout.strip())["injectSteps"][0]["systemMessage"]["systemMessage"]
+    assert "--with-rtk" not in msg_muted

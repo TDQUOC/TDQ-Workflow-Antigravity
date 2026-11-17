@@ -171,20 +171,20 @@ def quyet(cwd, phien, ten_tool, vao):
     return ok, ly_do, pl, bool(dung_xuong)
 
 
-def main():
+def eval_search(payload):
+    """Evaluate search gate rules for an already-read payload; return True to allow continuing."""
     try:
-        payload = _common.read_payload()
-        ten_tool = payload.get("tool_name") or ""
+        ten_tool = (payload or {}).get("tool_name") or ""
         if ten_tool != "Grep" and ten_tool.lower() not in search_rules.CONG_CU_SHELL:
-            sys.exit(0)
+            return True
         cwd = _common.payload_cwd(payload)
-        vao = payload.get("tool_input") or {}
+        vao = (payload or {}).get("tool_input") or {}
         ok, ly_do, pl, dung_xuong = quyet(cwd, _common.session_id(payload), ten_tool, vao)
     except SystemExit:
         raise
     except Exception as exc:  # noqa: BLE001 — a gate must never break the agent's tool call
         _log(f"error, letting the call through: {type(exc).__name__}: {exc}")
-        sys.exit(0)
+        return True
 
     _log(f"{ten_tool} · {pl.get('loai')} · doan_mo={pl.get('doan_mo')} · "
          f"{'cho' if ok else 'CHAN'} · {ly_do.splitlines()[0][:80]}")
@@ -194,7 +194,7 @@ def main():
         _common.remind(cwd, payload, MA, [ly_do, "Concept layer: LSP find_symbol/find_references, "
                                       "graphify query."])
     if ok:
-        sys.exit(0)
+        return True
     # Every Claude Code deny goes through `_common.block()` (pinned by test_compliance_protocol).
     # `day_du=True`: the 200-character reminder cap would cut the one thing the agent needs here —
     # which query to run instead. The rules already start the reason with the code; drop it so
@@ -202,6 +202,12 @@ def main():
     dong = [str(x) for x in ly_do.splitlines()] or [str(ly_do)]
     dong[0] = dong[0].replace(f"[{MA}] ", "", 1)
     _common.block(cwd, payload, MA, dong, day_du=True)
+    return False
+
+
+def main():
+    eval_search(_common.read_payload())
+    sys.exit(0)
 
 
 if __name__ == "__main__":
