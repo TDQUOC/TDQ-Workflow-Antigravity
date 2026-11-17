@@ -42,6 +42,7 @@ LIET_KE = {"ls", "dir", "find", "fd", "fdfind", "tree", "get-childitem", "gci"}
 DOC_FILE = {"cat", "type", "get-content", "gc"}
 TU_KHOA_SHELL = {"do", "then", "else", "elif", "if", "while", "until", "!", "time", "{", "(", "(("}
 TIEN_TO = {"sudo", "command", "nice", "exec", "builtin", "noglob", "nohup"}
+RTK_WRAPPER_FLAGS_VAL = {"--db-path", "-c", "--config", "-t", "--type"}
 GAN_BIEN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
 # Short options whose value is the next argument (or the rest of the cluster).
@@ -350,10 +351,20 @@ def _tach_script(s, do_sau=0, ngan_sach=None):
     return [o for o in ong_list if o]
 
 
+_WIN_PATH_OR_QUOTE = re.compile(
+    r"""'[^']*'|"[^"\\]*(?:\\.[^"\\]*)*"|((?:^|(?<=\s))[A-Za-z]:\\[^\s'"]*)"""
+)
+
+
 def _tach_tu(phan, ngan_sach=None):
     """argv of one command; best effort when quotes are unbalanced."""
     if ngan_sach:
         ngan_sach.tinh_cong_viec(len(phan))
+    if ":\\" in phan:
+        phan = _WIN_PATH_OR_QUOTE.sub(
+            lambda m: m.group(1).replace("\\", "\\\\") if m.group(1) else m.group(0),
+            phan,
+        )
     try:
         return shlex.split(phan, posix=True)
     except ValueError:
@@ -379,8 +390,28 @@ def _bo_tuy_chon(argv):
     return argv
 
 
+def _strip_rtk_prefix(argv: list[str]) -> list[str]:
+    """Strip rtk wrapper binary, pre-subcommand flags, bypass/proxy, and map `read` -> `cat`."""
+    if not argv:
+        return argv
+    ten = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().lstrip("({")
+    if ten.removesuffix(".exe") != "rtk":
+        return argv
+    rest = argv[1:]
+    i = 0
+    while i < len(rest) and rest[i].startswith("-"):
+        i += 2 if (rest[i] in RTK_WRAPPER_FLAGS_VAL and i + 1 < len(rest)) else 1
+    rest = rest[i:]
+    head = rest[0].lower() if rest else ""
+    if head in ("bypass", "proxy"):
+        return rest[1:]
+    if head == "read":
+        return ["cat"] + rest[1:]
+    return rest
+
+
 def _chuan_hoa(argv):
-    """Strip VAR=x, sudo, env, timeout N, xargs, shell keywords. Returns (program, args, via_xargs)."""
+    """Strip VAR=x, sudo, env, timeout N, xargs, rtk, shell keywords. Returns (program, args, via_xargs)."""
     qua_xargs = False
     while argv:
         t = argv[0]
@@ -403,12 +434,15 @@ def _chuan_hoa(argv):
             while argv and argv[0].startswith("-"):
                 argv = argv[2:] if argv[0] in ("-I", "-n", "-P", "-d", "-L", "-s", "-E") else argv[1:]
         else:
-            break
+            stripped = _strip_rtk_prefix(argv)
+            if stripped is not argv:
+                argv = stripped
+            else:
+                break
     if not argv:
         return "", [], qua_xargs
     ten = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().rstrip(")}")
-    if ten.endswith(".exe"):
-        ten = ten[:-4]
+    ten = ten.removesuffix(".exe")
     return ten, argv[1:], qua_xargs
 
 

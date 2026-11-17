@@ -765,5 +765,123 @@ class TestParserRecognitionVaBudget(unittest.TestCase):
         self.assertIn("exhausted", ly_do)
 
 
+class TestRtkWrapperNormalization(unittest.TestCase):
+    """T1.2: Strip rtk wrapper prefix, flags, bypass/proxy, and map `rtk read` to DOC_FILE."""
+
+    def test_rtk_grep_direct(self):
+        pl = sr.phan_loai("run_command", "rtk grep foo src/")
+        self.assertEqual(pl["loai"], sr.TIM_CODE)
+        self.assertEqual(pl["tu_khoa"], ["foo"])
+
+    def test_rtk_bypass_and_proxy(self):
+        pl_bypass = sr.phan_loai("run_command", "rtk bypass rg bar scripts/")
+        self.assertEqual(pl_bypass["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_bypass["tu_khoa"], ["bar"])
+
+        pl_proxy = sr.phan_loai("run_command", "rtk proxy findstr baz *.py")
+        self.assertEqual(pl_proxy["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_proxy["tu_khoa"], ["baz"])
+
+    def test_rtk_windows_exe_path_bypass(self):
+        pl_unquoted = sr.phan_loai("run_command", r"C:\Users\admin\.local\bin\rtk.exe bypass rg foo src/")
+        self.assertEqual(pl_unquoted["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_unquoted["tu_khoa"], ["foo"])
+
+        pl_quoted = sr.phan_loai("run_command", r'"C:\Users\admin\.local\bin\rtk.exe" bypass rg foo src/')
+        self.assertEqual(pl_quoted["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_quoted["tu_khoa"], ["foo"])
+
+    def test_rtk_pre_subcommand_flags_and_env(self):
+        pl_flags = sr.phan_loai("run_command", "rtk --skip-env -v --db-path C:/tmp/db.sqlite grep hello src/")
+        self.assertEqual(pl_flags["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_flags["tu_khoa"], ["hello"])
+
+        pl_eq_flag = sr.phan_loai("run_command", "rtk --db-path=C:/tmp/db.sqlite -c rtk.toml -t py rg hello src/")
+        self.assertEqual(pl_eq_flag["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_eq_flag["tu_khoa"], ["hello"])
+
+        pl_env = sr.phan_loai("run_command", "rtk --ultra-compact bypass env FOO=1 rg hello src/")
+        self.assertEqual(pl_env["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_env["tu_khoa"], ["hello"])
+
+    def test_rtk_read_maps_to_doc_file_and_not_search(self):
+        pl_read = sr.phan_loai("run_command", "rtk read app.py")
+        self.assertEqual(pl_read["loai"], sr.KHONG)
+
+        pl_pipe = sr.phan_loai("run_command", "rtk read app.py | grep foo")
+        self.assertEqual(pl_pipe["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_pipe["tu_khoa"], ["foo"])
+
+    def test_rtk_git_subcommands(self):
+        pl_git_grep = sr.phan_loai("run_command", "rtk git grep TODO")
+        self.assertEqual(pl_git_grep["loai"], sr.TIM_CODE)
+        self.assertEqual(pl_git_grep["tu_khoa"], ["TODO"])
+
+        pl_git_status = sr.phan_loai("run_command", "rtk git status")
+        self.assertEqual(pl_git_status["loai"], sr.KHONG)
+
+    def test_rtk_bare_and_subshell_group(self):
+        self.assertEqual(sr.phan_loai("run_command", "rtk --help")["loai"], sr.KHONG)
+        pl_group = sr.phan_loai("run_command", "(rtk grep foo src/)")
+        self.assertEqual(pl_group["loai"], sr.TIM_CODE)
+        self.assertEqual(sr._strip_rtk_prefix(["rtk", "read", "app.py"]), ["cat", "app.py"])
+
+    def test_cli_fixes_a_patch_search_rules_syncs_and_is_idempotent(self):
+        import importlib.util
+        import tempfile
+
+        tools_dir = os.path.join(ROOT, "tools")
+        if tools_dir not in sys.path:
+            sys.path.insert(0, tools_dir)
+        from patches.cli_fixes_a import _patch_search_rules
+
+        with open(os.path.join(ROOT, "scripts", "search_rules.py"), encoding="utf-8") as fh:
+            src = fh.read()
+        # Simulate pre-T1.2 search_rules.py without rtk normalization
+        stripped_src = src.replace(
+            'RTK_WRAPPER_FLAGS_VAL = {"--db-path", "-c", "--config", "-t", "--type"}\n', ""
+        )
+        stripped_src = re.sub(
+            r"_WIN_PATH_OR_QUOTE = re\.compile\(.*?\)\n\n\n", "", stripped_src, flags=re.S
+        )
+        stripped_src = re.sub(
+            r'    if ":\\\\" in phan:.*?\n    try:', "    try:", stripped_src, flags=re.S
+        )
+        stripped_src = re.sub(
+            r"def _strip_rtk_prefix\(.*?\n\n\ndef _chuan_hoa", "def _chuan_hoa", stripped_src, flags=re.S
+        )
+        stripped_src = re.sub(
+            r"        else:\n            stripped = _strip_rtk_prefix\(argv\).*?    if not argv:",
+            "        else:\n            break\n    if not argv:",
+            stripped_src,
+            flags=re.S,
+        )
+        self.assertNotIn("_strip_rtk_prefix", stripped_src)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "search_rules.py")
+            with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(stripped_src)
+            from pathlib import Path
+            _patch_search_rules(Path(tmp))
+            with open(p, encoding="utf-8") as fh:
+                once = fh.read()
+            _patch_search_rules(Path(tmp))
+            with open(p, encoding="utf-8") as fh:
+                twice = fh.read()
+            self.assertEqual(once, twice)
+            self.assertIn("TDQ_LSP_SERVER_RE", once)
+            self.assertIn("_strip_rtk_prefix", once)
+
+            spec = importlib.util.spec_from_file_location("patched_sr", p)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            self.assertEqual(
+                mod.phan_loai("run_command", r"C:\Users\admin\.local\bin\rtk.exe bypass rg foo src/")["loai"],
+                mod.TIM_CODE,
+            )
+            self.assertEqual(mod.phan_loai("run_command", "rtk read app.py")["loai"], mod.KHONG)
+
+
 if __name__ == "__main__":
     unittest.main()
