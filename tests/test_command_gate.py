@@ -1,4 +1,5 @@
 """Tests for T2.3 unified PreToolUse `command_gate.py` and manifest/AGENTS rules."""
+import io
 import json
 import os
 import stat
@@ -6,55 +7,48 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
-from unittest import mock
 
 from helper import HOOKS, ROOT
 
 TOOLS = os.path.join(ROOT, "tools")
 
+_FAKE_RTK_IMPL = (
+    "import sys\n"
+    "args = sys.argv[1:]\n"
+    "if args == ['--version']:\n"
+    "    print('rtk 1.2.0')\n"
+    "elif args == ['gain']:\n"
+    "    print('total saved: 0')\n"
+    "elif len(args) >= 2 and args[0] == 'rewrite':\n"
+    "    cmd = args[2] if args[1] == '--' and len(args) >= 3 else args[1]\n"
+    "    if cmd.startswith(('git ', 'pytest ', 'cargo ')):\n"
+    "        print('rtk ' + cmd)\n"
+    "        sys.exit(3)\n"
+    "    sys.exit(1)\n"
+)
+
 
 def _install_fake_rtk(bin_dir):
-    """Create a fake rtk executable/cmd shim in bin_dir supporting --version, gain, rewrite."""
+    """Create an isolated fake rtk binary in bin_dir supporting version/gain/rewrite."""
     os.makedirs(bin_dir, exist_ok=True)
     if sys.platform.startswith("win"):
-        py_helper = os.path.join(bin_dir, "fake_rtk_impl.py")
-        cmd_shim = os.path.join(bin_dir, "rtk.cmd")
-        Path(py_helper).write_text(
-            "import sys\n"
-            "args = sys.argv[1:]\n"
-            "if args == ['--version']:\n"
-            "    print('rtk 1.2.0')\n"
-            "elif args == ['gain']:\n"
-            "    print('total saved: 0')\n"
-            "elif len(args) >= 2 and args[0] == 'rewrite':\n"
-            "    cmd = args[2] if args[1] == '--' and len(args) >= 3 else args[1]\n"
-            "    if cmd.startswith(('git ', 'pytest ', 'cargo ')):\n"
-            "        print('rtk ' + cmd)\n"
-            "        sys.exit(3)\n"
-            "    sys.exit(1)\n",
-            encoding="utf-8",
-        )
-        Path(cmd_shim).write_text(
-            f'@echo off\r\n"{sys.executable}" "{py_helper}" %*\r\n',
-            encoding="utf-8",
-        )
-        return cmd_shim
+        from pip._vendor.distlib.scripts import ScriptMaker
+
+        launcher = ScriptMaker(None, bin_dir)._get_launcher("t")
+        zbuf = io.BytesIO()
+        with zipfile.ZipFile(zbuf, "w") as zf:
+            zf.writestr("__main__.py", _FAKE_RTK_IMPL)
+        shebang = f"#!{sys.executable}\n".encode("utf-8")
+        exe_path = os.path.join(bin_dir, "rtk.exe")
+        Path(exe_path).write_bytes(launcher + shebang + zbuf.getvalue())
+        return exe_path
+    helper_py = os.path.join(bin_dir, "fake_rtk_impl.py")
+    Path(helper_py).write_text(_FAKE_RTK_IMPL, encoding="utf-8")
     sh_bin = os.path.join(bin_dir, "rtk")
     Path(sh_bin).write_text(
-        f'#!{sys.executable}\n'
-        "import sys\n"
-        "args = sys.argv[1:]\n"
-        "if args == ['--version']:\n"
-        "    print('rtk 1.2.0')\n"
-        "elif args == ['gain']:\n"
-        "    print('total saved: 0')\n"
-        "elif len(args) >= 2 and args[0] == 'rewrite':\n"
-        "    cmd = args[2] if args[1] == '--' and len(args) >= 3 else args[1]\n"
-        "    if cmd.startswith(('git ', 'pytest ', 'cargo ')):\n"
-        "        print('rtk ' + cmd)\n"
-        "        sys.exit(3)\n"
-        "    sys.exit(1)\n",
+        f'#!/bin/sh\nexec "{sys.executable}" "{helper_py}" "$@"\n',
         encoding="utf-8",
     )
     os.chmod(sh_bin, os.stat(sh_bin).st_mode | stat.S_IXUSR)
@@ -67,6 +61,8 @@ class TestCommandGate(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.cwd = self._tmp.name
+        self.fake_home = os.path.join(self.cwd, "fake-home")
+        os.makedirs(self.fake_home, exist_ok=True)
         self.fake_bin = os.path.join(self.cwd, "fake-bin")
         _install_fake_rtk(self.fake_bin)
 
@@ -78,10 +74,16 @@ class TestCommandGate(unittest.TestCase):
         env = dict(os.environ)
         env["PYTHONUTF8"] = "1"
         env["TDQ_PROJECT_DIR"] = self.cwd
+        env["HOME"] = self.fake_home
+        env["USERPROFILE"] = self.fake_home
+        env["APPDATA"] = os.path.join(self.fake_home, "AppData", "Roaming")
+        env["LOCALAPPDATA"] = os.path.join(self.fake_home, "AppData", "Local")
+        env["TDQ_RTK_BIN"] = ""
+        py_dir = os.path.dirname(sys.executable)
         if extra_path:
-            env["PATH"] = self.fake_bin + os.pathsep + env.get("PATH", "")
+            env["PATH"] = self.fake_bin + os.pathsep + py_dir
         else:
-            env["PATH"] = os.path.dirname(sys.executable)
+            env["PATH"] = py_dir
         proc = subprocess.run(
             [sys.executable, "-X", "utf8", gate_path, "--event", "PreToolUse"],
             input=json.dumps(payload),
@@ -147,7 +149,9 @@ class TestCommandGate(unittest.TestCase):
         data = json.loads(proc.stdout)
         self.assertEqual(data["decision"], "allow")
         self.assertEqual(data["overwrite"]["CommandLine"], "rtk git diff")
-        rows = _common.turn_rows(self.cwd, {"cwd": self.cwd, "session_id": "cmd-gate-git-diff"})
+        rows = _common.turn_rows(
+            self.cwd, {"cwd": self.cwd, "session_id": "cmd-gate-git-diff"}
+        )
         self.assertFalse(any(r.get("code") == "TDQ:OUTPUT" for r in rows))
 
     def test_qc_role_skips_git_diff_compression(self):

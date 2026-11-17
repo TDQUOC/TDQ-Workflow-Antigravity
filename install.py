@@ -70,19 +70,15 @@ def _adjust_hooks_for_platform(installed_dir: Path) -> None:
     hooks_file = installed_dir / "hooks.json"
     if not hooks_file.is_file():
         return
-    text = hooks_file.read_text(encoding="utf-8")
-    is_win = platform.system() == "Windows"
-    py_prefix = "py -3" if is_win else "python3"
-    
-    # Replace prefix if different
-    if is_win:
+    text = hooks_file.read_text(encoding="utf-8").replace("\r\n", "\n")
+    if platform.system() == "Windows":
         text = text.replace("python3 -X utf8", "py -3 -X utf8")
         text = text.replace("python3 ", "py -3 ")
     else:
         text = text.replace("py -3 -X utf8", "python3 -X utf8")
         text = text.replace("py -3 ", "python3 ")
-    
-    hooks_file.write_text(text, encoding="utf-8")
+    with open(hooks_file, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(text)
 
 
 def _find_agy_cli() -> str:
@@ -125,54 +121,65 @@ def _git_pull_ff_only(repo_root: Path) -> bool:
     return True
 
 
-def _import_rtk_integration(src: Path | None = None):
-    """Import scripts/rtk_integration from repo root or fallback plugin directory."""
-    candidates = [str(ROOT_DIR / "scripts")]
-    if src is not None:
-        candidates.append(str(Path(src) / "scripts"))
-    for cand in candidates:
-        if cand not in sys.path and os.path.isdir(cand):
-            sys.path.insert(0, cand)
-    import rtk_integration
-    return rtk_integration
+def _prompt_rtk_install(args, stdin_tty=None, ask_fn=input) -> bool:
+    """Return True when --with-rtk is passed or interactive user approves."""
+    if getattr(args, "with_rtk", False):
+        return True
+    is_tty = bool(stdin_tty) if stdin_tty is not None else bool(sys.stdin.isatty())
+    if not is_tty:
+        return False
+    print("\n   Optional token-saving tools missing (rtk + rg).")
+    print(
+        "   Sources: github.com/rtk-ai/rtk & BurntSushi/ripgrep"
+        " (SHA256-verified -> ~/.local/bin)"
+    )
+    try:
+        ans = ask_fn("   Install rtk + rg user-level now? [y/N]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return ans in ("y", "yes")
 
 
-def _handle_rtk_trigger(args, src: Path | None = None, stdin_tty=None, ask_fn=input) -> int:
-    """Detect rtk/rg after plugin install and request consent before user-level setup."""
-    rtk_mod = _import_rtk_integration(src)
-    st_rtk = rtk_mod.probe_rtk(cwd=str(ROOT_DIR))
-    rg_bin = rtk_mod.locate_rg_binary()
+def _handle_rtk_trigger(
+    args, src: Path | None = None, stdin_tty=None, ask_fn=input
+) -> int:
+    """Detect rtk/rg after install and ask consent before user-level setup."""
+    tools_dir = str(ROOT_DIR / "tools")
+    if tools_dir not in sys.path:
+        sys.path.insert(0, tools_dir)
+    from patches.common_utils import import_rtk_integration
+
+    rtk_mod = import_rtk_integration(ROOT_DIR, src)
     if getattr(args, "skip_rtk", False):
         print("   [NOTE] RTK/rg trigger skipped (--skip-rtk).")
         return 0
+    st_rtk = rtk_mod.probe_rtk(cwd=str(ROOT_DIR))
+    rg_bin = rtk_mod.locate_rg_binary()
     if st_rtk.get("valid") and rg_bin:
         if not getattr(args, "dry_run", False):
             rtk_mod.ensure_rtk_config()
         print(f"   [OK] rtk ({st_rtk.get('version')}) & rg ready.")
         return 0
     if getattr(args, "dry_run", False):
-        msg = ("Would install SHA256-verified rtk + rg into ~/.local/bin."
-               if getattr(args, "with_rtk", False)
-               else "Missing rtk/rg detected; run with --with-rtk or approve prompt.")
+        msg = (
+            "Would install SHA256-verified rtk + rg into ~/.local/bin."
+            if getattr(args, "with_rtk", False)
+            else "Missing rtk/rg detected; run with --with-rtk or approve prompt."
+        )
         print(f"[DRY-RUN] {msg}")
         return 0
-    approve = bool(getattr(args, "with_rtk", False))
-    if not approve:
-        is_tty = bool(stdin_tty) if stdin_tty is not None else bool(sys.stdin.isatty())
-        if is_tty:
-            print("\n   Optional token-saving tools missing (rtk + rg).")
-            print("   Sources: github.com/rtk-ai/rtk & BurntSushi/ripgrep (SHA256-verified -> ~/.local/bin)")
-            try:
-                ans = ask_fn("   Install rtk + rg user-level now? [y/N]: ").strip().lower()
-            except (EOFError, KeyboardInterrupt):
-                ans = ""
-            approve = ans in ("y", "yes")
-    if not approve:
-        print("   [NOTE] rtk/rg not installed. Install with permission anytime: py -3 install.py --with-rtk")
+    if not _prompt_rtk_install(args, stdin_tty=stdin_tty, ask_fn=ask_fn):
+        print(
+            "   [NOTE] rtk/rg not installed. Install with permission anytime:"
+            " py -3 install.py --with-rtk"
+        )
         return 0
     res = rtk_mod.install_rtk_and_rg(approve=True)
     if res.get("ok"):
-        print(f"   [OK] Installed rtk ({res.get('rtk_version')}) & rg ({res.get('rg_version')}).")
+        print(
+            f"   [OK] Installed rtk ({res.get('rtk_version')})"
+            f" & rg ({res.get('rg_version')})."
+        )
         return 0
     print(f"   [WARN] rtk/rg install failed: {res.get('reason')}", file=sys.stderr)
     return 1 if getattr(args, "with_rtk", False) else 0
@@ -185,8 +192,16 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true", help="Simulate installation without writing to disk")
     parser.add_argument("--no-enable", action="store_true", help="Do not automatically enable the plugin after install")
     parser.add_argument("--update", action="store_true", help="Run 'git pull --ff-only' in the repository before reinstalling")
-    parser.add_argument("--with-rtk", action="store_true", help="Download and install SHA256-verified rtk + rg into ~/.local/bin")
-    parser.add_argument("--skip-rtk", action="store_true", help="Skip rtk + rg installation check/prompt")
+    parser.add_argument(
+        "--with-rtk",
+        action="store_true",
+        help="Download and install SHA256-verified rtk + rg into ~/.local/bin",
+    )
+    parser.add_argument(
+        "--skip-rtk",
+        action="store_true",
+        help="Skip rtk + rg installation check/prompt",
+    )
     args = parser.parse_args()
 
     if args.update and not args.dry_run:

@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 """RTK integration: probe, safe rewrite, TOML config, and SHA256 installer."""
-from datetime import datetime
-import hashlib
-import io
+from __future__ import annotations
+
 import json
 import os
-from pathlib import Path
-import platform
 import re
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
-import urllib.request
-import zipfile
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPTS_DIR not in sys.path:
@@ -58,6 +52,7 @@ REQUIRED_EXCLUDE_COMMANDS = ("grep", "rg")
 def _log(message: str) -> None:
     """Emit an ISO-timestamped diagnostic line to stderr unless TDQ_LOG=0."""
     if os.environ.get("TDQ_LOG", "1") != "0":
+        from datetime import datetime
         stamp = datetime.now().isoformat(timespec="seconds")
         print(f"[{stamp}] rtk_integration: {message}", file=sys.stderr)
 
@@ -66,34 +61,92 @@ def _local_bin_dir() -> str:
     return os.path.expanduser(os.path.join("~", ".local", "bin"))
 
 
+_WIN_SHIM_EXTS = (".cmd", ".bat", ".com")
+
+
+def _is_windows() -> bool:
+    return os.name == "nt" or sys.platform.startswith("win")
+
+
 def _candidate_names(base: str) -> tuple[str, ...]:
-    if os.name == "nt" or sys.platform.startswith("win"):
-        return (f"{base}.exe", base)
+    if _is_windows():
+        return (base,) if base.lower().endswith(".exe") else (f"{base}.exe",)
     return (base,)
 
 
-def _find_in_local_bin(base: str) -> str | None:
-    bin_dir = _local_bin_dir()
-    for name in _candidate_names(base):
-        candidate = os.path.join(bin_dir, name)
-        if not os.path.isfile(candidate):
+def _find_in_dirs(base: str, dirs: list[str]) -> str | None:
+    """Find executable in explicit directory list, skipping CWD and shims."""
+    win = _is_windows()
+    for d in dirs:
+        if not d:
             continue
-        if os.name == "nt" or os.access(candidate, os.X_OK):
-            return candidate
+        for name in _candidate_names(base):
+            candidate = os.path.join(d, name)
+            if not os.path.isfile(candidate):
+                continue
+            if win or os.access(candidate, os.X_OK):
+                return candidate
     return None
 
 
+def _find_in_local_bin(base: str) -> str | None:
+    return _find_in_dirs(base, [_local_bin_dir()])
+
+
+def _safe_path_dirs() -> list[str]:
+    """Return PATH directories excluding '.', empty entries, and current CWD."""
+    cwd_norm = os.path.abspath(os.getcwd()).casefold()
+    safe = []
+    for raw in os.environ.get("PATH", "").split(os.pathsep):
+        cleaned = raw.strip().strip('"')
+        if not cleaned or cleaned == ".":
+            continue
+        if os.path.abspath(cleaned).casefold() == cwd_norm:
+            continue
+        safe.append(cleaned)
+    return safe
+
+
+def _is_safe_path_binary(candidate: str | None) -> str | None:
+    """Reject CWD matches and Windows .cmd/.bat/.com shims from which()."""
+    if not candidate:
+        return None
+    norm = os.path.abspath(candidate)
+    cwd_norm = os.path.abspath(os.getcwd()).casefold()
+    if os.path.dirname(norm).casefold() == cwd_norm:
+        return None
+    if _is_windows() and not norm.lower().endswith(".exe"):
+        return None
+    return candidate
+
+
+def _safe_which_binary(base: str) -> str | None:
+    """Locate binary safely via non-CWD PATH .exe lookup then ~/.local/bin."""
+    cand = shutil.which(base)
+    if _is_safe_path_binary(cand):
+        return cand
+    if cand is not None:
+        found = _find_in_dirs(base, _safe_path_dirs())
+        if found:
+            return found
+    return _find_in_local_bin(base)
+
+
 def locate_rtk_binary() -> str | None:
-    """Locate the rtk binary from TDQ_RTK_BIN, PATH, or ~/.local/bin."""
+    """Locate rtk from TDQ_RTK_BIN, non-CWD PATH .exe, or ~/.local/bin."""
     env_bin = os.environ.get("TDQ_RTK_BIN", "").strip()
     if env_bin:
-        return env_bin if os.path.isfile(env_bin) else shutil.which(env_bin)
-    return shutil.which("rtk") or _find_in_local_bin("rtk")
+        if os.sep in env_bin or "/" in env_bin:
+            if _is_windows() and env_bin.lower().endswith(_WIN_SHIM_EXTS):
+                return None
+            return env_bin if os.path.isfile(env_bin) else None
+        return _safe_which_binary(env_bin)
+    return _safe_which_binary("rtk")
 
 
 def locate_rg_binary() -> str | None:
-    """Locate the ripgrep (rg) binary from PATH or ~/.local/bin."""
-    return shutil.which("rg") or _find_in_local_bin("rg")
+    """Locate ripgrep (rg) from non-CWD PATH .exe or ~/.local/bin."""
+    return _safe_which_binary("rg")
 
 
 def _default_runner(argv, **kwargs):
@@ -179,11 +232,12 @@ def _run_gain_check(exec_fn, resolved: str) -> int | None:
         with tempfile.TemporaryDirectory(prefix="tdq-rtk-gain-") as tmp_db:
             gain_env = dict(os.environ)
             gain_env["RTK_DB_PATH"] = os.path.join(tmp_db, "history.db")
+            gain_env["RTK_SUPPRESS_HOOK_WARNING"] = "1"
             proc = exec_fn(
                 [resolved, "gain"],
                 capture_output=True,
                 text=True,
-                timeout=2.0,
+                timeout=8.0,
                 env=gain_env,
             )
             return proc.returncode
@@ -211,6 +265,11 @@ def probe_rtk(cwd=None, runner=None, bin_path=None) -> dict:
     if not ok_ver:
         return _probe_result(False, ver_str, resolved, ver_reason)
     gain_rc = _run_gain_check(exec_fn, resolved)
+    if gain_rc is None:
+        _log(f"probe_rtk: gain check failed at {resolved} (ver={ver_str})")
+        return _probe_result(
+            False, ver_str, resolved, "gain_probe_failed", collision=False
+        )
     if gain_rc != 0:
         _log(f"probe_rtk: collision at {resolved} (ver={ver_str}, gain={gain_rc})")
         return _probe_result(
@@ -405,8 +464,14 @@ def can_compress_dump_command(
 
 
 def _qualify_rtk_for_powershell(rewritten: str, bin_path: str) -> str:
-    """Wrap leading rtk token for PowerShell when ~/.local/bin is off parent PATH."""
-    if not sys.platform.startswith("win") or shutil.which("rtk") is not None:
+    """Wrap leading rtk token for PowerShell when safe rtk is off non-CWD PATH."""
+    if not sys.platform.startswith("win"):
+        return rewritten
+    on_safe_path = bool(
+        _is_safe_path_binary(shutil.which("rtk"))
+        and _find_in_dirs("rtk", _safe_path_dirs())
+    )
+    if on_safe_path:
         return rewritten
     quoted = "'" + bin_path.replace("'", "''") + "'"
     out: list[str] = []
@@ -489,14 +554,17 @@ def _split_toml_sections(text: str) -> list[tuple[str, list[str]]]:
     return sections
 
 
-def _upsert_toml_key(lines: list[str], key: str, value: str) -> list[str]:
+def _upsert_toml_key(
+    lines: list[str], key: str, value: str, overwrite: bool = True
+) -> list[str]:
     key_re = re.compile(rf"^(\s*){re.escape(key)}\s*=.*$")
     for idx, line in enumerate(lines):
         if idx == 0 and line.lstrip().startswith("["):
             continue
         match = key_re.match(line)
         if match:
-            lines[idx] = f"{match.group(1)}{key} = {value}"
+            if overwrite:
+                lines[idx] = f"{match.group(1)}{key} = {value}"
             return lines
     insert_at = len(lines)
     while insert_at > 1 and not lines[insert_at - 1].strip():
@@ -545,6 +613,10 @@ def _merge_rtk_toml(orig_text: str) -> str:
         sec_lines = by_name[sec_name]
         for key, val in pairs:
             _upsert_toml_key(sec_lines, key, val)
+        if sec_name == "display":
+            # rtk v1.2.0 DisplayConfig lacks #[serde(default)] on colors & max_width
+            _upsert_toml_key(sec_lines, "colors", "false", overwrite=False)
+            _upsert_toml_key(sec_lines, "max_width", "120", overwrite=False)
         if sec_name == "hooks":
             _merge_exclude_commands(sec_lines)
     chunks = [
@@ -576,9 +648,11 @@ def ensure_rtk_config(config_path=None) -> tuple[bool, str]:
     """Ensure rtk config.toml matches TDQ rules, backing up any existing file."""
     target = os.fspath(config_path) if config_path else default_rtk_config_path()
     try:
-        orig_text = (
-            Path(target).read_text(encoding="utf-8") if os.path.isfile(target) else ""
-        )
+        if os.path.isfile(target):
+            with open(target, encoding="utf-8") as fh:
+                orig_text = fh.read()
+        else:
+            orig_text = ""
         merged = _merge_rtk_toml(orig_text)
         if orig_text == merged:
             return True, f"rtk config up to date: {target}"
@@ -593,12 +667,14 @@ def ensure_rtk_config(config_path=None) -> tuple[bool, str]:
 
 
 def _default_fetcher(url: str) -> bytes:
+    import urllib.request
     req = urllib.request.Request(url, headers={"User-Agent": "tdq-setup"})
     with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT) as resp:  # noqa: S310
         return resp.read()
 
 
 def _platform_arch(plat: str | None = None, mach: str | None = None) -> tuple[str, str]:
+    import platform
     p = (plat or sys.platform).lower()
     os_kind = "windows" if p.startswith("win") else (
         "darwin" if p == "darwin" else "linux"
@@ -667,12 +743,15 @@ def _expected_sha256(asset: dict, assets: dict[str, dict], fetch_fn) -> str:
 def _extract_binary(
     archive_bytes: bytes, asset_name: str, bin_name: str
 ) -> bytes | None:
+    import io
     if asset_name.endswith(".zip"):
+        import zipfile
         with zipfile.ZipFile(io.BytesIO(archive_bytes)) as zf:
             match = next(
                 (n for n in zf.namelist() if os.path.basename(n) == bin_name), None
             )
             return zf.read(match) if match else None
+    import tarfile
     with tarfile.open(fileobj=io.BytesIO(archive_bytes), mode="r:gz") as tf:
         member = next(
             (
@@ -731,6 +810,7 @@ def ensure_windows_user_path(bin_dir: str, reg_module=None, notify_fn=None) -> b
 def _install_release_binary(
     api_url: str, tool: str, pick_fn, target_bin_dir: str, os_kind: str, fetch_fn
 ) -> tuple[bool, str, str, str]:
+    import hashlib
     rel = json.loads(fetch_fn(api_url))
     tag = str(rel.get("tag_name") or "?")
     assets = {a.get("name"): a for a in rel.get("assets") or [] if a.get("name")}
@@ -762,6 +842,8 @@ def _is_temp_path(path: str) -> bool:
 def _install_both_tools(
     edition: str, target_bin: str, os_kind: str, arch: str, fetch_fn
 ) -> tuple[bool, dict]:
+    import tarfile
+    import zipfile
     try:
         ok_rtk, rtk_ver, rtk_dest, msg_rtk = _install_release_binary(
             RTK_RELEASE_API,
@@ -836,12 +918,14 @@ def install_rtk_and_rg(
     }
 
 
-def _default_prefs_path() -> Path:
+def _default_prefs_path():
+    from pathlib import Path
     return Path.home() / ".gemini" / "config" / "tdq-rtk-prefs.json"
 
 
 def is_prompt_muted(prefs_path=None) -> bool:
     """Return True when the user muted SessionStart RTK setup reminders."""
+    from pathlib import Path
     target = Path(prefs_path) if prefs_path else _default_prefs_path()
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
@@ -850,8 +934,10 @@ def is_prompt_muted(prefs_path=None) -> bool:
         return False
 
 
-def set_prompt_muted(muted: bool, prefs_path=None) -> Path:
+def set_prompt_muted(muted: bool, prefs_path=None):
     """Persist the user's mute preference for SessionStart RTK setup."""
+    from datetime import datetime
+    from pathlib import Path
     target = Path(prefs_path) if prefs_path else _default_prefs_path()
     try:
         data = json.loads(target.read_text(encoding="utf-8"))

@@ -1900,31 +1900,40 @@ def parse_args(argv):
     return ap.parse_args(argv)
 
 
+def _in_rtk_check(rtk_mod, project):
+    st = rtk_mod.probe_rtk(cwd=project)
+    rg = rtk_mod.locate_rg_binary()
+    lbl = "trùng tên Rust Type Kit" if st.get("collision") else (
+        st.get("version") if st.get("valid") else st.get("reason")
+    )
+    ok = bool(st.get("valid"))
+    _log(f"rtk check · valid={ok} label={lbl} rg={rg or 'missing'}")
+    print(f"rtk · valid={ok} ({lbl}) | rg={rg or 'thiếu'} | muted={rtk_mod.is_prompt_muted()}")
+    return 0 if (ok and rg) else 1
+
+
 def _xu_ly_rtk_flags(args, project):
-    """Handle explicit RTK CLI flags; return int exit code or None to continue normal flow."""
-    if not any((args.mute_rtk_prompt, args.unmute_rtk_prompt, args.check_rtk, args.with_rtk)):
+    """Handle RTK CLI flags; return int exit code or None to continue."""
+    flags = (args.mute_rtk_prompt, args.unmute_rtk_prompt, args.check_rtk, args.with_rtk)
+    if not any(flags):
         return None
+    if getattr(args, "khong_log", False):
+        os.environ["TDQ_LOG"] = "0"
     import rtk_integration
-    if args.mute_rtk_prompt:
-        path = rtk_integration.set_prompt_muted(True)
-        print(f"rtk prompt · đã tắt ({path})")
-        return 0
-    if args.unmute_rtk_prompt:
-        path = rtk_integration.set_prompt_muted(False)
-        print(f"rtk prompt · đã bật lại ({path})")
+    if args.mute_rtk_prompt or args.unmute_rtk_prompt:
+        muted = bool(args.mute_rtk_prompt)
+        path = rtk_integration.set_prompt_muted(muted)
+        _log(f"rtk prompt · {'muted' if muted else 'unmuted'} ({path})")
+        print(f"rtk prompt · {'đã tắt' if muted else 'đã bật lại'} ({path})")
         return 0
     if args.check_rtk:
-        st = rtk_integration.probe_rtk(cwd=project)
-        rg = rtk_integration.locate_rg_binary()
-        rtk_lbl = "trùng tên Rust Type Kit" if st.get("collision") else (
-            st.get("version") if st.get("valid") else st.get("reason")
-        )
-        print(f"rtk · valid={bool(st.get('valid'))} ({rtk_lbl}) | rg={rg or 'thiếu'} | muted={rtk_integration.is_prompt_muted()}")
-        return 0 if (st.get("valid") and rg) else 1
+        return _in_rtk_check(rtk_integration, project)
     res = rtk_integration.install_rtk_and_rg(approve=True)
     if res.get("ok"):
+        _log(f"rtk install · ĐẠT rtk={res.get('rtk_version')} rg={res.get('rg_version')}")
         print(f"rtk · ĐẠT rtk={res.get('rtk_version')} ({res.get('rtk_path')}), rg={res.get('rg_version')} ({res.get('rg_path')}), cfg={res.get('config_path')}")
         return 0
+    _log(f"rtk install · THẤT BẠI: {res.get('reason')}")
     print(f"rtk · THẤT BẠI: {res.get('reason')}")
     return 1
 

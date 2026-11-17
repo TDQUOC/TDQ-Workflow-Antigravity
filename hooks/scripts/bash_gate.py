@@ -149,19 +149,8 @@ def _enforce_agy_bash_guards(payload, cwd):
     return False
 
 
-def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind=False):
-    """Run approve/setphase, branch-name, commit-msg, dump, and state-write checks."""
-    approve_match = APPROVE_CLI.search(cmd)
-    if approve_match:
-        _check_signal_mismatch(cwd, payload, approve_match.group(1), rows)
-    setphase_match = SETPHASE_CLI.search(cmd)
-    if setphase_match:
-        target = NEXT_PHASE_TARGET.get(setphase_match.group(1))
-        # A gate already approved needs no fresh consent to move on: the QC fix round goes
-        # back with `set phase=implement` long after the plan was approved, no signal written.
-        if target and not state.get(f"{target}_approved"):
-            _check_signal_mismatch(cwd, payload, target, rows)
-
+def _check_git_conventions(cmd, cwd, payload, rows):
+    """Warn on banned branch/worktree prefixes or AI traces in git commit messages."""
     branch_names = []
     for pattern in BRANCH_PATTERNS:
         branch_names += [_clean(m) for m in pattern.findall(cmd)]
@@ -186,6 +175,21 @@ def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind
                     "How: drop 'generated with …', 'được tạo cùng/với AI' and any AI Co-Authored-By.",  # i18n-allow
                     echo_line("TDQ:GIT", "fixed the commit message"),
                 ], rows=rows)
+
+
+def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind=False):
+    """Run approve/setphase, branch/commit conventions, dump, and state-write checks."""
+    approve_match = APPROVE_CLI.search(cmd)
+    if approve_match:
+        _check_signal_mismatch(cwd, payload, approve_match.group(1), rows)
+    setphase_match = SETPHASE_CLI.search(cmd)
+    if setphase_match:
+        target = NEXT_PHASE_TARGET.get(setphase_match.group(1))
+        # A gate already approved needs no fresh consent: QC fix round returns with `set phase=implement`.
+        if target and not state.get(f"{target}_approved"):
+            _check_signal_mismatch(cwd, payload, target, rows)
+
+    _check_git_conventions(cmd, cwd, payload, rows)
 
     if not suppress_output_remind and DUMP.search(cmd) and not GIOI_HAN.search(cmd) and not CAT_GHI.search(cmd):
         remind(cwd, payload, "TDQ:OUTPUT", [

@@ -11,7 +11,10 @@ TOOLS_DIR = Path(__file__).resolve().parent
 ROOT_DIR = TOOLS_DIR.parent
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
-from patches.common_utils import sync_tree_inplace
+from patches.common_utils import (  # noqa: E402
+    import_rtk_integration,
+    sync_tree_inplace,
+)
 
 
 DEFAULT_SRC = ROOT_DIR / "plugins" / "tdq-workflow-agy"
@@ -30,7 +33,7 @@ def _copy_plugin(src: Path, dst: Path) -> int:
 
 
 def _sync_local_mcp(dst: Path) -> dict:
-    """Merge local non-repo lsp args / env (never committed to repo) into installed copy."""
+    """Merge local non-repo lsp args/env into installed mcp_config.json."""
     mcp_file = dst / "mcp_config.json"
     cfg = json.loads(mcp_file.read_text(encoding="utf-8"))
     claude_json = Path.home() / ".claude.json"
@@ -43,35 +46,31 @@ def _sync_local_mcp(dst: Path) -> dict:
             if isinstance(lsp, dict) and lsp.get("command"):
                 cfg["mcpServers"]["lsp"]["command"] = lsp["command"]
                 if isinstance(lsp.get("args"), list):
-                    cfg["mcpServers"]["lsp"]["args"] = [str(a) for a in lsp["args"]]
+                    cfg["mcpServers"]["lsp"]["args"] = [
+                        str(a) for a in lsp["args"]
+                    ]
                 synced.append("lsp")
         except (OSError, ValueError):
             pass
-    mcp_file.write_text(json.dumps(cfg, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    mcp_file.write_text(
+        json.dumps(cfg, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     return {"synced_servers": synced}
 
 
-def _import_rtk_integration(src: Path | None = None):
-    """Import scripts/rtk_integration from repo root or fallback plugin directory."""
-    candidates = [str(ROOT_DIR / "scripts")]
-    if src is not None:
-        candidates.append(str(Path(src) / "scripts"))
-    for cand in candidates:
-        if cand not in sys.path and os.path.isdir(cand):
-            sys.path.insert(0, cand)
-    import rtk_integration
-    return rtk_integration
-
-
-def _handle_rtk(src: Path, with_rtk: bool, skip_rtk: bool, dry_run: bool) -> tuple[int, dict]:
+def _handle_rtk(
+    src: Path, with_rtk: bool, skip_rtk: bool, dry_run: bool
+) -> tuple[int, dict]:
     """Probe rtk/rg status and install only when --with-rtk is explicitly passed."""
     if skip_rtk:
         _log("RTK/rg check skipped (--skip-rtk)")
         return 0, {
             "present": False, "valid": False, "rg_present": False,
-            "version": "", "installed": False, "skipped": True, "reason": "skip_rtk",
+            "version": "", "installed": False, "skipped": True,
+            "reason": "skip_rtk",
         }
-    rtk_mod = _import_rtk_integration(src)
+    rtk_mod = import_rtk_integration(ROOT_DIR, src)
     probe = rtk_mod.probe_rtk(cwd=str(ROOT_DIR))
     rg_bin = rtk_mod.locate_rg_binary()
     valid = bool(probe.get("valid"))
@@ -112,7 +111,9 @@ def _handle_rtk(src: Path, with_rtk: bool, skip_rtk: bool, dry_run: bool) -> tup
 
 def parse_args(argv=None) -> argparse.Namespace:
     """Parse CLI arguments for the Antigravity native plugin installer."""
-    ap = argparse.ArgumentParser(description="Install tdq-workflow-agy native Antigravity plugin.")
+    ap = argparse.ArgumentParser(
+        description="Install tdq-workflow-agy native Antigravity plugin."
+    )
     ap.add_argument("--src", type=Path, default=DEFAULT_SRC)
     ap.add_argument("--target", type=Path, default=DEFAULT_DST)
     ap.add_argument("--dry-run", action="store_true")
@@ -123,18 +124,38 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def main(argv=None) -> int:
-    """Install the compiled plugin and report JSON status including optional RTK probe."""
+    """Install plugin and print JSON status including optional RTK probe."""
     args = parse_args(argv)
     if not (args.src / "plugin.json").is_file():
-        raise SystemExit(f"Compiled plugin missing at {args.src}; run build_agy_plugin.py first.")
+        raise SystemExit(
+            f"Compiled plugin missing at {args.src}; run build_agy_plugin.py first."
+        )
     if args.dry_run:
-        rtk_rc, rtk_status = _handle_rtk(args.src, args.with_rtk, args.skip_rtk, dry_run=True)
-        print(json.dumps({"dry_run": True, "src": str(args.src), "target": str(args.target), "rtk": rtk_status}))
+        rtk_rc, rtk_status = _handle_rtk(
+            args.src, args.with_rtk, args.skip_rtk, dry_run=True
+        )
+        print(json.dumps({
+            "dry_run": True,
+            "src": str(args.src),
+            "target": str(args.target),
+            "rtk": rtk_status,
+        }))
         return rtk_rc
     files_copied = _copy_plugin(args.src, args.target)
-    mcp_res = _sync_local_mcp(args.target) if args.sync_local_mcp else {"synced_servers": []}
-    rtk_rc, rtk_status = _handle_rtk(args.src, args.with_rtk, args.skip_rtk, dry_run=False)
-    print(json.dumps({"installed_to": str(args.target), "files": files_copied, **mcp_res, "rtk": rtk_status}))
+    mcp_res = (
+        _sync_local_mcp(args.target)
+        if args.sync_local_mcp
+        else {"synced_servers": []}
+    )
+    rtk_rc, rtk_status = _handle_rtk(
+        args.src, args.with_rtk, args.skip_rtk, dry_run=False
+    )
+    print(json.dumps({
+        "installed_to": str(args.target),
+        "files": files_copied,
+        **mcp_res,
+        "rtk": rtk_status,
+    }))
     return rtk_rc
 
 

@@ -352,7 +352,7 @@ def _tach_script(s, do_sau=0, ngan_sach=None):
 
 
 _WIN_PATH_OR_QUOTE = re.compile(
-    r"""'[^']*'|"[^"\\]*(?:\\.[^"\\]*)*"|((?:^|(?<=\s))[A-Za-z]:\\[^\s'"]*)"""
+    r"""'[^']*'|"[^"\\]*(?:\\.[^"\\]*)*"|((?:^|(?<=[\s({]))[A-Za-z]:\\[^\s'"]*)"""
 )
 
 
@@ -384,55 +384,103 @@ def _tach_tu(phan, ngan_sach=None):
         return [t.strip("'\"") for t in re.findall(r"\"[^\"]*\"?|'[^']*'?|\S+", phan)]
 
 
-def _bo_tuy_chon(argv):
+_WRAPPER_VAL_FLAGS = {
+    "sudo": {
+        "-u", "--user", "-g", "--group", "-C", "--close-from", "-h", "--host",
+        "-p", "--prompt",
+    },
+    "env": {"-u", "--unset", "-C", "--chdir", "-S", "--split-string", "--argv0"},
+    "timeout": {"-k", "--kill-after", "-s", "--signal"},
+    "nice": {"-n", "--adjustment"},
+}
+
+
+def _exe_stem(tok):
+    """Return lowercase basename without braces or Windows .exe/.cmd/.bat suffix."""
+    ten = tok.replace("\\", "/").rsplit("/", 1)[-1].lower().lstrip("({").rstrip(")}")
+    for ext in (".exe", ".cmd", ".bat"):
+        if ten.endswith(ext):
+            return ten[: -len(ext)]
+    return ten
+
+
+def _bo_tuy_chon(argv, val_flags=()):
+    """Strip leading option tokens (and option values in val_flags) up to `--`."""
     while argv and argv[0].startswith("-"):
+        tok = argv[0]
         argv = argv[1:]
+        if tok == "--":
+            break
+        if tok in val_flags and argv:
+            argv = argv[1:]
     return argv
 
 
+def _peel_prefix_token(argv):
+    """Strip one keyword, var assignment, or sudo/env/timeout wrapper; else None."""
+    t = argv[0]
+    if t.lower() in TU_KHOA_SHELL or GAN_BIEN.match(t):
+        return argv[1:]
+    if t[:1] in "({" and len(t) > 1:
+        return [t.lstrip("({")] + argv[1:]
+    tl = _exe_stem(t)
+    if tl in TIEN_TO:
+        return _bo_tuy_chon(argv[1:], _WRAPPER_VAL_FLAGS.get(tl, ()))
+    if tl == "env":
+        rest = argv[1:]
+        while rest and (rest[0].startswith("-") or GAN_BIEN.match(rest[0])):
+            if rest[0].startswith("-"):
+                rest = _bo_tuy_chon(rest, _WRAPPER_VAL_FLAGS["env"])
+            else:
+                rest = rest[1:]
+        return rest
+    if tl == "timeout":
+        return _bo_tuy_chon(argv[1:], _WRAPPER_VAL_FLAGS["timeout"])[1:]
+    return None
+
+
 def _strip_rtk_prefix(argv: list[str]) -> list[str]:
-    """Strip rtk wrapper binary, pre-subcommand flags, bypass/proxy, and map `read` -> `cat`."""
+    """Strip rtk binary, flags, bypass/proxy + trailing flags, and map `read`."""
     if not argv:
         return argv
     ten = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().lstrip("({")
-    if ten.removesuffix(".exe") != "rtk":
+    for ext in (".exe", ".cmd", ".bat"):
+        ten = ten.removesuffix(ext)
+    if ten != "rtk":
         return argv
-    rest = argv[1:]
-    i = 0
-    while i < len(rest) and rest[i].startswith("-"):
-        i += 2 if (rest[i] in RTK_WRAPPER_FLAGS_VAL and i + 1 < len(rest)) else 1
-    rest = rest[i:]
+
+    def _skip_flags(seq):
+        i = 0
+        while i < len(seq) and seq[i].startswith("-"):
+            tok = seq[i]
+            i += 2 if (tok in RTK_WRAPPER_FLAGS_VAL and i + 1 < len(seq)) else 1
+            if tok == "--":
+                break
+        return seq[i:]
+
+    rest = _skip_flags(argv[1:])
     head = rest[0].lower() if rest else ""
     if head in ("bypass", "proxy"):
-        return rest[1:]
+        return _skip_flags(rest[1:])
     if head == "read":
         return ["cat"] + rest[1:]
     return rest
 
 
 def _chuan_hoa(argv):
-    """Strip VAR=x, sudo, env, timeout N, xargs, rtk, shell keywords. Returns (program, args, via_xargs)."""
+    """Strip VAR=x, sudo, env, timeout N, xargs, rtk, shell keywords."""
     qua_xargs = False
     while argv:
-        t = argv[0]
-        tl = t.lower()
-        if tl in TU_KHOA_SHELL or GAN_BIEN.match(t):
-            argv = argv[1:]
-        elif t[:1] in "({" and len(t) > 1:
-            argv = [t.lstrip("({")] + argv[1:]
-        elif tl in TIEN_TO:
-            argv = _bo_tuy_chon(argv[1:])
-        elif tl == "env":
-            argv = argv[1:]
-            while argv and (argv[0].startswith("-") or GAN_BIEN.match(argv[0])):
-                argv = argv[1:]
-        elif tl == "timeout":
-            argv = _bo_tuy_chon(argv[1:])[1:]
-        elif tl == "xargs":
+        peeled = _peel_prefix_token(argv)
+        if peeled is not None:
+            argv = peeled
+            continue
+        if argv[0].lower() == "xargs":
             qua_xargs = True
             argv = argv[1:]
             while argv and argv[0].startswith("-"):
-                argv = argv[2:] if argv[0] in ("-I", "-n", "-P", "-d", "-L", "-s", "-E") else argv[1:]
+                val_xargs = ("-I", "-n", "-P", "-d", "-L", "-s", "-E")
+                argv = argv[2:] if argv[0] in val_xargs else argv[1:]
         else:
             stripped = _strip_rtk_prefix(argv)
             if stripped is not argv:
@@ -441,9 +489,7 @@ def _chuan_hoa(argv):
                 break
     if not argv:
         return "", [], qua_xargs
-    ten = argv[0].replace("\\", "/").rsplit("/", 1)[-1].lower().rstrip(")}")
-    ten = ten.removesuffix(".exe")
-    return ten, argv[1:], qua_xargs
+    return _exe_stem(argv[0]), argv[1:], qua_xargs
 
 
 def _git_lenh_con(args):

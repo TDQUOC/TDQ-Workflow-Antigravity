@@ -271,6 +271,15 @@ def main():
             if not st_rtk.get("valid") or not rtk_integration.locate_rg_binary():
                 turn_log_append(cwd, "remind", session=session_id(payload),
                                 code="SETUP-RTK", event="SessionStart")
+                import os as _os
+                import sys as _sys
+                from datetime import datetime as _dt
+                if _os.environ.get("TDQ_LOG", "1") != "0":
+                    _stamp = _dt.now().isoformat(timespec="seconds")
+                    print(
+                        f"[{_stamp}] session_start: SETUP-RTK missing rtk/rg",
+                        file=_sys.stderr,
+                    )
                 nhac_rtk = (
                     "[TDQ:SETUP] Missing rtk/rg for token savings — ask user permission to run "
                     "py -3 scripts/tdq_setup.py --with-rtk (or --mute-rtk-prompt to hide)."

@@ -151,6 +151,11 @@
               "detail": "Ki\u1ec3m tra m\u1ed1c LSP/Graphify tr\u01b0\u1edbc khi cho ph\u00e9p Grep (`hooks/scripts/search_gate.py:132-197`)"
             },
             {
+              "id": "step-command-gate-rtk",
+              "text": "G\u1ed9p c\u1ed5ng run_command v\u00e0 n\u00e9n RTK c\u1ed9ng sinh",
+              "detail": "command_gate g\u1ed9p search + bash + rtk rewrite qua overwrite.CommandLine (`hooks/scripts/command_gate.py:40-98`, `scripts/rtk_integration.py:248-522`)"
+            },
+            {
               "id": "step-edit-gate",
               "text": "C\u1ed5ng b\u1ea3o v\u1ec7 ghi file theo pha v\u00e0 b\u1ea3n \u0111\u1ed3 ph\u00e2n c\u00f4ng",
               "detail": "Ki\u1ec3m tra tr\u1ea1ng th\u00e1i duy\u1ec7t, tick plan v\u00e0 SHA-256 team map (`hooks/scripts/edit_gate.py:77-278`)"

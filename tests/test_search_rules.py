@@ -826,6 +826,24 @@ class TestRtkWrapperNormalization(unittest.TestCase):
         self.assertEqual(pl_group["loai"], sr.TIM_CODE)
         self.assertEqual(sr._strip_rtk_prefix(["rtk", "read", "app.py"]), ["cat", "app.py"])
 
+    def test_rtk_security_hardening_bypass_wrappers_and_subshell_winpath(self):
+        cases = [
+            ("rtk bypass -- rg foo src/", ["foo"]),
+            ("rtk proxy -v -- rg foo src/", ["foo"]),
+            ("rtk.cmd bypass rg foo src/", ["foo"]),
+            ("rtk.bat rg foo src/", ["foo"]),
+            ("/usr/bin/env rg foo src/", ["foo"]),
+            ("env -u PATH FOO=1 rg foo src/", ["foo"]),
+            ("sudo -u root rg foo src/", ["foo"]),
+            ("timeout -s 9 5 rg foo src/", ["foo"]),
+            (r"(C:\Users\admin\.local\bin\rtk.exe bypass rg foo src/)", ["foo"]),
+            (r"{C:\Users\admin\.local\bin\rtk.exe rg foo src/;}", ["foo"]),
+        ]
+        for cmd, exp_tok in cases:
+            pl = sr.phan_loai("run_command", cmd)
+            self.assertEqual(pl["loai"], sr.TIM_CODE, msg=f"Missed TIM_CODE for {cmd!r}: {pl}")
+            self.assertEqual(pl["tu_khoa"], exp_tok, msg=f"Bad tokens for {cmd!r}: {pl}")
+
     def test_cli_fixes_a_patch_search_rules_syncs_and_is_idempotent(self):
         import importlib.util
         import tempfile

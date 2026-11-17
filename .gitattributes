@@ -14,3 +14,4 @@ antigravity_portable/** -text
 docs/tdq/** -text
 docs/architecture/** -text
 docs/.staging.*/** -text
+*.sh text eol=lf

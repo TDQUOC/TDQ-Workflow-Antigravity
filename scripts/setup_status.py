@@ -135,11 +135,12 @@ def _run_tool(binary, args, goi_y="", timeout=TIMEOUT_MAC_DINH, env=None):
     `co=False` plus the command that would install it, and the page shows a "chưa cài" cell.
     Every captured stream goes through `mask_secrets` before it leaves this function.
     """
-    duong_dan = shutil.which(binary)
-    if not duong_dan and binary in ("rtk", "rg"):
+    if binary in ("rtk", "rg"):
         import rtk_integration
         duong_dan = (rtk_integration.locate_rtk_binary()
                      if binary == "rtk" else rtk_integration.locate_rg_binary()) or ""
+    else:
+        duong_dan = shutil.which(binary)
     if not duong_dan:
         _log(f"{binary}: not installed")
         return {"co": False, "chay_duoc": False, "duong_dan": "", "ma": None,

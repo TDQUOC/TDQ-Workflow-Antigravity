@@ -1,10 +1,12 @@
 """V3 Verification: Live cmd.exe /c dual-protocol hooks, all 24 TDQ:* codes, EC-01..EC-14."""
 import importlib.util
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
 
 WORKSPACE = Path(__file__).resolve().parent.parent
@@ -346,10 +348,9 @@ def test_ec16_lsp_gate_mcp_routing_and_empty_args(tmp_path):
 
 
 def _make_fake_rtk_shim(bin_dir: Path) -> None:
-    """Create an isolated fake rtk shim supporting --version, gain, and rewrite."""
+    """Create an isolated fake rtk binary supporting --version, gain, and rewrite."""
     bin_dir.mkdir(parents=True, exist_ok=True)
-    helper_py = bin_dir / "fake_rtk_impl.py"
-    helper_py.write_text(
+    impl_src = (
         "import sys\n"
         "args = sys.argv[1:]\n"
         "if args == ['--version']:\n"
@@ -361,15 +362,22 @@ def _make_fake_rtk_shim(bin_dir: Path) -> None:
         "    if cmd.startswith('git '):\n"
         "        print('rtk ' + cmd)\n"
         "        sys.exit(3)\n"
-        "    sys.exit(1)\n",
-        encoding="utf-8",
+        "    sys.exit(1)\n"
     )
     if os.name == "nt":
-        shim = bin_dir / "rtk.cmd"
-        shim.write_text(f'@echo off\r\n"{sys.executable}" "{helper_py}" %*\r\n', encoding="utf-8")
+        from pip._vendor.distlib.scripts import ScriptMaker
+
+        launcher = ScriptMaker(None, str(bin_dir))._get_launcher("t")
+        zbuf = io.BytesIO()
+        with zipfile.ZipFile(zbuf, "w") as zf:
+            zf.writestr("__main__.py", impl_src)
+        shebang = f"#!{sys.executable}\n".encode("utf-8")
+        (bin_dir / "rtk.exe").write_bytes(launcher + shebang + zbuf.getvalue())
     else:
+        helper_py = bin_dir / "fake_rtk_impl.py"
+        helper_py.write_text(impl_src, encoding="utf-8")
         shim = bin_dir / "rtk"
-        shim.write_text(f"#!/bin/sh\nexec \"{sys.executable}\" \"{helper_py}\" \"$@\"\n", encoding="utf-8")
+        shim.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{helper_py}" "$@"\n', encoding="utf-8")
         os.chmod(shim, 0o755)
 
 

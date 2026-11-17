@@ -246,3 +246,8 @@ def test_agy_installer_dry_run_with_rtk_never_installs_and_existing_ensures_conf
     assert ok_payload["rtk"]["valid"] is True
     assert ok_payload["rtk"]["rg_present"] is True
     assert ok_payload["rtk"]["installed"] is False
+
+
+def test_install_sh_uses_lf_line_endings_no_crlf():
+    raw = (ROOT / "install.sh").read_bytes()
+    assert b"\r\n" not in raw and b"\r" not in raw, "install.sh must use LF endings for POSIX bash"

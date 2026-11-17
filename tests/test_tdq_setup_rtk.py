@@ -1,6 +1,7 @@
 """Tests for T3.2 RTK integration in tdq_setup, tdq_lsp, and session_start."""
 import io
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -17,12 +18,17 @@ class TestTdqSetupAndLspRtk(unittest.TestCase):
     """Verify explicit RTK CLI flags in tdq_setup.py and non-breaking tdq_lsp summary."""
 
     def setUp(self):
+        self._orig_tdq_log = os.environ.get("TDQ_LOG")
         self._tmp = tempfile.TemporaryDirectory()
         self.cwd = self._tmp.name
         os.makedirs(os.path.join(self.cwd, ".git"), exist_ok=True)
         os.makedirs(os.path.join(self.cwd, "docs", "tdq"), exist_ok=True)
 
     def tearDown(self):
+        if self._orig_tdq_log is None:
+            os.environ.pop("TDQ_LOG", None)
+        else:
+            os.environ["TDQ_LOG"] = self._orig_tdq_log
         self._tmp.cleanup()
 
     def test_parse_args_accepts_rtk_flags(self):
@@ -81,12 +87,17 @@ class TestSessionStartRtkNotice(unittest.TestCase):
     """Verify SessionStart [TDQ:SETUP] 1-line notice respects mute and single-per-session dedupe."""
 
     def setUp(self):
+        self._orig_tdq_log = os.environ.get("TDQ_LOG")
         self._tmp = tempfile.TemporaryDirectory()
         self.cwd = self._tmp.name
         os.makedirs(os.path.join(self.cwd, ".git"), exist_ok=True)
         os.makedirs(os.path.join(self.cwd, "docs", "tdq"), exist_ok=True)
 
     def tearDown(self):
+        if self._orig_tdq_log is None:
+            os.environ.pop("TDQ_LOG", None)
+        else:
+            os.environ["TDQ_LOG"] = self._orig_tdq_log
         self._tmp.cleanup()
 
     def _run_session_start(self, sid, muted):
@@ -127,6 +138,49 @@ class TestSessionStartRtkNotice(unittest.TestCase):
         # Muted session stays silent about RTK
         out_muted = self._run_session_start("sid-muted", muted=True)
         self.assertNotIn("Missing rtk/rg", out_muted)
+
+    def test_tdq_setup_check_rtk_logs_iso_stderr_and_respects_khong_log(self):
+        import rtk_integration
+        import tdq_setup
+        os.environ.pop("TDQ_LOG", None)
+        ns_on = tdq_setup.parse_args(["--check-rtk"])
+        buf_on = io.StringIO()
+        with (
+            mock.patch.object(rtk_integration, "probe_rtk", return_value={"valid": True, "collision": False, "version": "1.2.0"}),
+            mock.patch.object(rtk_integration, "locate_rg_binary", return_value="/bin/rg"),
+            mock.patch("sys.stderr", buf_on),
+            mock.patch("sys.stdout", io.StringIO()),
+        ):
+            rc_on = tdq_setup._xu_ly_rtk_flags(ns_on, self.cwd)
+        self.assertEqual(rc_on, 0)
+        self.assertRegex(buf_on.getvalue(), r"^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] rtk check")
+
+        ns_off = tdq_setup.parse_args(["--check-rtk", "--khong-log"])
+        buf_off = io.StringIO()
+        with (
+            mock.patch.object(rtk_integration, "probe_rtk", return_value={"valid": True, "collision": False, "version": "1.2.0"}),
+            mock.patch.object(rtk_integration, "locate_rg_binary", return_value="/bin/rg"),
+            mock.patch("sys.stderr", buf_off),
+            mock.patch("sys.stdout", io.StringIO()),
+        ):
+            rc_off = tdq_setup._xu_ly_rtk_flags(ns_off, self.cwd)
+        self.assertEqual(rc_off, 0)
+        self.assertEqual(buf_off.getvalue(), "")
+
+    def test_session_start_setup_rtk_logs_iso_stderr_and_respects_tdq_log(self):
+        os.environ.pop("TDQ_LOG", None)
+        err_on = io.StringIO()
+        with mock.patch("sys.stderr", err_on):
+            self._run_session_start("sid-log-on", muted=False)
+        self.assertTrue(
+            re.search(r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] session_start: SETUP-RTK", err_on.getvalue()),
+            err_on.getvalue(),
+        )
+        os.environ["TDQ_LOG"] = "0"
+        err_off = io.StringIO()
+        with mock.patch("sys.stderr", err_off):
+            self._run_session_start("sid-log-off", muted=False)
+        self.assertNotIn("SETUP-RTK", err_off.getvalue())
 
 
 if __name__ == "__main__":

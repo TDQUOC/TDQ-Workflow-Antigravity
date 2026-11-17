@@ -50,6 +50,52 @@ class TestLocateBinaries(unittest.TestCase):
         with mock.patch.dict(os.environ, {"TDQ_RTK_BIN": fake_bin}):
             self.assertEqual(rtk.locate_rtk_binary(), fake_bin)
 
+    def test_locate_binary_ignores_cwd_and_cmd_shims(self):
+        repo_dir = os.path.join(self.tmp, "hostile_repo")
+        safe_dir = os.path.join(self.tmp, "safe_bin")
+        empty_home = os.path.join(self.tmp, "empty_home")
+        os.makedirs(repo_dir, exist_ok=True)
+        os.makedirs(safe_dir, exist_ok=True)
+        os.makedirs(empty_home, exist_ok=True)
+        # Drop CWD hijackers (.cmd, .bat, and .exe) in repo root
+        for hijack in ("rtk.cmd", "rtk.bat", "rtk.exe", "rg.cmd", "rg.bat", "rg.exe"):
+            with open(os.path.join(repo_dir, hijack), "wb") as fh:
+                fh.write(b"@echo hijacked\n")
+        # Safe dir initially holds only .cmd shims (must NOT match on Windows)
+        for shim in ("rtk.cmd", "rg.cmd"):
+            with open(os.path.join(safe_dir, shim), "wb") as fh:
+                fh.write(b"@echo shim\n")
+
+        old_cwd = os.getcwd()
+        env_patch = {
+            "PATH": safe_dir,
+            "HOME": empty_home,
+            "USERPROFILE": empty_home,
+            "TDQ_RTK_BIN": "",
+        }
+        try:
+            os.chdir(repo_dir)
+            with (
+                mock.patch.dict(os.environ, env_patch),
+                mock.patch("os.path.expanduser", side_effect=lambda p: p.replace("~", empty_home)),
+            ):
+                if os.name == "nt":
+                    self.assertIsNone(rtk.locate_rtk_binary())
+                    self.assertIsNone(rtk.locate_rg_binary())
+                # Now place real binaries in safe_dir -> must resolve safe_dir, NOT repo_dir
+                rtk_name = "rtk.exe" if os.name == "nt" else "rtk"
+                rg_name = "rg.exe" if os.name == "nt" else "rg"
+                safe_rtk = os.path.join(safe_dir, rtk_name)
+                safe_rg = os.path.join(safe_dir, rg_name)
+                for p in (safe_rtk, safe_rg):
+                    with open(p, "wb") as fh:
+                        fh.write(b"MZ")
+                    os.chmod(p, 0o755)
+                self.assertEqual(os.path.abspath(rtk.locate_rtk_binary()), os.path.abspath(safe_rtk))
+                self.assertEqual(os.path.abspath(rtk.locate_rg_binary()), os.path.abspath(safe_rg))
+        finally:
+            os.chdir(old_cwd)
+
     def test_locate_rtk_falls_back_to_which_then_local_bin(self):
         home_dir = os.path.join(self.tmp, "home")
         local_bin = os.path.join(home_dir, ".local", "bin")
@@ -161,6 +207,18 @@ class TestProbeRtk(unittest.TestCase):
         with mock.patch.dict(os.environ, {"TDQ_RTK_BIN": self.fake_bin}):
             res = rtk.probe_rtk(cwd=self.tmp, runner=slow_runner)
         self.assertFalse(res["valid"])
+
+    def test_gain_timeout_is_not_misclassified_as_collision(self):
+        def slow_gain(argv, **kwargs):
+            if argv[1] == "--version":
+                return SimpleNamespace(returncode=0, stdout="rtk 1.2.0\n", stderr="")
+            raise subprocess.TimeoutExpired(argv, kwargs.get("timeout", 8.0))
+
+        with mock.patch.dict(os.environ, {"TDQ_RTK_BIN": self.fake_bin}):
+            res = rtk.probe_rtk(cwd=self.tmp, runner=slow_gain)
+        self.assertFalse(res["valid"])
+        self.assertFalse(res["collision"])
+        self.assertEqual(res["reason"], "gain_probe_failed")
 
 
 class TestSkipAndRewrite(unittest.TestCase):
@@ -335,6 +393,8 @@ class TestConfigAndInstaller(unittest.TestCase):
             "enabled = false",
             "pro_hint = false",
             "emoji = false",
+            "colors = false",
+            "max_width = 120",
             'mode = "sqlite"',
             'level = "default"',
             "suppress_hook_warning = true",
@@ -349,6 +409,9 @@ class TestConfigAndInstaller(unittest.TestCase):
             "# user comment\n"
             "[telemetry]\n"
             "enabled = true\n\n"
+            "[display]\n"
+            "colors = true\n"
+            "max_width = 100\n\n"
             "[hooks]\n"
             'exclude_commands = ["ls"]\n\n'
             "[user_extra]\n"
@@ -357,6 +420,9 @@ class TestConfigAndInstaller(unittest.TestCase):
         Path(custom_cfg).write_text(orig, encoding="utf-8")
         ok2, _ = rtk.ensure_rtk_config(custom_cfg)
         self.assertTrue(ok2)
+        updated_custom = Path(custom_cfg).read_text(encoding="utf-8")
+        self.assertIn("colors = true", updated_custom)
+        self.assertIn("max_width = 100", updated_custom)
         bak_text = Path(custom_cfg + ".truoc-tdq.bak").read_text(encoding="utf-8")
         self.assertEqual(bak_text, orig)
         merged = Path(custom_cfg).read_text(encoding="utf-8")
