@@ -2,6 +2,13 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.98.0 — 2026-11-17
+
+Tích hợp cộng sinh RTK (`rtk` + `ripgrep`) tối ưu token và tự động kiểm/xin quyền cài user-level bằng `SHA256` (`2026-11-17-0325-tich-hop-rtk-antigravity`).
+
+- `scripts/rtk_integration.py` & `hooks/scripts/command_gate.py`: Gộp `PreToolUse` (`overwrite.CommandLine`, median `71.50 ms` / `126.52 ms`), Collision Guard `rtk gain`, miễn nén `git diff`/`log`/`show` cho QC/reviewer, chốt `TDQ_KHONG_CHAM_MAY=1`.
+- `scripts/search_rules.py`, `install.*` & `tools/`: Bóc vỏ `rtk`/`bypass`/`proxy`/`(C:\...)` giữ khóa `[TDQ:SEARCH]`, thêm trigger xin quyền cài `SHA256`, biên dịch `plugins/tdq-workflow-agy/` (`v0.98.0`, `4.313` ca PASS, QC Vòng 2 PASS).
+
 ## 0.97.2 — 2026-11-17
 
 Sửa triệt để lỗi `lsp_gate.py` chặn nhầm `call_mcp_tool` và chuẩn hoá giải gói MCP/nhận diện TDQ LSP về một nguồn thuần duy nhất (`2026-11-16-1953-fix-lsp-gate-mcp-routing`).

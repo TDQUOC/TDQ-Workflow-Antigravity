@@ -11,7 +11,7 @@
     "bytes": 4898
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\hooks-and-gates.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\hooks-and-gates.html",
     "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
     "bytes": 823078
   },
@@ -28,12 +28,12 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\hooks-and-gates.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\hooks-and-gates.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\hooks-and-gates.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\hooks-and-gates.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\hooks-and-gates.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\hooks-and-gates.browser-check.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 3235,
+  "durationMs": 3342,
   "browserCheck": {
     "requested": true,
     "ran": true

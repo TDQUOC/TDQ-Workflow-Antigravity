@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-11-17T10:59:22.092Z",
+  "startedAt": "2026-11-17T11:34:49.614Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
     "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
     "bytes": 4891
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
     "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
     "bytes": 822816
   },
@@ -23,12 +23,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39112_1794913149230\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38428_1794915276036\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "architecture",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -56,14 +56,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 524,
+      "durationMs": 539,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39112_1794913149230\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38428_1794915276036\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "architecture",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -72,12 +72,12 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "ff93eaaf-add2-475d-a422-31dc48f65127",
+        "receiptId": "b11fc062-db6a-43a9-91c7-61c96a298a28",
         "ok": true,
         "command": "deliver",
         "type": "architecture",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "specification": {
           "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
           "bytes": 4891
@@ -137,17 +137,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 229,
+      "durationMs": 228,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39112_1794913149230\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38428_1794915276036\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "artifact": {
           "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
           "bytes": 822816
@@ -291,18 +291,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "ff93eaaf-add2-475d-a422-31dc48f65127"
+        "deliveryReceiptId": "b11fc062-db6a-43a9-91c7-61c96a298a28"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1661,
+      "durationMs": 1714,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39112_1794913149230\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38428_1794915276036\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "browser-check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
         "--json",
         "--require-provenance"
       ],
@@ -315,9 +315,9 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "ff93eaaf-add2-475d-a422-31dc48f65127",
+        "deliveryReceiptId": "b11fc062-db6a-43a9-91c7-61c96a298a28",
         "artifact": {
-          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.html",
+          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
           "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
           "bytes": 822816
         },
@@ -1061,13 +1061,13 @@
     }
   ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b43b0829ff074eba88260ff052842955\\runtime-verification.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-17T10:59:25.136Z",
-  "durationMs": 3043,
+  "finishedAt": "2026-11-17T11:34:52.693Z",
+  "durationMs": 3079,
   "update": {
     "status": "unavailable",
     "installedVersion": null,
