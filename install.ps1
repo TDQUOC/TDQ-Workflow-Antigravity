@@ -3,12 +3,16 @@
 param(
     [switch]$DryRun,
     [switch]$NoEnable,
-    [switch]$Update
+    [switch]$Update,
+    [switch]$WithRtk,
+    [switch]$SkipRtk
 )
 $params = @()
 if ($DryRun) { $params += "--dry-run" }
 if ($NoEnable) { $params += "--no-enable" }
 if ($Update) { $params += "--update" }
+if ($WithRtk) { $params += "--with-rtk" }
+if ($SkipRtk) { $params += "--skip-rtk" }
 
 if (Get-Command py -ErrorAction SilentlyContinue) {
     py -3 "$PSScriptRoot\install.py" @params

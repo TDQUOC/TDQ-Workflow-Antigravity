@@ -11,12 +11,14 @@ and demand exit 0 with its block intact. The environment is scrubbed of `PYTHONU
 `PYTHONIOENCODING` on purpose — inheriting them would hide the very bug this file exists to
 catch, and the suite would stay green while the product stayed broken.
 """
+import io
 import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from helper import ROOT
 
@@ -291,6 +293,88 @@ class TestCommonMcpNormalization(unittest.TestCase):
         })
         self.assertNotIn("_tool_args_present", out_missing_claude)
         self.assertIs(self._common.has_tool_args(), False)
+
+
+class TestCommonCollapsedSessionAndOverwrite(unittest.TestCase):
+    """Collapsed session cache + Antigravity PreToolUse `overwrite` emitter."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.path.insert(0, HOOKS)
+        try:
+            import _common
+            cls._common = _common
+        finally:
+            if sys.path and sys.path[0] == HOOKS:
+                sys.path.pop(0)
+
+    def setUp(self):
+        _common = self._common
+        self._saved = dict(_common._RUNTIME_STATE)
+        self._saved["context_lines"] = list(_common._RUNTIME_STATE.get("context_lines") or [])
+        self._saved["overwrite"] = dict(_common._RUNTIME_STATE.get("overwrite") or {})
+        _common._RUNTIME_STATE.update({
+            "event": None,
+            "is_agy": False,
+            "deny_reason": None,
+            "stop_reason": None,
+            "context_lines": [],
+            "registered": False,
+            "tool_args_present": False,
+            "overwrite": {},
+            "collapsed_payload": None,
+        })
+
+    def tearDown(self):
+        self._common._RUNTIME_STATE.clear()
+        self._common._RUNTIME_STATE.update(self._saved)
+
+    def test_collapsed_session_reuses_payload_without_rereading_stdin(self):
+        cached = self._common.begin_collapsed_session({
+            "hookEventName": "PreToolUse",
+            "tool_name": "run_command",
+            "toolInput": {"CommandLine": "git status"},
+            "cwd": ".",
+        })
+        self.assertEqual(cached["tool_input"]["command"], "git status")
+        with mock.patch("sys.stdin", io.StringIO("not json")):
+            again = self._common.read_payload()
+        self.assertEqual(again["tool_input"]["command"], "git status")
+        self.assertIs(self._common._RUNTIME_STATE["is_agy"], True)
+        self._common.end_collapsed_session()
+        self.assertIsNone(self._common._RUNTIME_STATE["collapsed_payload"])
+
+    def test_flush_agy_stdout_emits_overwrite_on_allow_only(self):
+        self._common._RUNTIME_STATE.update({
+            "event": "PreToolUse",
+            "is_agy": True,
+            "deny_reason": None,
+            "overwrite": {},
+        })
+        self._common.set_overwrite({"CommandLine": "rtk git status"})
+        buf = io.StringIO()
+        with mock.patch("sys.stdout", buf):
+            self._common._flush_agy_stdout()
+        data = json.loads(buf.getvalue())
+        self.assertEqual(
+            data,
+            {"decision": "allow", "overwrite": {"CommandLine": "rtk git status"}},
+        )
+
+    def test_flush_agy_stdout_drops_overwrite_when_denied(self):
+        self._common._RUNTIME_STATE.update({
+            "event": "PreToolUse",
+            "is_agy": True,
+            "deny_reason": "[TDQ:SEARCH] forbidden",
+            "overwrite": {},
+        })
+        self._common.set_overwrite({"CommandLine": "rtk rg foo"})
+        buf = io.StringIO()
+        with mock.patch("sys.stdout", buf):
+            self._common._flush_agy_stdout()
+        data = json.loads(buf.getvalue())
+        self.assertEqual(data["decision"], "deny")
+        self.assertNotIn("overwrite", data)
 
 
 if __name__ == "__main__":

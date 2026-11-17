@@ -149,37 +149,8 @@ def _enforce_agy_bash_guards(payload, cwd):
     return False
 
 
-def main():
-    payload = read_payload()
-    cmd = (payload.get("tool_input") or {}).get("command") or ""
-    if not isinstance(cmd, str) or not cmd:
-        return
-    cwd = payload_cwd(payload)
-    if _enforce_agy_bash_guards(payload, cwd):
-        return
-    rows = turn_rows(cwd, payload)  # P0-3: read once, reused by every check below
-    state = __import__("tdq_state").load(cwd) or {}
-    parts = [part.strip() for part in re.split(r"[;&]", cmd) if part.strip()]
-    mutates_outside_docs = any(
-        (SHELL_MUTATOR.search(part) and not DOCS_ARTIFACT.search(part))
-        or any(not DOCS_ARTIFACT.search(target) and target.lower() not in ("/dev/null", "$null")
-               for target in STDOUT_WRITE.findall(part))
-        for part in parts)
-    if payload.get("agent_id") and state.get("active_request") \
-            and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
-        block(cwd, payload, "TDQ:TEAM", [
-            "A sub-agent may not mutate the project through Bash/PowerShell before implement.",
-            "Return structured output, or write only the assigned report under docs/tdq/artifacts/.",
-            "The TDQ leader remains the state and source writer.",
-        ])
-
-    # (1) observe
-    for sub in STATE_CLI.findall(cmd):
-        observe(cwd, payload, "state_cli", cmd=sub)
-        if sub == "next":
-            observe(cwd, payload, "next_run")
-
-    # (2) remind — the phase-advance guard (approve/set phase=) outranks GIT/STATE
+def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind=False):
+    """Run approve/setphase, branch-name, commit-msg, dump, and state-write checks."""
     approve_match = APPROVE_CLI.search(cmd)
     if approve_match:
         _check_signal_mismatch(cwd, payload, approve_match.group(1), rows)
@@ -216,7 +187,7 @@ def main():
                     echo_line("TDQ:GIT", "fixed the commit message"),
                 ], rows=rows)
 
-    if DUMP.search(cmd) and not GIOI_HAN.search(cmd) and not CAT_GHI.search(cmd):
+    if not suppress_output_remind and DUMP.search(cmd) and not GIOI_HAN.search(cmd) and not CAT_GHI.search(cmd):
         remind(cwd, payload, "TDQ:OUTPUT", [
             ("This command dumps its whole content into context — every output is re-read on "
              "every API call after it."),
@@ -234,6 +205,47 @@ def main():
                     "How: python3 scripts/tdq_state.py set|approve|init|reset.",
                     echo_line("TDQ:STATE", "wrote state through the CLI"),
                 ], rows=rows)
+
+
+def eval_bash(payload, suppress_output_remind=False):
+    """Evaluate bash gate rules for an already-read payload; return True to allow continuing."""
+    cmd = (payload.get("tool_input") or {}).get("command") or ""
+    if not isinstance(cmd, str) or not cmd:
+        return True
+    cwd = payload_cwd(payload)
+    if _enforce_agy_bash_guards(payload, cwd):
+        return False
+    rows = turn_rows(cwd, payload)  # P0-3: read once, reused by every check below
+    state = __import__("tdq_state").load(cwd) or {}
+    parts = [part.strip() for part in re.split(r"[;&]", cmd) if part.strip()]
+    mutates_outside_docs = any(
+        (SHELL_MUTATOR.search(part) and not DOCS_ARTIFACT.search(part))
+        or any(not DOCS_ARTIFACT.search(target) and target.lower() not in ("/dev/null", "$null")
+               for target in STDOUT_WRITE.findall(part))
+        for part in parts)
+    if payload.get("agent_id") and state.get("active_request") \
+            and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
+        block(cwd, payload, "TDQ:TEAM", [
+            "A sub-agent may not mutate the project through Bash/PowerShell before implement.",
+            "Return structured output, or write only the assigned report under docs/tdq/artifacts/.",
+            "The TDQ leader remains the state and source writer.",
+        ])
+        return False
+
+    # (1) observe
+    for sub in STATE_CLI.findall(cmd):
+        observe(cwd, payload, "state_cli", cmd=sub)
+        if sub == "next":
+            observe(cwd, payload, "next_run")
+
+    # (2) remind — the phase-advance guard (approve/set phase=) outranks GIT/STATE
+    _check_bash_reminders(cmd, cwd, payload, rows, state,
+                          suppress_output_remind=suppress_output_remind)
+    return True
+
+
+def main():
+    eval_bash(read_payload())
 
 
 if __name__ == "__main__":
