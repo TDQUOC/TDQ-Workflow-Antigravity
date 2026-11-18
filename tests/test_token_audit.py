@@ -471,5 +471,133 @@ class DemAnhTest(unittest.TestCase):
         self.assertGreaterEqual(r.lon_nhat, 2030)
 
 
+class MultiHostAuditTest(unittest.TestCase):
+    """Multi-host audit for Antigravity, Codex, and Claude Code with measured/inferred labels."""
+
+    def _write_jsonl(self, path, lines):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            for item in lines:
+                if isinstance(item, str):
+                    fh.write(item + "\n")
+                else:
+                    fh.write(json.dumps(item, ensure_ascii=False) + "\n")
+        return path
+
+    def _stage_agy_session(self, home, conv_id="conv-1", with_usage=True, broken=False):
+        path = os.path.join(
+            home, ".gemini", "antigravity", "brain", conv_id, ".system_generated", "logs", "transcript.jsonl"
+        )
+        r1 = {
+            "type": "PLANNER_RESPONSE",
+            "step_index": 1,
+            "created_at": "2026-11-18T05:00:00Z",
+            "tool_calls": [
+                {"name": "read_file", "args": {"Path": json.dumps("/work/a.py")}},
+                {"name": "invoke_subagent", "args": {"AgentName": "tdq-implementer"}},
+            ],
+        }
+        r2 = {
+            "type": "PLANNER_RESPONSE",
+            "step_index": 4,
+            "created_at": "2026-11-18T05:00:05Z",
+            "tool_calls": [
+                {"name": "read_file", "args": {"Path": json.dumps("/work/a.py"), "StartLine": "1", "EndLine": "20"}},
+            ],
+        }
+        r3 = {"type": "PLANNER_RESPONSE", "step_index": 6, "created_at": "2026-11-18T05:00:10Z", "tool_calls": []}
+        if with_usage:
+            r1.update({"input_tokens": 1000, "cache_read_tokens": 200, "output_tokens": 50})
+            r2.update({"input_tokens": 1400, "cache_read_tokens": 300, "output_tokens": 60})
+            r3.update({"input_tokens": 1800, "cache_read_tokens": 400, "output_tokens": 70})
+        records = [
+            r1,
+            {"type": "GENERIC", "step_index": 2, "source": "MODEL", "content": "a" * 400},
+            {"type": "TOOL_RESPONSE", "step_index": 3, "content": "subagent result " * 30},
+            r2,
+            {"type": "GENERIC", "step_index": 5, "source": "MODEL", "content": "b" * 160},
+            r3,
+        ]
+        if broken:
+            records.insert(2, "{truncated json line")
+        return self._write_jsonl(path, records)
+
+    def _stage_codex_session(self, home, name="rollout-1.jsonl"):
+        path = os.path.join(home, ".codex", "sessions", "2026", "11", "18", name)
+        records = [
+            {"type": "session_meta", "timestamp": "2026-11-18T05:00:00Z", "payload": {"id": "cx-1", "cwd": "/work"}},
+            {"type": "response_item", "timestamp": "2026-11-18T05:00:01Z",
+             "payload": {"type": "custom_tool_call", "call_id": "c1", "name": "exec", "input": "cat /work/x.py"}},
+            {"type": "response_item", "timestamp": "2026-11-18T05:00:02Z",
+             "payload": {"type": "custom_tool_call_output", "call_id": "c1",
+                         "output": [{"type": "input_text", "text": "z" * 320}]}},
+            {"type": "event_msg", "timestamp": "2026-11-18T05:00:03Z",
+             "payload": {"type": "token_count", "info": {
+                 "total_token_usage": {"input_tokens": 800, "cached_input_tokens": 300, "output_tokens": 40},
+                 "last_token_usage": {"input_tokens": 800, "cached_input_tokens": 300, "output_tokens": 40},
+             }}},
+            {"type": "response_item", "timestamp": "2026-11-18T05:00:04Z",
+             "payload": {"type": "function_call", "call_id": "c2", "name": "spawn_agent",
+                         "arguments": json.dumps({"prompt": "check"})}},
+            {"type": "response_item", "timestamp": "2026-11-18T05:00:05Z",
+             "payload": {"type": "function_call_output", "call_id": "c2", "output": "done " * 40}},
+            {"type": "event_msg", "timestamp": "2026-11-18T05:00:06Z",
+             "payload": {"type": "token_count", "info": {
+                 "total_token_usage": {"input_tokens": 1600, "cached_input_tokens": 700, "output_tokens": 90},
+                 "last_token_usage": {"input_tokens": 800, "cached_input_tokens": 400, "output_tokens": 50},
+             }}},
+        ]
+        return self._write_jsonl(path, records)
+
+    def test_audit_multi_host_agy_and_codex_fixtures(self):
+        with tempfile.TemporaryDirectory() as home:
+            self._stage_agy_session(home, broken=True)
+            self._stage_codex_session(home)
+            report = token_audit.audit_multi_host(host="all", project_dir="/work", limit=5, top=10, home=home)
+        self.assertGreaterEqual(report["sessions_scanned"], 2)
+        self.assertTrue(report["hosts"])
+        self.assertTrue(all(row["basis"] in ("measured", "inferred") for row in report["hosts"]))
+        host_names = {row["host"] for row in report["hosts"]}
+        self.assertEqual(host_names, {"agy", "codex"})
+        self.assertTrue(report["top_items"])
+        self.assertTrue(report["repeated_reads"])
+        self.assertEqual(report["repeated_reads"][0]["file_path"], "/work/a.py")
+        self.assertEqual(report["repeated_reads"][0]["re_reads"], 1)
+        self.assertTrue(report["subagent_calls"])
+
+    def test_missing_tokenizer_falls_back_to_inferred_for_non_claude_hosts(self):
+        with tempfile.TemporaryDirectory() as home:
+            self._stage_agy_session(home, with_usage=False)
+            self._stage_codex_session(home)
+            env = dict(os.environ, TDQ_TOKENS_DA_NHAY="1", TDQ_TOKENS_VENV="khong-co",
+                       USERPROFILE=home, HOME=home, TDQ_LOG="0")
+            r = subprocess.run(
+                [sys.executable, os.path.join(REPO, "scripts", "token_audit.py"),
+                 "--host", "all", "--sessions", "5", "--top", "5"],
+                check=False, capture_output=True, encoding="utf-8", text=True, env=env,
+            )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("inferred", r.stdout)
+        self.assertIn("agy", r.stdout)
+        self.assertIn("codex", r.stdout)
+        self.assertEqual(r.stderr.strip(), "")
+
+    def test_empty_session_and_empty_home_handled_cleanly(self):
+        with tempfile.TemporaryDirectory() as home:
+            self._write_jsonl(
+                os.path.join(home, ".gemini", "antigravity", "brain", "empty", ".system_generated", "logs",
+                             "transcript.jsonl"),
+                [],
+            )
+            report = token_audit.audit_multi_host(host="agy", limit=5, home=home)
+            self.assertEqual(report["sessions_scanned"], 1)
+            self.assertEqual(report["hosts"][0]["basis"], "inferred")
+
+        with tempfile.TemporaryDirectory() as empty_home:
+            report_none = token_audit.audit_multi_host(host="all", limit=5, home=empty_home)
+            self.assertEqual(report_none["sessions_scanned"], 0)
+            self.assertEqual(report_none["hosts"], [])
+
+
 if __name__ == "__main__":
     unittest.main()
