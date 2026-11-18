@@ -1,0 +1,206 @@
+{
+  "schema": "tdq-hook-impact/v1",
+  "days": 4.0,
+  "files": 120,
+  "model_calls_total": 11241,
+  "tool_steps_total": 17429,
+  "pretool_deny_total": 196,
+  "pretool_deny_by_tag": [
+    {
+      "tag": "SEARCH",
+      "count": 85,
+      "streak_repeat": 4,
+      "sample": "denied by pre-tool hook: [TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references"
+    },
+    {
+      "tag": "LSP",
+      "count": 48,
+      "streak_repeat": 16,
+      "sample": "denied by pre-tool hook: [TDQ:LSP] start_lsp without language_id: agent-lsp starts every server and makes TypeScript current (crash 0xc0000409 / No Project on 2026-10-07).\nPass the language of the code you work on, e.g. \"language_id\": \"python\"."
+    },
+    {
+      "tag": "TICK",
+      "count": 30,
+      "streak_repeat": 16,
+      "sample": "denied by pre-tool hook: [TDQ:TICK] 3 edits in a row with no tick in the plan — close the task before editing on.\nTask still in progress → update notes or tasks in the plan file to reset the streak.\nTest green → flip to [x]…"
+    },
+    {
+      "tag": "TEAM",
+      "count": 16,
+      "streak_repeat": 1,
+      "sample": "denied by pre-tool hook: [TDQ:TEAM] Team mode with no assignment map — you may not edit code on main first.\nRun: python3 \"C:/Users/admin/.gemini/config/plugins/tdq-workflow-agy/scripts/tdq_team.py\" assign (then audit, then wave).\nA task the leader must do itse"
+    },
+    {
+      "tag": "?",
+      "count": 6,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: "
+    },
+    {
+      "tag": "GIT",
+      "count": 4,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: [TDQ:GIT] AI-prefixed branch names are banned; name the branch after the work."
+    },
+    {
+      "tag": "APPROVE",
+      "count": 2,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: [TDQ:APPROVE] The user's prompt this turn did not approve spec (or the mode differs) — STOP, do not run this command.\nHow: present spec, END the turn, wait for the user's own approval message.\nWhen done, print: ✓ [TDQ:APPROVE] asked ag"
+    },
+    {
+      "tag": "LOG",
+      "count": 2,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: ` ở phiên cha (Step 4 → Step 6)**: Không phải do `tdq-workflow` (đang tắt `enabled: false`, và test thực tế trả stdout rỗng) và cũng không phải do user hook `~/.gemini/config/hooks/auto-compact.ps1` (test thực nghiệm với đúng payload S"
+    },
+    {
+      "tag": "NEXT",
+      "count": 2,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: [TDQ:SEARCH] Command could not be parsed safely (malformed). Ask first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references"
+    },
+    {
+      "tag": "WORKTREE",
+      "count": 1,
+      "streak_repeat": 0,
+      "sample": "denied by pre-tool hook: [TDQ:TEAM] Team mode with no assignment map — you may not edit code on main first.\\nRun: python3 \\\"C:/Users/admin/.gemini/config/plugins/tdq-workflow-agy/scripts/tdq_team.py\\\" assign (then audit, then wave).\\nA task the leader must do "
+    }
+  ],
+  "planner_or_system_mentions": {
+    "INTAKE": 1,
+    "?": 1,
+    "LSP": 1
+  },
+  "stop_block_total": 60,
+  "stop_block_by_tag": [
+    {
+      "tag": "UNFINISHED",
+      "count": 53,
+      "sample": "Stop hook blocked termination: [TDQ:UNFINISHED] 11 open task(s). Keep working to the approved spec: mark [~], test, mark [x]. Small drift → `lech add`, continue; only true blockers → `tdq_state.py pause --loai <kind> --ly-do \"<why>\"`. Next: T4.2 Test: `py -3 -"
+    },
+    {
+      "tag": "LOG",
+      "count": 7,
+      "sample": "Stop hook blocked termination: [TDQ:LOG] Repo changed (docs/.staging.f5225924a9ef490294b82671daae1cd7/index.deliver), docs/workinglog/2026-11-17.md not appended. Run `tdq_finish.py --files <file> --log \"<summary>\"`, no hand Edit. Then reprint the last chat blo"
+    }
+  ],
+  "injections": {
+    "SessionStart": {
+      "n": 105,
+      "avg_chars": 3962.7,
+      "max_chars": 7819,
+      "total_chars": 416084
+    },
+    "PreInvocation": {
+      "n": 9744,
+      "avg_chars": 239.6,
+      "max_chars": 2107,
+      "total_chars": 2334784
+    },
+    "PostInvocation": {
+      "n": 311,
+      "avg_chars": 247.5,
+      "max_chars": 2433,
+      "total_chars": 76977
+    }
+  },
+  "deny_to_next_ok_tool": {
+    "n": 156,
+    "median_s": 6.5,
+    "p90_s": 27.0,
+    "total_minutes": 34.12
+  },
+  "top_conversations": [
+    {
+      "conv": "3b94e6b1-c700-4b75-bdce-7aa5fd094ee7",
+      "deny": 18,
+      "stop": 16,
+      "tool_steps": 2305
+    },
+    {
+      "conv": "b717d25b-b7ce-450d-b4b9-ac9d0db8aac7",
+      "deny": 27,
+      "stop": 3,
+      "tool_steps": 1390
+    },
+    {
+      "conv": "15919377-5d22-4136-877d-7caef94b1d2c",
+      "deny": 24,
+      "stop": 4,
+      "tool_steps": 2156
+    },
+    {
+      "conv": "f9e21752-8c77-42a5-9ada-fc2f53cee68c",
+      "deny": 22,
+      "stop": 4,
+      "tool_steps": 1943
+    },
+    {
+      "conv": "af55c2ae-971f-499b-8e33-0ad5e73f8921",
+      "deny": 18,
+      "stop": 2,
+      "tool_steps": 2046
+    },
+    {
+      "conv": "f7955f1c-5228-4cfc-9595-f095b2d07fec",
+      "deny": 13,
+      "stop": 1,
+      "tool_steps": 308
+    },
+    {
+      "conv": "98c9de1e-5f48-49b5-91b1-5fda4ba08e8a",
+      "deny": 1,
+      "stop": 6,
+      "tool_steps": 76
+    },
+    {
+      "conv": "051cc9e9-415e-4e05-8fcb-1f906500bc6b",
+      "deny": 5,
+      "stop": 1,
+      "tool_steps": 144
+    },
+    {
+      "conv": "498ec83a-57fe-4853-890e-7dba9d8644eb",
+      "deny": 5,
+      "stop": 1,
+      "tool_steps": 165
+    },
+    {
+      "conv": "2a408580-dde6-4a41-aeda-5a1f871c0366",
+      "deny": 5,
+      "stop": 0,
+      "tool_steps": 1768
+    },
+    {
+      "conv": "68fa96f1-34f0-4590-83db-fc9a869b7d29",
+      "deny": 2,
+      "stop": 3,
+      "tool_steps": 130
+    },
+    {
+      "conv": "bd88a39f-b067-40b5-b667-10ee4bb87ee6",
+      "deny": 5,
+      "stop": 0,
+      "tool_steps": 65
+    },
+    {
+      "conv": "cedfc689-72af-4104-94f6-ef1e516872bf",
+      "deny": 1,
+      "stop": 4,
+      "tool_steps": 19
+    },
+    {
+      "conv": "011adcdf-7acc-493e-9944-5f7393234292",
+      "deny": 4,
+      "stop": 0,
+      "tool_steps": 194
+    },
+    {
+      "conv": "0cd5acc3-c448-488c-b10c-67efff8e7942",
+      "deny": 4,
+      "stop": 0,
+      "tool_steps": 28
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "schema": "tdq-false-positive-repro/v1",
+  "generated_at": "2026-11-18T14:45:48+07:00",
+  "plugin_dir": "C:\\Users\\admin\\.gemini\\config\\plugins\\tdq-workflow-agy",
+  "plugin_version": "0.99.0",
+  "cases": [
+    {
+      "id": "search_py_c_backtick_agy_command_gate",
+      "group": "search_malformed",
+      "hook": "command_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "run_command",
+      "payload_summary": "py -3 -X utf8 -c \"import pathlib; lines=pathlib.Path('docs/srs/03-functional-requirements.md').read_text(encoding='utf-8').splitlines(); print(sum(1 for l in li",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "search_rules._tach_script checks backtick before double-quote state (L291 < L302); odd backticks inside Python -c double-quoted string set la_malformed=True.",
+      "transcript_ref": "f9e21752 L3361 / 011adcdf L80"
+    },
+    {
+      "id": "search_py_c_backtick_agy_search_gate",
+      "group": "search_malformed",
+      "hook": "search_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "run_command",
+      "payload_summary": "py -3 -X utf8 -c \"import pathlib; lines=pathlib.Path('docs/srs/03-functional-requirements.md').read_text(encoding='utf-8').splitlines(); print(sum(1 for l in li",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "Standalone search_gate.py accepts run_command via CONG_CU_SHELL; in AGY hooks.json run_command is routed via command_gate.py which calls search_gate.eval_search.",
+      "transcript_ref": "f9e21752 L3361"
+    },
+    {
+      "id": "search_py_c_backtick_claude_bash",
+      "group": "search_malformed",
+      "hook": "search_gate.py",
+      "protocol": "claude_codex",
+      "tool_name": "Bash",
+      "payload_summary": "py -3 -X utf8 -c \"import pathlib; lines=pathlib.Path('docs/srs/03-functional-requirements.md').read_text(encoding='utf-8').splitlines(); print(sum(1 for l in li",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "Claude/Codex hooks.json routes Bash directly to search_gate.py -> same malformed deny.",
+      "transcript_ref": "hooks/hooks.json Bash|Grep|PowerShell"
+    },
+    {
+      "id": "search_ps_herestring_agy_command_gate",
+      "group": "search_malformed",
+      "hook": "command_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "run_command",
+      "payload_summary": "@'\nfrom pathlib import Path\nhtml = Path('docs/srs/portal.html').read_text(encoding='utf-8')\nfor i, line in enumerate(html.splitlines(), 1):\n    if '`' in line:\n",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "search_rules._bo_heredoc only strips POSIX <<EOF heredocs, not PowerShell @'...'@; single quotes inside Python code close the quote at @' and expose backticks/parens.",
+      "transcript_ref": "011adcdf L59 / 051cc9e9 L36"
+    },
+    {
+      "id": "search_ps_herestring_claude_powershell",
+      "group": "search_malformed",
+      "hook": "search_gate.py",
+      "protocol": "claude_codex",
+      "tool_name": "PowerShell",
+      "payload_summary": "@'\nfrom pathlib import Path\nhtml = Path('docs/srs/portal.html').read_text(encoding='utf-8')\nfor i, line in enumerate(html.splitlines(), 1):\n    if '`' in line:\n",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "PowerShell matcher in hooks/hooks.json routes PowerShell to search_gate.py -> malformed deny.",
+      "transcript_ref": "hooks/hooks.json Bash|Grep|PowerShell"
+    },
+    {
+      "id": "search_curl_split_agy_command_gate",
+      "group": "search_malformed",
+      "hook": "command_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "run_command",
+      "payload_summary": "(curl.exe -s \"https://raw.githubusercontent.com/dashdogy/MFG-Unlocker/HEAD/README.md\") -split \"`n\" | Select-Object -First 75",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "PowerShell newline escape \"`n\" has one backtick inside double quotes; _tach_script treats it as an unclosed POSIX backtick command substitution.",
+      "transcript_ref": "f7955f1c L683"
+    },
+    {
+      "id": "search_curl_split_claude_powershell",
+      "group": "search_malformed",
+      "hook": "search_gate.py",
+      "protocol": "claude_codex",
+      "tool_name": "PowerShell",
+      "payload_summary": "(curl.exe -s \"https://raw.githubusercontent.com/dashdogy/MFG-Unlocker/HEAD/README.md\") -split \"`n\" | Select-Object -First 75",
+      "decision": "deny",
+      "reason": "[TDQ:SEARCH] Command could not be parsed safely (malformed).\nAsk first: mcp__lsp__start_lsp (root_dir = the project root, language_id = the language of the code, e.g. python, typescript, go) then mcp__lsp__find_symbol / find_references (a symbol and its callers); or graphify query \"<question>\" (a concept in plain words, or the architecture).",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "Claude/Codex PowerShell payload through search_gate.py hits the same \"`n\" parser bug.",
+      "transcript_ref": "hooks/hooks.json Bash|Grep|PowerShell"
+    },
+    {
+      "id": "search_grep_search_agy_control",
+      "group": "search_malformed",
+      "hook": "search_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "grep_search",
+      "payload_summary": "{'Query': 'def main', 'SearchPath': 'C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\tdq_fp_shared_mxioy7lo'}",
+      "decision": "allow",
+      "reason": "",
+      "reproduced": false,
+      "rc": 0,
+      "technical_cause": "AGY hooks.json binds standalone search_gate.py to grep_search|...; eval_search (L178) only checks 'Grep' or CONG_CU_SHELL, so grep_search exits allow.",
+      "transcript_ref": "hooks.json L55-60"
+    },
+    {
+      "id": "lsp_chrome_devtools_navigate_page",
+      "group": "lsp_non_lsp",
+      "hook": "lsp_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "call_mcp_tool",
+      "payload_summary": "chrome-devtools navigate_page",
+      "decision": "allow",
+      "reason": "",
+      "reproduced": false,
+      "rc": 0,
+      "technical_cause": "Installed lsp_gate.py (synced 2026-11-18, commit 4c5d5fd5) unwraps call_mcp_tool via chuan_hoa_cong_cu_mcp -> 'mcp__chrome-devtools__navigate_page', then ten_lenh_tdq_lsp (lsp_gate.py:163-166, search_rules.py:975-1040) returns None -> exits 0 (allow). Pre-fix (4c5d5fd5~1) lacked ten_lenh_tdq_lsp and ran phan_xu on every call_mcp_tool.",
+      "transcript_ref": "hooks/scripts/lsp_gate.py:163-166"
+    },
+    {
+      "id": "lsp_chrome_devtools_new_page_0c6604ba",
+      "group": "lsp_non_lsp",
+      "hook": "lsp_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "call_mcp_tool",
+      "payload_summary": "chrome-devtools new_page (0c6604ba L105)",
+      "decision": "allow",
+      "reason": "",
+      "reproduced": false,
+      "rc": 0,
+      "technical_cause": "Not reproduced on 2026-11-18 installed lsp_gate.py: op=ten_lenh_tdq_lsp('mcp__chrome-devtools__new_page') is None, so lsp_gate exits allow. In 0c6604ba (2026-11-16), pre-fix lsp_gate saw non-empty tool_input without language_id and denied with [TDQ:LSP].",
+      "transcript_ref": "0c6604ba L105-106"
+    },
+    {
+      "id": "lsp_chrome_devtools_select_page_batch_0c6604ba",
+      "group": "lsp_non_lsp",
+      "hook": "lsp_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "call_mcp_tool",
+      "payload_summary": "toolCall batch step select_page (0c6604ba L59)",
+      "decision": "allow",
+      "reason": "",
+      "reproduced": false,
+      "rc": 0,
+      "technical_cause": "normalize_payload extracts toolCall.args, unwraps to mcp__chrome-devtools__select_page, and ten_lenh_tdq_lsp returns None -> allow on installed lsp_gate.py.",
+      "transcript_ref": "0c6604ba L59-60"
+    },
+    {
+      "id": "lsp_chrome_devtools_new_page_no_event_fallback",
+      "group": "lsp_non_lsp",
+      "hook": "lsp_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "call_mcp_tool",
+      "payload_summary": "chrome-devtools new_page without --event",
+      "decision": "allow",
+      "reason": "",
+      "reproduced": false,
+      "rc": 0,
+      "technical_cause": "Even without --event, _is_antigravity_payload detects toolName/toolInput and ten_lenh_tdq_lsp returns None -> allow.",
+      "transcript_ref": "hooks/scripts/_common.py:149-160"
+    },
+    {
+      "id": "tick_loop_no_doing_task",
+      "group": "tick_loop",
+      "hook": "edit_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "edit_file",
+      "payload_summary": "3 consecutive edit_file calls with plan having only [ ] tasks (no [~])",
+      "decision": "deny",
+      "reason": "[TDQ:TICK] (lặp x3) The plan carries no task marked [~] — mark the task in progress BEFORE editing code.\nGỡ nhanh: Open the plan, switch the next task to [~]; flip it to [x] the moment it is green.",
+      "reproduced": true,
+      "rc": 0,
+      "steps": [
+        {
+          "step": 1,
+          "decision": "deny",
+          "reason": "[TDQ:TICK] The plan carries no task marked [~] — mark the task in progress BEFORE editing code.\nOpen the plan, switch the next task to [~]; flip it to [x] the moment it is green.\nRequest already fini…"
+        },
+        {
+          "step": 2,
+          "decision": "deny",
+          "reason": "[TDQ:TICK] (lặp) The plan carries no task marked [~] — mark the task in progress BEFORE editing code.\nGỡ nhanh: Open the plan, switch the next task to [~]; flip it to [x] the moment it is green."
+        },
+        {
+          "step": 3,
+          "decision": "deny",
+          "reason": "[TDQ:TICK] (lặp x3) The plan carries no task marked [~] — mark the task in progress BEFORE editing code.\nGỡ nhanh: Open the plan, switch the next task to [~]; flip it to [x] the moment it is green."
+        }
+      ],
+      "technical_cause": "edit_gate.py:266-272 blocks immediately when tick['has_doing'] is False and plan has uncompleted [ ] tasks; repeated edits hit the same block with '(lặp)'.",
+      "transcript_ref": "hooks/scripts/edit_gate.py:266-272"
+    },
+    {
+      "id": "tick_loop_streak_3_edits",
+      "group": "tick_loop",
+      "hook": "edit_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "edit_file",
+      "payload_summary": "5 consecutive edit_file calls on src/app.py with [~] task and unchanged plan_sha",
+      "decision": "deny",
+      "reason": "[TDQ:TICK] 3 edits in a row with no tick in the plan — close the task before editing on.\nTask still in progress → update notes or tasks in the plan file to reset the streak.\nTest green → flip to [x]…",
+      "reproduced": true,
+      "rc": 0,
+      "steps": [
+        {
+          "step": 1,
+          "decision": "allow",
+          "reason": ""
+        },
+        {
+          "step": 2,
+          "decision": "allow",
+          "reason": ""
+        },
+        {
+          "step": 3,
+          "decision": "allow",
+          "reason": ""
+        },
+        {
+          "step": 4,
+          "decision": "deny",
+          "reason": "[TDQ:TICK] 3 edits in a row with no tick in the plan — close the task before editing on.\nTask still in progress → update notes or tasks in the plan file to reset the streak.\nTest green → flip to [x]…"
+        },
+        {
+          "step": 5,
+          "decision": "deny",
+          "reason": "[TDQ:TICK] (lặp) 3 edits in a row with no tick in the plan — close the task before editing on.\nGỡ nhanh: Task still in progress → update notes or tasks in the plan file to reset the streak."
+        }
+      ],
+      "technical_cause": "edit_gate.py:285-299 counts code_edit rows matching tick['sha']; once streak >= STREAK_NGUONG (3), edit #4+ is blocked until plan.md sha256 changes.",
+      "transcript_ref": "15919377 L3115-3123"
+    }
+  ],
+  "controls": [
+    {
+      "id": "lsp_tdq_start_lsp_missing_lang_control",
+      "group": "lsp_non_lsp",
+      "hook": "lsp_gate.py",
+      "protocol": "antigravity",
+      "tool_name": "call_mcp_tool",
+      "payload_summary": "positive control: tdq-workflow-agy_lsp start_lsp without language_id",
+      "decision": "deny",
+      "reason": "[TDQ:LSP] start_lsp without language_id: agent-lsp starts every server and makes TypeScript current (crash 0xc0000409 / No Project on 2026-10-07).\nPass the language of the code you work on, e.g. \"language_id\": \"python\".",
+      "reproduced": true,
+      "rc": 0,
+      "technical_cause": "Control case proving TDQ_LSP_SERVER_RE still matches tdq-workflow-agy_lsp and denies [TDQ:LSP] when language_id is omitted, while non-LSP servers like chrome-devtools pass.",
+      "transcript_ref": "scripts/search_rules.py:975-985"
+    }
+  ],
+  "summary": {
+    "total_cases": 14,
+    "reproduced_count": 9,
+    "by_group": {
+      "search_malformed": {
+        "total": 8,
+        "reproduced": 7
+      },
+      "lsp_non_lsp": {
+        "total": 4,
+        "reproduced": 0
+      },
+      "tick_loop": {
+        "total": 2,
+        "reproduced": 2
+      }
+    }
+  }
+}
