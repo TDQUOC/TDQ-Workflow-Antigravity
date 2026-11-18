@@ -4,6 +4,8 @@ import argparse
 from datetime import datetime
 import json
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -26,6 +28,44 @@ def _log(message: str) -> None:
     if os.environ.get("TDQ_LOG", "1") != "0":
         stamp = datetime.now().isoformat(timespec="seconds")
         print(f"[{stamp}] install_agy_plugin: {message}", file=sys.stderr)
+
+
+def probe_python_path_command(timeout: float = 5.0) -> dict:
+    """Verify `python -X utf8` on PATH executes real Python 3 rather than a WindowsApps stub."""
+    resolved = shutil.which("python")
+    kw = {"capture_output": True, "text": True, "timeout": timeout, "check": False}
+    if os.name == "nt":
+        kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    err_note = ""
+    try:
+        proc = subprocess.run(["python", "-X", "utf8", "-c", "pass"], **kw)
+        rc = proc.returncode
+    except (OSError, subprocess.SubprocessError) as exc:
+        rc = -1
+        err_note = str(exc)
+
+    is_windowsapps_stub = ("windowsapps" in (resolved or "").lower()) or (rc != 0)
+    ok = (rc == 0) and not is_windowsapps_stub
+    warning = ""
+    if not ok:
+        detail = f" ({err_note})" if err_note else ""
+        warning = (
+            f"python -X utf8 probe failed (resolved={resolved or 'not found'}, rc={rc}){detail}. "
+            "Place a real Python 3 directory above WindowsApps on PATH or disable the "
+            "Microsoft Store App Execution Alias for python.exe; fallback: py -3 -X utf8."
+        )
+        _log(f"WARNING: {warning}")
+    else:
+        _log(f"python probe ok ({resolved or 'python'})")
+    return {
+        "ok": ok,
+        "command": "python -X utf8",
+        "resolved": resolved,
+        "is_windowsapps_stub": is_windowsapps_stub,
+        "returncode": rc,
+        "warning": warning,
+        "fallback": "py -3 -X utf8",
+    }
 
 
 def _copy_plugin(src: Path, dst: Path) -> int:
@@ -244,6 +284,7 @@ def main(argv=None) -> int:
         raise SystemExit(
             f"Compiled plugin missing at {args.src}; run build_agy_plugin.py first."
         )
+    python_probe = probe_python_path_command()
     if args.dry_run:
         rtk_rc, rtk_status = _handle_rtk(
             args.src, args.with_rtk, args.skip_rtk, dry_run=True
@@ -260,6 +301,7 @@ def main(argv=None) -> int:
             "dry_run": True,
             "src": str(args.src),
             "target": str(args.target),
+            "python_probe": python_probe,
             "rtk": rtk_status,
             "caveman": caveman_status,
         }))
@@ -285,6 +327,7 @@ def main(argv=None) -> int:
         "installed_to": str(args.target),
         "files": files_copied,
         **mcp_res,
+        "python_probe": python_probe,
         "rtk": rtk_status,
         "caveman": caveman_status,
     }))

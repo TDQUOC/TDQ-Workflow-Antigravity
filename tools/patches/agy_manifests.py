@@ -88,52 +88,57 @@ def generate_logo_svg(plugin_root: Path) -> None:
 
 
 def _hook_cmd(script_name: str, event_name: str) -> Dict[str, str]:
-    """Return Antigravity hook handler entry using unquoted relative path for Windows cmd /c safety."""
+    """Return Antigravity dispatch hook entry using unquoted relative path for Windows cmd /c safety."""
+    _ = script_name
     return {
         "type": "command",
-        "command": f"py -3 -X utf8 hooks/scripts/{script_name} --event {event_name}",
+        "command": f"python -X utf8 hooks/scripts/dispatch.py --event {event_name}",
     }
 
 
 def generate_hooks_json(plugin_root: Path) -> None:
-    """Write top-level Antigravity hooks.json wiring all 6 active lifecycle events + gates."""
+    """Write top-level Antigravity hooks.json wiring all 6 active lifecycle events via dispatch.py."""
+    pre_tool_matchers = (
+        "edit_file|write_to_file|write_file|replace_file_content|multi_replace_file_content|notebook_edit",
+        "read_file|view_file",
+        "run_command",
+        "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory",
+        "mcp_.*lsp_.*|call_mcp_tool",
+        "ask_question|ask_user_question",
+        "invoke_subagent|swarm|define_subagent",
+    )
     spec = {
         "tdq-session-start": {
             "enabled": True,
-            "SessionStart": [_hook_cmd("session_start.py", "SessionStart")],
+            "SessionStart": [_hook_cmd("dispatch.py", "SessionStart")],
         },
         "tdq-pre-invocation": {
             "enabled": True,
-            "PreInvocation": [
-                _hook_cmd("prompt_context.py", "PreInvocation"),
-                _hook_cmd("search_observe.py", "PreInvocation"),
-            ],
+            "PreInvocation": [_hook_cmd("dispatch.py", "PreInvocation")],
         },
         "tdq-pre-tool-gates": {
             "enabled": True,
             "PreToolUse": [
-                {"matcher": "edit_file|write_to_file|write_file|replace_file_content|multi_replace_file_content|notebook_edit", "hooks": [_hook_cmd("edit_gate.py", "PreToolUse")]},
-                {"matcher": "read_file|view_file", "hooks": [_hook_cmd("read_gate.py", "PreToolUse")]},
-                {"matcher": "run_command", "hooks": [_hook_cmd("command_gate.py", "PreToolUse")]},
-                {"matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory", "hooks": [_hook_cmd("search_gate.py", "PreToolUse")]},
-                {"matcher": "mcp_.*lsp_.*|call_mcp_tool", "hooks": [_hook_cmd("lsp_gate.py", "PreToolUse"), _hook_cmd("search_observe.py", "PreToolUse")]},
-                {"matcher": "ask_question|ask_user_question", "hooks": [_hook_cmd("ask_gate.py", "PreToolUse")]},
-                {"matcher": "invoke_subagent|swarm|define_subagent", "hooks": [_hook_cmd("subagent_dispatch_gate.py", "PreToolUse")]},
+                {"matcher": matcher, "hooks": [_hook_cmd("dispatch.py", "PreToolUse")]}
+                for matcher in pre_tool_matchers
             ],
         },
         "tdq-post-tool-observe": {
             "enabled": True,
             "PostToolUse": [
-                {"matcher": "run_command|read_file|view_file|grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool", "hooks": [_hook_cmd("search_observe.py", "PostToolUse")]},
+                {
+                    "matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool",
+                    "hooks": [_hook_cmd("dispatch.py", "PostToolUse")],
+                },
             ],
         },
         "tdq-post-invocation": {
             "enabled": True,
-            "PostInvocation": [_hook_cmd("post_invocation.py", "PostInvocation")],
+            "PostInvocation": [_hook_cmd("dispatch.py", "PostInvocation")],
         },
         "tdq-stop-gate": {
             "enabled": True,
-            "Stop": [_hook_cmd("stop_gate.py", "Stop")],
+            "Stop": [_hook_cmd("dispatch.py", "Stop")],
         },
     }
     write_utf8(plugin_root / "hooks.json", json.dumps(spec, indent=2, ensure_ascii=False) + "\n")
@@ -169,7 +174,7 @@ def generate_two_tier_rules(plugin_root: Path) -> None:
 
     agents_md = """# TDQ Workflow — Google Antigravity Core Rules (Soul & Constitution)
 
-> Soul: **chất lượng > runtime > context cost** · Source of Truth: `skills/tdq-conventions/references/soul.md`
+> Soul: **chất lượng > runtime > context cost** <!-- i18n-allow: canonical Soul line --> · Source of Truth: `skills/tdq-conventions/references/soul.md`
 
 ## 1. Mandatory Entry & Phase Sequence
 - **Every user request MUST begin with `tdq-intake`** (`skills/tdq-intake/SKILL.md`). NEVER switch into harness `EnterPlanMode` on your own (`[TDQ:NO-PLAN-MODE]`).
