@@ -19,6 +19,16 @@ EXCLUDED_SCRIPTS = {
     "check_canvas_layout.py",
 }
 
+EXCLUDED_AGY_HOOKS = {
+    "doc_file_gate.py",
+    "strategic_compact_gate.py",
+    "stop_batch_checker.py",
+    "agy_pretooluse_gate.py",
+    "agy_stop_gate.py",
+    "codex_edit_gate.py",
+    "subagent_start.py",
+}
+
 
 def force_writable_rmtree(path: Path) -> None:
     """Remove directory tree safely on Windows even when read-only bits exist."""

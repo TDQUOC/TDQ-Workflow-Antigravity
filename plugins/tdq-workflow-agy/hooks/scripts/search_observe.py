@@ -36,6 +36,7 @@ for _p in (_tdq_scripts, _tdq_here):
 import utf8_io  # noqa: E402,F401
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -53,8 +54,21 @@ HAN_PHIEN_GIAY = 6 * 3600
 # The tokenizer, the concept-call recognizer and the state builder live in
 # `scripts/search_rules.py` (pure): the replay tool shares them, so the live ledger and the
 # replay can never disagree on what counts (they did, until QC round 1 of 2026-10-03).
+import search_rules  # noqa: E402
 from search_rules import (TOKEN, la_goi_khai_niem, la_tool_tdq_lsp,  # noqa: E402,F401
                           phan_loai_ket_qua_lsp, trang_thai)
+
+
+def _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan):
+    if not _common.is_agy():
+        return
+    norm_name, _ = search_rules._agy_unwrap_tool(tool_name, tool_input)
+    is_graphify = bool(re.match(r"^mcp_+(?:[A-Za-z0-9_-]+_)?graphify", str(norm_name or ""), re.I))
+    if not (nhan or la_tool_tdq_lsp(norm_name) or is_graphify):
+        return
+    row = {"ts": _common.tdq_state.now_iso(), "kind": "observe", "event": "search_grace",
+           "type": "search_grace", "state": "reset", "session": phien, "tool": str(norm_name)}
+    _common._lock_and_append_jsonl(_common._shard_turn_path(cwd, phien), row)
 
 
 def _log(message):
@@ -169,6 +183,7 @@ def main():
 
     if su_kien == "PreToolUse":
         nhan = la_goi_khai_niem(tool_name, tool_input)
+        _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
         if nhan:
             row = {
                 "ts": time.time(),
@@ -219,6 +234,7 @@ def main():
 
         if su_kien == "PostToolUse":
             nhan = la_goi_khai_niem(tool_name, tool_input)
+            _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
             if nhan:
                 ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "khai_niem", "cong_cu": nhan})
                 _log(f"khai_niem · {nhan} · {khoa}")
@@ -228,6 +244,7 @@ def main():
 
     # Fallback for events without explicit hook_event_name
     nhan = la_goi_khai_niem(tool_name, tool_input)
+    _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
     if nhan:
         ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "khai_niem", "cong_cu": nhan})
         _log(f"khai_niem · {nhan} · {khoa}")

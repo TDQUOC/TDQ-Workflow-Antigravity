@@ -134,6 +134,28 @@ _PS_WRITE_PATTERN = re.compile(
 )
 
 
+
+
+def _has_banned_agy_git(cmd, cwd, payload):
+    from _common import block
+    branch_names = []
+    for pattern in BRANCH_PATTERNS:
+        branch_names += [_clean(m) for m in pattern.findall(cmd)]
+    for b_name, w_path in WORKTREE.findall(cmd):
+        if b_name:
+            branch_names.append(_clean(b_name))
+        if w_path:
+            branch_names.append(os.path.basename(_clean(w_path).rstrip("/")))
+    for name in branch_names:
+        if BAN.match(name):
+            block(cwd, payload, "TDQ:GIT", [f"AI-prefixed branch/worktree name {name!r} is banned; name it after the work."])
+            return True
+    if re.search(r"git\b.*\bcommit\b", cmd, re.DOTALL) and any(p.search(cmd) for p in BAD_MSG):
+        block(cwd, payload, "TDQ:GIT", ["AI trailers (Co-Authored-By / generated with) are banned in commit messages."])
+        return True
+    return False
+
+
 def _enforce_agy_bash_guards(payload, cwd):
     info = detect_subagent(payload, cwd)
     agy = is_agy()
@@ -147,11 +169,14 @@ def _enforce_agy_bash_guards(payload, cwd):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
         return True
     norm_cmd = cmd.replace("\\", "/")
-    if agy and _PS_WRITE_PATTERN.search(cmd) and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd):
-        block(cwd, payload, "GATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])
+    if agy and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd) and (
+        _PS_WRITE_PATTERN.search(cmd)
+        or any(p.search(norm_cmd) for p in STATE_WRITES[:5])
+        or re.search(r"\bopen\([^)]*docs/tdq/(?:state\.json|STATE\.md)[^)]*['\"](?:w|a|x)[a-z+]*['\"]", norm_cmd)
+    ):
+        block(cwd, payload, "STATE", ["Do not mutate TDQ state directly; use tdq_state.py CLI."])
         return True
-    if agy and re.search(r"git\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch)\s+['\"]?(?:claude|antigravity|gemini|codex)[-_]", cmd, re.IGNORECASE):
-        block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])
+    if agy and _has_banned_agy_git(cmd, cwd, payload):
         return True
     return False
 
@@ -234,7 +259,7 @@ def eval_bash(payload, suppress_output_remind=False):
         or any(not DOCS_ARTIFACT.search(target) and target.lower() not in ("/dev/null", "$null")
                for target in STDOUT_WRITE.findall(part))
         for part in parts)
-    if payload.get("agent_id") and state.get("active_request") \
+    if (payload.get("agent_id") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \
             and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
         block(cwd, payload, "TDQ:TEAM", [
             "A sub-agent may not mutate the project through Bash/PowerShell before implement.",

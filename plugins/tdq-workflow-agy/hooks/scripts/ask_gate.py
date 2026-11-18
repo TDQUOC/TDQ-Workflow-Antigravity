@@ -59,6 +59,8 @@ def main():
             "Popup question UI is banned during an active TDQ request.",
             "Ask numbered options (1a 2b 3c) directly in chat instead.",
         ])
+    if _common.is_agy():
+        sys.exit(0)
     phase = effective_phase(state, warn=False) if isinstance(state, dict) else None
     nhac = phase is not None and can_nhac(state, phase)
     _log(f"phase={phase} · {'remind' if nhac else 'silent'}")

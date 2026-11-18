@@ -1,6 +1,6 @@
 # TDQ Workflow — Google Antigravity Core Rules (Soul & Constitution)
 
-> Soul: **chất lượng > runtime > context cost** · Source of Truth: `skills/tdq-conventions/references/soul.md`
+> Soul: **chất lượng > runtime > context cost** <!-- i18n-allow: canonical Soul line --> · Source of Truth: `skills/tdq-conventions/references/soul.md`
 
 ## 1. Mandatory Entry & Phase Sequence
 - **Every user request MUST begin with `tdq-intake`** (`skills/tdq-intake/SKILL.md`). NEVER switch into harness `EnterPlanMode` on your own (`[TDQ:NO-PLAN-MODE]`).

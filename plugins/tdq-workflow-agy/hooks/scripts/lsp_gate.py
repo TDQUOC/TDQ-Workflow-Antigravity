@@ -133,20 +133,110 @@ def phan_xu_blast_radius(cwd, tool_input, rows=None):
     return []
 
 
+_ROOT_LANG_MARKERS = {
+    "pyproject.toml": "python",
+    "requirements.txt": "python",
+    "setup.py": "python",
+    "tsconfig.json": "typescript",
+    "package.json": "typescript",
+    "jsconfig.json": "javascript",
+    "go.mod": "go",
+    "Cargo.toml": "rust",
+    "pom.xml": "java",
+    "build.gradle": "java",
+    "build.gradle.kts": "java",
+}
+
+
+def _lang_family(lang):
+    return "typescript" if lang in HO_TS else lang
+
+
+def _pick_from_module_table(cap, goc):
+    if not cap:
+        return None, None
+    if goc:
+        goc_c = _chuan(goc)
+        matched = [(g, l) for g, l in cap if _chuan(g) == goc_c and l]
+        families = {_lang_family(l) for _, l in matched}
+        if len(families) == 1:
+            return matched[0][1], matched[0][0]
+        return None, None
+    families = {_lang_family(l) for _, l in cap if l}
+    if len(families) == 1:
+        return cap[0][1], cap[0][0]
+    return None, None
+
+
+def _detect_unique_lang_o1(cwd, goc=""):
+    """Detect unique project language in O(1) without calling lsp_module.do_module."""
+    cap = doc_cap_hop_le(cwd)
+    if cap:
+        return _pick_from_module_table(cap, goc)
+    if not cwd or not os.path.isdir(cwd):
+        return None, None
+    found = []
+    try:
+        entries = list(os.scandir(cwd))
+    except OSError:
+        return None, None
+    for entry in entries:
+        if not entry.is_file():
+            continue
+        if entry.name in _ROOT_LANG_MARKERS:
+            found.append(_ROOT_LANG_MARKERS[entry.name])
+        elif entry.name.lower().endswith((".csproj", ".sln")):
+            found.append("csharp")
+    families = {_lang_family(l) for l in found}
+    if len(families) != 1:
+        return None, None
+    chosen = "typescript" if "typescript" in found else found[0]
+    return chosen, cwd
+
+
+def _agy_blast_radius(cwd, phien, tool_input):
+    khoa = khoa_hien_tai(cwd, phien)
+    rows = doc_so(cwd, khoa, phien)
+    scope = tool_input.get("scope", "exported")
+    transitive = bool(tool_input.get("include_transitive")) is True
+    if _common.is_agy() and (scope != "exported" or transitive):
+        patched = dict(tool_input, scope="exported", include_transitive=False)
+        dong = phan_xu_blast_radius(cwd, patched, rows)
+        if not dong:
+            _common.set_overwrite({"scope": "exported", "include_transitive": False})
+            _log("blast_radius auto-overwrite scope=exported · allow")
+            return []
+        return dong
+    dong = phan_xu_blast_radius(cwd, tool_input, rows)
+    _log(f"blast_radius files={len(tool_input.get('changed_files') or [])} - {'deny' if dong else 'allow'}")
+    return dong
+
+
+def _agy_start_lsp(cwd, tool_input):
+    lang = str(tool_input.get("language_id") or "").strip()
+    goc = str(tool_input.get("root_dir") or "").strip()
+    if _common.is_agy() and not lang:
+        det_lang, det_root = _detect_unique_lang_o1(cwd, goc)
+        if det_lang:
+            ov = {"language_id": det_lang}
+            if not goc and det_root:
+                ov["root_dir"] = det_root
+            _common.set_overwrite(ov)
+            _log(f"start_lsp auto-overwrite language_id={det_lang!r} - allow")
+            return []
+    dong = phan_xu(cwd, tool_input)
+    _log(f"language_id={tool_input.get('language_id')!r} root={tool_input.get('root_dir')!r} - "
+         f"{'deny' if dong else 'allow'}")
+    return dong
+
+
 def _phan_xu_lenh(cwd, phien, op, tool_input):
     """Route a TDQ LSP call to blast_radius, start_lsp, or allow."""
     if op == "blast_radius":
-        khoa = khoa_hien_tai(cwd, phien)
-        rows = doc_so(cwd, khoa, phien)
-        dong = phan_xu_blast_radius(cwd, tool_input, rows)
-        _log(f"blast_radius files={len(tool_input.get('changed_files') or [])} · {'deny' if dong else 'allow'}")
-        return dong
+        return _agy_blast_radius(cwd, phien, tool_input)
     if op == "start_lsp":
-        dong = phan_xu(cwd, tool_input)
-        _log(f"language_id={tool_input.get('language_id')!r} root={tool_input.get('root_dir')!r} · "
-             f"{'deny' if dong else 'allow'}")
-        return dong
-    _log(f"tdq-lsp op={op} — allow")
+        return _agy_start_lsp(cwd, tool_input)
+    _log(f"tdq-lsp op={op} - allow")
     return []
 
 

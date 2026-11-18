@@ -634,6 +634,7 @@ UNTRACKED_HASH_BUDGET = 4194304     # total bytes readable per fingerprint pass
 BOOKKEEPING_PATHS = ("docs/tdq", "docs/workinglog", "graphify-out")
 _EXCLUDE = tuple(f":(top,exclude){p}" for p in BOOKKEEPING_PATHS)
 _ROOT_CACHE = {}
+_REPO_ROOT_CACHE_MAX = 64
 
 
 def today_log_rel():
@@ -665,12 +666,145 @@ def _git(cwd, *args):
     return proc.stdout if proc.returncode == 0 else None
 
 
-def repo_root(cwd):
-    """Repo root (porcelain prints paths from the root, not from cwd). None if not a repo."""
-    if cwd not in _ROOT_CACHE:
-        out = _git(cwd, "rev-parse", "--show-toplevel")
-        _ROOT_CACHE[cwd] = out.decode("utf-8", "replace").strip() if out else None
-    return _ROOT_CACHE[cwd]
+def _read_gitdir_target(git_file: str, base_dir: str) -> str | None:
+    """Read target path from a `.git` file containing `gitdir: <path>`."""
+    try:
+        with open(git_file, "r", encoding="utf-8", errors="replace") as fh:
+            raw = fh.read(1024)
+    except OSError:
+        return None
+    for line in raw.splitlines():
+        if line.lower().startswith("gitdir:"):
+            target = line.split(":", 1)[1].strip()
+            if not target:
+                return None
+            if os.path.isabs(target):
+                return target
+            return os.path.normpath(os.path.join(base_dir, target))
+    return None
+
+
+def _find_git_head(cwd: str, max_depth: int = 8) -> str | None:
+    """Locate .git/HEAD (or gitdir pointer file) up to max_depth parent dirs."""
+    cur = os.path.abspath(cwd or os.getcwd())
+    for _ in range(max_depth + 1):
+        git_entry = os.path.join(cur, ".git")
+        git_dir = None
+        if os.path.isdir(git_entry):
+            git_dir = git_entry
+        elif os.path.isfile(git_entry):
+            git_dir = _read_gitdir_target(git_entry, cur)
+        if git_dir:
+            head = os.path.join(git_dir, "HEAD")
+            if os.path.isfile(head):
+                return head
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            break
+        cur = parent
+    return None
+
+
+def _head_mtime_ns(head_path: str | None) -> int | None:
+    """Return st_mtime_ns of HEAD file, or None when unavailable."""
+    if not head_path:
+        return None
+    try:
+        return os.stat(head_path).st_mtime_ns
+    except OSError:
+        return None
+
+
+def _load_repo_root_cache(cache_path: str) -> dict:
+    """Load persisted repo-root map from JSON, or {} on missing/corrupt."""
+    try:
+        with open(cache_path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def _lookup_repo_root_cache(
+    disk_cache: dict, cwd_key: str, mtime_ns: int
+) -> str | None:
+    """Return cached repo root when HEAD mtime matches and root dir exists."""
+    entry = disk_cache.get(cwd_key)
+    if not isinstance(entry, dict) or entry.get("head_mtime_ns") != mtime_ns:
+        return None
+    cached_root = entry.get("root")
+    if isinstance(cached_root, str) and cached_root and os.path.isdir(cached_root):
+        return cached_root
+    return None
+
+
+def _save_repo_root_cache(cache_path: str, cache_data: dict, cwd_key: str,
+                          root: str, head_mtime_ns: int) -> None:
+    """Atomically persist bounded repo-root cache, merging disk state under lock."""
+    lock_path = cache_path + ".lock"
+    lf = None
+    try:
+        lf = open(lock_path, "a+b")
+        if os.name == "nt":
+            import msvcrt
+            lf.seek(0)
+            try:
+                msvcrt.locking(lf.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError:
+                pass
+    except OSError:
+        lf = None
+    try:
+        fresh = _load_repo_root_cache(cache_path)
+        updated = dict(cache_data) if isinstance(cache_data, dict) else {}
+        updated.update(fresh)
+        updated.pop(cwd_key, None)
+        updated[cwd_key] = {"root": root, "head_mtime_ns": head_mtime_ns}
+        if len(updated) > _REPO_ROOT_CACHE_MAX:
+            keep_keys = list(updated.keys())[-_REPO_ROOT_CACHE_MAX:]
+            updated = {key: updated[key] for key in keep_keys}
+        _atomic_write(cache_path, json.dumps(updated, ensure_ascii=False))
+    except OSError as exc:
+        _warn(f"could not write repo root cache ({exc.__class__.__name__})")
+    finally:
+        if lf is not None:
+            if os.name == "nt":
+                import msvcrt
+                try:
+                    lf.seek(0)
+                    msvcrt.locking(lf.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
+            try:
+                lf.close()
+            except OSError:
+                pass
+
+
+def repo_root(cwd: str) -> str | None:
+    """Return git repo root for cwd (cached by .git/HEAD mtime_ns), else None."""
+    if not cwd:
+        return None
+    abs_cwd = os.path.abspath(cwd)
+    if abs_cwd in _ROOT_CACHE:
+        return _ROOT_CACHE[abs_cwd]
+
+    mtime_ns = _head_mtime_ns(_find_git_head(abs_cwd))
+    cache_path = os.path.join(tempfile.gettempdir(), "tdq-repo-roots.json")
+    disk_cache = {}
+    if mtime_ns is not None:
+        disk_cache = _load_repo_root_cache(cache_path)
+        cached_root = _lookup_repo_root_cache(disk_cache, abs_cwd, mtime_ns)
+        if cached_root is not None:
+            _ROOT_CACHE[abs_cwd] = cached_root
+            return cached_root
+
+    out = _git(cwd, "rev-parse", "--show-toplevel")
+    root = out.decode("utf-8", "replace").strip() if out else None
+    _ROOT_CACHE[abs_cwd] = root
+    if root and mtime_ns is not None:
+        _save_repo_root_cache(cache_path, disk_cache, abs_cwd, root, mtime_ns)
+    return root
 
 
 def _untracked_mark(path, budget):
@@ -689,6 +823,14 @@ def _untracked_mark(path, budget):
         return f"{st.st_size}:{st.st_mtime_ns}", 0
     except OSError:
         return None, 0
+
+
+def _has_tracked_git_changes(status: bytes) -> bool:
+    """True when porcelain status reports at least one non-untracked (tracked) line."""
+    for line in status.splitlines():
+        if line.strip() and not line.startswith(b"?? "):
+            return True
+    return False
 
 
 def repo_status_digest(cwd, status=None):
@@ -712,7 +854,11 @@ def repo_status_digest(cwd, status=None):
     if status is None:
         return None
     # a repo with no commit yet → no HEAD → rc!=0 → b""
-    diff = _git(cwd, "diff", "HEAD", "--", ":(top)", *_EXCLUDE) or b""
+    diff = (
+        _git(cwd, "diff", "HEAD", "--", ":(top)", *_EXCLUDE) or b""
+        if _has_tracked_git_changes(status)
+        else b""
+    )
     h = hashlib.sha256(status + b"\0" + diff)
     # Untracked files: porcelain prints `?? path`, which does not change when the
     # content changes, and `diff HEAD` never touches them — they need their own

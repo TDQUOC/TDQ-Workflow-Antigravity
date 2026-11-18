@@ -1,17 +1,17 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-18T15:25:23+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-18T23:26:49+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-18-1346-scan-hook-anh-huong-runtime |
+| Request | 2026-11-18-1814-toi-uu-hook-huong-dan |
 | Lane | full |
 | Phase | report |
-| Spec | docs/tdq/spec/2026-11-18-1346-scan-hook-anh-huong-runtime.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-18-1346-scan-hook-anh-huong-runtime.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-18-1814-toi-uu-hook-huong-dan.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-18-1814-toi-uu-hook-huong-dan.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | lite |
+| QC level | ultra |
 | Run mode | subagent |
 
 ## Where we are

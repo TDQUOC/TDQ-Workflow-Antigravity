@@ -217,6 +217,46 @@ def _khop_ngoac(s, i, ngan_sach=None):
     return n
 
 
+_PS_PUNCT_ESCAPES = frozenset({'"', "'", "$", "`"})
+_PS_CTRL_ESCAPES = frozenset("nrt0abfv")
+
+
+def _consume_dquote_backtick(
+    s: str, i: int, dquote_has_esc: bool
+) -> tuple[str, int, bool]:
+    """Handle double-quoted backtick as PS escape or closing-quote literal."""
+    n = len(s)
+    if i + 1 >= n:
+        return "`", i + 1, dquote_has_esc
+    nxt = s[i + 1]
+    if nxt != '"':
+        return s[i:i + 2], i + 2, dquote_has_esc
+    if not dquote_has_esc:
+        rest = s[i + 2:].lstrip(" \t")
+        if not rest or rest[0] in ";|&)\r\n":
+            return "`", i + 1, dquote_has_esc
+    return s[i:i + 2], i + 2, True
+
+
+def _consume_unquoted_backtick(s: str, i: int) -> tuple[str, int] | None:
+    """Return (text, next_i) for PowerShell line continuation or escape, else None."""
+    n = len(s)
+    if s.startswith("\r\n", i + 1):
+        return " ", i + 3
+    if i + 1 >= n:
+        return None
+    nxt = s[i + 1]
+    if nxt == "\n":
+        return " ", i + 2
+    if nxt in _PS_PUNCT_ESCAPES:
+        return s[i:i + 2], i + 2
+    if nxt in _PS_CTRL_ESCAPES and (
+        i + 2 == n or (not s[i + 2].isalnum() and s[i + 2] != "`")
+    ):
+        return s[i:i + 2], i + 2
+    return None
+
+
 def _tach_script(s, do_sau=0, ngan_sach=None):
     """Split a shell script into pipelines (lists of command strings), quote-aware.
 
@@ -288,7 +328,30 @@ def _tach_script(s, do_sau=0, ngan_sach=None):
             buf.append(CHO_THAY)
             i = j + 1
             continue
+        if ngoac == '"':
+            if c == "`":
+                chunk, next_i, dquote_has_esc = _consume_dquote_backtick(
+                    s, i, dquote_has_esc
+                )
+                buf.append(chunk)
+                if next_i - i > 1:
+                    ngan_sach.tinh_cong_viec(next_i - i - 1)
+                i = next_i
+                continue
+            buf.append(c)
+            if c == '"':
+                ngoac = None
+            i += 1
+            continue
         if c == "`":
+            ps_step = _consume_unquoted_backtick(s, i)
+            if ps_step is not None:
+                chunk, next_i = ps_step
+                buf.append(chunk)
+                if next_i - i > 1:
+                    ngan_sach.tinh_cong_viec(next_i - i - 1)
+                i = next_i
+                continue
             j = s.find("`", i + 1)
             if j < 0:
                 j = n
@@ -298,12 +361,6 @@ def _tach_script(s, do_sau=0, ngan_sach=None):
                 con.append(s[i + 1:j])
             buf.append(CHO_THAY)
             i = j + 1
-            continue
-        if ngoac == '"':
-            buf.append(c)
-            if c == '"':
-                ngoac = None
-            i += 1
             continue
         if c in "'\"":
             ngoac = c
@@ -368,6 +425,9 @@ def _tach_tu(phan, ngan_sach=None):
     try:
         return shlex.split(phan, posix=True)
     except ValueError:
+        ps_tokens = _retry_shlex_ps(phan)
+        if ps_tokens is not None:
+            return ps_tokens
         if sys.platform == "win32":
             fixed = re.sub(
                 r'([A-Za-z]:\\[^"\n]*?|\\[^"\n]*?)\\"($|[\s;|&)])',
@@ -382,6 +442,17 @@ def _tach_tu(phan, ngan_sach=None):
         if ngan_sach:
             ngan_sach.la_malformed = True
         return [t.strip("'\"") for t in re.findall(r"\"[^\"]*\"?|'[^']*'?|\S+", phan)]
+
+
+def _retry_shlex_ps(phan: str) -> list[str] | None:
+    """Retry shlex.split after translating PowerShell `` and `" escapes."""
+    if '`"' not in phan:
+        return None
+    fixed = re.sub(r'``|`"', lambda m: "\\\\" if m.group(0) == "``" else '\\"', phan)
+    try:
+        return shlex.split(fixed, posix=True)
+    except ValueError:
+        return None
 
 
 _WRAPPER_VAL_FLAGS = {
@@ -636,9 +707,30 @@ def _script_cua(lenh):
     return "" if lenh is None else str(lenh)
 
 
+_PS_HERESTRING_RE = re.compile(
+    r"""(@(['"])[ \t]*\r?\n)(.*?)(^\2@)""",
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def _strip_ps_herestrings(script: str) -> str:
+    """Blank out PowerShell @'...'@ / @"..."@ bodies while preserving newlines."""
+    if "@'" not in script and '@"' not in script:
+        return script
+
+    def _blank_body(match: re.Match[str]) -> str:
+        body = "".join(
+            ch if ch in ("\n", "\r") else " " for ch in match.group(3)
+        )
+        return f"{match.group(1)}{body}{match.group(4)}"
+
+    return _PS_HERESTRING_RE.sub(_blank_body, script)
+
+
 def _bo_heredoc(script):
     """Drop heredoc BODIES: `cat > x.sh <<'EOF'` followed by a `grep` line is writing a file, not
     searching. The first version split the body into commands (review 2026-10-03, R1#4)."""
+    script = _strip_ps_herestrings(script)
     if "<<" not in script:
         return script
     ra, cho = [], []

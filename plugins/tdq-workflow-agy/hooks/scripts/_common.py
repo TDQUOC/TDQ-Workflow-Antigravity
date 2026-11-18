@@ -1,136 +1,193 @@
-"""Shared helpers for the TDQ hooks (stdlib only).
-
-Compliance protocol 0.3.0 (spec §2.1): a hook emits a reminder carrying a CODE, and writes
-both kinds of event into the turn ledger:
-  - remind : which code the hook reminded about
-  - observe: what REALLY happened (which file was edited, which state command ran)
-At the end of the turn `stop_gate` pairs the two sides up. The evidence of compliance is the
-observable EFFECT, never the model's own claim — which is why no hook reads the transcript
-and none of them trusts a `✓ [TDQ:...]` line the model printed itself.
-"""
+#!/usr/bin/env python3
+"""Dual-protocol shared runtime helpers for TDQ lifecycle hooks (Claude Code + Antigravity 2.0)."""
 import atexit
 import contextlib
+import importlib.util
 import json
 import os
 import re
 import sys
 import time
 import urllib.parse
+from datetime import datetime
 
-_SCRIPTS_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "scripts")
+_HOOKS_DIR = os.path.dirname(os.path.abspath(__file__))
+_SCRIPTS_DIR = os.path.normpath(os.path.join(_HOOKS_DIR, "..", "..", "scripts"))
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
+
+import utf8_io  # noqa: E402,F401
+import tdq_state  # noqa: E402
+from tdq_state import (  # noqa: E402
+    VALID_MODES,
+    lenh_cho_project,
+    mode_label,
+    resolve_project_dir,
+    turn_log_append,
+    turn_log_read,
 )
-sys.path.insert(0, _SCRIPTS_DIR)
-# `utf8_io` first: a hook that dies on a cp1252 console takes the whole turn with it, and every
-# reminder below carries `✓` plus Vietnamese. Imported for the side effect, not for a name.
-import utf8_io  # noqa: E402,F401 — stdout/stderr become UTF-8 the moment this lands
-# The import MUST be `from tdq_state import <name>` and then call `f()` directly, NEVER
-# through the module attribute: graphify (0.9.28 and 0.9.42) only emits a cross-file `calls`
-# edge for the from-import shape. Call through the attribute and the graph goes blind to the
-# whole hook → state chain.
-import tdq_state  # noqa: E402 — kept so other modules can `from _common import tdq_state`
-from tdq_state import (VALID_MODES, mode_label, resolve_project_dir,  # noqa: E402
-                       turn_log_append, turn_log_read)
 from search_rules import chuan_hoa_cong_cu_mcp  # noqa: E402
 
-# 0.2.0 dropped the hard gate; 0.3.0 dropped the approval slash command too — the user
-# approves in plain chat.
-# Every invite offers TWO ways to answer: type a sentence, or type a single letter. The letter
-# is the way in for a user who does not write English either (`prompt_context.LETTER` accepts a
-# bare `a`–`d`), and the recommendation always sits at A, so "A" always means approved.
-APPROVE_HINTS = {
-    "spec": 'say "approve spec" or type "A"',
-    # The plan gate no longer asks about the mode — that is phase `mode`, right after it.
-    # Making the user approve and pick a mode in one sentence is what made the block unreadable.
-    "plan": 'say "approve plan" or type "A"',
-    # {mode} = the mode the plan PROPOSES (its "Mode thực thi:" line), falling back to main.  # i18n-allow
-    # Explained on the spot: an end user has no duty to know what "subagent" means.
-    # The "the plan proposes {mode}" part comes FIRST: the reminder is cut from the tail at the
-    # character cap, and cutting the proposal away leaves the user guessing what to pick.
-    "mode": 'the plan proposes {mode} — say "inline" (I do it step by step right here) '
-            'or "sub-agent" (several assistants in parallel), or type "A"/"B"; '
-            'the old names main/subagent still work',
-    # No skip-QC variant here on purpose (2026-09-23): `muc_qc=off` exists but is never
-    # OFFERED — putting the opt-out in the most-read line is offering it.
-    "quick": 'say "approve quick" or type "A"',
-}
-
-# Built from VALID_MODES, never typed by hand: a binary pair hardcoded here means a plan
-# naming the third mode reads back as None, and the mode gate silently proposes the wrong
-# one. Longest code first, because the regex takes the FIRST matching branch: a short code
-# that is the prefix of a longer one would swallow the tail if it came first.
-_MODE_NHANH = "|".join(re.escape(m) for m in sorted(VALID_MODES, key=len, reverse=True))
-_PLAN_MODE = re.compile(r"Mode thực thi:\s*(%s)" % _MODE_NHANH, re.IGNORECASE)  # i18n-allow
-
-
-def plan_mode(cwd, state):
-    """The mode settled in plan_file (its 'Mode thực thi:' line), None when not written yet."""  # i18n-allow
-    rel = (state or {}).get("plan_file")
-    if not rel:
-        return None
-    path = rel if os.path.isabs(rel) else os.path.join(cwd, rel)
-    try:
-        with open(path, encoding="utf-8") as f:
-            match = _PLAN_MODE.search(f.read())
-    except OSError:
-        return None
-    return match.group(1).lower() if match else None
-
-# The CLOSED list of codes (spec §2.1). Adding a new code means editing the spec first.
-# 2026-09-17: the sixth code, TDQ:GON — the lean-law channels (SessionStart, SubagentStart
-# carry the law body; UserPromptSubmit carries one pointer line). Declared in spec §5 first.
-# 2026-10-02: the seventh, TDQ:DOC — `read_gate.py` on a whole-file re-read. Declared in spec
-# 2026-09-28-2324 §2 first, and documented in `reminder-codes.md` with the other six.
-# 2026-10-03: the eighth, TDQ:SEARCH — `search_gate.py` DENIES a code search that skips the
-# concept layer. The second blocking point of the workflow; why, in `docs/kien-truc.md` 2026-10-03
-# and spec 2026-10-03-0015 §3.
-# 2026-10-03: the ninth, TDQ:ASK — `ask_gate.py` REMINDS (never blocks) when AskUserQuestion is
-# called in implement/qc: an unmet spec threshold is recorded with `lech add`, not asked about.
-# Why, in `docs/kien-truc.md` 2026-10-03 and spec 2026-10-03-0732 §3.
-# 2026-10-08: the tenth, TDQ:LSP — `lsp_gate.py` DENIES `mcp__lsp__start_lsp` sent without a
-# `language_id` or with a (root, language) pair no LSP module of the project has. The reason is a
-# wrong call, not a missing approval; why, in `docs/kien-truc.md` 2026-10-08 and spec
-# 2026-10-07-2225 §3.
 AGY_CODES = (
-    "EDIT", "TEST", "TICK", "DIRTY", "LOG", "READ", "SEARCH", "NO-PLAN-MODE",
-    "LSP", "LSP-WAIT", "COMPACT", "GON", "UNFINISHED", "PAUSE", "LECH",
-    "SETUP", "SUBAGENT", "VUNG", "GATE", "ANCHOR", "ZERO-POPUP", "READONLY",
-    "SCOPE", "FEEDBACK",
+    "APPROVE",
+    "GIT",
+    "TEAM",
+    "STATE",
+    "READONLY",
+    "VUNG",
+    "ZERO-POPUP",
+    "SUBAGENT",
+    "UNFINISHED",
+    "LSP",
+    "SEARCH",
+    "TICK",
+    "DOC",
+    "LOG",
+    "OUTPUT",
+    "SETUP",
+    "GON",
+    "NEXT",
+    "WORKTREE",
+    "ANCHOR",
+    "DOD",
+    "INTAKE",
 )
 CODES = AGY_CODES
 
-# The token budget cap (spec §2.7) — measured on the reminder content.
 MAX_REMIND_CHARS = 200
 MAX_REMIND_LINES = 3
+MAX_USER_MARKDOWN_CHARS = 1200
+
+APPROVE_HINTS = {
+    "spec": 'say "approve spec" or type "A"',
+    "plan": 'say "approve plan" or type "A"',
+    "mode": (
+        'the plan proposes {mode} — say "inline" (I do it step by step right here) '
+        'or "sub-agent" (several assistants in parallel), or type "A"/"B"; '
+        'the old names main/subagent still work'
+    ),
+    "quick": 'say "approve quick" or type "A"',
+}
+
+_MODE_NHANH = "|".join(re.escape(m) for m in sorted(VALID_MODES, key=len, reverse=True))
+_PLAN_MODE = re.compile(rf"Mode th\u1ef1c thi:\s*({_MODE_NHANH})", re.IGNORECASE)
 
 _AGY_TOOLS = frozenset({
-    "run_command", "edit_file", "write_file", "write_to_file", "replace_file_content",
-    "multi_replace_file_content", "read_file", "view_file", "grep_search",
-    "find_by_name", "list_dir", "search_directory", "find_file", "list_directory",
-    "invoke_subagent", "swarm", "define_subagent", "ask_question", "ask_user_question",
-    "call_mcp_tool", "manage_task", "send_message", "enter_plan_mode", "exit_plan_mode",
+    "run_command",
+    "edit_file",
+    "write_file",
+    "write_to_file",
+    "replace_file_content",
+    "multi_replace_file_content",
+    "read_file",
+    "view_file",
+    "grep_search",
+    "find_by_name",
+    "list_dir",
+    "search_directory",
+    "find_file",
+    "list_directory",
+    "invoke_subagent",
+    "swarm",
+    "define_subagent",
+    "ask_question",
+    "ask_user_question",
+    "call_mcp_tool",
+    "manage_task",
+    "send_message",
+    "enter_plan_mode",
+    "exit_plan_mode",
 })
 _AGY_PAYLOAD_KEYS = (
-    "conversation_id", "conversationId", "trajectory_id", "transcriptPath",
-    "workingDirectory", "user_message", "agent_step_idx", "toolName", "toolInput",
-    "workspacePaths", "toolCall", "stepIdx", "invocationNum", "executionNum",
-    "terminationReason", "lastUserInput", "continuationActive", "hookEventName",
+    "conversation_id",
+    "conversationId",
+    "trajectory_id",
+    "transcriptPath",
+    "workingDirectory",
+    "user_message",
+    "agent_step_idx",
+    "toolName",
+    "toolInput",
+    "workspacePaths",
+    "toolCall",
+    "stepIdx",
+    "invocationNum",
+    "executionNum",
+    "terminationReason",
+    "lastUserInput",
+    "continuationActive",
+    "hookEventName",
 )
 TERMINAL_STOP_REASONS = frozenset({
-    "USER_CANCELED", "ERROR", "MAX_INVOCATIONS", "MAX_FORCED_INVOCATIONS",
-    "MAX_TOKEN_BUDGET_EXCEEDED", "TERMINAL_CUSTOM_HOOK",
+    "USER_CANCELED",
+    "ERROR",
+    "MAX_INVOCATIONS",
+    "MAX_FORCED_INVOCATIONS",
+    "MAX_TOKEN_BUDGET_EXCEEDED",
+    "TERMINAL_CUSTOM_HOOK",
 })
+
 _RUNTIME_STATE = {
     "event": None,
     "is_agy": False,
     "deny_reason": None,
     "stop_reason": None,
     "context_lines": [],
+    "user_cards": [],
     "registered": False,
+    "flushed": False,
     "tool_args_present": False,
     "overwrite": {},
+    "raw_tool_name": "",
+    "raw_args_is_str": False,
+    "raw_arguments": {},
     "collapsed_payload": None,
+    "new_user_turn": True,
 }
+_GUIDANCE_CACHE = None
+
+
+def _log(message):
+    """Emit ISO-timestamped stderr log line unless TDQ_LOG=0."""
+    if os.environ.get("TDQ_LOG", "1") != "0":
+        stamp = datetime.now().isoformat(timespec="seconds")
+        print(f"[{stamp}] _common: {message}", file=sys.stderr)
+
+
+def _load_gate_guidance():
+    """Lazily load gate_guidance from hooks/scripts or tools/patches."""
+    global _GUIDANCE_CACHE
+    if _GUIDANCE_CACHE is not None:
+        return _GUIDANCE_CACHE
+    try:
+        import gate_guidance
+        _GUIDANCE_CACHE = gate_guidance
+        return gate_guidance
+    except ImportError:
+        pass
+    fallback_path = os.path.normpath(
+        os.path.join(_HOOKS_DIR, "..", "..", "tools", "patches", "gate_guidance.py")
+    )
+    if os.path.isfile(fallback_path):
+        try:
+            spec = importlib.util.spec_from_file_location("gate_guidance", fallback_path)
+            if spec is not None and spec.loader is not None:
+                mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(mod)
+                _GUIDANCE_CACHE = mod
+                return mod
+        except (ImportError, OSError, SyntaxError, ValueError) as exc:
+            _log(f"fallback gate_guidance import failed: {type(exc).__name__}")
+    return None
+
+
+def _norm_code(code):
+    """Normalize [TDQ:CODE] / TDQ:CODE / code to canonical uppercase key."""
+    gg = _load_gate_guidance()
+    if gg is not None:
+        return gg.normalize_code(code)
+    raw = str(code or "").strip().strip("[]").strip().upper()
+    return raw[4:].strip() if raw.startswith("TDQ:") else raw
 
 
 def has_tool_args():
@@ -147,7 +204,7 @@ def _parse_event_flag(argv=None):
 
 
 def _is_antigravity_payload(raw, event=None):
-    """Detect Antigravity protocol strictly from flag/host/payload markers, never bare env."""
+    """Detect Antigravity protocol strictly from flag/host/payload markers."""
     if event:
         return True
     if os.environ.get("TDQ_HOST") == "antigravity":
@@ -161,7 +218,7 @@ def _is_antigravity_payload(raw, event=None):
 
 
 def is_agy():
-    """Return True when the active hook invocation is running under Antigravity protocol."""
+    """Return True when the active hook invocation uses Antigravity protocol."""
     return bool(_RUNTIME_STATE["is_agy"])
 
 
@@ -171,7 +228,7 @@ def _agy_active(payload=None):
 
 def _unwrap_call_mcp(tool_name, tool_input):
     """Delegate call_mcp_tool and eager AGY unwrapping to scripts/search_rules.py."""
-    tname, tinput, _has_args = chuan_hoa_cong_cu_mcp(tool_name, tool_input)
+    tname, tinput, _ = chuan_hoa_cong_cu_mcp(tool_name, tool_input)
     return tname, tinput
 
 
@@ -196,78 +253,22 @@ def extract_workspace_path(payload):
     return None
 
 
-def _flush_agy_stdout():
-    """Single-JSON stdout emitter called via atexit for Antigravity hook protocol."""
-    if not _RUNTIME_STATE["is_agy"]:
-        return
-    ev = _RUNTIME_STATE["event"]
-    text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
-
-    if ev == "PreToolUse":
-        if _RUNTIME_STATE["deny_reason"]:
-            out = {"decision": "deny", "reason": _RUNTIME_STATE["deny_reason"]}
-        else:
-            out = {"decision": "allow"}
-            if _RUNTIME_STATE.get("overwrite"):
-                out["overwrite"] = dict(_RUNTIME_STATE["overwrite"])
-        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-        return
-
-    if ev == "PostToolUse":
-        sys.stdout.write("{}\n")
-        sys.stdout.flush()
-        return
-
-    if ev in ("SessionStart", "PreInvocation", "PostInvocation"):
-        out = {"injectSteps": [{"systemMessage": {"systemMessage": text}}]} if text else {}
-        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-        return
-
-    if ev == "Stop":
-        if _RUNTIME_STATE["stop_reason"]:
-            out = {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
-        else:
-            out = {"decision": "allow"}
-        sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-        return
-
-    # Legacy union fallback when invoked without --event or hookEventName
-    if _RUNTIME_STATE["deny_reason"]:
-        reason = _RUNTIME_STATE["deny_reason"]
-        payload = {
-            "allow_tool": False,
-            "decision": "deny",
-            "reason": reason,
-            "message": reason,
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "permissionDecision": "deny",
-                "permissionDecisionReason": reason,
-            },
-        }
-        sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-        return
-    if _RUNTIME_STATE["stop_reason"]:
-        payload = {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
-        sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-        return
-    if text:
-        sys.stdout.write(json.dumps({
-            "additionalContext": text,
-            "injectSteps": [{"systemMessage": {"systemMessage": text}}],
-        }, ensure_ascii=False) + "\n")
-        sys.stdout.flush()
-
-
-def _ensure_atexit():
-    if not _RUNTIME_STATE["registered"]:
-        atexit.register(_flush_agy_stdout)
-        _RUNTIME_STATE["registered"] = True
+def _decode_json_object(raw):
+    """Decode dict or up to 3 JSON string layers into (dict, ok)."""
+    if isinstance(raw, dict):
+        return dict(raw), True
+    if isinstance(raw, str):
+        val = raw
+        for _ in range(3):
+            try:
+                val = json.loads(val)
+            except (TypeError, ValueError):
+                return {}, False
+            if isinstance(val, dict):
+                return dict(val), True
+            if not isinstance(val, str):
+                return {}, False
+    return {}, False
 
 
 def _extract_raw_tool_container(payload, tool_call):
@@ -275,80 +276,126 @@ def _extract_raw_tool_container(payload, tool_call):
     for key in ("tool_input", "toolInput"):
         if key in payload and payload[key] is not None:
             return payload[key], True
-    if "args" in tool_call and tool_call["args"] is not None:
-        return tool_call["args"], True
+    for key in ("args", "arguments"):
+        if key in tool_call and tool_call[key] is not None:
+            return tool_call[key], True
     for key in ("arguments", "input"):
         if key in payload and payload[key] is not None:
             return payload[key], True
     return None, False
 
 
-def normalize_payload(raw):
-    """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
-    event = _parse_event_flag()
-    if event is None and isinstance(raw, dict) and raw.get("hookEventName"):
-        event = str(raw.get("hookEventName"))
-    agy = _is_antigravity_payload(raw, event=event)
-    _RUNTIME_STATE.update({
-        "event": event,
-        "is_agy": agy,
-        "deny_reason": None,
-        "stop_reason": None,
-        "context_lines": [],
-        "tool_args_present": False,
-    })
-    if not isinstance(raw, dict):
-        return {}
-    payload = dict(raw)
-    has_args = "tool_input" in payload and isinstance(payload["tool_input"], dict)
-    if agy:
-        if not payload.get("hook_event_name") and event:
-            payload["hook_event_name"] = event
-        tool_call = payload.get("toolCall") if isinstance(payload.get("toolCall"), dict) else {}
-        orig_tname = str(payload.get("tool_name") or payload.get("toolName") or tool_call.get("name") or "")
-        if orig_tname.startswith("CORTEX_STEP_TYPE_"):
-            orig_tname = orig_tname[len("CORTEX_STEP_TYPE_"):].lower()
-        raw_container, has_container = _extract_raw_tool_container(payload, tool_call)
-        tname, tinput, args_present = chuan_hoa_cong_cu_mcp(orig_tname, raw_container)
-        has_args = bool(has_container and args_present)
-        if orig_tname != "call_mcp_tool" and tname != orig_tname:
-            payload["original_tool_name"] = orig_tname
-        tinput = dict(tinput) if isinstance(tinput, dict) else {}
-        if "file_path" not in tinput:
-            for alias in ("TargetFile", "Path", "AbsolutePath", "path", "target_file"):
-                if isinstance(tinput.get(alias), str) and tinput[alias].strip():
-                    tinput["file_path"] = tinput[alias]
-                    break
-        if "command" not in tinput:
-            for alias in ("CommandLine", "cmd"):
-                if isinstance(tinput.get(alias), str) and tinput[alias].strip():
-                    tinput["command"] = tinput[alias]
-                    break
-        if tname in ("read_file", "view_file", "Read"):
-            if "offset" not in tinput and "StartLine" in tinput:
-                tinput["offset"] = tinput.get("StartLine")
-            if "limit" not in tinput and "StartLine" in tinput and "EndLine" in tinput:
-                try:
-                    sl = int(tinput["StartLine"])
-                    el = int(tinput["EndLine"])
-                    if el >= sl:
-                        tinput["limit"] = (el - sl) + 1
-                except (TypeError, ValueError):
-                    pass
-            if "limit" not in tinput and "ByteOffset" in tinput and "EndLine" not in tinput:
-                tinput["limit"] = 150
-        if "tool_name" in payload or "toolName" in payload or tname:
-            payload["tool_name"] = tname
-        if any(k in payload for k in ("tool_input", "toolInput", "toolCall", "arguments", "input")) or tinput:
-            payload["tool_input"] = tinput
-        if not payload.get("prompt") and isinstance(payload.get("lastUserInput"), str) and payload["lastUserInput"].strip():
-            payload["prompt"] = payload["lastUserInput"]
-        if "continuationActive" in payload and "stop_hook_active" not in payload:
-            payload["stop_hook_active"] = bool(payload["continuationActive"])
+def _save_raw_mcp_state(orig_tname, raw_container):
+    """Capture raw tool name and call_mcp_tool Arguments shape before unwrapping."""
+    _RUNTIME_STATE["raw_tool_name"] = orig_tname
+    _RUNTIME_STATE["raw_args_is_str"] = False
+    _RUNTIME_STATE["raw_arguments"] = {}
+    if orig_tname != "call_mcp_tool":
+        return
+    container, ok = _decode_json_object(raw_container)
+    if not ok:
+        return
+    if "Arguments" in container:
+        raw_val = container["Arguments"]
+    elif "arguments" in container:
+        raw_val = container["arguments"]
+    else:
+        return
+    _RUNTIME_STATE["raw_args_is_str"] = isinstance(raw_val, str)
+    decoded_args, decoded_ok = _decode_json_object(raw_val)
+    if decoded_ok:
+        _RUNTIME_STATE["raw_arguments"] = decoded_args
 
-    expected = {"cwd": str, "session_id": str, "tool_name": str,
-                "hook_event_name": str, "prompt": str, "source": str,
-                "agent_type": str, "stop_hook_active": bool, "tool_input": dict}
+
+def _normalize_search_aliases(tinput):
+    """Map Antigravity grep_search/search_directory aliases to Grep keys."""
+    if "pattern" not in tinput:
+        for alias in ("Query", "query", "Pattern"):
+            if isinstance(tinput.get(alias), str) and tinput[alias].strip():
+                tinput["pattern"] = tinput[alias]
+                break
+    if "path" not in tinput:
+        for alias in ("SearchPath", "TargetDir", "search_path"):
+            if isinstance(tinput.get(alias), str) and tinput[alias].strip():
+                tinput["path"] = tinput[alias]
+                break
+    if "glob" not in tinput and tinput.get("Includes"):
+        inc = tinput["Includes"]
+        if isinstance(inc, list) and inc:
+            tinput["glob"] = str(inc[0])
+        elif isinstance(inc, str) and inc.strip():
+            tinput["glob"] = inc
+
+
+def _normalize_tool_aliases(tname, tinput):
+    """Map Antigravity tool input field aliases onto canonical Claude-compatible keys."""
+    if "file_path" not in tinput:
+        for alias in ("TargetFile", "Path", "AbsolutePath", "path", "target_file"):
+            if isinstance(tinput.get(alias), str) and tinput[alias].strip():
+                tinput["file_path"] = tinput[alias]
+                break
+    if "command" not in tinput:
+        for alias in ("CommandLine", "cmd"):
+            if isinstance(tinput.get(alias), str) and tinput[alias].strip():
+                tinput["command"] = tinput[alias]
+                break
+    if tname in ("read_file", "view_file", "Read"):
+        _normalize_read_ranges(tinput)
+    elif tname in ("grep_search", "search_directory"):
+        _normalize_search_aliases(tinput)
+
+
+def _normalize_read_ranges(tinput):
+    """Map StartLine/EndLine/ByteOffset aliases to offset/limit."""
+    if "offset" not in tinput and "StartLine" in tinput:
+        tinput["offset"] = tinput.get("StartLine")
+    if "limit" not in tinput and "StartLine" in tinput and "EndLine" in tinput:
+        try:
+            sl = int(tinput["StartLine"])
+            el = int(tinput["EndLine"])
+            if el >= sl:
+                tinput["limit"] = (el - sl) + 1
+        except (TypeError, ValueError):
+            pass
+    if "limit" not in tinput and "ByteOffset" in tinput and "EndLine" not in tinput:
+        tinput["limit"] = 150
+
+
+def _sanitize_tool_input(payload):
+    tool_input = payload.get("tool_input", {})
+    expected = {
+        "command": (str, list),
+        "cmd": str,
+        "file_path": str,
+        "notebook_path": str,
+        "path": str,
+        "pattern": str,
+        "root_dir": str,
+        "language_id": str,
+    }
+    for field in tool_input.keys() & expected.keys():
+        value = tool_input[field]
+        valid = isinstance(value, expected[field])
+        if isinstance(value, list):
+            valid = all(isinstance(arg, str) for arg in value)
+        if not valid:
+            tdq_state._warn(f"Hook payload field rejected: tool_input.{field}")
+            tool_input.pop(field)
+            payload.pop("tool_name", None)
+
+
+def _sanitize_payload_fields(payload, has_args):
+    expected = {
+        "cwd": str,
+        "session_id": str,
+        "tool_name": str,
+        "hook_event_name": str,
+        "prompt": str,
+        "source": str,
+        "agent_type": str,
+        "stop_hook_active": bool,
+        "tool_input": dict,
+    }
     for field, kind in expected.items():
         if field in payload and not isinstance(payload[field], kind):
             tdq_state._warn(f"Hook payload field rejected: {field}")
@@ -359,12 +406,183 @@ def normalize_payload(raw):
                 has_args = False
     _RUNTIME_STATE["tool_args_present"] = bool(has_args)
     _sanitize_tool_input(payload)
+
+
+def _apply_agy_normalization(payload, event):
+    """Normalize Antigravity protojson fields into canonical payload shape."""
+    if not payload.get("hook_event_name") and event:
+        payload["hook_event_name"] = event
+    tool_call = payload.get("toolCall") if isinstance(payload.get("toolCall"), dict) else {}
+    orig_tname = str(payload.get("tool_name") or payload.get("toolName") or tool_call.get("name") or "")
+    if orig_tname.startswith("CORTEX_STEP_TYPE_"):
+        orig_tname = orig_tname[len("CORTEX_STEP_TYPE_"):].lower()
+    raw_container, has_container = _extract_raw_tool_container(payload, tool_call)
+    _save_raw_mcp_state(orig_tname, raw_container if has_container else None)
+
+    tname, tinput, args_present = chuan_hoa_cong_cu_mcp(
+        orig_tname, raw_container if has_container else None
+    )
+    has_args = bool(has_container and args_present)
+    if orig_tname != "call_mcp_tool" and tname != orig_tname:
+        payload["original_tool_name"] = orig_tname
+    tinput = dict(tinput) if isinstance(tinput, dict) else {}
+    _normalize_tool_aliases(tname, tinput)
+
+    if "tool_name" in payload or "toolName" in payload or tname:
+        payload["tool_name"] = tname
+    if any(k in payload for k in ("tool_input", "toolInput", "toolCall", "arguments", "input")) or tinput:
+        payload["tool_input"] = tinput
+    if not payload.get("prompt") and isinstance(payload.get("lastUserInput"), str) and payload["lastUserInput"].strip():
+        payload["prompt"] = payload["lastUserInput"]
+    if "continuationActive" in payload and "stop_hook_active" not in payload:
+        payload["stop_hook_active"] = bool(payload["continuationActive"])
+    return has_args
+
+
+def normalize_payload(raw, event=None):
+    """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
+    resolved_event = event if event is not None else _parse_event_flag()
+    if not resolved_event and isinstance(raw, dict) and raw.get("hookEventName"):
+        resolved_event = str(raw.get("hookEventName"))
+    agy = _is_antigravity_payload(raw, event=resolved_event)
+    _RUNTIME_STATE.update({
+        "event": resolved_event or None,
+        "is_agy": agy,
+        "deny_reason": None,
+        "stop_reason": None,
+        "context_lines": [],
+        "user_cards": [],
+        "flushed": False,
+        "tool_args_present": False,
+        "overwrite": {},
+        "raw_tool_name": "",
+        "raw_args_is_str": False,
+        "raw_arguments": {},
+        "new_user_turn": True,
+    })
+    if not isinstance(raw, dict):
+        return {}
+    payload = dict(raw)
+    has_args = "tool_input" in payload and isinstance(payload["tool_input"], dict)
+    if agy:
+        has_args = _apply_agy_normalization(payload, resolved_event)
+    else:
+        _RUNTIME_STATE["raw_tool_name"] = str(payload.get("tool_name") or "")
+    _sanitize_payload_fields(payload, has_args)
     return payload
 
 
+def _merge_user_markdown(cards):
+    """Join or cap accumulated user_markdown blocks at <= 1,200 characters."""
+    clean = [str(c).strip() for c in (cards or []) if str(c).strip()]
+    if not clean:
+        return ""
+    joined = "\n\n".join(clean)
+    if len(joined) <= MAX_USER_MARKDOWN_CHARS:
+        return joined
+    gg = _load_gate_guidance()
+    if gg is not None:
+        return gg._cap_text(joined, MAX_USER_MARKDOWN_CHARS)
+    return joined[: MAX_USER_MARKDOWN_CHARS - 1].rstrip() + "…"
+
+
+def _build_inject_response():
+    """Build SessionStart / PreInvocation / PostInvocation protojson payload."""
+    text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
+    user_md = _merge_user_markdown(_RUNTIME_STATE.get("user_cards"))
+    if not text and not user_md:
+        return {}
+    msg_obj = {"systemMessage": text}
+    if user_md:
+        msg_obj["metadata"] = {"user_markdown": user_md}
+    return {"injectSteps": [{"systemMessage": msg_obj}]}
+
+
+def _build_legacy_response(text):
+    """Build legacy fallback response when invoked without --event or hookEventName."""
+    if _RUNTIME_STATE["deny_reason"]:
+        reason = _RUNTIME_STATE["deny_reason"]
+        return {
+            "allow_tool": False,
+            "decision": "deny",
+            "reason": reason,
+            "message": reason,
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            },
+        }
+    if _RUNTIME_STATE["stop_reason"]:
+        return {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
+    user_md = _merge_user_markdown(_RUNTIME_STATE.get("user_cards"))
+    if text or user_md:
+        msg_obj = {"systemMessage": text}
+        if user_md:
+            msg_obj["metadata"] = {"user_markdown": user_md}
+        return {"additionalContext": text, "injectSteps": [{"systemMessage": msg_obj}]}
+    return {}
+
+
+def build_agy_response():
+    """Build the Antigravity 2.0 JSON output object from current _RUNTIME_STATE."""
+    if not _RUNTIME_STATE["is_agy"]:
+        return {}
+    ev = _RUNTIME_STATE["event"]
+    if ev == "PreToolUse":
+        if _RUNTIME_STATE["deny_reason"]:
+            return {"decision": "deny", "reason": _RUNTIME_STATE["deny_reason"]}
+        out = {"decision": "allow"}
+        if _RUNTIME_STATE.get("overwrite"):
+            out["overwrite"] = dict(_RUNTIME_STATE["overwrite"])
+        return out
+    if ev == "PostToolUse":
+        return {}
+    if ev in ("SessionStart", "PreInvocation", "PostInvocation"):
+        return _build_inject_response()
+    if ev == "Stop":
+        if _RUNTIME_STATE["stop_reason"]:
+            return {"decision": "continue", "reason": _RUNTIME_STATE["stop_reason"]}
+        return {"decision": "allow"}
+    text = "\n".join(line for line in _RUNTIME_STATE["context_lines"] if line)
+    return _build_legacy_response(text)
+
+
+def _flush_agy_stdout():
+    """Single-JSON stdout emitter called via atexit for Antigravity hook protocol."""
+    if not _RUNTIME_STATE["is_agy"] or _RUNTIME_STATE.get("flushed"):
+        return
+    _RUNTIME_STATE["flushed"] = True
+    out = build_agy_response()
+    if not out and _RUNTIME_STATE["event"] is None:
+        return
+    sys.stdout.write(json.dumps(out, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+
+
+def _ensure_atexit():
+    if not _RUNTIME_STATE["registered"]:
+        atexit.register(_flush_agy_stdout)
+        _RUNTIME_STATE["registered"] = True
+
+
 def set_overwrite(fields):
-    """Merge Antigravity PreToolUse `overwrite` fields (e.g. CommandLine)."""
+    """Set Antigravity PreToolUse `overwrite` fields, wrapping Arguments for call_mcp_tool."""
     if not isinstance(fields, dict) or not fields:
+        return
+    if _RUNTIME_STATE.get("raw_tool_name") == "call_mcp_tool":
+        base = _RUNTIME_STATE.get("raw_arguments")
+        merged = dict(base) if isinstance(base, dict) else {}
+        for key, val in fields.items():
+            if isinstance(key, str) and val is not None:
+                merged[key] = val
+        _RUNTIME_STATE["raw_arguments"] = merged
+        encoded = (
+            json.dumps(merged, ensure_ascii=False)
+            if _RUNTIME_STATE.get("raw_args_is_str")
+            else merged
+        )
+        _RUNTIME_STATE["overwrite"] = {"Arguments": encoded}
         return
     cur = _RUNTIME_STATE.setdefault("overwrite", {})
     for key, val in fields.items():
@@ -375,7 +593,13 @@ def set_overwrite(fields):
 def begin_collapsed_session(payload):
     """Normalize once (if needed) and cache payload for in-process gates."""
     raw = dict(payload) if isinstance(payload, dict) else {}
-    norm = normalize_payload(raw) if _RUNTIME_STATE.get("event") is None else raw
+    already_norm = (
+        _RUNTIME_STATE.get("event") is not None
+        and "tool_input" in raw
+        and "toolInput" not in raw
+        and "toolCall" not in raw
+    )
+    norm = raw if already_norm else normalize_payload(raw)
     _RUNTIME_STATE["collapsed_payload"] = dict(norm)
     _RUNTIME_STATE["overwrite"] = {}
     return dict(norm)
@@ -387,14 +611,15 @@ def end_collapsed_session():
 
 
 def read_payload():
-    """Read an object payload and discard ill-typed protocol fields."""
+    """Read stdin JSON object fail-open and return normalized dict."""
     _ensure_atexit()
     cached = _RUNTIME_STATE.get("collapsed_payload")
     if cached is not None:
         return dict(cached)
     _RUNTIME_STATE["overwrite"] = {}
     try:
-        payload = json.load(sys.stdin)
+        raw = sys.stdin.read()
+        payload = json.loads(raw) if raw and raw.strip() else {}
     except (ValueError, OSError, UnicodeError):
         tdq_state._warn("Hook payload rejected: invalid JSON or unreadable stdin")
         return normalize_payload({})
@@ -404,25 +629,8 @@ def read_payload():
     return normalize_payload(payload)
 
 
-def _sanitize_tool_input(payload):
-    tool_input = payload.get("tool_input", {})
-    expected = {"command": (str, list), "cmd": str, "file_path": str,
-                "notebook_path": str, "path": str, "pattern": str,
-                "root_dir": str, "language_id": str}
-    for field in tool_input.keys() & expected.keys():
-        value = tool_input[field]
-        valid = isinstance(value, expected[field])
-        if isinstance(value, list):
-            valid = isinstance(value, expected[field]) and all(
-                isinstance(arg, str) for arg in value)
-        if not valid:
-            tdq_state._warn(f"Hook payload field rejected: tool_input.{field}")
-            tool_input.pop(field)
-            payload.pop("tool_name", None)
-
-
 def payload_cwd(payload):
-    """The project root for state — the payload cwd may be a subdirectory or a worktree."""
+    """Resolve canonical project root from payload cwd keys, workspacePaths, or os.getcwd()."""
     if isinstance(payload, dict):
         for key in ("cwd", "workingDirectory", "working_directory", "workspace_root", "project_root", "root"):
             val = payload.get(key)
@@ -435,6 +643,7 @@ def payload_cwd(payload):
 
 
 def session_id(payload):
+    """Return canonical conversation/session identifier."""
     if not isinstance(payload, dict):
         return "default" if _RUNTIME_STATE["is_agy"] else ""
     if _agy_active(payload):
@@ -446,8 +655,6 @@ def session_id(payload):
     return str(payload.get("session_id") or "")
 
 
-# ------------------------------------------------------------------ NTFS locks & shards
-
 def _runtime_dir(cwd):
     return os.path.join(cwd, "docs", "tdq", ".tdq-runtime")
 
@@ -456,30 +663,124 @@ def _shard_turn_path(cwd, conv_id):
     return os.path.join(_runtime_dir(cwd), f"turns-{conv_id}.jsonl")
 
 
+def _turn_meta_path(cwd, conv_id):
+    return os.path.join(_runtime_dir(cwd), f"turn-meta-{conv_id}.json")
+
+
+def read_turn_meta(cwd, conv_id):
+    """Read per-session turn-meta JSON fail-open; returns {} when missing or invalid."""
+    path = _turn_meta_path(cwd, conv_id)
+    if not os.path.isfile(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_turn_meta(cwd, conv_id, meta):
+    """Persist per-session turn-meta JSON safely under NTFS lock."""
+    path = _turn_meta_path(cwd, conv_id)
+    payload = meta if isinstance(meta, dict) else {}
+    with with_ntfs_lock(path + ".lock"):
+        try:
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(payload, fh, ensure_ascii=False)
+        except OSError:
+            pass
+
+
+def mark_turn_closed(cwd, conv_id):
+    """Set turn_closed=True in turn-meta-<sid>.json so the next prompt starts a fresh turn."""
+    if not conv_id:
+        return
+    meta = read_turn_meta(cwd, conv_id)
+    if meta.get("turn_closed") is True:
+        return
+    meta["turn_closed"] = True
+    write_turn_meta(cwd, conv_id, meta)
+
+
+def _is_stale_runtime_file(name):
+    """True when filename in .tdq-runtime belongs to the 7-day auto-cleanup allowlist."""
+    if name.endswith(".lock"):
+        return True
+    if name.startswith("turns-") and name.endswith(".jsonl"):
+        return True
+    if name.startswith("pending-reminders-") and name.endswith(".jsonl"):
+        return True
+    return name.startswith("turn-meta-") and name.endswith(".json")
+
+
+def cleanup_stale_runtime(cwd, max_age_seconds=7 * 86400):
+    """Remove stale .tdq-runtime files older than max_age_seconds, failing open."""
+    rdir = _runtime_dir(cwd)
+    if not os.path.isdir(rdir):
+        return 0
+    cutoff = time.time() - max_age_seconds
+    removed = 0
+    try:
+        entries = list(os.scandir(rdir))
+    except OSError:
+        return 0
+    for entry in entries:
+        if not entry.is_file() or not _is_stale_runtime_file(entry.name):
+            continue
+        try:
+            if entry.stat().st_mtime < cutoff:
+                os.remove(entry.path)
+                removed += 1
+        except OSError:
+            continue
+    if removed:
+        _log(f"cleaned {removed} stale runtime file(s)")
+    return removed
+
+
+def _try_acquire_ntfs_lock(lock_path):
+    """Attempt one non-blocking NTFS lock acquisition; return (fh, locked)."""
+    if os.name != "nt":
+        return None, True
+    import msvcrt
+    lf = open(lock_path, "a+b")
+    lf.seek(0)
+    msvcrt.locking(lf.fileno(), msvcrt.LK_NBLCK, 1)
+    return lf, True
+
+
+def _release_ntfs_lock(lf, locked):
+    """Unlock and close NTFS lock file handle safely."""
+    if lf is None:
+        return
+    if locked and os.name == "nt":
+        import msvcrt
+        try:
+            lf.seek(0)
+            msvcrt.locking(lf.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+    try:
+        lf.close()
+    except OSError:
+        pass
+
+
 @contextlib.contextmanager
 def with_ntfs_lock(lock_path, attempts=200):
-    """Acquire a non-blocking Windows NTFS byte lock with exponential backoff."""
+    """Acquire a non-blocking Windows NTFS byte lock with bounded backoff."""
     parent = os.path.dirname(lock_path)
     if parent:
         os.makedirs(parent, exist_ok=True)
-    lf = None
-    locked = False
+    lf, locked = None, False
     for attempt in range(attempts):
         try:
-            if os.name == "nt":
-                import msvcrt
-                lf = open(lock_path, "a+b")
-                lf.seek(0)
-                msvcrt.locking(lf.fileno(), msvcrt.LK_NBLCK, 1)
-                locked = True
+            lf, locked = _try_acquire_ntfs_lock(lock_path)
             break
         except OSError:
-            if lf is not None:
-                try:
-                    lf.close()
-                except OSError:
-                    pass
-                lf = None
+            _release_ntfs_lock(lf, False)
+            lf = None
             if attempt == attempts - 1:
                 yield False
                 return
@@ -487,22 +788,11 @@ def with_ntfs_lock(lock_path, attempts=200):
     try:
         yield True
     finally:
-        if lf is not None:
-            if locked and os.name == "nt":
-                import msvcrt
-                try:
-                    lf.seek(0)
-                    msvcrt.locking(lf.fileno(), msvcrt.LK_UNLCK, 1)
-                except OSError:
-                    pass
-            try:
-                lf.close()
-            except OSError:
-                pass
+        _release_ntfs_lock(lf, locked)
 
 
 def _lock_and_append_jsonl(path, row):
-    """Append one JSONL record under a dedicated NTFS lockfile for zero contention drops."""
+    """Append one JSONL record under a dedicated NTFS lockfile."""
     parent = os.path.dirname(path)
     if parent:
         os.makedirs(parent, exist_ok=True)
@@ -538,16 +828,8 @@ def _read_jsonl(path):
     return rows
 
 
-# ------------------------------------------------------------------ turn ledger
-
 def observe(cwd, payload, event, **fields):
-    """Record one real, observed action.
-
-    Any `path` is written with forward slashes, whatever the host. The ledger is compared
-    against git output (which always prints `/`) and against prefixes like `docs/workinglog`,
-    so letting a Windows `\\` through would make the same file look like two different ones to
-    every reader downstream.
-    """
+    """Record one real observed action in the sharded or canonical turn ledger."""
     if isinstance(fields.get("path"), str):
         fields["path"] = fields["path"].replace(os.sep, "/")
     sid = session_id(payload)
@@ -560,6 +842,7 @@ def observe(cwd, payload, event, **fields):
 
 
 def turn_rows(cwd, payload=None):
+    """Read current conversation turn rows combining canonical ledger and per-convId shard."""
     sid = session_id(payload) if payload is not None else None
     rows = turn_log_read(cwd, session=sid)
     if payload is not None and _agy_active(payload) and sid:
@@ -570,16 +853,13 @@ def turn_rows(cwd, payload=None):
 
 
 def already_reminded(cwd, payload, code, rows=None):
-    """Has this code already been reminded in the current turn (dedupe: once per code/turn)?
-
-    `rows`: an already-read turn ledger (P0-3 — avoids re-reading `.tdq-turn.jsonl` when the
-    caller got rows from another read inside the same invoke). None → read it here.
-    """
+    """True when normalized code was already reminded in the current turn."""
     if rows is None:
         rows = turn_rows(cwd, payload)
+    target = _norm_code(code)
     return any(
         (r.get("kind") == "remind" or r.get("event") == "remind")
-        and r.get("code") == code
+        and (_norm_code(r.get("code")) == target or r.get("code") == code)
         for r in rows
     )
 
@@ -590,7 +870,7 @@ def _fmt_tag(code):
 
 
 def emit_context(lines):
-    """Queue additionalContext lines for Antigravity or print on stdout for Claude."""
+    """Queue model context lines for Antigravity or print on stdout for Claude."""
     text = "\n".join(str(l) for l in lines if l) if isinstance(lines, (list, tuple)) else str(lines or "")
     if not text:
         return
@@ -601,16 +881,78 @@ def emit_context(lines):
         print(text)
 
 
-def queue_remind(cwd, payload, code, text):
-    """Queue a PreToolUse reminder to flush cleanly at PostInvocation / PreInvocation."""
+def emit_user_markdown(markdown_text):
+    """Attach user-only 4-part Markdown guidance to injectSteps metadata."""
+    text = str(markdown_text or "").strip()
+    if not text or not _RUNTIME_STATE["is_agy"]:
+        return
+    _ensure_atexit()
+    _RUNTIME_STATE["user_cards"].append(text)
+
+
+def _build_queued_entry(norm_code, model_line="", user_card=""):
+    """Build dual-channel queue entry (model_line <= 160, user_card <= 1,200)."""
+    gg = _load_gate_guidance()
+    raw_line = " ".join(str(model_line or "").split())
+    if gg is None:
+        tag = f"[TDQ:{norm_code}]"
+        line = raw_line if raw_line.startswith("[TDQ:") else (f"{tag} {raw_line}".strip())
+        return {
+            "code": norm_code,
+            "model_line": line[:160],
+            "user_card": str(user_card or line)[:MAX_USER_MARKDOWN_CHARS],
+            "text": line[:160],
+        }
+    detail = raw_line
+    prefix = f"[TDQ:{norm_code}]"
+    if detail.upper().startswith(prefix):
+        detail = detail[len(prefix):].strip()
+    built = gg.build_reminder_entry(norm_code, detail=detail)
+    if norm_code in gg.GUIDANCE_TABLE:
+        final_line = built["model_line"]
+    elif raw_line.startswith("[TDQ:"):
+        final_line = gg._cap_text(raw_line, gg.MAX_MODEL_HINT_CHARS)
+    else:
+        final_line = built["model_line"]
+    final_card = str(user_card or "").strip() or built["user_card"]
+    return {
+        "code": norm_code,
+        "model_line": final_line,
+        "user_card": final_card,
+        "text": final_line,
+    }
+
+
+def queue_remind(cwd, payload, code, model_line="", user_card="", check_turn=True):
+    """Queue deduplicated dual-channel reminder to flush at PostInvocation/PreInvocation."""
+    norm_code = _norm_code(code) or "UNKNOWN"
+    if check_turn and already_reminded(cwd, payload, norm_code):
+        return False
     sid = session_id(payload)
     qpath = os.path.join(_runtime_dir(cwd), f"pending-reminders-{sid}.jsonl")
-    _lock_and_append_jsonl(qpath, {"code": code, "text": text})
+    entry = _build_queued_entry(norm_code, model_line=model_line, user_card=user_card)
+    os.makedirs(os.path.dirname(qpath), exist_ok=True)
+    with with_ntfs_lock(qpath + ".lock") as ok:
+        if not ok:
+            return False
+        existing = _read_jsonl(qpath)
+        if any(_norm_code(r.get("code")) == norm_code for r in existing):
+            return False
+        raw = (json.dumps(entry, ensure_ascii=False) + "\n").encode("utf-8")
+        try:
+            with open(qpath, "ab") as fh:
+                fh.write(raw)
+                fh.flush()
+            return True
+        except OSError:
+            return False
 
 
-def flush_pending_reminders(cwd, conv_id):
-    """Pop queued PreToolUse reminders for conv_id so next invocation sees them."""
+def _pop_pending_rows(cwd, conv_id):
+    """Atomically read and clear pending-reminders-<conv_id>.jsonl under NTFS lock."""
     qpath = os.path.join(_runtime_dir(cwd), f"pending-reminders-{conv_id}.jsonl")
+    if not os.path.isfile(qpath):
+        return []
     with with_ntfs_lock(qpath + ".lock"):
         rows = _read_jsonl(qpath)
         if rows:
@@ -618,25 +960,51 @@ def flush_pending_reminders(cwd, conv_id):
                 os.remove(qpath)
             except OSError:
                 pass
-    return [r.get("text", "") for r in rows if r.get("text")]
+    return rows
+
+
+def flush_pending_channels(cwd, conv_id):
+    """Pop queued reminders and format (model_text <= 200, user_markdown <= 1,200)."""
+    rows = _pop_pending_rows(cwd, conv_id)
+    if not rows:
+        return "", ""
+    entries = []
+    for row in rows:
+        mline = str(row.get("model_line") or row.get("text") or "").strip()
+        ucard = str(row.get("user_card") or "").strip()
+        code = _norm_code(row.get("code")) or "UNKNOWN"
+        if mline or ucard:
+            entries.append({"code": code, "model_line": mline, "user_card": ucard})
+    if not entries:
+        return "", ""
+    gg = _load_gate_guidance()
+    if gg is not None:
+        return gg.format_model_summary(entries), gg.format_user_markdown(entries)
+    lines = [e["model_line"] for e in entries if e.get("model_line")]
+    cards = [e["user_card"] for e in entries if e.get("user_card")]
+    return trim(lines), _merge_user_markdown(cards)
+
+
+def flush_pending_reminders(cwd, conv_id):
+    """Pop queued PreToolUse reminders for conv_id and return list of model lines."""
+    rows = _pop_pending_rows(cwd, conv_id)
+    return [
+        str(r.get("model_line") or r.get("text") or "")
+        for r in rows
+        if r.get("model_line") or r.get("text")
+    ]
 
 
 def _tuyet_doi(text, cwd):
-    """Make every `python3 scripts/X.py` in a reminder runnable from THIS project.
-
-    Applied AFTER `trim`: the 200-character cap measures what the reminder says, while the path
-    prefix is mechanical. Rewriting before the cap would cut a command in half, and a command cut
-    in half is one the agent cannot run.
-    """
-    return tdq_state.lenh_cho_project(text, cwd)
+    return lenh_cho_project(text, cwd)
 
 
 def trim(lines):
-    """Force it under the cap: <= 3 lines, <= 200 characters."""
+    """Enforce <= 3 lines and <= 200 characters for legacy reminder strings."""
     lines = [l for l in lines if l][:MAX_REMIND_LINES]
     text = "\n".join(lines)
     if len(text) > MAX_REMIND_CHARS:
-        text = text[:MAX_REMIND_CHARS - 1].rstrip() + "…"
+        text = text[: MAX_REMIND_CHARS - 1].rstrip() + "…"
     return text
 
 
@@ -646,35 +1014,67 @@ def _as_lines(lines):
     return [str(l) for l in (lines or [])]
 
 
-def remind(cwd, payload, code, lines, event="PreToolUse", rows=None, decide=True):
-    """Remind Claude with a CODE WITHOUT blocking the tool, then exit.
+def _format_hard_block_4part(code, raw_reason):
+    """Format a 4-part Vietnamese block/continue reason via gate_guidance."""
+    norm = _norm_code(code) or "UNKNOWN"
+    text = " ".join(str(raw_reason or "").split())
+    prefix = f"[TDQ:{norm}]"
+    if text.upper().startswith(prefix):
+        text = text[len(prefix):].strip()
+    gg = _load_gate_guidance()
+    if gg is not None:
+        return gg.format_deny_4part(norm, detail=text)
+    return f"{prefix} {text}".strip()
 
-    The 3-line shape (spec §2.1): the job to do · how to do it · the echo line to print.
-    A code already reminded this turn stays silent (dedupe) so no tokens are burnt.
-    `rows`: an already-read turn ledger — see `already_reminded` (P0-3).
-    `decide=False` leaves out `permissionDecision`: for AskUserQuestion the tool IS the question
-    to the user, and an "allow" from a hook may answer it (`ask_gate.py`, 2026-10-03).
-    """
+
+def _record_agy_remind(cwd, sid, code, event, force=False):
+    row = {
+        "ts": tdq_state.now_iso(),
+        "kind": "remind",
+        "event": "remind",
+        "session": sid,
+        "code": _norm_code(code) or code,
+        "source_event": event,
+    }
+    if force:
+        row["force"] = True
+    _lock_and_append_jsonl(_shard_turn_path(cwd, sid), row)
+
+
+def _emit_agy_reminder(cwd, payload, code, line_list, event, force=False):
+    """Queue PreToolUse reminder or emit dual-channel reminder directly."""
+    _ensure_atexit()
+    sid = session_id(payload)
+    norm_code = _norm_code(code) or "UNKNOWN"
+    detail = " ".join(str(x).strip() for x in line_list if str(x).strip())
+    active_ev = _RUNTIME_STATE["event"] or event
+    if active_ev in ("PreToolUse", "Stop"):
+        queue_remind(cwd, payload, norm_code, model_line=detail, check_turn=False)
+        _record_agy_remind(cwd, sid, code, event, force=force)
+        return True
+    entry = _build_queued_entry(norm_code, model_line=detail)
+    if entry["model_line"]:
+        emit_context([entry["model_line"]])
+    if entry["user_card"]:
+        emit_user_markdown(entry["user_card"])
+    _record_agy_remind(cwd, sid, code, event, force=force)
+    return True
+
+
+def remind(cwd, payload, code, lines, event="PreToolUse", rows=None, decide=True):
+    """Emit (or queue under AGY) a non-blocking TDQ reminder once per turn."""
     if already_reminded(cwd, payload, code, rows=rows):
         if _agy_active(payload):
             return False
         sys.exit(0)
     line_list = _as_lines(lines)
+    if _agy_active(payload):
+        return _emit_agy_reminder(cwd, payload, code, line_list, event, force=False)
     tag = _fmt_tag(code)
     head = line_list[0] if line_list else ""
     prefixed = head if head.startswith(("[TDQ:", f"[{code}]")) else f"{tag} {head}"
     body = _tuyet_doi(trim([prefixed] + line_list[1:]), cwd)
     sid = session_id(payload)
-    if _agy_active(payload):
-        _ensure_atexit()
-        row = {"ts": tdq_state.now_iso(), "kind": "remind", "event": "remind",
-               "session": sid, "code": code, "source_event": event}
-        _lock_and_append_jsonl(_shard_turn_path(cwd, sid), row)
-        if (_RUNTIME_STATE["event"] or event) == "PreToolUse":
-            queue_remind(cwd, payload, code, body)
-        else:
-            emit_context([body])
-        return True
     turn_log_append(cwd, "remind", session=sid, code=code)
     out = {"hookEventName": event}
     if decide:
@@ -686,12 +1086,7 @@ def remind(cwd, payload, code, lines, event="PreToolUse", rows=None, decide=True
 
 
 def format_denial(code, lines, repeat_count=0, day_du=False):
-    """Format denial lines according to first vs repeat occurrence in the turn (O07).
-
-    - First occurrence (repeat_count == 0): full remediation instructions.
-    - Repeat occurrence (repeat_count > 0): concise message saving context tokens
-      while preserving the actionable recovery path.
-    """
+    """Format denial lines for Claude Code first vs repeat occurrence."""
     line_list = _as_lines(lines)
     tag_full = _fmt_tag(code)
     head = line_list[0] if line_list else ""
@@ -699,64 +1094,49 @@ def format_denial(code, lines, repeat_count=0, day_du=False):
     dong = [first_line] + list(line_list[1:])
     if repeat_count <= 0:
         return "\n".join(l for l in dong if l) if day_du else trim(dong)
-
-    tag = f"{tag_full} (lặp x{repeat_count + 1})" if repeat_count > 1 else f"{tag_full} (lặp)"  # i18n-allow
-    first_summary = head.strip()
-
-    action_summary = []
-    for l in line_list[1:]:
-        l_s = l.strip()
-        if not l_s:
-            continue
-        action_summary.append(l_s)
-
-    repeat_body = [f"{tag} {first_summary}"]
+    tag = f"{tag_full} (repeat x{repeat_count + 1})" if repeat_count > 1 else f"{tag_full} (repeat)"
+    action_summary = [l.strip() for l in line_list[1:] if l.strip()]
+    repeat_body = [f"{tag} {head.strip()}"]
     if action_summary:
-        # Keep only the primary actionable remediation line on repeat
-        primary_action = action_summary[0]
-        if primary_action.endswith(":") and len(action_summary) > 1:
-            primary_action = f"{primary_action} {action_summary[1]}"
-        repeat_body.append(f"Gỡ nhanh: {primary_action}")  # i18n-allow
-
+        primary = action_summary[0]
+        if primary.endswith(":") and len(action_summary) > 1:
+            primary = f"{primary} {action_summary[1]}"
+        repeat_body.append(f"Quick fix: {primary}")
     res = "\n".join(repeat_body)
     return res if day_du else trim(repeat_body)
 
 
 def block(cwd, payload, code, lines, event="PreToolUse", day_du=False):
-    """BLOCK the tool with a CODE, then exit.
-
-    Two deliberate differences from `remind()`:
-    - `permissionDecision: "deny"` — the tool does not run.
-    - NO dedupe by code: does not turn deny into allow. The blocking condition
-      remains active while the job is undone.
-    - O07: Repeated denials in the same turn with the same reason/evidence are
-      formatted concisely to minimize token consumption while preserving the
-      actionable remediation. New reasons or first occurrences emit full remediation.
-    Written to the turn ledger under kind `block` with repeat metadata.
-
-    `day_du=True` keeps the whole reason instead of `trim`ming it to 200 characters. Use it only
-    when the reason IS the way out — the search gate's denial names the exact query to run
-    instead, and a reason cut in half leaves the agent blocked with no instruction.
-    """
+    """Block a PreToolUse call cleanly across Claude Code and Antigravity 2.0."""
     rows = turn_rows(cwd, payload)
     line_list = _as_lines(lines)
     reason_key = line_list[0].strip() if line_list else ""
-    prev_blocks = [r for r in rows if r.get("kind") == "block" and r.get("code") == code and r.get("reason_key") == reason_key]
+    norm_c = _norm_code(code) or code
+    prev_blocks = [
+        r for r in rows
+        if r.get("kind") == "block" and (_norm_code(r.get("code")) or r.get("code")) == norm_c and r.get("reason_key") == reason_key
+    ]
     repeat_count = len(prev_blocks)
     sid = session_id(payload)
-    ly_do = _tuyet_doi(format_denial(code, line_list, repeat_count=repeat_count, day_du=day_du), cwd)
-
     if _agy_active(payload):
         _ensure_atexit()
-        row = {"ts": tdq_state.now_iso(), "kind": "block", "event": "block",
-               "session": sid, "code": code, "reason_key": reason_key,
-               "repeat_count": repeat_count, "source_event": event}
+        raw_reason = _tuyet_doi(" ".join(l.strip() for l in line_list if l.strip()), cwd)
+        ly_do = _format_hard_block_4part(code, raw_reason)
+        row = {
+            "ts": tdq_state.now_iso(),
+            "kind": "block",
+            "event": "block",
+            "session": sid,
+            "code": _norm_code(code) or code,
+            "reason_key": reason_key,
+            "repeat_count": repeat_count,
+            "source_event": event,
+        }
         _lock_and_append_jsonl(_shard_turn_path(cwd, sid), row)
         _RUNTIME_STATE["deny_reason"] = ly_do
         sys.exit(0)
-
-    turn_log_append(cwd, "block", session=sid, code=code,
-                    reason_key=reason_key, repeat_count=repeat_count)
+    ly_do = _tuyet_doi(format_denial(code, line_list, repeat_count=repeat_count, day_du=day_du), cwd)
+    turn_log_append(cwd, "block", session=sid, code=code, reason_key=reason_key, repeat_count=repeat_count)
     print(json.dumps({
         "hookSpecificOutput": {
             "hookEventName": event,
@@ -768,24 +1148,15 @@ def block(cwd, payload, code, lines, event="PreToolUse", day_du=False):
 
 
 def remind_force(cwd, payload, code, lines, event="PreToolUse"):
-    """Like `remind()` but WITHOUT dedupe by code — for when another hook (e.g. edit_gate.py)
-    already claimed that code this turn and this reminder still has to get out."""
+    """Emit/queue reminder without prior turn dedupe."""
     line_list = _as_lines(lines)
+    if _agy_active(payload):
+        return _emit_agy_reminder(cwd, payload, code, line_list, event, force=True)
     tag = _fmt_tag(code)
     head = line_list[0] if line_list else ""
     prefixed = head if head.startswith(("[TDQ:", f"[{code}]")) else f"{tag} {head}"
     body = _tuyet_doi(trim([prefixed] + line_list[1:]), cwd)
     sid = session_id(payload)
-    if _agy_active(payload):
-        _ensure_atexit()
-        row = {"ts": tdq_state.now_iso(), "kind": "remind", "event": "remind",
-               "session": sid, "code": code, "source_event": event, "force": True}
-        _lock_and_append_jsonl(_shard_turn_path(cwd, sid), row)
-        if (_RUNTIME_STATE["event"] or event) == "PreToolUse":
-            queue_remind(cwd, payload, code, body)
-        else:
-            emit_context([body])
-        return True
     turn_log_append(cwd, "remind", session=sid, code=code)
     print(json.dumps({
         "hookSpecificOutput": {
@@ -798,15 +1169,21 @@ def remind_force(cwd, payload, code, lines, event="PreToolUse"):
     sys.exit(0)
 
 
-def stop_block(cwd, payload, reason, code="STOP", stop_hook_active=None):
-    """Emit Stop block decision: decision='continue' for Antigravity, decision='block' for Claude."""
+def stop_block(cwd, payload, reason, code="UNFINISHED", stop_hook_active=None):
+    """Emit Stop block decision: decision='continue' for Antigravity, 'block' for Claude."""
     sid = session_id(payload)
     if _agy_active(payload):
         _ensure_atexit()
-        row = {"ts": tdq_state.now_iso(), "kind": "stop_block", "event": "stop_block",
-               "session": sid, "code": code}
+        formatted = _format_hard_block_4part(code, reason)
+        row = {
+            "ts": tdq_state.now_iso(),
+            "kind": "stop_block",
+            "event": "stop_block",
+            "session": sid,
+            "code": _norm_code(code) or code,
+        }
         _lock_and_append_jsonl(_shard_turn_path(cwd, sid), row)
-        _RUNTIME_STATE["stop_reason"] = reason
+        _RUNTIME_STATE["stop_reason"] = formatted
         return
     out = {"decision": "block", "reason": reason}
     if stop_hook_active is not None:
@@ -814,8 +1191,36 @@ def stop_block(cwd, payload, reason, code="STOP", stop_hook_active=None):
     print(json.dumps(out, ensure_ascii=False))
 
 
+def echo_line(code, what):
+    return f"When done, print: \u2713 [{code}] {what}"
+
+
+def approve_hint(target, mode=None):
+    hint = APPROVE_HINTS.get(target, "say approve")
+    if target == "mode":
+        return (
+            f"\u27a4 Pick how to run it: {hint.format(mode=mode_label(mode or 'main'))}"
+            " \u00b7 Feedback: just say it"
+        )
+    return f"\u27a4 Approve: {hint} \u00b7 Feedback: just say it"
+
+
+def plan_mode(cwd, state):
+    """Return the mode settled in plan_file, or None when absent."""
+    rel = (state or {}).get("plan_file")
+    if not rel:
+        return None
+    path = rel if os.path.isabs(rel) else os.path.join(cwd, rel)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            match = _PLAN_MODE.search(fh.read())
+    except OSError:
+        return None
+    return match.group(1).lower() if match else None
+
+
 def register_subagent_role(cwd, conv_id, role, target_task=""):
-    """Persist dispatched subagent role under .tdq-runtime/sessions.json for role-aware gates."""
+    """Persist dispatched subagent role under .tdq-runtime/sessions.json."""
     path = os.path.join(_runtime_dir(cwd), "sessions.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with with_ntfs_lock(path + ".lock"):
@@ -837,7 +1242,7 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
 
 
 def detect_subagent(payload, cwd):
-    """Detect subagent invocation and resolve role via sessions.json or step-0 transcriptPath."""
+    """Detect subagent invocation via sessions.json, agent_type, or step-0 transcriptPath."""
     sid = session_id(payload)
     spath = os.path.join(_runtime_dir(cwd), "sessions.json")
     if os.path.isfile(spath):
@@ -860,8 +1265,12 @@ def detect_subagent(payload, cwd):
                 rec = json.loads(first_line)
                 txt = str(rec.get("content") or rec)
                 for role_name in (
-                    "tdq-security-reviewer", "tdq-reviewer", "tdq-qc-tester",
-                    "tdq-implementer", "tdq-build-resolver", "tdq-refactor-cleaner",
+                    "tdq-security-reviewer",
+                    "tdq-reviewer",
+                    "tdq-qc-tester",
+                    "tdq-implementer",
+                    "tdq-build-resolver",
+                    "tdq-refactor-cleaner",
                 ):
                     if role_name in txt:
                         register_subagent_role(cwd, sid, role_name)
@@ -869,17 +1278,3 @@ def detect_subagent(payload, cwd):
         except (OSError, ValueError):
             pass
     return {"is_subagent": False, "role": None, "task": ""}
-
-
-def echo_line(code, what):
-    return f"When done, print: ✓ [{code}] {what}"
-
-
-def approve_hint(target, mode=None):
-    hint = APPROVE_HINTS.get(target, "say approve")
-    if target == "mode":
-        # Print the READER label, not the machine identifier: a user has no duty to know what
-        # "subagent" means when the mode gate already calls it "sub-agent implement".
-        return (f"➤ Pick how to run it: {hint.format(mode=mode_label(mode or 'main'))}"
-                " · Feedback: just say it")
-    return f"➤ Approve: {hint} · Feedback: just say it"

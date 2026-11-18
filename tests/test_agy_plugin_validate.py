@@ -58,6 +58,21 @@ def test_v1_hooks_json_windows_cmd_c_no_quotes_and_protojson():
     assert commands, "hooks.json must contain hook commands"
     for cmd in commands:
         assert '"' not in cmd, f"Windows cmd /c escapes double quotes in command: {cmd!r}"
+        assert cmd.startswith("python -X utf8 hooks/scripts/dispatch.py --event "), (
+            f"Unexpected hook command: {cmd!r}"
+        )
+
+    post_entries = hooks_data["tdq-post-tool-observe"]["PostToolUse"]
+    assert len(post_entries) == 1
+    for removed in ("run_command", "read_file", "view_file"):
+        assert removed not in post_entries[0]["matcher"]
+
+    scripts_dir = PLUGIN_DIR / "hooks" / "scripts"
+    assert (scripts_dir / "dispatch.py").is_file()
+    assert (scripts_dir / "gate_guidance.py").is_file()
+    assert not (scripts_dir / "stop_batch_checker.py").exists()
+    assert not (scripts_dir / "doc_file_gate.py").exists()
+    assert not (scripts_dir / "strategic_compact_gate.py").exists()
 
     if os.name == "nt":
         for cmd in dict.fromkeys(commands):
