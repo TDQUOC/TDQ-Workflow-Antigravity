@@ -52,7 +52,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: thư mục không phải git repo, file cache JSON hỏng, chuỗi `py -3 -c "... \`..."`, `@'...'@` có chứa `rg`/`grep` bên trong, `\`n` ở cuối chuỗi.
     - Tiêu chí: `assert repo_root(tmp_repo)` lần 2 không gọi subprocess (`mock` `_git` assert call_count == 0); `phan_loai("Bash", cmd)` trả `status != "unknown"` (`reason != "malformed"`) trên cả `7` mẫu PowerShell/`py -c`.
 
-- [>] **T1.2** (e10m) Tạo module chỉ dẫn 4 phần `tools/patches/gate_guidance.py` + unit test — Test: `py -3 -m pytest tests/test_gate_guidance.py -q`
+- [x] **T1.2** (e10m) Tạo module chỉ dẫn 4 phần `tools/patches/gate_guidance.py` + unit test — Test: `py -3 -m pytest tests/test_gate_guidance.py -q`
   - Chạm: `tools/patches/gate_guidance.py`, `tests/test_gate_guidance.py`
   - Mục tiêu: cung cấp dữ liệu & bộ định dạng chuẩn 4 phần (*Chuyện gì · Vì sao · Làm gì · Bỏ qua*) + `model_line` <= 160 ký tự + thẻ `user_markdown` cho đúng `22` mã AGY giữ lại và danh sách `7` mã xóa (`LEAN_REMOVED_CODES`).
   - Vị trí neo: module mới dưới `tools/patches/gate_guidance.py` và `tests/test_gate_guidance.py`.
