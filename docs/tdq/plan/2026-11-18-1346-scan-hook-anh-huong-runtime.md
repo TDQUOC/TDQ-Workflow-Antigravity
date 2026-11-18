@@ -3,7 +3,7 @@
 Ngày: 2026-11-18 · Spec: ../spec/2026-11-18-1346-scan-hook-anh-huong-runtime.md (bản 1.1, ĐÃ DUYỆT) · Lane: full
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: subagent — `tdq_bench.py simulate --he-so-agent 1.5` cho Winner: đội, nhanh hơn 5,1 phút (14,3 → 9,2 phút model): T1.2/T1.3/T1.4 độc lập sau T1.1, mỗi task một file riêng (ĐỀ XUẤT, user chốt lúc duyệt)
-Trạng thái plan: ĐÃ DUYỆT
+Trạng thái plan: HOÀN THÀNH
 
 ## Mục lục
 
@@ -41,15 +41,18 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.json`
   - Cần: T1.1
   - Mục tiêu: tách phần git + hook khỏi phần model cho ca "commit/merge 15 phút" (Q9).
+  - Đặc tả kỹ thuật & Logic cốt lõi: `run_benchmark(n_runs)` tạo repo tạm 200 file trong `tempfile`, chạy N=5 cặp (`git_only`, `git_with_hook`, `git_with_pre_and_post_hook`) với `command_gate.py` + `search_observe.py` bản cài và xuất median/p90 ra JSON.
   - Ca hiểm: git chưa cấu hình user → đặt `-c user.name/-c user.email` trên lệnh; dọn repo tạm cả khi lỗi.
 - [x] **T1.3** (e8m) Tái hiện ca chặn nhầm: đưa các lệnh thật đã bị `[TDQ:SEARCH] malformed` (py `-c`, here-string, `curl ... -split`) qua `search_gate.py`/`command_gate.py` bản cài; đưa `call_mcp_tool` → `chrome-devtools navigate_page/new_page` qua `lsp_gate.py`; dựng chuỗi edit không tick để xem `[TDQ:TICK]` trong `TDQ_PROJECT_DIR` tạm — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json',encoding='utf-8')); assert len(d['cases'])>=3 and all(k in {c['group'] for c in d['cases']} for k in ('search_malformed','lsp_non_lsp','tick_loop'))"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json`
   - Cần: T1.1
   - Mục tiêu: bằng chứng chặn nhầm cho Q5.
+  - Đặc tả kỹ thuật & Logic cốt lõi: `run_repro()` gửi payload stdin hợp đồng Antigravity/Claude qua `command_gate.py`, `search_gate.py`, `lsp_gate.py`, và chuỗi 4 lần `edit_gate.py` trong `TDQ_PROJECT_DIR` tạm, ghi quyết định & lý do nguyên văn.
 - [x] **T1.4** (e6m) Phân rã ≥ 6 lượt dài (gồm `f9e21752` "1 commit") thành 5 thành phần: chờ lỗi API, model sinh (kèm token/cache), tool, hook ước tính, deny/Stop; tính độ phủ = tổng thành phần / thời lượng — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json',encoding='utf-8')); ts=d['turns']; assert len(ts)>=6 and any(t['conv'].startswith('f9e21752') for t in ts) and all(t['do_phu']>=0.9 or t.get('ghi_chu') for t in ts)"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json`
   - Cần: T1.1
   - Mục tiêu: trả lời "tại sao lâu" (Q7).
+  - Đặc tả kỹ thuật & Logic cốt lõi: `_analyze_turn()` tách mỗi lượt thành 5 khoảng không chồng chéo (`api_err_s`, `model_gen_s`, `tool_exec_s`, `hook_est_s` từ `bench_hooks.json`, `deny_wait_s`) và tính `do_phu`, chú thích ca chờ subagent/compaction.
 
 **Xong P1 khi**: 6 file JSON bằng chứng tồn tại và parse được; `git status --short` không có file ngoài `docs/`.
 
@@ -59,6 +62,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json`
   - Cần: T1.3
   - Mục tiêu: Q2 + Q8.
+  - Đặc tả kỹ thuật & Logic cốt lõi: `scan_hook_codes()` phân tích AST toàn bộ `hooks/scripts/*.py` + bản plugin + script ủy quyền, ánh xạ `hook_impact.json` và `false_positive_repro.json`, gắn nhãn `chan_cung`/`tu_sua`/`huong_dan`/`xoa` cùng 4 trường `loi_de_xuat`.
   - Dùng: `tdq-lean`
   - Để: soát từng cổng xem XÓA được không trước khi làm mềm, nạp skill TRƯỚC bước đỏ
   - Ra: cột `phan_loai` có giá trị `xoa` cho cổng thừa (nếu có) trong `gate_inventory.json`
@@ -69,7 +73,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
 
 ## P3 — Báo cáo nghiên cứu
 
-- [>] **T3.1** (e18m) Viết báo cáo 9 mục (a–i theo spec §3c bước 5), mọi số trích từ JSON P1/P2, ước tính tiết kiệm ghi công thức = chi phí đo × tần suất đo; đối chiếu hợp đồng hook `agy-customizations` (`hooks.md`) — Test: `py -3 scripts/doc_lint.py docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
+- [x] **T3.1** (e18m) Viết báo cáo 9 mục (a–i theo spec §3c bước 5), mọi số trích từ JSON P1/P2, ước tính tiết kiệm ghi công thức = chi phí đo × tần suất đo; đối chiếu hợp đồng hook `agy-customizations` (`hooks.md`) — Test: `py -3 scripts/doc_lint.py docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
   - Chạm: `docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
   - Cần: T1.2, T1.4, T2.1
   - Dùng: `agy-customizations (docs/hooks.md)`
@@ -97,16 +101,16 @@ Không có file nào bị từ 2 task trở lên khai ở `Chạm:` (T1.1 khai t
 
 Log: BỎ — không có task tạo/sửa mã sản phẩm chạy được; script đo là công cụ bằng chứng, in kết quả ra stdout/JSON.
 
-- [ ] **Tx.2** Kiểm tái chạy bằng một lệnh cho mỗi script bằng chứng — Test: `py -3 docs/tdq/bench/2026-11-18-1346-hook-runtime/bench_hooks.py --json <tmp>` và `hook_impact.py --json <tmp>` exit 0, số lệch ≤ 20% so với bản lưu
+- [x] **Tx.2** Kiểm tái chạy bằng một lệnh cho mỗi script bằng chứng — Test: `py -3 docs/tdq/bench/2026-11-18-1346-hook-runtime/bench_hooks.py --json <tmp>` và `hook_impact.py --json <tmp>` exit 0, số lệch ≤ 20% so với bản lưu
 
 ## Definition of Done
 
-- [ ] Q1 Số đo tái lập (lệch ≤ 20%) — chạy lại `bench_hooks.py`, `hook_impact.py` và so với JSON đã lưu
-- [ ] Q2 Kiểm kê cổng đủ 100% mã — so số mã grep `hooks/scripts/*.py` với số dòng `gate_inventory.json`
-- [ ] Q3 Không sửa mã sản phẩm — `git diff --stat dev` + `git status --short` chỉ có `docs/`
-- [ ] Q4 Tài liệu sạch — `py -3 scripts/doc_lint.py` trên spec/plan/research/report = 0 vi phạm
-- [ ] Q5 Ca chặn nhầm có bằng chứng — `false_positive_repro.json` đủ 3 nhóm ca
-- [ ] Q6 Ước tính truy được — mỗi con số tiết kiệm trong báo cáo có công thức + nguồn JSON
-- [ ] Q7 Trả lời "tại sao lâu" — `long_turns.json` ≥ 6 lượt, `do_phu >= 0.9` hoặc ghi lý do
-- [ ] Q8 Lời chỉ dẫn đủ 4 phần — kiểm `gate_inventory.json` mọi dòng có 4 khóa không rỗng
-- [ ] Q9 Thử commit/merge — `commit_merge_trial.json` có median 2 nhánh, N ≥ 5
+- [x] Q1 Số đo tái lập (lệch ≤ 20%) — chạy lại `bench_hooks.py`, `hook_impact.py` và so với JSON đã lưu
+- [x] Q2 Kiểm kê cổng đủ 100% mã — so số mã grep `hooks/scripts/*.py` với số dòng `gate_inventory.json`
+- [x] Q3 Không sửa mã sản phẩm — `git diff --stat dev` + `git status --short` chỉ có `docs/`
+- [x] Q4 Tài liệu sạch — `py -3 scripts/doc_lint.py` trên spec/plan/research/report = 0 vi phạm
+- [x] Q5 Ca chặn nhầm có bằng chứng — `false_positive_repro.json` đủ 3 nhóm ca
+- [x] Q6 Ước tính truy được — mỗi con số tiết kiệm trong báo cáo có công thức + nguồn JSON
+- [x] Q7 Trả lời "tại sao lâu" — `long_turns.json` ≥ 6 lượt, `do_phu >= 0.9` hoặc ghi lý do
+- [x] Q8 Lời chỉ dẫn đủ 4 phần — kiểm `gate_inventory.json` mọi dòng có 4 khóa không rỗng
+- [x] Q9 Thử commit/merge — `commit_merge_trial.json` có median 2 nhánh, N ≥ 5

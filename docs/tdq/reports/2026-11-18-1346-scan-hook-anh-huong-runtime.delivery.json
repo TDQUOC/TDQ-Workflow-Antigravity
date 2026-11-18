@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "115b923d-0475-43bb-971e-cb92761c684f",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1346-scan-hook-anh-huong-runtime\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1346-scan-hook-anh-huong-runtime.3928d37f761147d3ac15f42cb3d39a74.html",
+  "specification": {
+    "sha256": "5861bd73db22335ceafe5add7b3a03c13a03343e570b11ddabfbd2abbf56d355",
+    "bytes": 3091
+  },
+  "artifact": {
+    "sha256": "bb32047e00b285ffa2f085d247404e70f04c64d83bb1be3d09e5d78ab7b3eef1",
+    "bytes": 508105
+  },
+  "explainer": {
+    "preparedSha256": "1c676058a44b468f9a3619bc07206d61fdcb22ce0ce8c65da081bc6b4c3efc71",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "truoc-sau-hook-runtime",
+        "inline": true,
+        "sha256": "c3d8d01f95408055e338f8a0aee8b8a7c32881c11e2971f58050b26a33a35c6c",
+        "bytes": 1061
+      }
+    ]
+  }
+}
