@@ -2,6 +2,16 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.99.0 — 2026-11-18
+
+Tích hợp Caveman `5` hướng tối ưu ngữ cảnh & token bằng `Python stdlib` thuần (`100%` `MIT`, cộng sinh `RTK v1.2.0`), hỗ trợ kích hoạt opt-in `--with-caveman` (`2026-11-17-2156-tich-hop-caveman-agy`). Báo cáo: `docs/tdq/reports/2026-11-17-2156-tich-hop-caveman-agy.md`.
+
+- **M1 Proxy MCP & Surface** (`scripts/tdq_mcp_shrink.py`, `scripts/context_surface.py --mcp-prefix`): Proxy `stdio` JSON-RPC 2.0 cắt metadata thừa giữ nguyên khóa schema & từ phủ định (`108` tool `99.968 → 73.578` ký tự `-26,4%`; live `agent-lsp` `-26,9%`).
+- **M2 Compact Handoff & Auto-Clarity**: Chuẩn hóa bàn giao `path:line — symbol — note` và luật đọc ngắn tại `6` `agents/tdq-*.md`, `skills/tdq-browser-research/SKILL.md`, `tools/patches/skills_and_agents.py`, `tools/patches/agy_hooks.py`.
+- **M3 Kho lossless CCR** (`scripts/tdq_ccr.py`, `hooks/scripts/read_gate.py`): Lưu file/DOM lớn (`> 32 KB` hoặc `>= 200` dòng, trần `128 MB`) theo `SHA-256` kèm nhắc không chặn khi đọc thô.
+- **M4 Kiểm toán đa host** (`scripts/tdq_transcript.py`, `scripts/token_audit.py`): Đọc transcript `Antigravity`, `Codex`, `Claude Code` (mặc định `5` phiên gần nhất, gắn nhãn `measured`/`inferred`).
+- **M5 Opt-in & Build** (`scripts/caveman_config.py`, `scripts/tdq_setup.py`, `scripts/tdq_lsp.py`, `hooks/scripts/session_start.py`, `install.*`, `tools/`): Cờ `--with-caveman`/`--without-caveman`/`--check-caveman`/`--mute-caveman-prompt`, cập nhật `APPROVED_RUNTIME_MODULES`, biên dịch `plugins/tdq-workflow-agy/` (`v0.99.0`, `4.350` ca PASS, `agy plugin validate` `0 findings`).
+
 ## 0.98.0 — 2026-11-17
 
 Tích hợp cộng sinh RTK (`rtk` + `ripgrep`) tối ưu token và tự động kiểm/xin quyền cài user-level bằng `SHA256` (`2026-11-17-0325-tich-hop-rtk-antigravity`).
@@ -437,63 +447,7 @@ Bổ sung chỉ dẫn rõ ràng vào các phase: user trả lời và duyệt tr
   lượt chờ user nhắn trong chat thay vì gọi tool popup.
 - **Giữ nguyên điểm neo luật.** Bảo toàn số dòng của các quy tắc trong `docs/tdq/audit/luat-hien-co.md`.
 
-## 0.59.0 — 2026-10-08
-
-Mỗi project chỉ mở được request khi LSP đã được CHỨNG MINH trả lời đúng cho từng module (ngôn ngữ,
-gốc), qua đúng đường MCP agent dùng. Ca gốc (bench 2026-10-07): `start_lsp` thiếu `language_id`
-trên repo Python → agent-lsp bật hết server, TypeScript thành server hiện hành → crash
-`0xc0000409` / "No Project", trong khi `agent-lsp doctor` vẫn báo khoẻ.
-Báo cáo: `docs/tdq/reports/2026-10-07-2225-tu-dong-setup-lsp.md`.
-
-- **Module LSP** (`scripts/lsp_module.py`, mới). Dò (ngôn ngữ, gốc) theo file mốc sâu nhất —
-  repo một ngôn ngữ là một dòng, claudecodeui là `typescript:.` + `typescript:server`. Lệnh mới
-  `tdq_lsp.py module | kich-ban | ghi-kiem`: script chọn symbol và in sẵn ba lời gọi MCP, agent gửi,
-  script chấm (tham chiếu LSP > số lần trong file định nghĩa). Kết quả hạn 24 giờ hoặc tới khi file
-  mốc / dòng MCP đổi.
-- **Bậc 8 "LSP theo module"** trong `tdq_lsp.py check`; bậc 3 thêm cổng: mỗi ngôn ngữ của project
-  phải có dòng trong `args` của MCP `lsp`.
-- **Cổng `init`.** `tdq_state.py init` từ chối khi còn module chưa ĐẠT; lối thoát
-  `--bo-qua-lsp "<lý do>"` ghi vào `lsp_bo_qua`, report đọc ra.
-- **Hook `lsp_gate.py` (`TDQ:LSP`, chặn).** `start_lsp` thiếu `language_id` hoặc sai cặp
-  (gốc, ngôn ngữ) bị từ chối, lời chặn liệt kê lời gọi đúng.
-- **Tự cài không hỏi.** `tdq_setup.py` cài agent-lsp từ bản phát hành GitHub (kiểm SHA256 theo
-  `checksums.txt`, chạy được trên Windows — `install.sh` upstream thì không); ngôn ngữ mới xuất hiện
-  trong project (vd. Python rồi thêm JS + HTML) được cài server và khai vào MCP `lsp` (sao lưu
-  `~/.claude.json` trước khi ghi, rồi nhắc `/mcp` kết nối lại); SessionStart dựng nền lại khi tập
-  ngôn ngữ đổi. Tắt `agent-lsp daemon-broker` mồ côi, cảnh báo bộ nhớ commit < 4 GB.
-- **Luật chữ.** Intake 1b tự chạy setup → check → kịch bản; `kiem-lsp-hieu-ung.md` viết lại theo
-  module; `uu-tien-tim-kiem.md` thêm luật gọi `start_lsp` theo module (TS mở file trước, ưu tiên
-  tool theo file, `find_symbol` chỉ hỏi server hiện hành — issue #55 upstream).
-- **Test không chạm máy.** `TDQ_KHONG_CHAM_MAY=1` (đặt cho cả tiến trình test) khoá ba việc chạm
-  máy thật: tải/cài agent-lsp, ghi `~/.claude.json`, tắt tiến trình.
-
-## 0.58.0 — 2026-10-07
-
-Gỡ lumen, luật tìm kiếm còn ba tầng (LSP · grep · graphify), cổng tìm kiếm dẫn tới tầng đang
-sống. Đo trước khi gỡ (request `2026-10-07-1843-phan-tich-bo-lumen`): 12 câu khái niệm trên
-TDQ-Workflow và claudecodeui, không lumen vẫn trúng 11/12 và 10/12 (trượt 0), token 0,88× và
-1,06× — không giảm đáng kể. Báo cáo: `docs/tdq/reports/2026-10-07-2041-go-lumen-toi-uu-tim-kiem.md`.
-
-- **lumen ra khỏi mã.** Thang `tdq_lsp.py check` còn 7 bậc đánh số liền (bậc lumen cũ là 5;
-  hook xung đột 6→5, cấu hình gốc import 7→6, graphify 8→7), smoke còn 3 tầng — máy không cài
-  lumen không còn "CHƯA ĐẠT, exit 4" vĩnh viễn. Bỏ `wake`/`release` của ollama, bước `reindex`
-  của `tdq_finish.py`, phần lumen của `tdq_setup.py` (cấu hình, dựng nền, khối ghim CLAUDE.md),
-  `setup_status`, khai MCP lumen cho Codex; xoá `skills/tdq-setup/references/lumen.md`,
-  `.lumenignore`.
-- **Cổng `TDQ:SEARCH` bớt lượt thừa.** Lời chặn chỉ nêu tầng mà dấu mốc sẵn sàng ghi là sống,
-  kèm lệnh dùng ngay (`start_lsp` khi LSP báo chưa khởi động). Lời gọi `mcp__lsp__*` được ghi sổ
-  ngay ở PreToolUse, nên lời gọi lỗi vẫn tính là đã hỏi. Mốc cũ còn khoá `lumen` không còn làm
-  dựng lại nền mỗi 6 giờ.
-- **Luật chữ 3 tầng.** Bốn câu từng chấm agent oan khi lumen vắng (`analyze-full.md`,
-  `quick-lane.md`, `tdq-build/SKILL.md`, `PHASE_TABLE`) nay đòi LSP rồi graphify; câu chuẩn và
-  bảng loại câu hỏi trong `uu-tien-tim-kiem.md` mang số đo mới kèm tên repo.
-- **Codex.** `tdq_codex_mcp.khai_hook_codex` không còn ghi đè `.codex/hooks.json` viết tay của
-  chính repo plugin (đã xảy ra 2026-10-03 và 2026-10-07). Mỗi lần ghi hook, nó nói rõ hai điều
-  kiện để hook chạy. Một: hook phải được duyệt ở `/hooks`, hook chưa duyệt bị bỏ qua lặng lẽ. Hai:
-  trên Windows, sandbox `read-only`/`workspace-write` chặn mọi tiến trình, kể cả tiến trình hook
-  (`docs/tdq/research/2026-10-07-2041-hook-codex.md`).
-
 ## Lịch sử cũ hơn
 
-Bản 0.57.0: `docs/CHANGELOG-archive-3.md`; bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`;
+Bản 0.59.0 đến 0.57.0: `docs/CHANGELOG-archive-3.md`; bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`;
 bản 0.36.0 trở xuống: `docs/CHANGELOG-archive.md`. Tách để giữ file chính dưới 500 dòng; chữ nghĩa giữ nguyên.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile TDQ-Workflow v0.98.0 source into plugins/tdq-workflow-agy/."""
+"""Compile TDQ-Workflow v0.99.0 source into plugins/tdq-workflow-agy/."""
 import argparse
 import json
 import os
@@ -93,7 +93,7 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Compile TDQ-Workflow v0.98.0 into Antigravity plugin.")
+    ap = argparse.ArgumentParser(description="Compile TDQ-Workflow v0.99.0 into Antigravity plugin.")
     ap.add_argument("--upstream", type=Path, default=DEFAULT_UPSTREAM, help="Source TDQ-Workflow directory.")
     ap.add_argument("--output", type=Path, default=PLUGIN_OUT, help="Destination compiled plugin directory.")
     args = ap.parse_args(argv)

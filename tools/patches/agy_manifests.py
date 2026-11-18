@@ -8,7 +8,7 @@ from typing import Dict, List
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
-PLUGIN_VERSION = "0.98.0"
+PLUGIN_VERSION = "0.99.0"
 
 
 def _default_lsp_args() -> List[str]:
