@@ -745,16 +745,25 @@ def kiem_mot_lenh(project, *, cache_mode="off", request=None, handoff=None, stat
 
 
 def kiem_tra_cong_cu_bo_tro(project=None):
-    """Non-blocking diagnostic for optional RTK + ripgrep binaries (outside 8 LSP rungs)."""
+    """Non-blocking diagnostic for optional RTK + ripgrep and Caveman status (outside 8 LSP rungs)."""
     import rtk_integration
     proj = project or _project_dir()
     rtk_info = rtk_integration.probe_rtk(cwd=proj)
     rg_path = rtk_integration.locate_rg_binary()
-    return {"rtk": rtk_info, "rg_path": rg_path}
+    caveman_info = None
+    try:
+        import caveman_config
+        plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        installed = os.path.expanduser(os.path.join("~", ".gemini", "config", "plugins", "tdq-workflow-agy"))
+        probe_root = installed if os.path.isfile(os.path.join(installed, "mcp_config.json")) else plugin_root
+        caveman_info = caveman_config.probe_caveman(plugin_root=probe_root)
+    except Exception:  # noqa: BLE001 — optional diagnostic must never break tdq_lsp
+        caveman_info = None
+    return {"rtk": rtk_info, "rg_path": rg_path, "caveman": caveman_info}
 
 
 def _in_cong_cu_bo_tro(project):
-    """Print optional RTK + ripgrep status line without affecting 8-rung exit codes."""
+    """Print optional RTK + ripgrep and Caveman status lines without affecting 8-rung exit codes."""
     try:
         bo_tro = kiem_tra_cong_cu_bo_tro(project)
     except Exception:  # noqa: BLE001 — optional diagnostic must never break tdq_lsp
@@ -770,6 +779,16 @@ def _in_cong_cu_bo_tro(project):
     print(f"Công cụ bổ trợ (RTK): rtk={rtk_txt} · rg={rg_txt}")
     if not rtk.get("valid") or not bo_tro.get("rg_path"):
         print("→ Xin quyền user để cài RTK + rg: `py -3 scripts/tdq_setup.py --with-rtk`")
+    caveman = bo_tro.get("caveman")
+    if isinstance(caveman, dict):
+        wrapped = caveman.get("mcp_wrapped_servers") or []
+        if caveman.get("enabled"):
+            cav_txt = f"đã bật (bọc {len(wrapped)} server MCP)"
+        else:
+            cav_txt = "chưa bật (opt-in)"
+        print(f"Công cụ bổ trợ (Caveman): {cav_txt} · muted={bool(caveman.get('prompt_muted'))}")
+        if not caveman.get("enabled"):
+            print("→ Xin quyền user để bật Caveman MCP Proxy: `py -3 scripts/tdq_setup.py --with-caveman`")
 
 
 def cmd_kiem(args):

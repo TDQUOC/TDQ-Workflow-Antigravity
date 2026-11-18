@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "46781870-213f-4586-a6d1-a6003f24aa34",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-17-2156-tich-hop-caveman-agy\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-17-2156-tich-hop-caveman-agy-preview.143aaf85154d4bfaab0d55e8fbd8a051.html",
+  "specification": {
+    "sha256": "b26919d2c07211b8c26165c8128e0673ca35f1b8d99a77ac0203c08344b77c8b",
+    "bytes": 3315
+  },
+  "artifact": {
+    "sha256": "f09ea63b421ec0167ebdf9219e443b7aa8247532614964f461c1e8a1face5a4b",
+    "bytes": 1250647
+  },
+  "explainer": {
+    "preparedSha256": "0836d4186505490646be72383d09f38f81c3a573fc281ac695442e2685b72b07",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "kien-truc-truoc",
+        "inline": true,
+        "sha256": "0ede469d5e33e07153f3e843f47f5962c017772a5539f314267ab2bc1f3aa2cd",
+        "bytes": 1032
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "kien-truc-sau",
+        "inline": true,
+        "sha256": "a1bd7602e1866f095e14f0bb4ecac07e0c453e3cb6a1deb04506b8c6d3a8f6d7",
+        "bytes": 1137
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "luong-m1-m3",
+        "inline": true,
+        "sha256": "a3a974b2a822ca449bd6888a4e6bebd1a3e2abd3638eb6debc7636011980aa6b",
+        "bytes": 1315
+      }
+    ]
+  }
+}

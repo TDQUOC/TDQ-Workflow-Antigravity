@@ -1897,6 +1897,16 @@ def parse_args(argv):
                     help="tắt dòng nhắc [TDQ:SETUP] thiếu rtk/rg lúc SessionStart")
     ap.add_argument("--unmute-rtk-prompt", action="store_true",
                     help="bật lại dòng nhắc [TDQ:SETUP] thiếu rtk/rg lúc SessionStart")
+    ap.add_argument("--with-caveman", action="store_true",
+                    help="bật Caveman opt-in và bọc MCP proxy với sự đồng ý của user")
+    ap.add_argument("--without-caveman", action="store_true",
+                    help="tắt Caveman và khôi phục mcp_config.json gốc")
+    ap.add_argument("--check-caveman", action="store_true",
+                    help="kiểm tra trạng thái Caveman opt-in không chạm máy")
+    ap.add_argument("--mute-caveman-prompt", action="store_true",
+                    help="tắt dòng nhắc [TDQ:SETUP] Caveman lúc SessionStart")
+    ap.add_argument("--unmute-caveman-prompt", action="store_true",
+                    help="bật lại dòng nhắc [TDQ:SETUP] Caveman lúc SessionStart")
     return ap.parse_args(argv)
 
 
@@ -1938,6 +1948,71 @@ def _xu_ly_rtk_flags(args, project):
     return 1
 
 
+def _caveman_targets(plugin_root):
+    """Return existing mcp_config.json paths and active plugin root for Caveman wrapping."""
+    home = os.environ.get("HOME") or os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    installed_root = os.path.join(home, ".gemini", "config", "plugins", "tdq-workflow-agy")
+    candidates = [os.path.join(plugin_root, "mcp_config.json"),
+                  os.path.join(installed_root, "mcp_config.json")]
+    seen = []
+    for path in candidates:
+        norm = os.path.abspath(path)
+        if os.path.isfile(norm) and norm not in seen:
+            seen.append(norm)
+    probe_root = installed_root if os.path.isfile(os.path.join(installed_root, "mcp_config.json")) else plugin_root
+    return seen, probe_root
+
+
+def _in_caveman_check(cfg_mod, plugin_root):
+    _, probe_root = _caveman_targets(plugin_root)
+    st = cfg_mod.probe_caveman(plugin_root=probe_root)
+    _log(f"caveman check · enabled={st.get('enabled')} active={st.get('active')} wrapped={st.get('mcp_wrapped_servers')}")
+    print(
+        f"caveman · enabled={st.get('enabled')} | active={st.get('active')} "
+        f"| wrapped={st.get('mcp_wrapped_servers')} | muted={st.get('prompt_muted')} "
+        f"| cfg={st.get('config_path')}"
+    )
+    return 0
+
+
+def _xu_ly_caveman_flags(args, project):
+    """Handle Caveman CLI flags; return int exit code or None to continue."""
+    flags = (args.mute_caveman_prompt, args.unmute_caveman_prompt,
+             args.check_caveman, args.with_caveman, args.without_caveman)
+    if not any(flags):
+        return None
+    if getattr(args, "khong_log", False):
+        os.environ["TDQ_LOG"] = "0"
+    import caveman_config
+    from pathlib import Path
+    plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if args.mute_caveman_prompt or args.unmute_caveman_prompt:
+        muted = bool(args.mute_caveman_prompt)
+        path = caveman_config.set_prompt_muted(muted)
+        _log(f"caveman prompt · {'muted' if muted else 'unmuted'} ({path})")
+        print(f"caveman prompt · {'đã tắt' if muted else 'đã bật lại'} ({path})")
+        return 0
+    if args.check_caveman:
+        return _in_caveman_check(caveman_config, plugin_root)
+    targets, _ = _caveman_targets(plugin_root)
+    if args.without_caveman:
+        unwrapped = []
+        for mcp_path in targets:
+            unwrapped.extend(caveman_config.unwrap_mcp_config(Path(mcp_path)))
+        res = caveman_config.disable_caveman()
+        _log(f"caveman disabled · unwrapped={unwrapped}")
+        print(f"caveman · ĐÃ TẮT (unwrapped={unwrapped}, cfg={res.get('config_path')})")
+        return 0
+    proxy_script = Path(plugin_root) / "scripts" / "tdq_mcp_shrink.py"
+    wrapped = []
+    for mcp_path in targets:
+        wrapped.extend(caveman_config.wrap_mcp_config(Path(mcp_path), proxy_script))
+    res = caveman_config.enable_caveman(approve=True, wrapped_servers=wrapped or list(caveman_config.CAVEMAN_MCP_SERVERS))
+    _log(f"caveman enabled · wrapped={res.get('wrapped_servers')}")
+    print(f"caveman · ĐẠT enabled=True | wrapped={res.get('wrapped_servers')} | cfg={res.get('config_path')}")
+    return 0
+
+
 def _khai_codex_mac_dinh():
     """The CLI's Codex step: the lsp MCP server, then the search gate in the project's
     `.codex/hooks.json` (Codex no longer takes hooks from a plugin). -> result lines."""
@@ -1967,6 +2042,9 @@ def main(argv, khai_codex=None):
     rtk_rc = _xu_ly_rtk_flags(args, project)
     if rtk_rc is not None:
         return rtk_rc
+    caveman_rc = _xu_ly_caveman_flags(args, project)
+    if caveman_rc is not None:
+        return caveman_rc
     if args.kiem_archify:
         ok, chi_tiet = kiem_tra_archify(project)
         if ok:

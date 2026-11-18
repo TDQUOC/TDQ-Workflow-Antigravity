@@ -140,7 +140,7 @@ def generate_hooks_json(plugin_root: Path) -> None:
 
 
 def generate_mcp_config(plugin_root: Path) -> None:
-    """Write warning-free mcp_config.json inheriting TAVILY_API_KEY from OS env cleanly."""
+    """Write warning-free default mcp_config.json (raw commands; Caveman proxy is opt-in)."""
     profile_dir = str((Path.home() / ".gemini" / "chrome-devtools-profile")).replace("\\", "/")
     npx_cmd = "npx.cmd" if os.name == "nt" else "npx"
     cfg = {
@@ -199,6 +199,7 @@ Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-
 - Whitelisted symbols in user-facing blocks: `➤`, `·`, `—`, `→`, `–`, `…` (emojis and box-drawing characters are strictly banned per `user-facing-block-vi-du.md`).
 - Reports require 4 sections: **Before Request**, **After Request**, **What Was Tested**, **Test Result** + Archify HTML (`docs/tdq/reports/<slug>.html`).
 - RTK CLI compression: when `rtk` rewrites noisy command output, recover lossless lines via `rtk recall <hash>`; need an explicit unfiltered pass → use `rtk bypass <cmd>`.
+- Caveman CCR & Compact Handoff: offload >32 KB data/DOM via `tdq_ccr.py summarize` (lossless `retrieve <id>`); keep subagent notes to `path:line — symbol — note`.
 """
     write_utf8(rules_dir / "AGENTS.md", agents_md)
 

@@ -109,6 +109,117 @@ def _handle_rtk(
     return 1, status
 
 
+def _import_caveman_config(src: Path):
+    """Import caveman_config from repo scripts or compiled plugin scripts."""
+    for cand in (str(ROOT_DIR / "scripts"), str(Path(src) / "scripts")):
+        if cand not in sys.path and os.path.isdir(cand):
+            sys.path.insert(0, cand)
+    import caveman_config
+
+    return caveman_config
+
+
+def _caveman_dry_run_status(
+    probe: dict, with_caveman: bool, without_caveman: bool
+) -> dict:
+    """Build read-only Caveman status summary for --dry-run mode."""
+    enabled = bool(probe.get("enabled"))
+    wrapped = list(probe.get("mcp_wrapped_servers") or [])
+    if without_caveman:
+        return {
+            "enabled": enabled,
+            "active": bool(probe.get("active")),
+            "wrapped_servers": wrapped,
+            "skipped": False,
+            "would_disable": True,
+            "would_unwrap": bool(wrapped),
+            "reason": "dry_run_without_caveman",
+        }
+    would_wrap = bool(with_caveman or enabled)
+    return {
+        "enabled": enabled,
+        "active": bool(probe.get("active")),
+        "wrapped_servers": wrapped,
+        "skipped": False,
+        "would_enable": bool(with_caveman and not enabled),
+        "would_wrap": would_wrap,
+        "reason": "dry_run_with_caveman" if with_caveman else "dry_run_probe",
+    }
+
+
+def _apply_caveman_wrap(
+    caveman_mod, src: Path, dst: Path, reason: str
+) -> dict:
+    """Wrap installed mcp_config.json and persist enabled Caveman state."""
+    mcp_file = dst / "mcp_config.json"
+    proxy_script = dst / "scripts" / caveman_mod.PROXY_SCRIPT_NAME
+    if not proxy_script.is_file():
+        src_proxy = src / "scripts" / caveman_mod.PROXY_SCRIPT_NAME
+        if src_proxy.is_file():
+            proxy_script = src_proxy
+    if mcp_file.is_file():
+        caveman_mod.wrap_mcp_config(mcp_file, proxy_script)
+    after = caveman_mod.probe_caveman(plugin_root=dst)
+    servers = list(after.get("mcp_wrapped_servers") or [])
+    caveman_mod.enable_caveman(approve=True, wrapped_servers=servers)
+    _log(f"caveman active ({reason}): wrapped={servers}")
+    return {
+        "enabled": True,
+        "active": bool(servers),
+        "wrapped_servers": servers,
+        "skipped": False,
+        "reason": reason,
+    }
+
+
+def _handle_caveman(
+    src: Path,
+    dst: Path,
+    with_caveman: bool,
+    without_caveman: bool,
+    skip_caveman: bool,
+    dry_run: bool,
+) -> tuple[int, dict]:
+    """Probe or apply opt-in Caveman MCP wrapping without silent activation."""
+    if skip_caveman:
+        _log("Caveman MCP wrap check skipped (--skip-caveman)")
+        return 0, {
+            "enabled": False,
+            "active": False,
+            "wrapped_servers": [],
+            "skipped": True,
+            "reason": "skip_caveman",
+        }
+    caveman_mod = _import_caveman_config(src)
+    probe_root = dst if dst.is_dir() else src
+    probe = caveman_mod.probe_caveman(plugin_root=probe_root)
+    if dry_run:
+        return 0, _caveman_dry_run_status(probe, with_caveman, without_caveman)
+    if without_caveman:
+        caveman_mod.unwrap_mcp_config(dst / "mcp_config.json")
+        caveman_mod.disable_caveman()
+        _log("caveman disabled and mcp_config.json unwrapped (--without-caveman)")
+        return 0, {
+            "enabled": False,
+            "active": False,
+            "wrapped_servers": [],
+            "skipped": False,
+            "reason": "disabled",
+        }
+    if with_caveman:
+        return 0, _apply_caveman_wrap(caveman_mod, src, dst, "with_caveman")
+    if probe.get("enabled"):
+        return 0, _apply_caveman_wrap(caveman_mod, src, dst, "preserved_opt_in")
+    _log("caveman opt-in not enabled; keeping mcp_config.json unwrapped")
+    return 0, {
+        "enabled": False,
+        "active": False,
+        "wrapped_servers": [],
+        "skipped": False,
+        "reason": "opt_in_required",
+    }
+
+
 def parse_args(argv=None) -> argparse.Namespace:
     """Parse CLI arguments for the Antigravity native plugin installer."""
     ap = argparse.ArgumentParser(
@@ -120,11 +231,14 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--sync-local-mcp", action="store_true")
     ap.add_argument("--with-rtk", action="store_true")
     ap.add_argument("--skip-rtk", action="store_true")
+    ap.add_argument("--with-caveman", action="store_true")
+    ap.add_argument("--without-caveman", action="store_true")
+    ap.add_argument("--skip-caveman", action="store_true")
     return ap.parse_args(argv)
 
 
 def main(argv=None) -> int:
-    """Install plugin and print JSON status including optional RTK probe."""
+    """Install plugin and print JSON status including optional RTK & Caveman."""
     args = parse_args(argv)
     if not (args.src / "plugin.json").is_file():
         raise SystemExit(
@@ -134,18 +248,35 @@ def main(argv=None) -> int:
         rtk_rc, rtk_status = _handle_rtk(
             args.src, args.with_rtk, args.skip_rtk, dry_run=True
         )
+        caveman_rc, caveman_status = _handle_caveman(
+            args.src,
+            args.target,
+            args.with_caveman,
+            args.without_caveman,
+            args.skip_caveman,
+            dry_run=True,
+        )
         print(json.dumps({
             "dry_run": True,
             "src": str(args.src),
             "target": str(args.target),
             "rtk": rtk_status,
+            "caveman": caveman_status,
         }))
-        return rtk_rc
+        return rtk_rc or caveman_rc
     files_copied = _copy_plugin(args.src, args.target)
     mcp_res = (
         _sync_local_mcp(args.target)
         if args.sync_local_mcp
         else {"synced_servers": []}
+    )
+    caveman_rc, caveman_status = _handle_caveman(
+        args.src,
+        args.target,
+        args.with_caveman,
+        args.without_caveman,
+        args.skip_caveman,
+        dry_run=False,
     )
     rtk_rc, rtk_status = _handle_rtk(
         args.src, args.with_rtk, args.skip_rtk, dry_run=False
@@ -155,8 +286,9 @@ def main(argv=None) -> int:
         "files": files_copied,
         **mcp_res,
         "rtk": rtk_status,
+        "caveman": caveman_status,
     }))
-    return rtk_rc
+    return rtk_rc or caveman_rc
 
 
 if __name__ == "__main__":

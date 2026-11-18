@@ -26,10 +26,10 @@ Exit: 0 even when no session is found (a warning only). 2 = bad syntax.
 """
 
 import argparse
+import base64
 import bisect
 import collections
 import datetime
-import base64
 import glob
 import hashlib
 import json
@@ -39,11 +39,40 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
 import skill_tokens  # noqa: E402 — share ONE token counter with the skill table
-from tdq_transcript import claude_transcript_dir  # noqa: E402
+import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
+from tdq_transcript import (  # noqa: E402
+    claude_transcript_dir,
+    detect_host_from_events,
+    discover_host_sessions,
+    extract_agy_audit_data,
+    extract_codex_audit_data,
+)
 
 EXIT_THIEU_THU_VIEN = skill_tokens.EXIT_THIEU_THU_VIEN
+SUBAGENT_TOOLS = frozenset({
+    "Agent",
+    "Task",
+    "invoke_subagent",
+    "define_subagent",
+    "manage_subagents",
+    "send_message",
+    "browser_subagent",
+    "spawn_agent",
+    "send_input",
+    "wait",
+    "wait_agent",
+    "close_agent",
+})
+READ_TOOLS = frozenset({"Read", "read_file", "view_file", "view_file_outline", "view_code_item"})
+EDIT_TOOLS = frozenset({
+    "Edit",
+    "MultiEdit",
+    "edit_file",
+    "replace_file_content",
+    "multi_replace_file_content",
+})
+SHELL_TOOLS = frozenset({"Bash", "run_command", "exec", "exec_command", "shell"})
 
 # Normalisation factors to "equivalent input tokens" — taken from the multiplier table of the
 # official pricing page (platform.claude.com/docs/en/about-claude/pricing, read 2026-08-05):
@@ -105,7 +134,8 @@ def dem_token(text):
 # ----------------------------------------------------------------- log service
 
 def _log_enabled():
-    return os.environ.get("TDQ_AUDIT_LOG", "1") != "0"
+    return (os.environ.get("TDQ_AUDIT_LOG", "1") != "0"
+            and os.environ.get("TDQ_LOG", "1") != "0")
 
 
 def _now():
@@ -113,7 +143,7 @@ def _now():
 
 
 def _log(message):
-    """Log progress to stderr with an ISO timestamp. Turn it off with TDQ_AUDIT_LOG=0."""
+    """Log progress to stderr with an ISO timestamp. Turn it off with TDQ_AUDIT_LOG=0 or TDQ_LOG=0."""
     if _log_enabled():
         print(f"[{_now()}] {message}", file=sys.stderr)
 
@@ -134,8 +164,13 @@ def iter_events(path):
             if not line:
                 continue
             try:
-                yield json.loads(line)
+                record = json.loads(line)
             except (ValueError, TypeError):
+                bad += 1
+                continue
+            if isinstance(record, dict):
+                yield record
+            else:
                 bad += 1
     if bad:
         _log(f"{os.path.basename(str(path))}: skipped {bad} unreadable line(s)")
@@ -157,8 +192,9 @@ def find_sessions(transcript_dir, limit=3):
 
 def classify(tool_name, tool_input):
     """Group tool calls into readable buckets — the bucket is the unit for deciding what to cut."""
-    if tool_name == "Bash":
-        cmd = (tool_input or {}).get("command", "") or ""
+    if tool_name in SHELL_TOOLS:
+        inp = tool_input or {}
+        cmd = inp.get("command") or inp.get("CommandLine") or inp.get("cmd") or ""
         if "tdq_state.py" in cmd:
             return "tdq_state.py (dump JSON)"
         if "unittest" in cmd or "pytest" in cmd:
@@ -167,10 +203,10 @@ def classify(tool_name, tool_input):
             return "doc_lint"
         if "graphify" in cmd:
             return "graphify"
-        return "other Bash"
-    if tool_name == "Read":
+        return "other Bash" if tool_name == "Bash" else tool_name
+    if tool_name in READ_TOOLS:
         return "Read file"
-    if tool_name in ("Edit", "MultiEdit"):
+    if tool_name in EDIT_TOOLS:
         return "Edit (echoes the diff back)"
     if tool_name and "tavily" in tool_name:
         return "tavily search"
@@ -180,7 +216,12 @@ def classify(tool_name, tool_input):
 def _label(tool_name, tool_input):
     """A short label identifying one specific tool call in the top table."""
     inp = tool_input or {}
-    for key in ("file_path", "command", "query", "description", "pattern"):
+    keys = (
+        "file_path", "command", "query", "description", "pattern",
+        "Path", "path", "AbsolutePath", "CommandLine", "cmd",
+        "Query", "Recipient", "AgentName", "Name", "Prompt", "raw",
+    )
+    for key in keys:
         if inp.get(key):
             return f"{tool_name}: {str(inp[key])[:70]}"
     return tool_name or "?"
@@ -276,28 +317,63 @@ def _message_key(ev, index):
     return mid if mid else f"__line_{index}"
 
 
-def _scan(path):
-    """Returns (the list of Items of this file, the usage totals)."""
-    events = list(iter_events(path))
-    names = {}
+def _count_chunks(chunks, allow_inferred=False):
+    """Count tokens using real tokenizer, or chars/4 fallback if `allow_inferred` is True."""
+    if not chunks:
+        return [], "measured"
+    try:
+        return dem_nhieu(chunks), "measured"
+    except skill_tokens.ThieuThuVienDem:
+        if not allow_inferred:
+            raise
+        counts = [max(1, len(text) // 4) if text else 0 for text in chunks]
+        return counts, "inferred"
+
+
+def _read_path_and_range(tool_name, args):
+    if tool_name not in READ_TOOLS or not isinstance(args, dict):
+        return None, False
+    path = args.get("file_path") or args.get("Path") or args.get("path") or args.get("AbsolutePath")
+    has_range = any(
+        args.get(key) is not None
+        for key in ("offset", "limit", "StartLine", "EndLine", "start_line", "end_line")
+    )
+    return path, has_range
+
+
+def _collect_claude_tool_uses(events):
+    names, reads = {}, []
     for ev in events:
         content = (ev.get("message") or {}).get("content")
-        if isinstance(content, list):
-            for block in content:
-                if isinstance(block, dict) and block.get("type") == "tool_use":
-                    names[block.get("id")] = (block.get("name"), block.get("input") or {})
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                continue
+            name, inp = block.get("name"), block.get("input") or {}
+            names[block.get("id")] = (name, inp)
+            rpath, has_range = _read_path_and_range(name, inp)
+            if rpath:
+                reads.append((rpath, has_range))
+    return names, reads
 
-    usage_by_msg = {}       # message key -> usage (the first occurrence wins)
-    call_idx = []           # index of the FIRST line of each API call, ascending
+
+def _collect_claude_usage(events):
+    usage_by_msg, call_idx = {}, []
     for i, ev in enumerate(events):
         usage = (ev.get("message") or {}).get("usage")
         if not usage:
             continue
         key = _message_key(ev, i)
-        if key in usage_by_msg:
-            continue
-        usage_by_msg[key] = usage
-        call_idx.append(i)
+        if key not in usage_by_msg:
+            usage_by_msg[key] = usage
+            call_idx.append(i)
+    return usage_by_msg, call_idx
+
+
+def _scan_claude(events, allow_inferred=False):
+    names, reads = _collect_claude_tool_uses(events)
+    usage_by_msg, call_idx = _collect_claude_usage(events)
 
     totals = collections.Counter()
     totals["api_calls"] = len(usage_by_msg)
@@ -321,11 +397,97 @@ def _scan(path):
             name, inp = names.get(block.get("tool_use_id"), (None, {}))
             text, anh = _tach_anh(block)
             remaining = len(call_idx) - bisect.bisect_left(call_idx, i)
-            tho.append((text, anh, remaining, classify(name, inp), _label(name, inp)))
-    # Count the whole file in ONE batch: the cost lies in starting the venv python.
-    so = dem_nhieu([t[0] for t in tho])
-    items = [Item((n + anh) * con_lai, len(text), group, label, n + anh)
-             for (text, anh, con_lai, group, label), n in zip(tho, so)]
+            tho.append((text, anh, remaining, classify(name, inp), _label(name, inp), name, inp))
+    so, carry_basis = _count_chunks([t[0] for t in tho], allow_inferred=allow_inferred)
+    items = [
+        Item((n + anh) * con_lai, len(text), group, label, n + anh)
+        for (text, anh, con_lai, group, label, _, _), n in zip(tho, so)
+    ]
+    subagents = [
+        (name, label, item.tokens, item.size)
+        for (_, _, _, _, label, name, _), item in zip(tho, items)
+        if name in SUBAGENT_TOOLS
+    ]
+    read_items = [
+        (rpath, item.tokens)
+        for (_, _, _, _, _, name, inp), item in zip(tho, items)
+        for rpath, _ in [_read_path_and_range(name, inp)]
+        if rpath
+    ]
+    usage_basis = "measured" if usage_by_msg else "inferred"
+    basis = "measured" if (usage_basis == "measured" and carry_basis == "measured") else "inferred"
+    if not events:
+        usage_basis = carry_basis = basis = "inferred"
+    meta = {
+        "host": "claude",
+        "basis": basis,
+        "usage_basis": usage_basis,
+        "carry_basis": carry_basis,
+        "reads": reads,
+        "read_items": read_items,
+        "subagents": subagents,
+    }
+    return items, totals, meta
+
+
+def _scan_non_claude(events, host, allow_inferred=True):
+    data = extract_agy_audit_data(events) if host == "agy" else extract_codex_audit_data(events)
+    call_idx = data["call_idx"]
+    reads = [
+        res_pair for name, args in data["tool_calls"]
+        for res_pair in [_read_path_and_range(name, args)]
+        if res_pair[0]
+    ]
+    raw_rows = []
+    for res in data["results"]:
+        name, args, text = res["tool_name"], res["args"], res["text"]
+        img_tok = res.get("media_count", 0) * TOKEN_ANH_KHONG_RO
+        remaining = len(call_idx) - bisect.bisect_left(call_idx, res["index"])
+        raw_rows.append((text, img_tok, remaining, classify(name, args), _label(name, args), name, args))
+
+    counts, carry_basis = _count_chunks([row[0] for row in raw_rows], allow_inferred=allow_inferred)
+    items = [
+        Item((n + img_tok) * rem, len(text), group, label, n + img_tok)
+        for (text, img_tok, rem, group, label, _, _), n in zip(raw_rows, counts)
+    ]
+    subagents = [
+        (name, label, item.tokens, item.size)
+        for (_, _, _, _, label, name, _), item in zip(raw_rows, items)
+        if name in SUBAGENT_TOOLS
+    ]
+    read_items = [
+        (rpath, item.tokens)
+        for (_, _, _, _, _, name, args), item in zip(raw_rows, items)
+        for rpath, _ in [_read_path_and_range(name, args)]
+        if rpath
+    ]
+    usage_basis = "measured" if data["has_real_usage"] else "inferred"
+    if not events:
+        usage_basis = carry_basis = "inferred"
+    basis = "measured" if (usage_basis == "measured" and carry_basis == "measured") else "inferred"
+    meta = {
+        "host": host,
+        "basis": basis,
+        "usage_basis": usage_basis,
+        "carry_basis": carry_basis,
+        "reads": reads,
+        "read_items": read_items,
+        "subagents": subagents,
+    }
+    return items, data["totals"], meta
+
+
+def _scan_with_meta(path, host=None, allow_inferred=False):
+    events = list(iter_events(path))
+    resolved = host or detect_host_from_events(events)
+    if resolved == "claude":
+        return _scan_claude(events, allow_inferred=allow_inferred)
+    return _scan_non_claude(events, resolved, allow_inferred=True)
+
+
+def _scan(path, host=None, allow_inferred=False):
+    """Returns (the list of Items of this file, the usage totals)."""
+    items, totals, _ = _scan_with_meta(path, host=host, allow_inferred=allow_inferred)
     return items, totals
 
 
@@ -438,43 +600,228 @@ def cost_equivalent(totals, cache_ttl=DEFAULT_CACHE_TTL):
     return sum(parts.values()), parts
 
 
+def _merge_basis(values):
+    return "measured" if values and all(v == "measured" for v in values) else "inferred"
+
+
+def _aggregate_repeated_reads(session_reads, read_carry, top):
+    agg = {}
+    for file_path, counts in session_reads.items():
+        agg[file_path] = {
+            "file_path": file_path,
+            "reads": counts["reads"],
+            "re_reads": counts["re_reads"],
+            "carry_tokens": read_carry.get(file_path, 0),
+            "hosts": sorted(counts["hosts"]),
+            "basis": _merge_basis(counts["bases"]),
+        }
+    rows = sorted(
+        agg.values(),
+        key=lambda row: (row["re_reads"], row["reads"], row["carry_tokens"]),
+        reverse=True,
+    )
+    return rows[:top] if top and top > 0 else rows
+
+
+def _aggregate_subagents(raw_subagents, top):
+    agg = {}
+    for host_name, tool_name, label, tokens, size, basis in raw_subagents:
+        key = (host_name, tool_name, label)
+        entry = agg.setdefault(key, {
+            "host": host_name, "tool": tool_name, "label": label,
+            "count": 0, "tokens": 0, "size": 0, "bases": [],
+        })
+        entry["count"] += 1
+        entry["tokens"] += tokens
+        entry["size"] += size
+        entry["bases"].append(basis)
+    rows = [
+        {
+            "host": e["host"], "tool": e["tool"], "label": e["label"],
+            "count": e["count"], "tokens": e["tokens"], "size": e["size"],
+            "basis": _merge_basis(e["bases"]),
+        }
+        for e in agg.values()
+    ]
+    rows.sort(key=lambda row: (row["tokens"], row["size"], row["count"]), reverse=True)
+    return rows[:top] if top and top > 0 else rows
+
+
+def _audit_session_pairs(pairs, host="all", limit=5, top=10, cache_ttl=DEFAULT_CACHE_TTL):
+    allow_inferred = host != "claude"
+    host_buckets = {}
+    group_agg = {}
+    all_top = []
+    session_reads = {}
+    read_carry = collections.Counter()
+    raw_subagents = []
+
+    for hname, path in pairs:
+        items, totals, meta = _scan_with_meta(path, host=hname, allow_inferred=allow_inferred)
+        _log(f"[{hname}] {os.path.basename(str(path))}: {len(items)} tool result(s) ({meta['basis']})")
+        bucket = host_buckets.setdefault(hname, {
+            "host": hname, "sessions": 0, "totals": collections.Counter(),
+            "carry_cost": 0, "bases": [], "usage_bases": [], "carry_bases": [], "paths": [],
+        })
+        bucket["sessions"] += 1
+        bucket["totals"].update(totals)
+        bucket["carry_cost"] += sum(it.tokens for it in items)
+        bucket["bases"].append(meta["basis"])
+        bucket["usage_bases"].append(meta["usage_basis"])
+        bucket["carry_bases"].append(meta["carry_basis"])
+        bucket["paths"].append(str(path))
+
+        for it in items:
+            grp = group_agg.setdefault(it.group, {"count": 0, "tokens": 0, "bases": []})
+            grp["count"] += 1
+            grp["tokens"] += it.tokens
+            grp["bases"].append(meta["carry_basis"])
+            all_top.append({
+                "host": hname, "group": it.group, "label": it.label,
+                "tokens": it.tokens, "size": it.size, "chars": it.chars,
+                "basis": meta["carry_basis"],
+            })
+
+        seen_in_session = set()
+        for rpath, _ in meta["reads"]:
+            entry = session_reads.setdefault(rpath, {"reads": 0, "re_reads": 0, "hosts": set(), "bases": []})
+            entry["reads"] += 1
+            entry["hosts"].add(hname)
+            entry["bases"].append(meta["carry_basis"])
+            if rpath in seen_in_session:
+                entry["re_reads"] += 1
+            else:
+                seen_in_session.add(rpath)
+        for rpath, tok in meta["read_items"]:
+            read_carry[rpath] += tok
+        for tool_name, label, tok, size in meta["subagents"]:
+            raw_subagents.append((hname, tool_name, label, tok, size, meta["carry_basis"]))
+
+    host_rows = []
+    for b in host_buckets.values():
+        t = b["totals"]
+        equiv, _ = cost_equivalent(t, cache_ttl)
+        host_rows.append({
+            "host": b["host"],
+            "sessions": b["sessions"],
+            "api_calls": t.get("api_calls", 0),
+            "tool_calls": t.get("tool_calls", 0),
+            "input": t.get("input", 0),
+            "output": t.get("output", 0),
+            "cache_read": t.get("cache_read", 0),
+            "cache_write": t.get("cache_write", 0),
+            "carry_cost": b["carry_cost"],
+            "equiv_cost": round(equiv, 2),
+            "basis": _merge_basis(b["bases"]),
+            "usage_basis": _merge_basis(b["usage_bases"]),
+            "carry_basis": _merge_basis(b["carry_bases"]),
+            "paths": b["paths"],
+        })
+
+    groups = sorted(
+        ({"group": g, "count": d["count"], "tokens": d["tokens"], "basis": _merge_basis(d["bases"])}
+         for g, d in group_agg.items()),
+        key=lambda row: row["tokens"],
+        reverse=True,
+    )
+    all_top.sort(key=lambda row: (row["tokens"], row["size"]), reverse=True)
+    top_rows = all_top[:top] if top and top > 0 else all_top
+    return {
+        "host_filter": host,
+        "limit": limit,
+        "sessions_scanned": len(pairs),
+        "hosts": host_rows,
+        "groups": groups,
+        "top_items": top_rows,
+        "repeated_reads": _aggregate_repeated_reads(session_reads, read_carry, top),
+        "subagent_calls": _aggregate_subagents(raw_subagents, top),
+    }
+
+
+def audit_multi_host(host="all", project_dir=None, limit=5, top=10, home=None, cache_ttl=DEFAULT_CACHE_TTL):
+    """Audit up to `limit` newest sessions per host (`all`, `agy`, `codex`, `claude`)."""
+    pairs = discover_host_sessions(host=host, project_dir=project_dir, limit=limit, home=home)
+    return _audit_session_pairs(pairs, host=host, limit=limit, top=top, cache_ttl=cache_ttl)
+
+
 # ----------------------------------------------------------------- CLI
 
 def _fmt(n):
     return f"{n:,}"
 
 
-def main(argv=None):
-    parser = argparse.ArgumentParser(
-        description="Measure the token carry-cost of a Claude Code transcript.")
-    parser.add_argument("--project", help="project folder (default: the current folder)")
-    parser.add_argument("--transcript-dir", help="point straight at the folder holding *.jsonl")
-    parser.add_argument("--sessions", type=int, default=3,
-                        help="how many newest sessions to measure (default 3, 0 = all)")
-    parser.add_argument("--top", type=int, default=0,
-                        help="also print the N priciest tool outputs (default 0 = do not print)")
-    parser.add_argument("--cache-ttl", choices=sorted(CACHE_WRITE_WEIGHT),
-                        default=DEFAULT_CACHE_TTL,
-                        help="cache TTL used to convert the cost (default 1h = factor 2.0)")
-    args = parser.parse_args(argv)
+def _print_multi_host_report(report, top):
+    print(f"# Multi-host token audit — host={report['host_filter']} · "
+          f"{report['sessions_scanned']} session(s)")
+    print()
+    print(f"{'host':<10}{'sess':>6}{'api':>7}{'tools':>7}"
+          f"{'equiv_tok':>14}{'carry-cost':>15}  {'basis':<10}")
+    print("-" * 71)
+    for row in report["hosts"]:
+        print(f"{row['host']:<10}{row['sessions']:>6}{row['api_calls']:>7}{row['tool_calls']:>7}"
+              f"{_fmt(round(row['equiv_cost'])):>14}{_fmt(row['carry_cost']):>15}  {row['basis']:<10}")
+    print()
+    print(f"{'group':<28}{'calls':>7}{'carry-cost (tokens)':>22}  {'basis':<10}")
+    print("-" * 69)
+    for grp in report["groups"]:
+        print(f"{grp['group']:<28}{grp['count']:>7}{_fmt(grp['tokens']):>22}  {grp['basis']:<10}")
+    if top and report["top_items"]:
+        print()
+        print(f"# Top {len(report['top_items'])} priciest tool outputs")
+        for item in report["top_items"]:
+            print(f"  [{item['host']}|{item['basis']}] {_fmt(item['tokens']):>12} tok | "
+                  f"{_fmt(item['chars']):>8} chars | {item['group']:<22} {item['label'][:60]}")
+    if report["repeated_reads"]:
+        print()
+        print("# Repeated file reads")
+        for rd in report["repeated_reads"]:
+            print(f"  [{rd['basis']}] re-reads={rd['re_reads']} total={rd['reads']} | "
+                  f"{_fmt(rd['carry_tokens']):>10} tok | {rd['file_path']}")
+    if report["subagent_calls"]:
+        print()
+        print("# Subagent calls")
+        for sub in report["subagent_calls"]:
+            print(f"  [{sub['host']}|{sub['basis']}] calls={sub['count']} | "
+                  f"{_fmt(sub['tokens']):>10} tok | {sub['label'][:70]}")
 
+
+def _run_multi_host_cli(args, sessions, top_n):
+    if args.transcript_dir:
+        paths = find_sessions(args.transcript_dir, sessions)
+        if not paths:
+            _log(f"no session found in {args.transcript_dir} — nothing to measure")
+            print("No session to measure.")
+            return 0
+        host_name = "claude" if args.host == "claude" else args.host
+        pairs = [(host_name if host_name != "all" else detect_host_from_events(list(iter_events(p))), p)
+                 for p in paths]
+        report = _audit_session_pairs(pairs, host=args.host, limit=sessions, top=top_n, cache_ttl=args.cache_ttl)
+    else:
+        report = audit_multi_host(
+            host=args.host, project_dir=args.project, limit=sessions, top=top_n, cache_ttl=args.cache_ttl
+        )
+    if not report["sessions_scanned"]:
+        _log(f"no session found for host={args.host} — nothing to measure")
+        print("No session to measure.")
+        return 0
+    _print_multi_host_report(report, top_n)
+    total_carry = sum(row["carry_cost"] for row in report["hosts"])
+    _log(f"done — multi-host total carry-cost {_fmt(total_carry)} tokens")
+    return 0
+
+
+def _run_legacy_cli(args, sessions, top_n):
     tdir = args.transcript_dir or default_transcript_dir(args.project)
     _log(f"reading transcripts from {tdir}")
-    paths = find_sessions(tdir, args.sessions)
+    paths = find_sessions(tdir, sessions)
     if not paths:
         _log(f"no session found in {tdir} — nothing to measure")
         print("No session to measure.")
         return 0
     _log(f"measuring {len(paths)} session(s)")
 
-    try:
-        totals = usage_totals(paths)
-        rows = carry_cost(paths)
-    except skill_tokens.ThieuThuVienDem as exc:
-        print("token_audit.py: the token-counting library `anthropic-tokenizer` is missing.\n"
-              "This script is FORBIDDEN to estimate characters/4, so it stops here.\n"
-              f"Install with: {exc}", file=sys.stderr)
-        return EXIT_THIEU_THU_VIEN
+    totals = usage_totals(paths)
+    rows = carry_cost(paths)
     total_carry = sum(r.tokens for r in rows)
 
     print(f"# Token audit — {len(paths)} session · {tdir}")
@@ -513,15 +860,45 @@ def main(argv=None):
               f"{hv.doc_lai} ({hv.doc_lai / hv.tong * 100:.1f}%)")
         print("  (re-reading is the RIGHT behaviour in the 5 cases the rules demand — this only measures)")
 
-    if args.top:
+    if top_n:
         print()
-        print(f"# Top {args.top} priciest tool outputs")
-        for item in top_items(paths, args.top):
+        print(f"# Top {top_n} priciest tool outputs")
+        for item in top_items(paths, top_n):
             print(f"  {_fmt(item.tokens):>12} tok | {_fmt(item.chars):>8} chars | "
                   f"{item.group:<26} {item.label[:70]}")
 
     _log(f"done — total carry-cost {_fmt(total_carry)} tokens")
     return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description="Measure the token carry-cost of Antigravity, Codex, and Claude Code transcripts.")
+    parser.add_argument("--host", choices=("all", "agy", "codex", "claude"),
+                        help="host transcript source to audit (default: legacy Claude-only mode)")
+    parser.add_argument("--project", help="project folder (default: the current folder)")
+    parser.add_argument("--transcript-dir", help="point straight at the folder holding *.jsonl")
+    parser.add_argument("--sessions", type=int, default=None,
+                        help="how many newest sessions to measure (default 3 for legacy, 5 for --host; 0 = all)")
+    parser.add_argument("--top", type=int, default=None,
+                        help="also print the N priciest tool outputs (default 0 for legacy, 10 for --host)")
+    parser.add_argument("--cache-ttl", choices=sorted(CACHE_WRITE_WEIGHT),
+                        default=DEFAULT_CACHE_TTL,
+                        help="cache TTL used to convert the cost (default 1h = factor 2.0)")
+    args = parser.parse_args(argv)
+
+    is_multi = args.host is not None
+    sessions = (5 if is_multi else 3) if args.sessions is None else args.sessions
+    top_n = (10 if is_multi else 0) if args.top is None else args.top
+    try:
+        if is_multi:
+            return _run_multi_host_cli(args, sessions, top_n)
+        return _run_legacy_cli(args, sessions, top_n)
+    except skill_tokens.ThieuThuVienDem as exc:
+        print("token_audit.py: the token-counting library `anthropic-tokenizer` is missing.\n"
+              "This script is FORBIDDEN to estimate characters/4, so it stops here.\n"
+              f"Install with: {exc}", file=sys.stderr)
+        return EXIT_THIEU_THU_VIEN
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@ PHASE1_RUNTIME_MODULES = {
 # Current O4 and eval suite modules are required in live packaging, but may not yet exist in Git HEAD.
 APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
-    "rtk_integration",
+    "rtk_integration", "tdq_mcp_shrink", "tdq_ccr", "caveman_config",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",

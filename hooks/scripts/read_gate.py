@@ -49,6 +49,8 @@ TRAN_DONG = 400
 # Below this size a re-read is not worth a line of reminder: the reminder costs about as much as
 # what it saves. Measured on this repo: a 2 KB file is roughly 600 tokens, the reminder line ~40.
 NGUONG_BYTE = 2048
+CCR_DATA_EXTS = frozenset({".json", ".jsonl", ".csv", ".log", ".yaml", ".yml"})
+CCR_MIN_BYTES = 32768
 
 
 def _log(message):
@@ -177,6 +179,22 @@ def _dem_lap_doan(rows, duong, dau, cuoi, mtime):
     return lap_count
 
 
+def _should_hint_ccr(path: str, size_bytes: int, start_line: int, end_line: int) -> bool:
+    """Return True when reading an entire structured/log file above 32 KB."""
+    if start_line or end_line:
+        return False
+    if size_bytes <= CCR_MIN_BYTES:
+        return False
+    return os.path.splitext(path)[1].lower() in CCR_DATA_EXTS
+
+
+def _tao_thong_diep_ccr(ten: str, kb: int, path: str) -> list[str]:
+    """Build a non-blocking English CCR summary hint for large data/log reads."""
+    return [
+        f"[{MA}] Large data file '{ten}' ({kb} KB); summarize lossless via `py -3 scripts/tdq_ccr.py summarize \"{path}\"` and restore raw bytes with `retrieve` if needed.",
+    ]
+
+
 def _tao_thong_diep(ten, kb, dau, cuoi, lap_count):
     """Thông điệp nhắc nhở trực diện cho AI."""
     if not dau and not cuoi:
@@ -210,6 +228,7 @@ def main():
     rows = _doc_so(cwd, phien)
 
     lap_count = 0
+    ccr_hint = False
     if not dau and not cuoi:
         truoc = _da_doc_tron(rows, duong)
         dang_nhac = (truoc is not None
@@ -217,28 +236,36 @@ def main():
                      and truoc.get("byte") == so.st_size
                      and truoc.get("mtime") == int(so.st_mtime)
                      and not _da_nhac(rows, duong))
+        if not dang_nhac and _should_hint_ccr(duong, so.st_size, dau, cuoi) and not _da_nhac(rows, duong):
+            ccr_hint = True
     else:
         lap_count = _dem_lap_doan(rows, duong, dau, cuoi, so.st_mtime)
         dang_nhac = (lap_count >= 2)
 
+    should_emit = dang_nhac or ccr_hint
     _ghi_so(cwd, {"ts": time.time(), "session": phien, "path": duong, "dau": dau, "cuoi": cuoi,
-                  "byte": so.st_size, "mtime": int(so.st_mtime), "da_nhac": dang_nhac}, rows)
+                  "byte": so.st_size, "mtime": int(so.st_mtime), "da_nhac": should_emit}, rows)
     _log(f"{os.path.basename(duong)} · {so.st_size}B · vung=({dau},{cuoi}) · lap={lap_count} · "
-         f"{'nhac' if dang_nhac else 'im'}")
-    if not dang_nhac:
+         f"{'nhac' if should_emit else 'im'}")
+    if not should_emit:
         sys.exit(0)
 
     ten = os.path.basename(duong)
     kb = so.st_size // 1024
+    messages = (
+        _tao_thong_diep_ccr(ten, kb, duong)
+        if ccr_hint
+        else _tao_thong_diep(ten, kb, dau, cuoi, lap_count)
+    )
     if _common.is_agy():
-        _common.remind_force(cwd, payload, "READ", _tao_thong_diep(ten, kb, dau, cuoi, lap_count))
+        _common.remind_force(cwd, payload, "READ", messages)
     else:
         print(_common.json.dumps({
             "hookSpecificOutput": {
                 "hookEventName": "PreToolUse",
                 "permissionDecision": "allow",
                 "permissionDecisionReason": "TDQ: a reminder, not a block.",
-                "additionalContext": _common.trim(_tao_thong_diep(ten, kb, dau, cuoi, lap_count)),
+                "additionalContext": _common.trim(messages),
             }
         }, ensure_ascii=False))
     sys.exit(0)

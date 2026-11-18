@@ -469,5 +469,93 @@ class PathAndTimeTest(unittest.TestCase):
             transcript.read_transcripts(PROJECT, host="unknown")
 
 
+class MultiHostAuditDiscoveryTest(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.home = Path(self.temporary.name)
+        self.quiet = patch.dict(os.environ, {"TDQ_LOG": "0"})
+        self.quiet.start()
+        self.addCleanup(self.quiet.stop)
+
+    def _write_jsonl(self, path, records, mtime=None):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as fh:
+            for rec in records:
+                fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        if mtime is not None:
+            os.utime(path, (mtime, mtime))
+        return path
+
+    def test_discover_host_sessions_respects_limit_and_newest_order(self):
+        project = "/work/demo"
+        claude_dir = Path(transcript.claude_transcript_dir(project, self.home))
+        for idx in range(7):
+            self._write_jsonl(claude_dir / f"c{idx}.jsonl", [claude("assistant", idx)], mtime=100 + idx)
+            agy_log = (self.home / ".gemini" / "antigravity" / "brain" / f"conv-{idx}"
+                       / ".system_generated" / "logs" / "transcript.jsonl")
+            self._write_jsonl(agy_log, [{"type": "PLANNER_RESPONSE", "step_index": 1}], mtime=200 + idx)
+            codex_log = self.home / ".codex" / "sessions" / "2026" / "11" / f"0{idx + 1}" / f"rollout-{idx}.jsonl"
+            self._write_jsonl(codex_log, [codex_meta(f"cx{idx}", project)], mtime=300 + idx)
+
+        all_sessions = transcript.discover_host_sessions("all", project_dir=project, limit=5, home=str(self.home))
+        by_host = {}
+        for h, path in all_sessions:
+            by_host.setdefault(h, []).append(Path(path).name)
+        self.assertEqual(len(by_host["claude"]), 5)
+        self.assertEqual(by_host["claude"][0], "c6.jsonl")
+        self.assertEqual(len(by_host["agy"]), 5)
+        self.assertEqual(len(by_host["codex"]), 5)
+        self.assertEqual(by_host["codex"][0], "rollout-6.jsonl")
+
+    def test_discover_agy_prefers_transcript_jsonl_over_transcript_full(self):
+        logs_dir = (self.home / ".gemini" / "antigravity" / "brain" / "conv-dup"
+                    / ".system_generated" / "logs")
+        self._write_jsonl(logs_dir / "transcript.jsonl", [{"type": "PLANNER_RESPONSE", "step_index": 1}], mtime=100)
+        self._write_jsonl(logs_dir / "transcript_full.jsonl", [{"type": "PLANNER_RESPONSE", "step_index": 1}], mtime=101)
+        found = transcript.discover_host_sessions("agy", limit=5, home=str(self.home))
+        self.assertEqual(len(found), 1)
+        self.assertEqual(Path(found[0][1]).name, "transcript.jsonl")
+
+    def test_discover_host_sessions_invalid_host_raises(self):
+        with self.assertRaisesRegex(ValueError, "host"):
+            transcript.discover_host_sessions("unknown", home=str(self.home))
+
+    def test_extract_agy_and_codex_audit_data(self):
+        agy_events = [
+            {"type": "USER_INPUT", "step_index": 0, "created_at": timestamp(0)},
+            {"type": "PLANNER_RESPONSE", "step_index": 1, "created_at": timestamp(1),
+             "input_tokens": 1200, "cache_read_tokens": 300, "output_tokens": 80,
+             "tool_calls": [{"name": "read_file", "args": {"Path": json.dumps("/work/a.py"), "EndLine": "50"}}]},
+            {"type": "GENERIC", "step_index": 2, "source": "MODEL", "content": "line1\nline2"},
+            {"type": "PLANNER_RESPONSE", "step_index": 3, "created_at": timestamp(3),
+             "input_tokens": 1500, "cache_read_tokens": 500, "output_tokens": 40, "tool_calls": []},
+        ]
+        agy_data = transcript.extract_agy_audit_data(agy_events)
+        self.assertTrue(agy_data["has_real_usage"])
+        self.assertEqual(agy_data["totals"]["api_calls"], 2)
+        self.assertEqual(agy_data["totals"]["tool_calls"], 1)
+        self.assertEqual(agy_data["results"][0]["tool_name"], "read_file")
+        self.assertEqual(agy_data["results"][0]["args"]["Path"], "/work/a.py")
+
+        codex_events = [
+            codex_meta("cx1", PROJECT),
+            codex_tool("custom_tool_call", 1, "c1", name="exec", input="cat a.py"),
+            codex_tool("custom_tool_call_output", 2, "c1", output=[{"type": "input_text", "text": "hello world"}]),
+            {"type": "event_msg", "timestamp": timestamp(3), "payload": {
+                "type": "token_count",
+                "info": {
+                    "total_token_usage": {"input_tokens": 500, "cached_input_tokens": 200, "output_tokens": 25},
+                    "last_token_usage": {"input_tokens": 500, "cached_input_tokens": 200, "output_tokens": 25},
+                }}},
+        ]
+        codex_data = transcript.extract_codex_audit_data(codex_events)
+        self.assertTrue(codex_data["has_real_usage"])
+        self.assertEqual(codex_data["totals"]["api_calls"], 1)
+        self.assertEqual(codex_data["totals"]["input"], 300)
+        self.assertEqual(codex_data["totals"]["cache_read"], 200)
+        self.assertEqual(codex_data["results"][0]["text"], "hello world")
+
+
 if __name__ == "__main__":
     unittest.main()

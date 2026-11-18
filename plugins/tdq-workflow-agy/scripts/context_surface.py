@@ -8,17 +8,21 @@ Two questions, two tables:
         The load tier is what decides the cost, not the file size: a 1,000-character file in the
         `always loaded` tier costs more than a 10,000-character file read once a month.
   2. `--hooks`: how many milliseconds each hook costs per turn, measured repeatedly, median taken.
+  3. `--mcp-prefix`: how many bytes/tokens local Antigravity MCP schemas cost raw vs shrunk.
 
 Usage:
         python3 scripts/context_surface.py                  # the surface table
         python3 scripts/context_surface.py --hooks           # the hook speed table
         python3 scripts/context_surface.py --hooks --runs 9  # change the number of runs
+        python3 scripts/context_surface.py --mcp-prefix      # the MCP schema prefix tax table
         python3 scripts/context_surface.py --quiet           # turn the progress log off
 
 Log service: ISO timestamp, printed to **stderr**, on by default, turned off with `--quiet`
-(or `TDQ_SURFACE_LOG=0`). The table always goes to **stdout** so it can be piped.
+(or `TDQ_SURFACE_LOG=0` / `TDQ_LOG=0`). The table always goes to **stdout** so it can be piped.
 Exit: 0 finished · 2 bad syntax — the same contract as `tdq_state.py`.
 """
+
+from __future__ import annotations
 
 import argparse
 import datetime
@@ -32,6 +36,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
+import tdq_mcp_shrink  # noqa: E402 — shared, used to measure shrunk MCP schema prefix tax
 import tdq_state  # noqa: E402 — shared, used to build a temp state for the hook measurement
 
 # Token estimate: the SAME factor for every file so comparing files stays fair.
@@ -58,7 +63,11 @@ _QUIET = False
 
 
 def _log_enabled():
-    return not _QUIET and os.environ.get("TDQ_SURFACE_LOG", "1") != "0"
+    return (
+        not _QUIET
+        and os.environ.get("TDQ_SURFACE_LOG", "1") != "0"
+        and os.environ.get("TDQ_LOG", "1") != "0"
+    )
 
 
 def _log(message):
@@ -158,6 +167,145 @@ def totals(rows):
         out.setdefault(row[1], 0)
         out[row[1]] += _num(row[2])
     return out
+
+
+# -------------------------------------------------------------- MCP prefix tax
+
+MCP_HEADERS = (
+    "schema",
+    "tools",
+    "raw bytes",
+    "raw tokens",
+    "shrunk bytes",
+    "shrunk tokens",
+    "saved",
+)
+
+
+def _fmt_num(value: int) -> str:
+    return f"{value:,}".replace(",", ".")
+
+
+def _collect_mcp_files(mcp_dir: str | None = None) -> tuple[str, list[str]]:
+    """Return `(base_dir, sorted_json_paths)` for MCP schema scanning."""
+    if mcp_dir is None:
+        base = os.path.expanduser(os.path.join("~", ".gemini", "antigravity", "mcp"))
+        if not os.path.isdir(base):
+            return base, []
+        roots = [
+            d for d in sorted(glob.glob(os.path.join(base, "tdq-workflow-agy_*")))
+            if os.path.isdir(d)
+        ] or [base]
+    else:
+        base = os.path.expanduser(mcp_dir)
+        if not os.path.isdir(base):
+            return base, []
+        roots = [base]
+    files = [
+        p
+        for r in roots
+        for p in sorted(glob.glob(os.path.join(r, "**", "*.json"), recursive=True))
+    ]
+    return base, sorted(set(files))
+
+
+def _measure_mcp_file(path: str) -> tuple[int, int, int] | None:
+    """Measure `(raw_bytes, shrunk_bytes, tool_count)` for one MCP JSON schema file."""
+    try:
+        raw = _read(path)
+        parsed = json.loads(raw.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if isinstance(parsed, dict) and isinstance(parsed.get("result"), dict):
+        tools = parsed["result"].get("tools")
+        if isinstance(tools, list):
+            shrunk = tdq_mcp_shrink.transform_rpc_response(parsed, "tools/list")
+            tool_count = len(tools)
+        else:
+            shrunk = tdq_mcp_shrink.shrink_schema_node(parsed)
+            tool_count = 1
+    elif isinstance(parsed, list):
+        shrunk = tdq_mcp_shrink.shrink_schema_node(parsed)
+        tool_count = len(parsed)
+    elif isinstance(parsed, dict):
+        shrunk = tdq_mcp_shrink.shrink_schema_node(parsed)
+        tool_count = 1
+    else:
+        return None
+    payload = json.dumps(shrunk, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return len(raw), min(len(raw), len(payload)), tool_count
+
+
+def _iter_mcp_measurements(mcp_dir: str | None = None) -> list[tuple[str, int, int, int]]:
+    """Return `(rel_path, raw_bytes, shrunk_bytes, tool_count)` for valid MCP schemas."""
+    base, files = _collect_mcp_files(mcp_dir)
+    items: list[tuple[str, int, int, int]] = []
+    for path in files:
+        measured = _measure_mcp_file(path)
+        if measured is None:
+            continue
+        rel = os.path.relpath(path, base).replace(os.sep, "/")
+        items.append((rel, *measured))
+    return items
+
+
+def scan_mcp_schemas(mcp_dir: str | None = None) -> list[list[str]]:
+    """Scan MCP schema JSON files and return table rows comparing raw vs shrunk sizes."""
+    rows: list[list[str]] = []
+    for rel, raw_b, shrunk_b, tool_count in _iter_mcp_measurements(mcp_dir):
+        pct = ((raw_b - shrunk_b) / raw_b * 100.0) if raw_b > 0 else 0.0
+        rows.append([
+            rel,
+            str(tool_count),
+            _fmt_num(raw_b),
+            _fmt_num(round(raw_b / BYTES_PER_TOKEN)),
+            _fmt_num(shrunk_b),
+            _fmt_num(round(shrunk_b / BYTES_PER_TOKEN)),
+            f"{pct:.1f}%",
+        ])
+    _log(f"scanned {len(rows)} MCP schema file(s)")
+    return rows
+
+
+def estimate_mcp_prefix_tax(mcp_dir: str | None = None) -> dict[str, int]:
+    """Estimate total raw vs shrunk MCP schema prefix tax in bytes and tool count."""
+    raw_total = 0
+    shrunk_total = 0
+    tools_total = 0
+    for _, raw_b, shrunk_b, tool_count in _iter_mcp_measurements(mcp_dir):
+        raw_total += raw_b
+        shrunk_total += shrunk_b
+        tools_total += tool_count
+    saved_total = raw_total - shrunk_total
+    _log(
+        f"mcp prefix tax: {tools_total} tool(s), "
+        f"{raw_total}B -> {shrunk_total}B (saved {saved_total}B)"
+    )
+    return {
+        "raw_bytes": raw_total,
+        "shrunk_bytes": shrunk_total,
+        "saved_bytes": saved_total,
+        "tools": tools_total,
+    }
+
+
+def _run_mcp_prefix(mcp_dir: str | None = None) -> int:
+    """Print the MCP prefix tax Markdown table and summary, returning exit code 0."""
+    _log("starting the MCP prefix tax scan")
+    rows = scan_mcp_schemas(mcp_dir)
+    tax = estimate_mcp_prefix_tax(mcp_dir)
+    print_table(MCP_HEADERS, rows)
+    print()
+    raw_tok = round(tax["raw_bytes"] / BYTES_PER_TOKEN)
+    shrunk_tok = round(tax["shrunk_bytes"] / BYTES_PER_TOKEN)
+    pct = (tax["saved_bytes"] / tax["raw_bytes"] * 100.0) if tax["raw_bytes"] > 0 else 0.0
+    print(
+        f"TOTAL MCP ({tax['tools']} tools): "
+        f"{_fmt_num(tax['raw_bytes'])} chars (~{_fmt_num(raw_tok)} tokens) -> "
+        f"{_fmt_num(tax['shrunk_bytes'])} chars (~{_fmt_num(shrunk_tok)} tokens), "
+        f"saved {_fmt_num(tax['saved_bytes'])} chars ({pct:.1f}%)"
+    )
+    return 0
 
 
 # ---------------------------------------------------------------- hook speed
@@ -317,11 +465,18 @@ def main(argv=None):
                         help="time each hook instead of scanning the surface")
     parser.add_argument("--dispatcher", action="store_true",
                         help="measure dispatcher baseline vs candidate parity under O08 protocol")
+    parser.add_argument("--mcp-prefix", action="store_true",
+                        help="scan Antigravity MCP schemas and compare raw vs shrunk prefix tax")
+    parser.add_argument("--mcp-dir", default=None,
+                        help="override MCP schema directory for --mcp-prefix")
     parser.add_argument("--runs", type=int, default=5,
                         help="how many runs per hook with --hooks (default 5)")
     parser.add_argument("--quiet", action="store_true", help="turn the progress log off")
     args = parser.parse_args(argv)
     _QUIET = args.quiet
+
+    if args.mcp_prefix:
+        return _run_mcp_prefix(args.mcp_dir)
 
     if args.hooks:
         _log(f"measuring hook speed, {args.runs} run(s) per situation")

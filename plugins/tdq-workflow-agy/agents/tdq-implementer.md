@@ -53,7 +53,7 @@ FILES: <path>, <path>
 TEST: <command> -> <pass/fail + the real numbers>
 BRANCH: <branch name> | MERGE-READY: yes | no
 TICK-READY: yes | no
-NOTES: <≤ 2 lines; when blocked, name exactly what is missing>
+NOTES: <≤ 2 lines, Compact Handoff: path:line — symbol — note; Auto-Clarity restores full text on blockers/security warnings>
 ```
 
 `TICK-READY: yes` is no longer self-certification. Before merging your branch the leader runs

@@ -1,17 +1,17 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-17T18:31:50+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-18T13:37:19+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-17-0325-tich-hop-rtk-antigravity |
+| Request | 2026-11-17-2156-tich-hop-caveman-agy |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-17-0325-tich-hop-rtk-antigravity.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-17-0325-tich-hop-rtk-antigravity.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-17-2156-tich-hop-caveman-agy.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-17-2156-tich-hop-caveman-agy.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | ultra |
+| QC level | full |
 | Run mode | subagent |
 
 ## Where we are

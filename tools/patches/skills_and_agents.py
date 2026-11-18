@@ -27,6 +27,18 @@ M01_M20_REPLACEMENTS: Tuple[Tuple[str, str], ...] = (
     ("mcp__tavily-primary__", "mcp_tdq-workflow-agy_tavily-primary_"),
 )
 
+AUTO_CLARITY_RULE = (
+    "Compact Handoff: report as `path:line — symbol — note` (Auto-Clarity: terse "
+    "ASD-STE100 internally; full prose on security warnings and approval gates)."
+)
+
+
+def compact_handoff_hint(note_line: str) -> str:
+    """Format a terse Compact Handoff line bounded under 240 chars."""
+    cleaned = " ".join(str(note_line or "").split())
+    return cleaned[:237] + "..." if len(cleaned) > 240 else cleaned
+
+
 # Strictly verified Antigravity 2.0 subagent specs (model in {inherit, flash_lite, flash, pro},
 # tools as YAML array of real Antigravity tool names).
 AGENT_FRONTMATTERS: Dict[str, Dict[str, object]] = {
@@ -113,7 +125,11 @@ def transform_skills(plugin_root: Path) -> int:
             "branch": {"type": "string"},
             "merge_ready": {"type": "boolean"},
             "tick_ready": {"type": "boolean"},
-            "notes": {"type": "string", "maxLength": 1500},
+            "notes": {
+                "type": "string",
+                "maxLength": 1500,
+                "description": AUTO_CLARITY_RULE,
+            },
         },
     }
     schema_path = skills_dir / "tdq-conventions" / "references" / "handoff-schema.json"

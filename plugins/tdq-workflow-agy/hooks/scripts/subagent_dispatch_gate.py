@@ -42,7 +42,7 @@ def main():
         missing = [f for f in REQUIRED_IMPL_FIELDS if f not in prompt]
         if missing:
             remind(cwd, payload, "SUBAGENT", [
-                f"Implementer assignment missing fields: {', '.join(missing)}. Check team-mode.md.",
+                f"Implementer assignment missing fields: {', '.join(missing)}. Check team-mode.md (Compact Handoff: path:line - symbol - note).",
             ])
 
 
