@@ -55,7 +55,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
 
 ## P2 — Kiểm kê cổng & lời chỉ dẫn
 
-- [>] **T2.1** (e12m) Kiểm kê toàn bộ mã chặn/nhắc `[TDQ:*]` trong `hooks/scripts/*.py` (grep `MA =`, `block(`, chuỗi `[TDQ:`): mỗi mã một dòng gồm sự kiện, điều kiện, số deny đo được, phân loại (chặn cứng / tự sửa `overwrite` / hướng dẫn / xóa), lời hiện tại và lời đề xuất 4 phần — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json',encoding='utf-8')); assert d['grepped_count']==len(d['cong']) and all(all(r['loi_de_xuat'].get(k) for k in ('chuyen_gi','vi_sao','lam_gi','bo_qua')) for r in d['cong'])"`
+- [x] **T2.1** (e12m) Kiểm kê toàn bộ mã chặn/nhắc `[TDQ:*]` trong `hooks/scripts/*.py` (grep `MA =`, `block(`, chuỗi `[TDQ:`): mỗi mã một dòng gồm sự kiện, điều kiện, số deny đo được, phân loại (chặn cứng / tự sửa `overwrite` / hướng dẫn / xóa), lời hiện tại và lời đề xuất 4 phần — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json',encoding='utf-8')); assert d['grepped_count']==len(d['cong']) and all(all(r['loi_de_xuat'].get(k) for k in ('chuyen_gi','vi_sao','lam_gi','bo_qua')) for r in d['cong'])"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json`
   - Cần: T1.3
   - Mục tiêu: Q2 + Q8.
@@ -69,7 +69,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
 
 ## P3 — Báo cáo nghiên cứu
 
-- [ ] **T3.1** (e18m) Viết báo cáo 9 mục (a–i theo spec §3c bước 5), mọi số trích từ JSON P1/P2, ước tính tiết kiệm ghi công thức = chi phí đo × tần suất đo; đối chiếu hợp đồng hook `agy-customizations` (`hooks.md`) — Test: `py -3 scripts/doc_lint.py docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
+- [>] **T3.1** (e18m) Viết báo cáo 9 mục (a–i theo spec §3c bước 5), mọi số trích từ JSON P1/P2, ước tính tiết kiệm ghi công thức = chi phí đo × tần suất đo; đối chiếu hợp đồng hook `agy-customizations` (`hooks.md`) — Test: `py -3 scripts/doc_lint.py docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
   - Chạm: `docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md`
   - Cần: T1.2, T1.4, T2.1
   - Dùng: `agy-customizations (docs/hooks.md)`
