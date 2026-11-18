@@ -28,7 +28,8 @@ AGY_TYPES = {"USER_INPUT", "PLANNER_RESPONSE", "SYSTEM", "TOOL_RESPONSE"}
 UNTIMED_TYPES = {"api-request-shape", "api-request-blob", "last-prompt", "cost-state",
                  "file-history-snapshot", "queue-operation", "summary", "custom-title",
                  "agent-name", "agent-color", "tag", "saved_hook_context", "pr-link",
-                 "token_usage_record", "compacted", "world_state"}
+                 "token_usage_record", "compacted", "world_state",
+                 "GENERIC", "SYSTEM_MESSAGE", "CHECKPOINT", "ERROR_MESSAGE"}
 
 
 def _log(message):
@@ -600,3 +601,295 @@ def _read_agy(record, source):
                 cid = str(call.get("id") or f"agy:{step_id}:{idx}")
                 _mark(source, ts_rec, "tool", "start", cid, step_id)
                 _mark(source, ts_rec, "tool", "end", cid, step_id)
+
+
+def _safe_mtime(path):
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def _sort_newest_paths(paths, limit):
+    ordered = sorted(set(paths), key=lambda p: (_safe_mtime(p), str(p)), reverse=True)
+    return ordered[:limit] if limit and limit > 0 else ordered
+
+
+def _host_session_files(target_host, project_dir, home):
+    if target_host == "claude":
+        files = []
+        for directory in _claude_directories(project_dir, home):
+            if directory.is_dir():
+                files.extend(directory.glob("*.jsonl"))
+        return files
+    if target_host == "agy":
+        files = []
+        for directory in _agy_directories(home):
+            primary = directory / "transcript.jsonl"
+            if primary.is_file():
+                files.append(primary)
+            else:
+                extra = sorted(directory.glob("*.jsonl"))
+                if extra:
+                    files.append(extra[0])
+        return files
+    base = Path(home or Path.home()) / ".codex" / "sessions"
+    if not base.is_dir():
+        return []
+    rollouts = list(base.rglob("rollout-*.jsonl"))
+    return rollouts if rollouts else list(base.rglob("*.jsonl"))
+
+
+def discover_host_sessions(host="all", project_dir=None, limit=5, home=None):
+    """Discover up to `limit` newest transcript files per host (`claude`, `agy`, `codex`)."""
+    valid = ("all", "agy", "antigravity", "codex", "claude")
+    if host not in valid:
+        raise ValueError("host must be all, agy, codex, or claude")
+    norm = "agy" if host == "antigravity" else host
+    targets = ("claude", "agy", "codex") if norm == "all" else (norm,)
+    found = []
+    for item in targets:
+        files = _host_session_files(item, project_dir, home)
+        for path in _sort_newest_paths(files, limit):
+            found.append((item, str(path)))
+    _log(f"discovered {len(found)} session(s) for host={norm}")
+    return found
+
+
+def detect_host_from_events(events):
+    """Infer transcript host (`claude`, `agy`, or `codex`) from parsed records."""
+    agy_markers = AGY_TYPES | {"GENERIC", "SYSTEM_MESSAGE", "CHECKPOINT", "ERROR_MESSAGE"}
+    for ev in events:
+        if not isinstance(ev, dict):
+            continue
+        etype = ev.get("type")
+        if etype in agy_markers:
+            return "agy"
+        if etype in CODEX_TYPES or etype == "token_usage_record":
+            return "codex"
+        if etype in CLAUDE_TYPES:
+            return "claude"
+    return "claude"
+
+
+def _stringify_payload(payload):
+    if payload is None:
+        return ""
+    if isinstance(payload, str):
+        return payload
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _unwrap_agy_args(raw_args):
+    decoded = _decode_double_json(raw_args)
+    if isinstance(decoded, dict):
+        return {
+            key: _decode_double_json(val) if isinstance(val, str) else val
+            for key, val in decoded.items()
+        }
+    return {"raw": decoded} if decoded is not None else {}
+
+
+def _agy_usage_from_record(ev, totals):
+    fields = (
+        ("input", ("input_tokens",)),
+        ("output", ("output_tokens",)),
+        ("cache_read", ("cache_read_tokens", "cache_read_input_tokens")),
+        ("cache_write", ("cache_creation_tokens", "cache_write_tokens", "cache_creation_input_tokens")),
+    )
+    found = False
+    for dest, keys in fields:
+        for key in keys:
+            val = ev.get(key)
+            if isinstance(val, int) and not isinstance(val, bool):
+                totals[dest] += val
+                found = True
+                break
+    return found
+
+
+def _agy_register_calls(ev, idx, totals, calls_by_id, pending, tool_calls):
+    tcalls = ev.get("tool_calls")
+    if not isinstance(tcalls, list):
+        return
+    for j, call in enumerate(tcalls):
+        if not isinstance(call, dict):
+            continue
+        name = call.get("name") or "unknown"
+        raw = call.get("args") if "args" in call else call.get("arguments")
+        args = _unwrap_agy_args(raw)
+        cid = str(call.get("id") or f"agy:{idx}:{j}")
+        totals["tool_calls"] += 1
+        calls_by_id[cid] = (name, args)
+        pending.append((cid, name, args))
+        tool_calls.append((name, args))
+
+
+def _agy_resolve_call(ev, calls_by_id, pending):
+    cid = ev.get("tool_call_id") or ev.get("call_id")
+    if cid and cid in calls_by_id:
+        return calls_by_id[cid]
+    if pending:
+        _, name, args = pending.popleft()
+        return name, args
+    return ev.get("tool_name") or ev.get("name") or "generic_output", {}
+
+
+def _agy_result_payload(ev):
+    for key in ("content", "output", "result", "error"):
+        if ev.get(key) is not None:
+            return _stringify_payload(ev.get(key))
+    return ""
+
+
+def extract_agy_audit_data(events):
+    """Normalize Antigravity transcript records into audit structures."""
+    totals = collections.Counter(
+        {"api_calls": 0, "tool_calls": 0, "output": 0, "input": 0, "cache_read": 0, "cache_write": 0}
+    )
+    call_idx, results, tool_calls = [], [], []
+    calls_by_id, pending = {}, collections.deque()
+    has_real_usage = False
+    for i, ev in enumerate(events):
+        if not isinstance(ev, dict):
+            continue
+        etype = ev.get("type")
+        if etype == "PLANNER_RESPONSE":
+            pending.clear()
+            call_idx.append(i)
+            totals["api_calls"] += 1
+            if _agy_usage_from_record(ev, totals):
+                has_real_usage = True
+            _agy_register_calls(ev, i, totals, calls_by_id, pending, tool_calls)
+        elif etype in ("TOOL_RESPONSE", "GENERIC", "ERROR_MESSAGE"):
+            if etype == "ERROR_MESSAGE" and not pending:
+                continue
+            name, args = _agy_resolve_call(ev, calls_by_id, pending)
+            media = ev.get("media")
+            results.append({
+                "index": i,
+                "tool_name": name,
+                "args": args,
+                "text": _agy_result_payload(ev),
+                "media_count": len(media) if isinstance(media, list) else 0,
+            })
+    return {
+        "totals": totals,
+        "call_idx": call_idx,
+        "results": results,
+        "tool_calls": tool_calls,
+        "has_real_usage": has_real_usage,
+    }
+
+
+def _codex_parse_args(payload, name):
+    raw = payload.get("arguments") if "arguments" in payload else payload.get("input")
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except ValueError:
+            pass
+        key = "command" if name in ("exec", "shell", "exec_command") else "raw"
+        return {key: raw}
+    return {}
+
+
+def _codex_output_text_and_media(output):
+    if isinstance(output, str):
+        return output, 0
+    if not isinstance(output, list):
+        return _stringify_payload(output), 0
+    parts, media_count = [], 0
+    for block in output:
+        if isinstance(block, dict) and block.get("type") in ("input_text", "output_text", "text"):
+            parts.append(str(block.get("text") or ""))
+        elif isinstance(block, dict) and "image" in str(block.get("type") or ""):
+            media_count += 1
+        else:
+            parts.append(_stringify_payload(block))
+    return "\n".join(part for part in parts if part), media_count
+
+
+def _codex_delta_usage(tot_u, prev_u):
+    fields = ("input_tokens", "cached_input_tokens", "cache_write_input_tokens", "output_tokens")
+    delta = {}
+    for key in fields:
+        cur = int(tot_u.get(key) or 0)
+        old = int(prev_u.get(key) or 0)
+        delta[key] = cur - old if cur >= old else cur
+    return delta
+
+
+def _codex_apply_token_count(payload, totals, state):
+    info = payload.get("info")
+    if not isinstance(info, dict):
+        return False
+    tot_u = info.get("total_token_usage")
+    last_u = info.get("last_token_usage")
+    if isinstance(tot_u, dict):
+        sig = tuple(sorted((k, int(v)) for k, v in tot_u.items() if isinstance(v, (int, float))))
+        if sig == state["sig"]:
+            return False
+        state["sig"] = sig
+    if isinstance(last_u, dict) and last_u:
+        usage = last_u
+    elif isinstance(tot_u, dict) and tot_u:
+        usage = _codex_delta_usage(tot_u, state["prev"])
+        state["prev"] = tot_u
+    else:
+        return False
+    inp = int(usage.get("input_tokens") or 0)
+    cached = int(usage.get("cached_input_tokens") or 0)
+    totals["api_calls"] += 1
+    totals["input"] += max(0, inp - cached)
+    totals["cache_read"] += cached
+    totals["cache_write"] += int(usage.get("cache_write_input_tokens") or 0)
+    totals["output"] += int(usage.get("output_tokens") or 0)
+    return True
+
+
+def extract_codex_audit_data(events):
+    """Normalize Codex rollout records into audit structures."""
+    totals = collections.Counter(
+        {"api_calls": 0, "tool_calls": 0, "output": 0, "input": 0, "cache_read": 0, "cache_write": 0}
+    )
+    call_idx, fallback_idx, results, tool_calls = [], [], [], []
+    calls_by_id = {}
+    tc_state = {"sig": None, "prev": {}}
+    has_real_usage = False
+    for i, ev in enumerate(events):
+        if not isinstance(ev, dict):
+            continue
+        etype, payload = ev.get("type"), ev.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        ptype = payload.get("type")
+        if etype == "event_msg" and ptype == "token_count":
+            if _codex_apply_token_count(payload, totals, tc_state):
+                call_idx.append(i)
+                has_real_usage = True
+        elif etype == "response_item" and ptype in ("function_call", "custom_tool_call"):
+            cid = payload.get("call_id") or payload.get("id") or f"codex:{i}"
+            name = payload.get("name") or ptype
+            args = _codex_parse_args(payload, name)
+            if cid not in calls_by_id:
+                totals["tool_calls"] += 1
+            calls_by_id[cid] = (name, args)
+            tool_calls.append((name, args))
+            fallback_idx.append(i)
+        elif etype == "response_item" and ptype in ("function_call_output", "custom_tool_call_output"):
+            cid = payload.get("call_id") or payload.get("id")
+            name, args = calls_by_id.get(cid, (ptype, {}))
+            text, media_count = _codex_output_text_and_media(payload.get("output"))
+            results.append({"index": i, "tool_name": name, "args": args, "text": text, "media_count": media_count})
+    return {
+        "totals": totals,
+        "call_idx": call_idx or fallback_idx,
+        "results": results,
+        "tool_calls": tool_calls,
+        "has_real_usage": has_real_usage,
+    }
