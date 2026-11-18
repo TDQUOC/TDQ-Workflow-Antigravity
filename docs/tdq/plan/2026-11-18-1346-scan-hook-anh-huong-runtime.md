@@ -46,7 +46,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json`
   - Cần: T1.1
   - Mục tiêu: bằng chứng chặn nhầm cho Q5.
-- [>] **T1.4** (e6m) Phân rã ≥ 6 lượt dài (gồm `f9e21752` "1 commit") thành 5 thành phần: chờ lỗi API, model sinh (kèm token/cache), tool, hook ước tính, deny/Stop; tính độ phủ = tổng thành phần / thời lượng — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json',encoding='utf-8')); ts=d['turns']; assert len(ts)>=6 and any(t['conv'].startswith('f9e21752') for t in ts) and all(t['do_phu']>=0.9 or t.get('ghi_chu') for t in ts)"`
+- [x] **T1.4** (e6m) Phân rã ≥ 6 lượt dài (gồm `f9e21752` "1 commit") thành 5 thành phần: chờ lỗi API, model sinh (kèm token/cache), tool, hook ước tính, deny/Stop; tính độ phủ = tổng thành phần / thời lượng — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json',encoding='utf-8')); ts=d['turns']; assert len(ts)>=6 and any(t['conv'].startswith('f9e21752') for t in ts) and all(t['do_phu']>=0.9 or t.get('ghi_chu') for t in ts)"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json`
   - Cần: T1.1
   - Mục tiêu: trả lời "tại sao lâu" (Q7).
