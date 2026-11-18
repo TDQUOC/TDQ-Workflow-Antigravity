@@ -210,10 +210,21 @@ class TestCommandGate(unittest.TestCase):
         pre = hooks_data["tdq-pre-tool-gates"]["PreToolUse"]
         cmd_entries = [m for m in pre if m["matcher"] == "run_command"]
         self.assertEqual(len(cmd_entries), 1)
-        self.assertIn("command_gate.py", cmd_entries[0]["hooks"][0]["command"])
+        cmd_str = cmd_entries[0]["hooks"][0]["command"]
+        self.assertIn("dispatch.py", cmd_str)
+        self.assertIn("python -X utf8", cmd_str)
+        self.assertNotIn('"', cmd_str)
         search_entries = [m for m in pre if "grep_search" in m["matcher"]]
         self.assertEqual(len(search_entries), 1)
         self.assertNotIn("run_command", search_entries[0]["matcher"])
+        post = hooks_data["tdq-post-tool-observe"]["PostToolUse"]
+        self.assertEqual(len(post), 1)
+        post_matcher = post[0]["matcher"]
+        for removed in ("run_command", "read_file", "view_file"):
+            self.assertNotIn(removed, post_matcher)
+        self.assertIn("call_mcp_tool", post_matcher)
+        self.assertIn("dispatch.py", post[0]["hooks"][0]["command"])
+        self.assertIn("python -X utf8", post[0]["hooks"][0]["command"])
         agents_text = (out_dir / "rules" / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("rtk recall", agents_text)
         self.assertIn("rtk bypass", agents_text)
