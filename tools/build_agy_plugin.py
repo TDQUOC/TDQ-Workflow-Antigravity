@@ -9,7 +9,7 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from patches import agy_hooks, agy_manifests, cli_fixes_a, cli_fixes_b, common_utils, skills_and_agents
+from patches import agy_dispatch, agy_hooks, agy_manifests, cli_fixes_a, cli_fixes_b, common_utils, skills_and_agents
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
@@ -44,7 +44,11 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         n_scripts = common_utils.copy_clean_tree(
             upstream / "scripts", stage / "scripts", exclude_names=common_utils.EXCLUDED_SCRIPTS
         )
-        n_hooks = common_utils.copy_clean_tree(upstream / "hooks" / "scripts", stage / "hooks" / "scripts")
+        n_hooks = common_utils.copy_clean_tree(
+            upstream / "hooks" / "scripts",
+            stage / "hooks" / "scripts",
+            exclude_names=common_utils.EXCLUDED_AGY_HOOKS,
+        )
         n_skills = common_utils.copy_clean_tree(upstream / "skills", stage / "skills")
         cp_skill = upstream / "portable_src" / "skills" / "tdq-checkportable"
         if cp_skill.is_dir():
@@ -66,6 +70,7 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         skills_and_agents.transform_skills(stage)
         skills_and_agents.transform_agents(stage)
         agy_hooks.apply_all(stage / "hooks" / "scripts")
+        agy_dispatch.apply_dispatch(stage / "hooks" / "scripts")
         skills_and_agents.relock_token_budget(stage)
 
         # 5. Emit final manifest.json & README.md
