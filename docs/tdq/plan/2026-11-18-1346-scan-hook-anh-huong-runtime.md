@@ -42,7 +42,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
   - Cần: T1.1
   - Mục tiêu: tách phần git + hook khỏi phần model cho ca "commit/merge 15 phút" (Q9).
   - Ca hiểm: git chưa cấu hình user → đặt `-c user.name/-c user.email` trên lệnh; dọn repo tạm cả khi lỗi.
-- [>] **T1.3** (e8m) Tái hiện ca chặn nhầm: đưa các lệnh thật đã bị `[TDQ:SEARCH] malformed` (py `-c`, here-string, `curl ... -split`) qua `search_gate.py`/`command_gate.py` bản cài; đưa `call_mcp_tool` → `chrome-devtools navigate_page/new_page` qua `lsp_gate.py`; dựng chuỗi edit không tick để xem `[TDQ:TICK]` trong `TDQ_PROJECT_DIR` tạm — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json',encoding='utf-8')); assert len(d['cases'])>=3 and all(k in {c['group'] for c in d['cases']} for k in ('search_malformed','lsp_non_lsp','tick_loop'))"`
+- [x] **T1.3** (e8m) Tái hiện ca chặn nhầm: đưa các lệnh thật đã bị `[TDQ:SEARCH] malformed` (py `-c`, here-string, `curl ... -split`) qua `search_gate.py`/`command_gate.py` bản cài; đưa `call_mcp_tool` → `chrome-devtools navigate_page/new_page` qua `lsp_gate.py`; dựng chuỗi edit không tick để xem `[TDQ:TICK]` trong `TDQ_PROJECT_DIR` tạm — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json',encoding='utf-8')); assert len(d['cases'])>=3 and all(k in {c['group'] for c in d['cases']} for k in ('search_malformed','lsp_non_lsp','tick_loop'))"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json`
   - Cần: T1.1
   - Mục tiêu: bằng chứng chặn nhầm cho Q5.
@@ -55,7 +55,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
 
 ## P2 — Kiểm kê cổng & lời chỉ dẫn
 
-- [ ] **T2.1** (e12m) Kiểm kê toàn bộ mã chặn/nhắc `[TDQ:*]` trong `hooks/scripts/*.py` (grep `MA =`, `block(`, chuỗi `[TDQ:`): mỗi mã một dòng gồm sự kiện, điều kiện, số deny đo được, phân loại (chặn cứng / tự sửa `overwrite` / hướng dẫn / xóa), lời hiện tại và lời đề xuất 4 phần — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json',encoding='utf-8')); assert d['grepped_count']==len(d['cong']) and all(all(r['loi_de_xuat'].get(k) for k in ('chuyen_gi','vi_sao','lam_gi','bo_qua')) for r in d['cong'])"`
+- [>] **T2.1** (e12m) Kiểm kê toàn bộ mã chặn/nhắc `[TDQ:*]` trong `hooks/scripts/*.py` (grep `MA =`, `block(`, chuỗi `[TDQ:`): mỗi mã một dòng gồm sự kiện, điều kiện, số deny đo được, phân loại (chặn cứng / tự sửa `overwrite` / hướng dẫn / xóa), lời hiện tại và lời đề xuất 4 phần — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json',encoding='utf-8')); assert d['grepped_count']==len(d['cong']) and all(all(r['loi_de_xuat'].get(k) for k in ('chuyen_gi','vi_sao','lam_gi','bo_qua')) for r in d['cong'])"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json`
   - Cần: T1.3
   - Mục tiêu: Q2 + Q8.
