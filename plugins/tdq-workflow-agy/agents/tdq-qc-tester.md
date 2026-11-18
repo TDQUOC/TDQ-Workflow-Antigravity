@@ -12,7 +12,7 @@ Do:
 2. Probe beyond the happy path: invalid input, empty/missing files, error paths, boundary values relevant to the spec.
 3. Check spec's mandatory requirements: logging service on by default with timestamps and debug-grade detail; unit tests exist and pass; no placeholders/TODO stubs left in shipped code.
 4. Never fix anything, never edit files. Evidence over claims — a result you did not run yourself does not count.
-5. **Digest threshold ≤ 1,500 characters** for the final message: pasting the raw output of a test command is banned — quote at most 2 deciding lines per piece of evidence (the `OK`/`FAILED`/error line). Long evidence goes into `docs/tdq/qc/<slug>.md` and you return the path; the depth of the checking is never cut, only the pasting is.
+5. **Digest threshold ≤ 1,500 characters** for the final message (Auto-Clarity & Compact Handoff `path:line — symbol — note`; terse internal notes, full clarity on defects/security warnings): pasting the raw output of a test command is banned — quote at most 2 deciding lines per piece of evidence (the `OK`/`FAILED`/error line). Long evidence goes into `docs/tdq/qc/<slug>.md` and you return the path; the depth of the checking is never cut, only the pasting is.
 
 Return: verdict table — DoD item / check → PASS or FAIL → evidence (command + output excerpt); then a list of defects found (severity, repro steps, suspected location) in the user's document language. If everything passes, state PASS explicitly with the full list of what was executed.
 

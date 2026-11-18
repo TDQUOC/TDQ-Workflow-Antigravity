@@ -293,6 +293,29 @@ def main():
                 )
     except Exception:  # noqa: BLE001 — optional reminder must never fail SessionStart
         pass
+    nhac_caveman = ""
+    try:
+        import caveman_config
+        if (
+            not caveman_config.is_prompt_muted()
+            and not already_reminded(cwd, payload, "SETUP-CAVEMAN")
+        ):
+            st_caveman = caveman_config.probe_caveman(plugin_root=GOC_LUAT)
+            if not st_caveman.get("enabled"):
+                turn_log_append(cwd, "remind", session=session_id(payload),
+                                code="SETUP-CAVEMAN", event="SessionStart")
+                if os.environ.get("TDQ_LOG", "1") != "0":
+                    _stamp = datetime.now().isoformat(timespec="seconds")
+                    print(
+                        f"[{_stamp}] session_start: SETUP-CAVEMAN opt-in disabled",
+                        file=sys.stderr,
+                    )
+                nhac_caveman = (
+                    "[TDQ:SETUP] Caveman MCP shrink is disabled — ask user permission to run "
+                    "py -3 scripts/tdq_setup.py --with-caveman (or --mute-caveman-prompt to hide)."
+                )
+    except Exception:  # noqa: BLE001 — optional reminder must never fail SessionStart
+        pass
     nhac = [n for n in (
         thong_bao_update_plugin,
         thong_bao_update_nen,
@@ -300,6 +323,7 @@ def main():
         "[TDQ] Đã tự động cập nhật instruction và cấu hình cho phiên bản mới." if da_cap_nhat_ver else "",
         nhac_setup,
         nhac_rtk,
+        nhac_caveman,
         "" if shutil.which("graphify") else
         "[TDQ] graphify is not installed (optional): uv tool install graphifyy",
         nhac_devtool,
