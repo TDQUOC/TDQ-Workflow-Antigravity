@@ -5,7 +5,9 @@ param(
     [switch]$NoEnable,
     [switch]$Update,
     [switch]$WithRtk,
-    [switch]$SkipRtk
+    [switch]$SkipRtk,
+    [switch]$WithCaveman,
+    [switch]$SkipCaveman
 )
 $params = @()
 if ($DryRun) { $params += "--dry-run" }
@@ -13,6 +15,8 @@ if ($NoEnable) { $params += "--no-enable" }
 if ($Update) { $params += "--update" }
 if ($WithRtk) { $params += "--with-rtk" }
 if ($SkipRtk) { $params += "--skip-rtk" }
+if ($WithCaveman) { $params += "--with-caveman" }
+if ($SkipCaveman) { $params += "--skip-caveman" }
 
 if (Get-Command py -ErrorAction SilentlyContinue) {
     py -3 "$PSScriptRoot\install.py" @params

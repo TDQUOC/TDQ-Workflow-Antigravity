@@ -185,6 +185,95 @@ def _handle_rtk_trigger(
     return 1 if getattr(args, "with_rtk", False) else 0
 
 
+def _import_caveman_config(src: Path | None = None):
+    """Import caveman_config from repo scripts or compiled plugin scripts."""
+    candidates = [str(ROOT_DIR / "scripts")]
+    if src is not None:
+        candidates.append(str(Path(src) / "scripts"))
+    for cand in candidates:
+        if cand not in sys.path and os.path.isdir(cand):
+            sys.path.insert(0, cand)
+    import caveman_config
+
+    return caveman_config
+
+
+def _prompt_caveman_enable(args, stdin_tty=None, ask_fn=input) -> bool:
+    """Return True when --with-caveman is passed or interactive user approves."""
+    if getattr(args, "with_caveman", False):
+        return True
+    is_tty = bool(stdin_tty) if stdin_tty is not None else bool(sys.stdin.isatty())
+    if not is_tty:
+        return False
+    print("\n   Optional Caveman MCP schema shrink proxy (opt-in).")
+    print("   Wraps lsp, chrome-devtools, tavily-primary via tdq_mcp_shrink.py (~/.tdq/caveman.json).")
+    try:
+        ans = ask_fn("   Enable Caveman MCP schema shrink now? [y/N]: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        return False
+    return ans in ("y", "yes")
+
+
+def _wrap_target_mcp(caveman_mod, src: Path | None, target: Path | None) -> list[str]:
+    """Wrap installed target mcp_config.json if present; return wrapped server names."""
+    if target is None:
+        return []
+    mcp_file = Path(target) / "mcp_config.json"
+    if not mcp_file.is_file():
+        return []
+    proxy_script = Path(target) / "scripts" / caveman_mod.PROXY_SCRIPT_NAME
+    if not proxy_script.is_file() and src is not None:
+        src_proxy = Path(src) / "scripts" / caveman_mod.PROXY_SCRIPT_NAME
+        if src_proxy.is_file():
+            proxy_script = src_proxy
+    caveman_mod.wrap_mcp_config(mcp_file, proxy_script)
+    after = caveman_mod.probe_caveman(plugin_root=Path(target))
+    return list(after.get("mcp_wrapped_servers") or [])
+
+
+def _handle_caveman_trigger(
+    args,
+    src: Path | None = None,
+    target: Path | None = None,
+    stdin_tty=None,
+    ask_fn=input,
+) -> int:
+    """Detect Caveman opt-in state and wrap MCP config only with explicit consent."""
+    if getattr(args, "skip_caveman", False):
+        print("   [NOTE] Caveman MCP shrink trigger skipped (--skip-caveman).")
+        return 0
+    caveman_mod = _import_caveman_config(src)
+    dry_run = bool(getattr(args, "dry_run", False))
+    probe_root = target if (target is not None and not dry_run) else src
+    probe = caveman_mod.probe_caveman(plugin_root=probe_root)
+    if probe.get("enabled"):
+        if dry_run:
+            print("[DRY-RUN] Caveman MCP shrink already enabled; would wrap installed mcp_config.json.")
+            return 0
+        wrapped = _wrap_target_mcp(caveman_mod, src, target)
+        caveman_mod.enable_caveman(approve=True, wrapped_servers=wrapped)
+        print(f"   [OK] Caveman MCP shrink active (wrapped: {', '.join(wrapped) or 'none'}).")
+        return 0
+    if dry_run:
+        msg = (
+            "Would enable Caveman opt-in (~/.tdq/caveman.json) and wrap mcp_config.json."
+            if getattr(args, "with_caveman", False)
+            else "Caveman MCP shrink is opt-in (disabled); run with --with-caveman or approve prompt."
+        )
+        print(f"[DRY-RUN] {msg}")
+        return 0
+    if not _prompt_caveman_enable(args, stdin_tty=stdin_tty, ask_fn=ask_fn):
+        print(
+            "   [NOTE] Caveman MCP shrink left disabled (opt-in). Enable anytime:"
+            " py -3 scripts/tdq_setup.py --with-caveman"
+        )
+        return 0
+    wrapped = _wrap_target_mcp(caveman_mod, src, target)
+    caveman_mod.enable_caveman(approve=True, wrapped_servers=wrapped)
+    print(f"   [OK] Caveman MCP shrink enabled (wrapped: {', '.join(wrapped) or 'none'}).")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=f"Install {PLUGIN_NAME} native plugin to user-level Antigravity.")
     parser.add_argument("--src", type=Path, default=PLUGIN_SRC, help=f"Source plugin directory (default: ./plugins/{PLUGIN_NAME})")
@@ -201,6 +290,16 @@ def main() -> int:
         "--skip-rtk",
         action="store_true",
         help="Skip rtk + rg installation check/prompt",
+    )
+    parser.add_argument(
+        "--with-caveman",
+        action="store_true",
+        help="Enable Caveman MCP schema shrink proxy (opt-in -> ~/.tdq/caveman.json)",
+    )
+    parser.add_argument(
+        "--skip-caveman",
+        action="store_true",
+        help="Skip Caveman MCP schema shrink check/prompt",
     )
     args = parser.parse_args()
 
@@ -227,6 +326,7 @@ def main() -> int:
         if args.update:
             print("[DRY-RUN] Would run: git -C <repo> pull --ff-only")
         _handle_rtk_trigger(args, src=src)
+        _handle_caveman_trigger(args, src=src, target=target)
         print("[DRY-RUN] Verification complete. No files were copied.")
         return 0
 
@@ -264,6 +364,9 @@ def main() -> int:
     print("\n5. Checking optional token-saving tools (rtk + rg)...")
     rtk_rc = _handle_rtk_trigger(args, src=src)
 
+    print("\n6. Checking optional Caveman MCP schema shrink (opt-in)...")
+    caveman_rc = _handle_caveman_trigger(args, src=src, target=target)
+
     print("\n==================================================================")
     print("INSTALLATION SUCCESSFUL!")
     print("==================================================================")
@@ -272,7 +375,7 @@ def main() -> int:
     print("\nIt will automatically load in any Antigravity workspace.")
     print("To check status anytime: agy plugin list")
     print("==================================================================")
-    return rtk_rc
+    return rtk_rc or caveman_rc
 
 
 if __name__ == "__main__":
