@@ -371,20 +371,30 @@ def main():
     # exactly the turn it is needed, since closing the books IS the last turn.
     hints[:0] = _dod_hint(cwd, state)
 
+    if is_agy():
+        dod_lines = _dod_hint(cwd, state)
+        if dod_lines:
+            queue_remind(cwd, payload, "DOD", dod_lines[0])
+        for code, (event, message) in EFFECTS.items():
+            short_code = code[4:] if code.startswith("TDQ:") else code
+            if (code in reminded or short_code in reminded) and event not in done:
+                queue_remind(cwd, payload, short_code, message)
+        if "TDQ:APPROVE" in reminded or "APPROVE" in reminded:
+            target = cong_dang_cho(state)
+            if target:
+                queue_remind(cwd, payload, "APPROVE", f"{target} approval pending")
+        if "TDQ:GIT" in reminded or "GIT" in reminded:
+            queue_remind(cwd, payload, "GIT", "Re-check branch/commit convention")
+        mark_turn_closed(cwd, sid)
+        return
     if not hints:
         return
     text = "\n".join(hints[:MAX_LINES])
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS - 1].rstrip() + "…"
-    if is_agy():
-        if _common._RUNTIME_STATE.get("event") == "Stop":
-            queue_remind(cwd, payload, "STOP", text)
-        else:
-            emit_context([text])
-    else:
-        print(json.dumps({
-            "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": text}
-        }, ensure_ascii=False))
+    print(json.dumps({
+        "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": text}
+    }, ensure_ascii=False))
 
 
 if __name__ == "__main__":

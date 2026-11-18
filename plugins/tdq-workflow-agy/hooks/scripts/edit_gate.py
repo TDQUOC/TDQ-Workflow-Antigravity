@@ -82,7 +82,7 @@ def _tick_notify(cwd, payload, lines):
     if is_agy():
         remind(cwd, payload, "TICK", lines)
     else:
-        _tick_notify(cwd, payload, lines)
+        block(cwd, payload, "TDQ:TICK", lines)
 
 
 def within(child, parent):

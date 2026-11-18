@@ -1110,9 +1110,10 @@ def block(cwd, payload, code, lines, event="PreToolUse", day_du=False):
     rows = turn_rows(cwd, payload)
     line_list = _as_lines(lines)
     reason_key = line_list[0].strip() if line_list else ""
+    norm_c = _norm_code(code) or code
     prev_blocks = [
         r for r in rows
-        if r.get("kind") == "block" and r.get("code") == code and r.get("reason_key") == reason_key
+        if r.get("kind") == "block" and (_norm_code(r.get("code")) or r.get("code")) == norm_c and r.get("reason_key") == reason_key
     ]
     repeat_count = len(prev_blocks)
     sid = session_id(payload)

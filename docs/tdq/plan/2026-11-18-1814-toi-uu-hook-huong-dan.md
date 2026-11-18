@@ -134,7 +134,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Mục tiêu: sinh bản `plugins/tdq-workflow-agy/` đầy đủ R1+R2+R3, khóa `token-budget.json`, kiểm `0 findings` từ `agy.EXE`, và xác nhận `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` chưa bị ghi đè.
   - Đặc tả kỹ thuật & Logic cốt lõi: chạy `py -3 tools/build_agy_plugin.py`, kiểm tra không tồn tại `doc_file_gate.py`/`strategic_compact_gate.py`/`stop_batch_checker.py` trong `plugins/tdq-workflow-agy/hooks/scripts/`, tồn tại `dispatch.py` & `gate_guidance.py`, và kiểm `agy.EXE plugin validate --strict --json plugins/tdq-workflow-agy`.
 
-- [>] **T3.2** (e14m) Viết bộ test mới `tests/test_hook_dispatch_r1_r3.py` kiểm chứng trọn vẹn `Q1–Q5` & log service — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -v`
+- [x] **T3.2** (e14m) Viết bộ test mới `tests/test_hook_dispatch_r1_r3.py` kiểm chứng trọn vẹn `Q1–Q5` & log service — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -v`
   - Chạm: `tests/test_hook_dispatch_r1_r3.py`
   - Cần: T3.1
   - Mục tiêu: khóa bằng test tự động các yêu cầu R1–R3 trên `plugins/tdq-workflow-agy/` đã biên dịch: phát hiện lượt mới khi gõ lặp `"1a"`, `0` lệnh git giữa lượt, `overwrite` `call_mcp_tool` + `SUBAGENT`, `SEARCH` Hướng A (`malformed` 0 deny, lần 1 allow + nhắc, lần 2 deny), `TICK`/`LOG` mềm, `Stop` `continuationActive` 1 lần, `user_markdown` 4 phần, dọn `.tdq-runtime` > 7 ngày, và `TDQ_LOG` mặc định/tắt.

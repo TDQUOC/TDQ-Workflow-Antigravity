@@ -1115,9 +1115,10 @@ def block(cwd, payload, code, lines, event="PreToolUse", day_du=False):
     rows = turn_rows(cwd, payload)
     line_list = _as_lines(lines)
     reason_key = line_list[0].strip() if line_list else ""
+    norm_c = _norm_code(code) or code
     prev_blocks = [
         r for r in rows
-        if r.get("kind") == "block" and r.get("code") == code and r.get("reason_key") == reason_key
+        if r.get("kind") == "block" and (_norm_code(r.get("code")) or r.get("code")) == norm_c and r.get("reason_key") == reason_key
     ]
     repeat_count = len(prev_blocks)
     sid = session_id(payload)
@@ -1703,6 +1704,11 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         label="edit_gate_agy_state_block",
         sentinel='(payload.get("agent_id") or is_agy())',
     )
+    if "def _tick_notify(" not in read_utf8(edit_path):
+        text = read_utf8(edit_path).replace(
+            'block(cwd, payload, "TDQ:TICK",', "_tick_notify(cwd, payload,"
+        )
+        write_utf8(edit_path, text)
     replace_exact(
         edit_path,
         "def within(child, parent):",
@@ -1715,10 +1721,6 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         label="edit_gate_tick_notify_helper",
         sentinel="def _tick_notify(",
     )
-    text = read_utf8(edit_path).replace(
-        'block(cwd, payload, "TDQ:TICK",', "_tick_notify(cwd, payload,"
-    )
-    write_utf8(edit_path, text)
     replace_exact(
         edit_path,
         '        if tick["exists"] and tick["has_doing"]:',
@@ -2351,7 +2353,7 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         '        "hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": text}\n'
         "    }, ensure_ascii=False))",
         label="stop_gate_agy_soft_hints_and_turn_closed",
-        sentinel="mark_turn_closed(cwd, sid)\n        return",
+        sentinel='queue_remind(cwd, payload, "DOD"',
     )
 
 
