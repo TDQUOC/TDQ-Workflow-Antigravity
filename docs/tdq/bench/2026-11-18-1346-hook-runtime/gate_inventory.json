@@ -1,0 +1,862 @@
+{
+  "schema": "tdq-gate-inventory/v1",
+  "generated_at": "2026-11-18T14:54:40+07:00",
+  "grepped_codes": [
+    "TDQ:ANCHOR",
+    "TDQ:APPROVE",
+    "TDQ:ASK",
+    "TDQ:DEVTOOL",
+    "TDQ:DOC",
+    "TDQ:DOD",
+    "TDQ:FEEDBACK",
+    "TDQ:GATE",
+    "TDQ:GIT",
+    "TDQ:GON",
+    "TDQ:INTAKE",
+    "TDQ:LOG",
+    "TDQ:LSP",
+    "TDQ:NEXT",
+    "TDQ:OUTPUT",
+    "TDQ:QC",
+    "TDQ:READONLY",
+    "TDQ:RULE",
+    "TDQ:SEARCH",
+    "TDQ:SETUP",
+    "TDQ:STATE",
+    "TDQ:STUCK",
+    "TDQ:SUBAGENT",
+    "TDQ:TEAM",
+    "TDQ:TICK",
+    "TDQ:UNFINISHED",
+    "TDQ:VUNG",
+    "TDQ:WORKTREE",
+    "TDQ:ZERO-POPUP"
+  ],
+  "grepped_count": 29,
+  "cong_count": 29,
+  "sources": {
+    "hooks_scripts_dir": "hooks/scripts/*.py",
+    "hooks_scripts_files": 20,
+    "plugin_extra_files": [
+      "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py",
+      "plugins/tdq-workflow-agy/hooks/scripts/post_invocation.py"
+    ],
+    "delegated_scripts": [
+      "scripts/search_rules.py",
+      "scripts/tdq_devtool_mcp.py",
+      "scripts/tdq_state.py"
+    ],
+    "hook_impact_json": "docs/tdq/bench/2026-11-18-1346-hook-runtime/hook_impact.json",
+    "false_positive_repro_json": "docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json"
+  },
+  "filter_metadata": {
+    "method": "Python AST scan skipping comments and docstrings + delegated emitter cross-check",
+    "merged_internal_keys": {
+      "TDQ:READ": {
+        "merged_into": "TDQ:DOC",
+        "locations": [
+          "hooks/scripts/read_gate.py:261"
+        ]
+      },
+      "TDQ:SETUP-CAVEMAN": {
+        "merged_into": "TDQ:SETUP",
+        "locations": [
+          "hooks/scripts/session_start.py:294"
+        ]
+      },
+      "TDQ:SETUP-RTK": {
+        "merged_into": "TDQ:SETUP",
+        "locations": [
+          "hooks/scripts/session_start.py:268"
+        ]
+      }
+    },
+    "excluded_non_emitters": {
+      "TDQ:STOP": {
+        "reason": "Internal default `code` argument for `stop_block`/`queue_remind` in `_common.py` and `stop_gate.py`; actual emitted tags are `[TDQ:STUCK]`, `[TDQ:UNFINISHED]`, `[TDQ:LOG]`, `[TDQ:TICK]`, `[TDQ:DOD]`, `[TDQ:NEXT]`.",
+        "locations": [
+          "hooks/scripts/stop_gate.py:367",
+          "hooks/scripts/stop_gate.py:246"
+        ]
+      }
+    },
+    "unwired_legacy_scripts": {
+      "doc_file_gate.py": "Standalone script emitting `[TDQ DOC-GATE REJECTION]`, not wired in hooks.json (tdq-lean: delete/yagni candidate).",
+      "strategic_compact_gate.py": "Standalone script emitting `[TDQ Strategic Compaction Advisory]`, not wired in hooks.json (tdq-lean: delete/yagni candidate).",
+      "stop_batch_checker.py": "Standalone script emitting `[TDQ Stop-Batch: ...]`, not wired in hooks.json (tdq-lean: delete/yagni candidate)."
+    }
+  },
+  "summary": {
+    "by_phan_loai": {
+      "chan_cung": 9,
+      "huong_dan": 12,
+      "tu_sua": 1,
+      "xoa": 7
+    },
+    "deny_count_4d_in_catalog": 190,
+    "stop_count_4d_in_catalog": 60,
+    "raw_hook_impact_notes": {
+      "TDQ:LOG": "hook_impact.json reports 2 PreToolUse hits under tag LOG, but the sample is an agent quote containing 'denied by pre-tool hook:'; edit_gate never blocks TDQ:LOG.",
+      "TDQ:NEXT": "hook_impact.json reports 2 PreToolUse hits under tag NEXT whose sample is actually [TDQ:SEARCH] (hook_impact.py matched the earliest [TDQ:*] tag in step text).",
+      "TDQ:WORKTREE": "hook_impact.json reports 1 PreToolUse hit under tag WORKTREE whose sample is actually [TDQ:TEAM] (hook_impact.py matched the earliest [TDQ:*] tag in step text)."
+    }
+  },
+  "cong": [
+    {
+      "ma": "TDQ:ANCHOR",
+      "file": "hooks/scripts/session_start.py",
+      "events": [
+        "SessionStart"
+      ],
+      "dieu_kien": "SessionStart khi có active_request và source là 'compact' hoặc 'resume'.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Giữ neo trạng thái ngắn 1 dòng khi compact/resume; cắt dòng lặp MCP-First/ANTI-1..6 vì đã nằm trong user rules.",
+      "loi_hien_tai": "[TDQ:ANCHOR] Compact recovery: request=<req> phase=<pha> source=<src> owner=<owner> plan=<plan_f> doing=<doing_str> ...",
+      "loi_de_xuat": {
+        "chuyen_gi": "Phiên vừa được compact hoặc mở lại nên ngữ cảnh cũ đã bị nén.",
+        "vi_sao": "Giữ neo đúng request, phase, task đang làm [~] và worktree để không làm trùng hoặc lệch task.",
+        "lam_gi": "Đọc `plan` và kiểm tra biên nhận/file hiện có rồi chạy `py -3 scripts/tdq_state.py next` trước khi gọi tool sửa.",
+        "bo_qua": "Chỉ bỏ qua khi đã chuyển sang request mới (`tdq_state.py init`) hoặc phase đã là `idle`."
+      },
+      "source_locations": [
+        "hooks/scripts/session_start.py:396",
+        "hooks/scripts/session_start.py:414",
+        "hooks/scripts/session_start.py:415"
+      ]
+    },
+    {
+      "ma": "TDQ:APPROVE",
+      "file": "hooks/scripts/bash_gate.py, hooks/scripts/edit_gate.py, hooks/scripts/prompt_context.py, hooks/scripts/stop_gate.py",
+      "events": [
+        "PreInvocation",
+        "PreToolUse",
+        "Stop"
+      ],
+      "dieu_kien": "Chạy `tdq_state.py approve` / `set phase=` không khớp tín hiệu user trong lượt, hoặc sửa code ngoài `docs/` khi spec/plan/quick/mode chưa được duyệt, hoặc spec lệch sha256.",
+      "deny_count_4d": 2,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Giữ chặn cứng ở PreToolUse (cổng an toàn/duyệt); bỏ lặp lại dòng nhắc dài trong PreInvocation khi trạng thái chưa đổi, dùng thẻ `metadata.user_markdown`.",
+      "loi_hien_tai": "[TDQ:APPROVE] The user's prompt this turn did not approve <target> (or the mode differs) — STOP, do not run this command.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh duyệt hoặc thao tác sửa mã bị chặn vì lượt hiện tại chưa có xác nhận rõ ràng của người dùng.",
+        "vi_sao": "Mọi cổng duyệt (spec, plan, quick, mode) phải do chính người dùng quyết định, cấm model tự suy diễn.",
+        "lam_gi": "Trình bày bản cần duyệt trong chat, kết thúc lượt chờ user trả lời; khi user đã duyệt rõ mới chạy `py -3 scripts/tdq_state.py approve <target> --by \"<lời user>\"`.",
+        "bo_qua": "Không có ngoại lệ (chỉ mở tự động ở vòng sửa QC khi cổng trước đó đã `*_approved = true`)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/bash_gate.py:110",
+        "hooks/scripts/bash_gate.py:115",
+        "hooks/scripts/bash_gate.py:117",
+        "hooks/scripts/bash_gate.py:113",
+        "hooks/scripts/edit_gate.py:170",
+        "hooks/scripts/edit_gate.py:169",
+        "hooks/scripts/prompt_context.py:397"
+      ]
+    },
+    {
+      "ma": "TDQ:ASK",
+      "file": "hooks/scripts/ask_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Gọi tool `AskUserQuestion` trong phase `implement` hoặc `qc` khi chưa đặt `implement_pause`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Trên Antigravity, `TDQ:ZERO-POPUP` trong chính `ask_gate.py` đã chặn mọi popup hỏi; 0 deny/4 ngày và nội dung trùng quy tắc `lech add` trong skill `tdq-build`.",
+      "loi_hien_tai": "[TDQ:ASK] An unmet spec threshold is no reason to ask: apply the §6 fallback, `lech add`, carry on.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Hệ thống nhắc không tự ý dừng giữa `implement`/`qc` để hỏi khi ngưỡng spec không đạt.",
+        "vi_sao": "Tránh đứt mạch thực thi tự động vì các ngưỡng có thể xử lý bằng phương án dự phòng §6.",
+        "lam_gi": "Áp dụng dự phòng trong spec §6 và chạy `py -3 scripts/tdq_state.py lech add \"<chi tiết>\"` rồi làm tiếp.",
+        "bo_qua": "Hợp lệ khi gặp ca bất khả kháng (`mat-truy-cap`, `pha-huy`, `dau-vao-user`, `tran-qc`) sau khi chạy `tdq_state.py pause --loai <loại>`."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:101",
+        "hooks/scripts/ask_gate.py:24"
+      ]
+    },
+    {
+      "ma": "TDQ:DEVTOOL",
+      "file": "hooks/scripts/session_start.py -> scripts/tdq_devtool_mcp.py",
+      "events": [
+        "SessionStart"
+      ],
+      "dieu_kien": "SessionStart khi Chrome DevTools MCP được bật trong cấu hình project/plugin.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Bơm trạng thái `[TDQ:DEVTOOL] ready/active` ở mọi phiên kể cả khi không mở trình duyệt và tốn thêm kiểm tra socket TCP 9222; chỉ báo lỗi cấu hình trong `TDQ:SETUP` nếu cần.",
+      "loi_hien_tai": "[TDQ:DEVTOOL] Chrome DevTools MCP: active (9222) / ready (auto-launch on call)",
+      "loi_de_xuat": {
+        "chuyen_gi": "Thông báo trạng thái kết nối Chrome DevTools MCP lúc mở phiên.",
+        "vi_sao": "Giúp nhận biết Chrome DevTools MCP đã sẵn sàng hay thiếu cấu hình trước khi test UI.",
+        "lam_gi": "Nếu dùng test trình duyệt mà báo thiếu, chạy `py -3 scripts/tdq_setup.py`; đề xuất xóa dòng báo khi đã sẵn sàng.",
+        "bo_qua": "Bỏ qua hoàn toàn với các request không liên quan đến trình duyệt/web UI."
+      },
+      "source_locations": [
+        "scripts/tdq_devtool_mcp.py:327",
+        "scripts/tdq_devtool_mcp.py:324"
+      ]
+    },
+    {
+      "ma": "TDQ:DOC",
+      "file": "hooks/scripts/read_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Đọc lại toàn bộ file (>= 2 KB) không đổi size/mtime trong cùng phiên, đọc dải dòng trùng >= 70% từ 2 lần, hoặc đọc file dữ liệu > 32 KB.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Gộp mã nội bộ `'READ'` về đúng `'TDQ:DOC'`; bỏ nhánh tính overlap 70% phức tạp, chỉ giữ nhắc 1 dòng ngắn qua hàng đợi lượt khi đọc lại nguyên file >= 2 KB hoặc file dữ liệu > 32 KB.",
+      "loi_hien_tai": "[TDQ:DOC] <file> (<kb> KB) is already in context from an earlier read, unchanged. Need another part? Read it with offset/limit.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Tệp này chưa thay đổi nhưng vừa được đọc lại toàn bộ (hoặc file dữ liệu lớn > 32 KB).",
+        "vi_sao": "Nội dung đọc vào ngữ cảnh sẽ bị model đọc lại ở mọi API call kế tiếp, làm tăng chi phí và độ trễ.",
+        "lam_gi": "Dùng `read_file` kèm `StartLine`/`EndLine` cho phần mới, hoặc tóm tắt file dữ liệu bằng `py -3 scripts/tdq_ccr.py summarize \"<path>\"`.",
+        "bo_qua": "Hợp lệ khi tệp vừa bị chỉnh sửa ngoài hoặc ngữ cảnh vừa bị compact nên cần đọc lại đúng vùng cần sửa."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:101",
+        "hooks/scripts/read_gate.py:40",
+        "hooks/scripts/read_gate.py:261"
+      ]
+    },
+    {
+      "ma": "TDQ:DOD",
+      "file": "hooks/scripts/stop_gate.py",
+      "events": [
+        "Stop"
+      ],
+      "dieu_kien": "Stop ở phase `report` hoặc `idle` khi QC đã PASS hết nhưng còn checkbox task/DoD chưa tick `[x]`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Giữ nhắc 1 dòng không chặn ở cuối lượt đóng sổ; tận dụng cache trạng thái lượt thay vì đọc lặp plan/qc nhiều lần.",
+      "loi_hien_tai": "[TDQ:DOD] Closing the books with boxes still open: <n> task(s), <m> DoD line(s). QC passed — tick them in the plan.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Phiên sắp kết thúc ở pha đóng báo cáo (QC đã PASS) nhưng trong plan vẫn còn ô `[ ]` chưa đánh dấu.",
+        "vi_sao": "Tránh lệch sổ sách giữa kết quả QC đã đạt và trạng thái checkbox của plan.",
+        "lam_gi": "Mở file plan và cập nhật `[x]` cho các task/mục DoD đã nghiệm thu trước khi xuất báo cáo cuối.",
+        "bo_qua": "Hợp lệ khi có mục lệch đã ghi `lech add` và chờ người dùng chốt ở phase `report`."
+      },
+      "source_locations": [
+        "hooks/scripts/stop_gate.py:148",
+        "hooks/scripts/stop_gate.py:151"
+      ]
+    },
+    {
+      "ma": "TDQ:FEEDBACK",
+      "file": "hooks/scripts/prompt_context.py",
+      "events": [
+        "PreInvocation"
+      ],
+      "dieu_kien": "PreInvocation khi prompt chứa từ khóa `lỗi|bug|sửa lại|broken|fail|không chạy|sai rồi`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Khớp từ khóa thô trên mọi prompt gây báo nhầm cả khi đang chạy test đỏ hoặc bàn về lỗi; luồng `tdq-intake` đã phân loại bug/hotfix ngay lúc mở request.",
+      "loi_hien_tai": "[TDQ:FEEDBACK] User reported bug/feedback: run `py -3 scripts/tdq_state.py hotfix <slug>` or open express fix cycle before editing.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Prompt có chứa từ khóa liên quan tới lỗi/hỏng nên hook gợi ý mở luồng hotfix.",
+        "vi_sao": "Nhắc mở chu trình sửa lỗi thay vì sửa tay ngoài quy trình TDQ.",
+        "lam_gi": "Nếu đúng là phản hồi lỗi mới từ user, chạy `py -3 scripts/tdq_state.py hotfix <slug>`; đề xuất xóa trigger từ khóa này.",
+        "bo_qua": "Bỏ qua khi đang trong quá trình TDD đỏ-xanh hoặc thảo luận phân tích lỗi."
+      },
+      "source_locations": [
+        "hooks/scripts/prompt_context.py:267"
+      ]
+    },
+    {
+      "ma": "TDQ:GATE",
+      "file": "hooks/scripts/bash_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Lệnh shell PowerShell (`Set-Content|Add-Content|Out-File|...`) chạm vào `docs/tdq/state.json|STATE.md`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Trùng 100% với `TDQ:STATE` (thậm chí `agy_pretooluse_gate.py` đã chặn cùng mẫu bằng mã `TDQ:STATE`); xóa mã `GATE` và gom vào `TDQ:STATE`.",
+      "loi_hien_tai": "[TDQ:GATE] Do not mutate TDQ state via PowerShell; use tdq_state.py CLI.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh PowerShell định ghi trực tiếp vào tệp trạng thái TDQ.",
+        "vi_sao": "Ghi tay làm hỏng schema hoặc mất đồng bộ giữa `state.json` và `STATE.md`.",
+        "lam_gi": "Dùng CLI chuẩn `py -3 scripts/tdq_state.py set <k>=<v>` (hoặc `approve`/`init`); hợp nhất cảnh báo này về mã `TDQ:STATE`.",
+        "bo_qua": "Không có ngoại lệ cho việc ghi trực tiếp file state."
+      },
+      "source_locations": [
+        "hooks/scripts/bash_gate.py:144"
+      ]
+    },
+    {
+      "ma": "TDQ:GIT",
+      "file": "hooks/scripts/bash_gate.py, hooks/scripts/agy_pretooluse_gate.py, hooks/scripts/stop_gate.py",
+      "events": [
+        "PreToolUse",
+        "Stop"
+      ],
+      "dieu_kien": "Tạo branch/worktree bắt đầu bằng `claude|antigravity|gemini|codex` (chặn cứng), hoặc commit message chứa `Co-Authored-By` / `generated with` AI (nhắc/chặn).",
+      "deny_count_4d": 4,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Gộp logic kiểm tra trùng lặp giữa `bash_gate.py` và `agy_pretooluse_gate.py` vào một hàm thuần dùng chung; giữ chặn cứng vì lịch sử git khó đảo ngược.",
+      "loi_hien_tai": "[TDQ:GIT] AI-prefixed branch names are banned; name the branch after the work.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Tên nhánh/worktree có tiền tố tên AI hoặc nội dung commit mang dấu attribution AI.",
+        "vi_sao": "Quy tắc git của dự án cấm tên nhánh theo AI và cấm mọi dòng `Co-Authored-By` trong lịch sử commit.",
+        "lam_gi": "Đổi tên nhánh theo công việc (vd `git switch -c fix/<mo-ta>`) và bỏ hoàn toàn dòng attribution AI khỏi commit message.",
+        "bo_qua": "Không có ngoại lệ (nhánh thuộc worktree TDQ hợp lệ có tiền tố `tdq/...` được phép)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/agy_pretooluse_gate.py:154",
+        "hooks/scripts/bash_gate.py:147",
+        "hooks/scripts/bash_gate.py:164",
+        "hooks/scripts/bash_gate.py:173",
+        "hooks/scripts/bash_gate.py:167",
+        "hooks/scripts/bash_gate.py:176",
+        "hooks/scripts/stop_gate.py:353"
+      ]
+    },
+    {
+      "ma": "TDQ:GON",
+      "file": "hooks/scripts/session_start.py, hooks/scripts/subagent_start.py, hooks/scripts/prompt_context.py",
+      "events": [
+        "SessionStart",
+        "SubagentStart",
+        "PreInvocation"
+      ],
+      "dieu_kien": "SessionStart / SubagentStart nạp luật tinh gọn từ `chung.md` theo `muc_gat`; PreInvocation lặp 1 dòng nhắc ở phase `implement`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Giữ nạp 1 lần ở `SessionStart`/`SubagentStart`; XÓA kênh lặp `[TDQ:GON]` ở `prompt_context.py` (PreInvocation) để giảm ký tự bơm lặp trên 9.744 lượt gọi model.",
+      "loi_hien_tai": "[TDQ:GON] muc_gat=full · build less than asked: climb the ladder from rung 1 (nothing new) before adding a file, class or layer.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Hệ thống nạp nhắc luật code tinh gọn (ít file mới, ít lớp trừu tượng đơn dụng) theo mức `muc_gat`.",
+        "vi_sao": "Giữ code gọn, tránh over-engineering trước khi cân nhắc sửa trên file/hàm sẵn có.",
+        "lam_gi": "Kiểm tra bậc thang từ bậc 1 (không thêm file/class mới) và chỉ ghi marker `ponytail:` nếu cần nợ kỹ thuật có ngưỡng.",
+        "bo_qua": "Tắt qua cấu hình `muc_gat=off` trong state, hoặc bỏ qua khi đang ở ngoại lệ Refactor/Clean Architecture (Rung 1)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/prompt_context.py:33",
+        "hooks/scripts/session_start.py:52",
+        "hooks/scripts/subagent_start.py:24"
+      ]
+    },
+    {
+      "ma": "TDQ:INTAKE",
+      "file": "hooks/scripts/prompt_context.py",
+      "events": [
+        "PreInvocation"
+      ],
+      "dieu_kien": "PreInvocation khi chưa có `active_request` hoặc `phase == 'idle'` (phát hiện thêm `_tdq_direct`).",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Quy tắc mở `tdq-intake` đã có trong user rule `TDQ:TOOLS`; chỉ phát ở lượt đầu khi mở phiên hoặc khi phát hiện `_tdq_direct`, không lặp lại ở mọi model call.",
+      "loi_hien_tai": "[TDQ:INTAKE] No request is open — unless this prompt belongs to an intake round already running, open tdq-workflow:tdq-intake (or tdq-intake).",
+      "loi_de_xuat": {
+        "chuyen_gi": "Chưa có request TDQ đang mở (hoặc phiên đang ở trạng thái `idle`).",
+        "vi_sao": "Đảm bảo mọi yêu cầu mới đi qua bước tiếp nhận `tdq-intake` để phân làn `quick`/`full` hoặc `_tdq_direct`.",
+        "lam_gi": "Mở skill `tdq-intake` (hoặc chạy `py -3 scripts/tdq_state.py init <slug> <quick|full>` sau khi phân tích nếu là `_tdq_direct`).",
+        "bo_qua": "Hợp lệ khi người dùng chỉ hỏi đáp nhanh không sửa đổi mã/tài liệu dự án."
+      },
+      "source_locations": [
+        "hooks/scripts/prompt_context.py:289",
+        "hooks/scripts/prompt_context.py:294"
+      ]
+    },
+    {
+      "ma": "TDQ:LOG",
+      "file": "hooks/scripts/edit_gate.py, hooks/scripts/stop_gate.py, hooks/scripts/agy_stop_gate.py",
+      "events": [
+        "PreToolUse",
+        "Stop"
+      ],
+      "dieu_kien": "PreToolUse nhắc khi file `docs/workinglog/YYYY-MM-DD.md` chưa tồn tại; Stop chặn (`stop_block`) khi repo có thay đổi ngoài bookkeeping nhưng workinglog không đổi.",
+      "deny_count_4d": 2,
+      "stop_count_4d": 7,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Bỏ chặn Stop bắt buộc gây 7 lượt quay đầu/4 ngày (gồm cả ca chặn nhầm file `docs/.staging*`); chuyển sang nhắc không chặn cuối lượt và bổ sung `docs/.staging` vào danh sách loại trừ.",
+      "loi_hien_tai": "[TDQ:LOG] Repo changed (<culprit>), docs/workinglog/YYYY-MM-DD.md not appended. Run `tdq_finish.py --files <file> --log \"<summary>\"`, no hand Edit.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Kho mã nguồn có thay đổi trong lượt nhưng nhật ký làm việc hôm nay chưa được ghi thêm.",
+        "vi_sao": "Lưu dấu vết ngắn gọn những file đã đổi và việc đã làm theo ngày để phục vụ tra cứu/handoff.",
+        "lam_gi": "Chạy `py -3 scripts/tdq_finish.py --files <file> --log \"<tóm tắt>\"` hoặc ghi thêm 1 mục `## HH:MM — ...` vào `docs/workinglog/YYYY-MM-DD.md`.",
+        "bo_qua": "Hợp lệ khi thay đổi chỉ nằm trong vùng nháp/bookkeeping (`docs/.staging*`, `docs/tdq/`, `graphify-out/`)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/agy_stop_gate.py:196",
+        "hooks/scripts/edit_gate.py:174",
+        "hooks/scripts/edit_gate.py:177",
+        "hooks/scripts/stop_gate.py:311",
+        "hooks/scripts/stop_gate.py:307",
+        "hooks/scripts/stop_gate.py:306"
+      ],
+      "hook_impact_note": "hook_impact.json reports 2 PreToolUse hits under tag LOG, but the sample is an agent quote containing 'denied by pre-tool hook:'; edit_gate never blocks TDQ:LOG."
+    },
+    {
+      "ma": "TDQ:LSP",
+      "file": "hooks/scripts/lsp_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "`start_lsp` thiếu `language_id` hoặc sai `(root_dir, language_id)` trong `.tdq-lsp-module.json`; `blast_radius` > 3 file, `scope != 'exported'`, `include_transitive=True`, hoặc circuit breaker mở.",
+      "deny_count_4d": 48,
+      "stop_count_4d": 0,
+      "phan_loai": "tu_sua",
+      "tdq_lean_note": "shrink: Dùng `overwrite` của Antigravity để tự điền `language_id` từ `do_ngon_ngu_du_an` / `.tdq-lsp-module.json` và tự chuẩn hóa `scope='exported'` thay vì deny lặp 16 lần (48 deny/4 ngày).",
+      "loi_hien_tai": "[TDQ:LSP] start_lsp without language_id: agent-lsp starts every server and makes TypeScript current (crash 0xc0000409 / No Project on 2026-10-07).",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh `start_lsp` thiếu `language_id` (hoặc `blast_radius` yêu cầu phạm vi quá rộng gây treo server).",
+        "vi_sao": "Thiếu `language_id` làm agent-lsp khởi động toàn bộ server và dễ sập tsserver; `blast_radius` rộng gây timeout 1800s.",
+        "lam_gi": "Truyền rõ `language_id` (vd `\"language_id\": \"python\"`) khi gọi `start_lsp`, hoặc thu hẹp `blast_radius` còn <= 3 file với `scope=\"exported\"` (đề xuất tự sửa qua `overwrite`).",
+        "bo_qua": "Hợp lệ khi dự án không dùng server ngôn ngữ nào hoặc đã có `.tdq-lsp-module.json` khớp sẵn để hook tự điền."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:101",
+        "hooks/scripts/lsp_gate.py:33"
+      ],
+      "false_positive_repro": {
+        "total_cases": 4,
+        "reproduced": 0,
+        "case_ids": [
+          "lsp_chrome_devtools_navigate_page",
+          "lsp_chrome_devtools_new_page_0c6604ba",
+          "lsp_chrome_devtools_select_page_batch_0c6604ba",
+          "lsp_chrome_devtools_new_page_no_event_fallback"
+        ]
+      }
+    },
+    {
+      "ma": "TDQ:NEXT",
+      "file": "hooks/scripts/session_start.py, hooks/scripts/prompt_context.py, hooks/scripts/stop_gate.py -> scripts/tdq_state.py",
+      "events": [
+        "SessionStart",
+        "PreInvocation",
+        "Stop"
+      ],
+      "dieu_kien": "SessionStart và mọi lượt PreInvocation in 1 dòng tóm tắt trạng thái/lệnh kế tiếp; Stop nhắc nếu chưa thấy `next_run`.",
+      "deny_count_4d": 2,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Bỏ hoàn toàn dòng `[TDQ:NEXT] (same as last turn — unchanged)` khi hash không đổi trong `prompt_context.py` và bỏ lặp lại ở `stop_gate.py` (EFFECTS) để giảm 2,33M ký tự PreInvocation.",
+      "loi_hien_tai": "[TDQ:NEXT] <slug> · lane <lane> · phase <phase> · run: python3 scripts/tdq_state.py next",
+      "loi_de_xuat": {
+        "chuyen_gi": "Hiển thị nhanh request đang chạy, pha hiện tại và bước tiếp theo của quy trình TDQ.",
+        "vi_sao": "Giúp agent đồng bộ trạng thái thật từ `state.json` thay vì đoán theo trí nhớ hội thoại.",
+        "lam_gi": "Khi trạng thái vừa chuyển pha hoặc chưa rõ bước kế, chạy `py -3 scripts/tdq_state.py next`.",
+        "bo_qua": "Bỏ qua việc bơm lại nếu pha và trạng thái giống hệt lượt trước (không in dòng `same as last turn`)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/stop_gate.py:50",
+        "scripts/tdq_state.py:1695",
+        "scripts/tdq_state.py:1692"
+      ],
+      "hook_impact_note": "hook_impact.json reports 2 PreToolUse hits under tag NEXT whose sample is actually [TDQ:SEARCH] (hook_impact.py matched the earliest [TDQ:*] tag in step text)."
+    },
+    {
+      "ma": "TDQ:OUTPUT",
+      "file": "hooks/scripts/bash_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Lệnh shell chạy `cat|git log|git diff|git show|ls -R` không giới hạn dòng (`head`/`tail`/`--stat`/`--oneline`...) và RTK không nén được.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Khi RTK hoạt động đã tự nén qua `overwrite`; chỉ đẩy nhắc vào hàng đợi lượt (không ngắt tool) nếu RTK không hỗ trợ lệnh.",
+      "loi_hien_tai": "[TDQ:OUTPUT] This command dumps its whole content into context — every output is re-read on every API call after it.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh shell sắp chạy có thể đổ toàn bộ nội dung dài vào ngữ cảnh hội thoại.",
+        "vi_sao": "Output quá dài làm phình input token ở mọi lượt gọi model sau đó và dễ gây chạm ngưỡng timeout.",
+        "lam_gi": "Thêm giới hạn ngay trong lệnh (vd `--stat`, `--oneline -n 20`, `| Select-Object -First 40`) hoặc đọc bằng `read_file` có `StartLine`/`EndLine`.",
+        "bo_qua": "Hợp lệ khi thực sự cần đọc trọn vẹn toàn bộ đầu ra để đảm bảo chất lượng kiểm tra."
+      },
+      "source_locations": [
+        "hooks/scripts/bash_gate.py:195",
+        "hooks/scripts/bash_gate.py:201"
+      ]
+    },
+    {
+      "ma": "TDQ:QC",
+      "file": "hooks/scripts/prompt_context.py",
+      "events": [
+        "PreInvocation"
+      ],
+      "dieu_kien": "PreInvocation ở phase `qc` khi prompt có từ khóa `qc|kiểm tra|dod`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Checklist DoD, 5 câu hỏi SOLID và anti-fake-red đã được quy định trong skill `tdq-qc` và spec §6; nhắc thêm ở PreInvocation theo từ khóa là thừa (`yagni`/`delete`).",
+      "loi_hien_tai": "[TDQ:QC] Quality Control checklist: verify DoD items with evidence; check 5 SOLID questions (clean-code.md); ensure zero false red tests.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Đang ở pha QC nên hook nhắc kiểm tra DoD, 5 câu hỏi SOLID và bằng chứng test thật.",
+        "vi_sao": "Đảm bảo nghiệm thu dựa trên kết quả chạy thật, không có test giả đỏ hoặc bỏ sót hạng mục DoD.",
+        "lam_gi": "Chạy kiểm chứng theo bảng DoD ở spec §6 và ghi kết quả vào biên bản QC; đề xuất xóa nhắc lặp ở PreInvocation.",
+        "bo_qua": "Bỏ qua khi đang ở phase ngoài `qc` hoặc đã thực hiện đầy đủ theo skill `tdq-qc`."
+      },
+      "source_locations": [
+        "hooks/scripts/prompt_context.py:413"
+      ]
+    },
+    {
+      "ma": "TDQ:READONLY",
+      "file": "hooks/scripts/bash_gate.py, hooks/scripts/edit_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Subagent mang role chỉ đọc (`reviewer`, `qc-tester`, `browser`) gọi tool sửa file hoặc lệnh shell ghi file.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Hợp nhất danh sách role chỉ đọc giữa `bash_gate.py` và `edit_gate.py` (hiện `bash_gate.py` thiếu `qc-tester`) thành một hằng số chung trong `_common.py`.",
+      "loi_hien_tai": "[TDQ:READONLY] Subagent role `<role>` is strictly read-only and cannot modify files.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Subagent chỉ có quyền đọc (`reviewer`/`qc-tester`/`browser`) đang cố sửa tệp hoặc ghi qua shell.",
+        "vi_sao": "Giữ nguyên tắc tách biệt vai trò: agent review/QC chỉ kiểm chứng và báo cáo, không tự ý sửa mã nguồn.",
+        "lam_gi": "Trả kết quả kiểm tra/lỗi phát hiện về cho leader qua `send_message` để leader giao `tdq-implementer` sửa.",
+        "bo_qua": "Không có ngoại lệ (nếu cần sửa file hãy dispatch bằng role `tdq-implementer`)."
+      },
+      "source_locations": [
+        "hooks/scripts/bash_gate.py:140",
+        "hooks/scripts/edit_gate.py:84"
+      ]
+    },
+    {
+      "ma": "TDQ:RULE",
+      "file": "hooks/scripts/edit_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Lần sửa mã nguồn đầu tiên theo đuôi `.py/.ts/.tsx/.js/.jsx` trên main (ngoài `tests/` và ngoài `.tdq-worktrees/`) khi có task `[~]`, phát `TDQ:RULE:PY|TS|JS`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Quy chuẩn cyclomatic <= 10, cognitive <= 15 và lint đã nạp sẵn trong `tdq-build` / `tdq-implementer`, lại bỏ qua worktree đội; xóa giúp giảm nhánh I/O và nhiễu trên `edit_gate.py`.",
+      "loi_hien_tai": "[TDQ:RULE:PY] Python: cyclomatic <= 10, cognitive <= 15; surgical edits only; no single-use abstraction.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Nhắc chuẩn độ phức tạp và lệnh lint ngôn ngữ ngay lần đầu chỉnh sửa tệp mã nguồn.",
+        "vi_sao": "Giữ hàm gọn, dễ đọc và nhắc chạy `ruff`/`eslint` trước khi chốt task.",
+        "lam_gi": "Chạy linter tương ứng sau khi sửa (vd `ruff check <file>`); đề xuất xóa reminder này ở `edit_gate.py` vì đã có trong skill.",
+        "bo_qua": "Bỏ qua khi đang chạy trong worktree subagent hoặc với file ngoài `.py/.ts/.js`."
+      },
+      "source_locations": [
+        "hooks/scripts/edit_gate.py:300"
+      ]
+    },
+    {
+      "ma": "TDQ:SEARCH",
+      "file": "hooks/scripts/search_gate.py, hooks/scripts/command_gate.py -> scripts/search_rules.py, hooks/scripts/session_start.py",
+      "events": [
+        "PreToolUse",
+        "SessionStart"
+      ],
+      "dieu_kien": "Chặn lệnh tìm kiếm code thô (Bash/Grep) trước khi hỏi tầng khái niệm LSP/graphify, lệnh có >1 nhánh đoán, hoặc chuỗi lệnh không parse được (`malformed`); SessionStart báo nền.",
+      "deny_count_4d": 85,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Nguyên nhân deny #1 (85/196 ca, 7/8 ca tái hiện chặn nhầm `py -c`, PowerShell `@'...'@`, `curl -split \"`n\"`). Bỏ chặn nhánh `malformed` và chuyển toàn bộ sang ghi sổ + nhắc hướng dẫn không chặn.",
+      "loi_hien_tai": "[TDQ:SEARCH] Command could not be parsed safely (malformed). Ask first: mcp__lsp__start_lsp ... / Code search before any concept query.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh tìm kiếm hoặc lệnh shell chứa ký tự trích dẫn phức tạp kích hoạt kiểm tra tầng tìm kiếm.",
+        "vi_sao": "Ưu tiên hỏi LSP/Graphify trước khi grep mò giúp định vị đúng symbol và giảm bước tìm thử.",
+        "lam_gi": "Nếu đang dò symbol/caller, gọi `start_lsp` -> `find_symbol` hoặc `graphify query \"<câu hỏi>\"`; nếu chạy script `py -3`/PowerShell thông thường thì cho phép chạy thẳng (chỉ nhắc, không chặn).",
+        "bo_qua": "Hợp lệ khi tên symbol đã có trong prompt người dùng, đang ở phase `analyze`/`spec`, hoặc đang chạy lệnh không phải tìm kiếm code."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:101",
+        "hooks/scripts/search_gate.py:33",
+        "hooks/scripts/session_start.py:324",
+        "scripts/search_rules.py:933",
+        "scripts/search_rules.py:954",
+        "scripts/search_rules.py:958"
+      ],
+      "false_positive_repro": {
+        "total_cases": 8,
+        "reproduced": 7,
+        "case_ids": [
+          "search_py_c_backtick_agy_command_gate",
+          "search_py_c_backtick_agy_search_gate",
+          "search_py_c_backtick_claude_bash",
+          "search_ps_herestring_agy_command_gate",
+          "search_ps_herestring_claude_powershell",
+          "search_curl_split_agy_command_gate",
+          "search_curl_split_claude_powershell",
+          "search_grep_search_agy_control"
+        ]
+      }
+    },
+    {
+      "ma": "TDQ:SETUP",
+      "file": "hooks/scripts/session_start.py",
+      "events": [
+        "SessionStart"
+      ],
+      "dieu_kien": "SessionStart phát hiện lỗi auto-update phiên bản, chưa cài đặt lần đầu, thiếu `rtk`/`rg`, hoặc tắt `caveman`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Gộp 4 dòng nhắc `nhac_setup`/`nhac_rtk`/`nhac_caveman`/`loi_cap_nhat` thành 1 dòng gọn hoặc đẩy ra thẻ `metadata.user_markdown` để không đội `SessionStart` lên ~4.000 ký tự.",
+      "loi_hien_tai": "[TDQ:SETUP] Missing rtk/rg for token savings — ask user permission to run py -3 scripts/tdq_setup.py --with-rtk (or --mute-rtk-prompt to hide).",
+      "loi_de_xuat": {
+        "chuyen_gi": "Môi trường hiện thiếu công cụ hỗ trợ (như `rtk`/`rg`) hoặc chưa chạy setup TDQ cho repo.",
+        "vi_sao": "Các công cụ như `rtk`/`rg` giúp nén output lệnh shell và tăng tốc tìm kiếm mà vẫn giữ kết quả.",
+        "lam_gi": "Xin phép người dùng rồi chạy `py -3 scripts/tdq_setup.py --with-rtk`, hoặc tắt nhắc bằng `py -3 scripts/tdq_setup.py --mute-rtk-prompt`.",
+        "bo_qua": "Hợp lệ khi người dùng không muốn cài công cụ bổ sung và đã tắt nhắc bằng cờ `--mute-*-prompt`."
+      },
+      "source_locations": [
+        "hooks/scripts/session_start.py:259",
+        "hooks/scripts/session_start.py:245",
+        "hooks/scripts/session_start.py:284",
+        "hooks/scripts/session_start.py:307",
+        "hooks/scripts/session_start.py:294",
+        "hooks/scripts/session_start.py:268"
+      ]
+    },
+    {
+      "ma": "TDQ:STATE",
+      "file": "hooks/scripts/bash_gate.py, hooks/scripts/agy_pretooluse_gate.py, hooks/scripts/edit_gate.py, hooks/scripts/stop_gate.py",
+      "events": [
+        "PreToolUse",
+        "Stop"
+      ],
+      "dieu_kien": "Ghi trực tiếp `docs/tdq/state.json` hoặc `docs/tdq/STATE.md` qua shell (chặn cứng trên AGY, chặn subagent ở `edit_gate`, nhắc ở `bash_gate`/`edit_gate` main).",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Gom logic phát hiện ghi file state từ `bash_gate`, `agy_pretooluse_gate`, `edit_gate` vào 1 hàm dùng chung (và xóa mã trùng `TDQ:GATE`).",
+      "loi_hien_tai": "[TDQ:STATE] writing docs/tdq/state.json or STATE.md straight through the shell is not allowed — use python3 scripts/tdq_state.py set|approve|init|reset.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Thao tác định sửa trực tiếp `docs/tdq/state.json` hoặc `docs/tdq/STATE.md` không qua CLI.",
+        "vi_sao": "Tránh sai định dạng JSON, mất sha256 kiểm soát duyệt và làm lệch gương `STATE.md`.",
+        "lam_gi": "Cập nhật trạng thái bằng CLI: `py -3 scripts/tdq_state.py set <key>=<value>` hoặc `approve <spec|plan|quick>`.",
+        "bo_qua": "Không có ngoại lệ (subagent càng không được phép ghi state, phải báo về leader)."
+      },
+      "source_locations": [
+        "hooks/scripts/_common.py:100",
+        "hooks/scripts/agy_pretooluse_gate.py:159",
+        "hooks/scripts/bash_gate.py:207",
+        "hooks/scripts/bash_gate.py:210",
+        "hooks/scripts/edit_gate.py:119",
+        "hooks/scripts/edit_gate.py:124",
+        "hooks/scripts/edit_gate.py:127",
+        "hooks/scripts/stop_gate.py:51"
+      ]
+    },
+    {
+      "ma": "TDQ:STUCK",
+      "file": "hooks/scripts/stop_gate.py",
+      "events": [
+        "Stop"
+      ],
+      "dieu_kien": "Stop hook đã chặn `TDQ:UNFINISHED` liên tiếp quá `MAX_STREAK` (= 3) lần mà checkbox plan không đổi.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "xoa",
+      "tdq_lean_note": "delete: Khi `TDQ:UNFINISHED` đã giới hạn ép tiếp tối đa 1 lần/lượt dựa vào `continuationActive`, cơ chế đếm `stop_streak.json` và mã hạ cấp `[TDQ:STUCK]` không còn cần thiết (`delete`/`yagni`).",
+      "loi_hien_tai": "[TDQ:STUCK] <n> open task(s). Finish plan or declare a genuine blocker with `tdq_state.py pause --loai <kind> --ly-do \"<why>\"`.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Vòng Stop đã chặn lặp quá 3 lần mà tiến độ checkbox không nhúc nhích nên hạ cấp thành cảnh báo kẹt.",
+        "vi_sao": "Ngăn vòng lặp Stop vô hạn khi agent thực sự bị kẹt hoặc thiếu quyền.",
+        "lam_gi": "Ghi rõ điểm tắc cho người dùng và chạy `py -3 scripts/tdq_state.py pause --loai <loại> --ly-do \"<lý do>\"`; đề xuất xóa mã này khi giới hạn Stop còn 1 lần/lượt.",
+        "bo_qua": "Không áp dụng khi các task đã hoàn tất hoặc đã bật tạm dừng `pause`."
+      },
+      "source_locations": [
+        "hooks/scripts/stop_gate.py:241"
+      ]
+    },
+    {
+      "ma": "TDQ:SUBAGENT",
+      "file": "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Chặn `swarm action=add` khi `implement_mode != 'subagent'`; chặn `Workspace='branch'|'share'` khi prompt có `WORKTREE:`; nhắc nếu thiếu 5 trường bắt buộc của implementer.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Giữ chặn `swarm` sai mode (`chan_cung`); riêng phần `Workspace` khi có `WORKTREE:` có thể nâng cấp thành tự sửa `overwrite` thành `Workspace='inherit'`.",
+      "loi_hien_tai": "[TDQ:SUBAGENT] TDQ already isolated a git worktree (WORKTREE:); pass Workspace='inherit' to invoke_subagent.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lệnh gọi subagent/swarm chưa khớp mode thực thi hoặc chọn sai `Workspace` khi đã cấp worktree riêng.",
+        "vi_sao": "Tránh tách thêm nhánh chồng chéo lên worktree TDQ hoặc chạy song song khi plan chưa duyệt chế độ `subagent`.",
+        "lam_gi": "Đặt `Workspace=\"inherit\"` nếu prompt đã có `WORKTREE:`, truyền đủ `TASK:/WORKTREE:/VÙNG FILE:/TEST:/TRẢ VỀ:`, và đảm bảo `implement_mode=subagent`.",
+        "bo_qua": "Không có ngoại lệ cho `swarm`/`Workspace` sai; nhắc thiếu trường chỉ mang tính hướng dẫn."
+      },
+      "source_locations": [
+        "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py:27",
+        "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py:35",
+        "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py:44"
+      ]
+    },
+    {
+      "ma": "TDQ:TEAM",
+      "file": "hooks/scripts/edit_gate.py, hooks/scripts/bash_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Subagent sửa project trước pha `implement`; hoặc ở mode `subagent` leader sửa vào vùng file đã giao cho subagent / thiếu bản đồ phân công; hoặc subagent ghi ra ngoài `VÙNG FILE`.",
+      "deny_count_4d": 16,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Cổng an toàn đội (16 deny/4 ngày), giữ chặn cứng để tránh xung đột merge; rút gọn thông báo nhánh lỗi và gộp phần kiểm tra từ `bash_gate` + `edit_gate`.",
+      "loi_hien_tai": "[TDQ:TEAM] Team mode with no assignment map — you may not edit code on main first. Run: python3 scripts/tdq_team.py assign (then audit, then wave).",
+      "loi_de_xuat": {
+        "chuyen_gi": "Thao tác sửa file vi phạm ranh giới phân công giữa leader và subagent (hoặc sửa code trước pha `implement`).",
+        "vi_sao": "Ngăn 2 agent ghi đè cùng 1 file và đảm bảo leader không âm thầm làm thay phần việc đã giao qua đội.",
+        "lam_gi": "Leader chạy `py -3 scripts/tdq_team.py assign` -> `audit` -> `open <TASK>`; subagent chỉ sửa đúng file trong `VÙNG FILE` hoặc báo leader nới vùng.",
+        "bo_qua": "Không có ngoại lệ cho việc ghi ngoài `VÙNG FILE`; leader chỉ sửa trực tiếp khi task được ghi `tu_lam` trong bản đồ."
+      },
+      "source_locations": [
+        "hooks/scripts/bash_gate.py:232",
+        "hooks/scripts/edit_gate.py:143",
+        "hooks/scripts/edit_gate.py:235",
+        "hooks/scripts/edit_gate.py:200",
+        "hooks/scripts/edit_gate.py:207",
+        "hooks/scripts/edit_gate.py:213",
+        "hooks/scripts/edit_gate.py:220"
+      ]
+    },
+    {
+      "ma": "TDQ:TICK",
+      "file": "hooks/scripts/edit_gate.py, hooks/scripts/stop_gate.py, hooks/scripts/agy_stop_gate.py",
+      "events": [
+        "PreToolUse",
+        "Stop"
+      ],
+      "dieu_kien": "PreToolUse chặn khi phase `implement`/`qc` không có task `[~]`, có >1 task `[~]`, hoặc sửa 3 lần liên tiếp chưa đổi sha256 plan; Stop chặn khi repo đổi nhưng plan không đổi.",
+      "deny_count_4d": 30,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Nguyên nhân deny #3 (30 deny/4 ngày, streak_repeat=16, tái hiện 2/2 ca vòng lặp ở `false_positive_repro.json`). Bỏ bộ đếm `STREAK_NGUONG=3` chặn giữa lúc edit, chuyển sang nhắc nhẹ.",
+      "loi_hien_tai": "[TDQ:TICK] 3 edits in a row with no tick in the plan — close the task before editing on. Task still in progress → update notes or tasks in the plan file to reset the streak.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Đang sửa mã nguồn ở pha `implement`/`qc` nhưng chưa cập nhật dấu `[~]` / `[x]` trong file plan.",
+        "vi_sao": "Giúp tiến độ plan phản ánh đúng việc đang làm và đo ETA từng task chính xác.",
+        "lam_gi": "Mở file plan, giữ đúng 1 task đang làm ở trạng thái `[~]` và đổi sang `[x]` ngay khi test task đó xanh.",
+        "bo_qua": "Hợp lệ khi sửa file dưới `tests/` (TDD red-first), file dưới `docs/`, hoặc khi subagent làm việc trong `.tdq-worktrees/`."
+      },
+      "source_locations": [
+        "hooks/scripts/agy_stop_gate.py:201",
+        "hooks/scripts/edit_gate.py:261",
+        "hooks/scripts/edit_gate.py:269",
+        "hooks/scripts/edit_gate.py:286",
+        "hooks/scripts/stop_gate.py:327",
+        "hooks/scripts/stop_gate.py:330",
+        "hooks/scripts/stop_gate.py:325"
+      ],
+      "false_positive_repro": {
+        "total_cases": 2,
+        "reproduced": 2,
+        "case_ids": [
+          "tick_loop_no_doing_task",
+          "tick_loop_streak_3_edits"
+        ]
+      }
+    },
+    {
+      "ma": "TDQ:UNFINISHED",
+      "file": "hooks/scripts/stop_gate.py, hooks/scripts/agy_stop_gate.py",
+      "events": [
+        "Stop"
+      ],
+      "dieu_kien": "Stop khi phase là `implement`, plan vẫn còn task chưa `[x]`, không có task `[>]` đang chạy qua subagent, và chưa khai báo `implement_pause`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 53,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Tác nhân Stop lớn nhất (53/60 ca trong 4 ngày). Giữ chặn mềm bằng `decision: continue` nhưng giới hạn tối đa 1 lần/lượt qua cờ `continuationActive` của Antigravity (thay cho `MAX_STREAK=3`).",
+      "loi_hien_tai": "[TDQ:UNFINISHED] <n> open task(s). Keep working to the approved spec: mark [~], test, mark [x]. Small drift → `lech add`, continue; only true blockers → `tdq_state.py pause`.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Lượt trả lời sắp dừng lại trong khi plan vẫn còn task chưa hoàn thành ở pha `implement`.",
+        "vi_sao": "Tránh agent dừng nửa chừng bỏ dở task khi chưa gặp blocker thật sự.",
+        "lam_gi": "Đọc task mở kế tiếp trong plan, đánh dấu `[~]`, triển khai, chạy lệnh `Test:` đến khi xanh rồi tick `[x]`.",
+        "bo_qua": "Hợp lệ khi đang chờ subagent (`[>]`), khi đã dừng có lý do qua `tdq_state.py pause --loai <loại> --ly-do \"<lý do>\"`, hoặc khi `continuationActive=true` đã ép tiếp 1 lần trong lượt."
+      },
+      "source_locations": [
+        "hooks/scripts/agy_stop_gate.py:150",
+        "hooks/scripts/stop_gate.py:258",
+        "hooks/scripts/stop_gate.py:173",
+        "hooks/scripts/stop_gate.py:255",
+        "hooks/scripts/stop_gate.py:240"
+      ]
+    },
+    {
+      "ma": "TDQ:VUNG",
+      "file": "hooks/scripts/codex_edit_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Chạy trong sandbox Codex (`TDQ_CODEX_TASK` được đặt) và lệnh `apply_patch`/shell ghi trúng `TDQ_CODEX_KHOA` hoặc nằm ngoài `TDQ_CODEX_VUNG`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "yagni: Chỉ dùng riêng cho chế độ Codex CLI; giữ chặn cứng để bảo vệ `VÙNG KHÓA` (test) nhưng có thể hợp nhất logic kiểm tra vùng với `TDQ:TEAM` nếu không dùng tách riêng.",
+      "loi_hien_tai": "[TDQ:VUNG] `<duong>` nằm ngoài VÙNG FILE đã khai cho task — sửa đúng file trong vùng, hoặc báo leader nới vùng.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Phiên Codex định ghi vào tệp nằm ngoài `VÙNG FILE` hoặc chạm vào `VÙNG KHÓA` của task.",
+        "vi_sao": "Ngăn task tự sửa file ngoài phạm vi hoặc sửa file test khóa trước khi đạt tiêu chuẩn.",
+        "lam_gi": "Chỉ sửa các đường dẫn thuộc `VÙNG FILE` được giao; nếu thiếu file cần sửa thì dừng và báo leader mở rộng vùng.",
+        "bo_qua": "Không có ngoại lệ trong phiên `TDQ_CODEX_TASK` (khi không có biến môi trường này hook tự đứng im)."
+      },
+      "source_locations": [
+        "hooks/scripts/codex_edit_gate.py:55"
+      ]
+    },
+    {
+      "ma": "TDQ:WORKTREE",
+      "file": "hooks/scripts/prompt_context.py",
+      "events": [
+        "PreInvocation"
+      ],
+      "dieu_kien": "PreInvocation khi sổ worktree (`tdq_worktree_registry.dong_mo`) còn dòng chưa đóng.",
+      "deny_count_4d": 1,
+      "stop_count_4d": 0,
+      "phan_loai": "huong_dan",
+      "tdq_lean_note": "shrink: Chỉ hiện 1 lần ở `SessionStart` hoặc qua `user_markdown` khi chuyển sang `report`/`idle`, không chèn vào mỗi lượt gọi model ở `PreInvocation`.",
+      "loi_hien_tai": "[TDQ:WORKTREE] <n> worktree(s) still open — run: python3 scripts/tdq_team.py sweep",
+      "loi_de_xuat": {
+        "chuyen_gi": "Vẫn còn các git worktree tạm của đội chưa được dọn sau khi chạy task.",
+        "vi_sao": "Tránh tích tụ worktree rác chiếm dung lượng đĩa và gây nhầm lẫn nhánh ở phiên sau.",
+        "lam_gi": "Khi các task đã merge xong, chạy `py -3 scripts/tdq_team.py sweep` để dọn worktree mở.",
+        "bo_qua": "Hợp lệ trong lúc các subagent của đợt song song vẫn đang làm việc trên worktree đó."
+      },
+      "source_locations": [
+        "hooks/scripts/prompt_context.py:223"
+      ],
+      "hook_impact_note": "hook_impact.json reports 1 PreToolUse hit under tag WORKTREE whose sample is actually [TDQ:TEAM] (hook_impact.py matched the earliest [TDQ:*] tag in step text)."
+    },
+    {
+      "ma": "TDQ:ZERO-POPUP",
+      "file": "hooks/scripts/ask_gate.py",
+      "events": [
+        "PreToolUse"
+      ],
+      "dieu_kien": "Gọi tool `ask_question`, `ask_user_question` hoặc `AskUserQuestion` (trên AGY) khi có `active_request`.",
+      "deny_count_4d": 0,
+      "stop_count_4d": 0,
+      "phan_loai": "chan_cung",
+      "tdq_lean_note": "shrink: Giữ chặn cứng theo quy tắc người dùng cấm mở popup hỏi; hợp nhất danh sách tên tool vào hằng số dùng chung và bỏ phần `TDQ:ASK` phía sau trên AGY.",
+      "loi_hien_tai": "[TDQ:ZERO-POPUP] Popup question UI is banned during an active TDQ request. Ask numbered options (1a 2b 3c) directly in chat instead.",
+      "loi_de_xuat": {
+        "chuyen_gi": "Agent vừa gọi công cụ popup hỏi người dùng trong khi có request TDQ đang mở.",
+        "vi_sao": "Quy tắc bắt buộc yêu cầu mọi câu hỏi và cổng duyệt phải trao đổi trực tiếp trong chat để lưu lịch sử rõ ràng.",
+        "lam_gi": "In trực tiếp các lựa chọn đánh số (`1a 2b 3c`) hoặc câu hỏi ra nội dung chat rồi kết thúc lượt chờ người dùng trả lời.",
+        "bo_qua": "Không có ngoại lệ khi `active_request` đang mở."
+      },
+      "source_locations": [
+        "hooks/scripts/ask_gate.py:51"
+      ]
+    }
+  ]
+}
