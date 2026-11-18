@@ -96,6 +96,30 @@ def _log_changed(cwd, snap):
     return isinstance(before, str) and now != before
 
 
+def _shell_change_check(cwd, snap):
+    before = snap.get("repo_sha")
+    if not isinstance(before, str):
+        return False, ""
+    from tdq_state import _EXCLUDE as _tdq_exc, _git as _tdq_git
+    status = _tdq_git(cwd, "status", "--porcelain", "--untracked-files=all", "--", ":(top)", *_tdq_exc)
+    if status is None:
+        return False, ""
+    now = repo_status_digest(cwd, status=status)
+    if not isinstance(now, str) or now == before:
+        return False, ""
+    prev = snap.get("repo_paths")
+    prev_set = set(prev) if isinstance(prev, list) else set()
+    fresh, known = "", ""
+    for p in repo_status_paths(cwd, status=status):
+        if not isinstance(p, str) or p.startswith(BOOKKEEPING):
+            continue
+        if p not in prev_set:
+            fresh = fresh or p
+        else:
+            known = known or p
+    return True, (fresh or known)[:MAX_PATH_CHARS]
+
+
 def _repo_changed(cwd, snap):
     before = snap.get("repo_sha")
     if not isinstance(before, str):
@@ -305,9 +329,9 @@ def main():
     if snap:
         if not logged:
             logged = _log_changed(cwd, snap)
-        if not culprit and _repo_changed(cwd, snap):
-            cand = _shell_changed_path(cwd, snap)
-            if not (is_agy() and "docs/.staging" in str(cand).replace("\\", "/")):
+        if not culprit:
+            changed, cand = _shell_change_check(cwd, snap)
+            if changed and cand and not (is_agy() and "docs/.staging" in str(cand).replace("\\", "/")):
                 culprit = cand
                 source = "repo fingerprint"
     if culprit and not logged:

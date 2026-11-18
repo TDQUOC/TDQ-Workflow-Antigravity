@@ -328,3 +328,49 @@ def test_real_bash_subshells_and_unbalanced_quotes_preserved() -> None:
     pl_bad_quote = sr.phan_loai("PowerShell", 'Write-Host "unterminated')
     assert pl_bad_quote["status"] == "unknown"
     assert pl_bad_quote["reason"] == "malformed"
+
+
+def test_repo_root_save_re_reads_under_lock_without_dropping_entries(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """_save_repo_root_cache merges fresh disk entries so concurrent repos never clobber keys."""
+    temp_dir = _setup_fake_temp_root(tmp_path, monkeypatch)
+    cache_path = temp_dir / "tdq-repo-roots.json"
+    other_repo = str(tmp_path / "other_repo")
+    Path(other_repo).mkdir()
+    cache_path.write_text(
+        json.dumps({other_repo: {"root": other_repo, "head_mtime_ns": 123}}),
+        encoding="utf-8",
+    )
+    repo_b = str(tmp_path / "repo_b")
+    Path(repo_b).mkdir()
+    # Even if caller passes an empty stale dict, merging from disk preserves other_repo.
+    tdq_state._save_repo_root_cache(str(cache_path), {}, repo_b, repo_b, 456)
+    saved = json.loads(cache_path.read_text(encoding="utf-8"))
+    assert other_repo in saved
+    assert repo_b in saved
+
+
+def test_repo_status_digest_skips_git_diff_when_clean_or_untracked_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Clean or untracked-only git status must not spawn a redundant git diff HEAD call."""
+    (tmp_path / "new.txt").write_text("hello", encoding="utf-8")
+    calls: list[tuple[str, ...]] = []
+
+    def fake_git(cwd: str, *args: str):
+        calls.append(args)
+        if args[0] == "status":
+            return b"?? new.txt\n"
+        raise AssertionError(f"Unexpected extra git call: {args}")
+
+    monkeypatch.setattr(tdq_state, "_git", fake_git)
+    monkeypatch.setattr(tdq_state, "repo_root", lambda _cwd: str(tmp_path))
+    digest_untracked = tdq_state.repo_status_digest(str(tmp_path))
+    assert isinstance(digest_untracked, str) and len(digest_untracked) == 64
+    assert len(calls) == 1 and calls[0][0] == "status"
+
+    calls.clear()
+    digest_clean = tdq_state.repo_status_digest(str(tmp_path), status=b"")
+    assert isinstance(digest_clean, str) and len(digest_clean) == 64
+    assert calls == []

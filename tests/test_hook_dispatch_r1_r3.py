@@ -12,7 +12,7 @@ WORKSPACE = Path(__file__).resolve().parent.parent
 PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 DISPATCH_PY = PLUGIN_DIR / "hooks" / "scripts" / "dispatch.py"
 STATE_PY = PLUGIN_DIR / "scripts" / "tdq_state.py"
-CODEX_GATE_PY = PLUGIN_DIR / "hooks" / "scripts" / "codex_edit_gate.py"
+CODEX_GATE_PY = WORKSPACE / "hooks" / "scripts" / "codex_edit_gate.py"
 GUIDANCE_PY = PLUGIN_DIR / "hooks" / "scripts" / "gate_guidance.py"
 
 FOUR_PART_LABELS = (
@@ -992,3 +992,152 @@ def test_empty_and_malformed_payload_fail_open(tmp_path: Path) -> None:
                 assert out.get("decision") == "allow"
             else:
                 assert isinstance(out, dict)
+
+
+def test_qc2_git_hard_gate_blocks_slash_worktree_and_coauthored(tmp_path: Path) -> None:
+    """Verify TDQ:GIT hard blocks slash branches, worktree add, and Co-Authored-By commits."""
+    repo, fake_home = _setup_implement_repo(
+        tmp_path,
+        "git_hard_repo",
+        "2026-11-18-2145-git-hard",
+        "- [~] **T1.1** Work — Test: `py -3 -m pytest`\n",
+    )
+    bad_cmds = [
+        "git checkout -b claude/bad-branch",
+        "git switch -c gemini/bad-branch",
+        "git worktree add -b codex-wt ../wt",
+        'git commit -m "feat: ok" -m "Co-Authored-By: Claude Code <noreply@x.com>"',
+    ]
+    for idx, cmd in enumerate(bad_cmds):
+        _, out, _ = _run_dispatch(
+            "PreToolUse",
+            {
+                "cwd": str(repo),
+                "conversation_id": f"conv-git-{idx}",
+                "toolCall": {"name": "run_command", "args": {"CommandLine": cmd}},
+            },
+            repo,
+            fake_home,
+        )
+        assert out.get("decision") == "deny", (cmd, out)
+        assert "[TDQ:GIT]" in out.get("reason", ""), (cmd, out)
+
+
+def test_qc2_team_blocks_agy_subagent_before_implement(tmp_path: Path) -> None:
+    """Verify AGY subagents detected via transcriptPath cannot mutate before implement."""
+    repo = tmp_path / "team_agy_repo"
+    fake_home = tmp_path / "team_agy_home"
+    _init_git_repo(repo)
+    assert _run_state_cli(repo, fake_home, "init", "2026-11-18-2146-team", "full", "--bo-qua-lsp", "test").returncode == 0
+    tr = tmp_path / "subagent_tr.jsonl"
+    tr.write_text(json.dumps({"role": "tdq-implementer", "text": "You are tdq-implementer agent"}) + "\n", encoding="utf-8")
+
+    _, edit_out, _ = _run_dispatch(
+        "PreToolUse",
+        {
+            "cwd": str(repo),
+            "conversation_id": "conv-team-1",
+            "transcriptPath": str(tr),
+            "toolCall": {"name": "edit_file", "args": {"TargetFile": str(repo / "app.py")}},
+        },
+        repo,
+        fake_home,
+    )
+    assert edit_out.get("decision") == "deny", edit_out
+    assert "[TDQ:TEAM]" in edit_out.get("reason", ""), edit_out
+
+    _, bash_out, _ = _run_dispatch(
+        "PreToolUse",
+        {
+            "cwd": str(repo),
+            "conversation_id": "conv-team-2",
+            "transcriptPath": str(tr),
+            "toolCall": {"name": "run_command", "args": {"CommandLine": "Set-Content -Path app.py -Value bad"}},
+        },
+        repo,
+        fake_home,
+    )
+    assert bash_out.get("decision") == "deny", bash_out
+    assert "[TDQ:TEAM]" in bash_out.get("reason", ""), bash_out
+
+
+def test_qc2_malformed_search_deduped_and_prompt_over_64kb(tmp_path: Path) -> None:
+    """Verify malformed search reminds once per turn and >64KB pasted prompt resets turn."""
+    repo, fake_home = _setup_implement_repo(
+        tmp_path,
+        "qc2_edge_repo",
+        "2026-11-18-2147-edge",
+        "- [~] **T1.1** Work — Test: `py -3 -m pytest`\n",
+    )
+    tr = tmp_path / "big_tr.jsonl"
+    tr.write_text(
+        json.dumps({"step_index": 1, "type": "USER_INPUT", "created_at": "2026-11-18T21:00:00Z", "content": "start"}) + "\n",
+        encoding="utf-8",
+    )
+    _run_dispatch(
+        "PreInvocation",
+        {"cwd": str(repo), "conversation_id": "conv-edge", "transcriptPath": str(tr), "prompt": "start"},
+        repo,
+        fake_home,
+    )
+    bad_cmd = {"name": "run_command", "args": {"CommandLine": 'rg "unterminated'}}
+    for _ in range(2):
+        _, cg_out, _ = _run_dispatch(
+            "PreToolUse",
+            {"cwd": str(repo), "conversation_id": "conv-edge", "toolCall": bad_cmd},
+            repo,
+            fake_home,
+        )
+        assert cg_out.get("decision") == "allow"
+    _, pi1, _ = _run_dispatch(
+        "PostInvocation",
+        {"cwd": str(repo), "conversation_id": "conv-edge"},
+        repo,
+        fake_home,
+    )
+    assert "injectSteps" in pi1
+    # Calling malformed command again after flush should be deduped within same turn
+    _run_dispatch(
+        "PreToolUse",
+        {"cwd": str(repo), "conversation_id": "conv-edge", "toolCall": bad_cmd},
+        repo,
+        fake_home,
+    )
+    _, pi2, _ = _run_dispatch(
+        "PostInvocation",
+        {"cwd": str(repo), "conversation_id": "conv-edge"},
+        repo,
+        fake_home,
+    )
+    assert pi2 == {}, f"Malformed SEARCH reminder should dedupe within same turn: {pi2}"
+
+    # Now append > 70 KB padding & huge > 70 KB USER_INPUT line with changed prompt (turn not closed)
+    with tr.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"step_index": 2, "type": "TOOL_OUTPUT", "text": "x" * 70000}) + "\n")
+        fh.write(json.dumps({
+            "step_index": 3, "type": "USER_INPUT",
+            "created_at": "2026-11-18T21:05:00Z", "content": "y" * 70000,
+        }) + "\n")
+    turns_file = repo / "docs" / "tdq" / ".tdq-runtime" / "turns-conv-edge.jsonl"
+    assert turns_file.is_file()
+    _run_dispatch(
+        "PreInvocation",
+        {"cwd": str(repo), "conversation_id": "conv-edge", "transcriptPath": str(tr), "prompt": "y" * 70000},
+        repo,
+        fake_home,
+    )
+    assert not turns_file.exists(), "New >64KB pasted prompt must trigger new-turn detection"
+
+
+def test_qc2_excluded_dead_agy_scripts_absent_from_plugin() -> None:
+    """Verify 4 non-AGY / duplicate hook scripts are excluded from compiled plugin."""
+    scripts_dir = PLUGIN_DIR / "hooks" / "scripts"
+    root_hooks = WORKSPACE / "hooks" / "scripts"
+    for name in (
+        "agy_pretooluse_gate.py",
+        "agy_stop_gate.py",
+        "codex_edit_gate.py",
+        "subagent_start.py",
+    ):
+        assert not (scripts_dir / name).exists(), f"Dead AGY script left in plugin: {name}"
+        assert (root_hooks / name).is_file(), f"Original root script removed: {name}"

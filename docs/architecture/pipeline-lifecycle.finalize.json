@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "lifecycle",
   "quality": "showcase",
-  "startedAt": "2026-11-18T06:22:41.074Z",
+  "startedAt": "2026-11-18T16:25:45.335Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\pipeline-lifecycle.json",
     "sha256": "15c8bdede572f4eebed294b93d2c2a3545c85d87b9811dd1305b8bf4d2574bc1",
     "bytes": 4128
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
     "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
     "bytes": 824757
   },
@@ -23,12 +23,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31080_1794982957636\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "lifecycle",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\pipeline-lifecycle.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -56,14 +56,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 510,
+      "durationMs": 507,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31080_1794982957636\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "lifecycle",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\pipeline-lifecycle.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -72,12 +72,12 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "4d3c640e-c1f3-49df-85f6-92e5a01f87a6",
+        "receiptId": "67ec8dab-ee3b-42d9-baea-2bd04fc2cad6",
         "ok": true,
         "command": "deliver",
         "type": "lifecycle",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\pipeline-lifecycle.json",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "specification": {
           "sha256": "15c8bdede572f4eebed294b93d2c2a3545c85d87b9811dd1305b8bf4d2574bc1",
           "bytes": 4128
@@ -110,17 +110,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 229,
+      "durationMs": 230,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31080_1794982957636\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "artifact": {
           "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
           "bytes": 824757
@@ -240,18 +240,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "4d3c640e-c1f3-49df-85f6-92e5a01f87a6"
+        "deliveryReceiptId": "67ec8dab-ee3b-42d9-baea-2bd04fc2cad6"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1490,
+      "durationMs": 1427,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31080_1794982957636\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "browser-check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "--json",
         "--require-provenance"
       ],
@@ -264,9 +264,9 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "4d3c640e-c1f3-49df-85f6-92e5a01f87a6",
+        "deliveryReceiptId": "67ec8dab-ee3b-42d9-baea-2bd04fc2cad6",
         "artifact": {
-          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
           "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
           "bytes": 824757
         },
@@ -961,13 +961,13 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-18T06:22:43.903Z",
-  "durationMs": 2829,
+  "finishedAt": "2026-11-18T16:25:48.089Z",
+  "durationMs": 2753,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

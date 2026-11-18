@@ -96,11 +96,11 @@
     "scripts/lsp_module.py": "bc7ad7122ab48461f5a2fcef010adc01b510992aa99952175f52869ad7364a29",
     "scripts/luat_phan_loai.py": "105eec3baea367cded9cac52a81287ffbe172852a5638c79706a9bec632be809",
     "scripts/plugin_tiers.py": "618f34eaf7cc759ef3e566ae90bdfc6424796d2fdad950758dd076b9f756b841",
-    "scripts/rtk_integration.py": "c5f71267e70e373f51023cadd6caf998e186c334be1ce6dee2ac49e555514937",
+    "scripts/rtk_integration.py": "dc58944e4807aca1b05e1842a02187ed4d9a2c29ee033182dc658386eafea17e",
     "scripts/samples/transcript-step-audit.jsonl": "0c027ee9ed37512db10b14428e07d7ec96b499c15ccd82dfa953d0b196af0bd6",
     "scripts/scan_block_symbols.py": "84e64e7204e815e620c52e57150f49ac273ba7e2b4bfc445a0ff302a0f20d8fd",
     "scripts/search_replay.py": "5f66a88354e86de75c5de7d9210b2c3a4889b974a2bec9d65de94da5d989f727",
-    "scripts/search_rules.py": "a52bea13fbcb9c58c4a354859be87333573aadc037146cdf4b49b2a09e3f5a2b",
+    "scripts/search_rules.py": "951aa11fdf091ce83f265a111719d6781be627871082f2f71131fc123c9007dd",
     "scripts/setup_status.py": "2c8deab11608605e3a901870ccd33ba2322a4149e3333541736e70fe83685517",
     "scripts/setup_status_render.py": "92ed6e0ee3fbc0ff9636dfbc9bea0254074a67d1f958d060c78ad34a9a9a76b4",
     "scripts/skill_inventory.py": "3a46264837129c05aa15c95196c686f38ad36afb0924d3e9482ed95d2750ce72",
@@ -129,7 +129,7 @@
     "scripts/tdq_runtime_bench.py": "823516f691fcaf1831f87d281395c77037228d1f58e85ba0bfea87f98e30e367",
     "scripts/tdq_setup.py": "f1069b83a400f837a1e6cd8b79bb040776ff0ac85674af585b535861d39a11cf",
     "scripts/tdq_skill_eval.py": "fe001638eeae5764bdd428d679d1234a64030b7a392b19154f62b54bba45ea36",
-    "scripts/tdq_state.py": "cb042bf7d4d7db8b030d166193309b8b6f7689d9ef1deb9208f06bb29e725f0b",
+    "scripts/tdq_state.py": "467781e2b7d8d5a4df6e65d5d936ad857cebf93fd1681466c3326ebfba9ecfd7",
     "scripts/tdq_team.py": "142ccb0d2a8b12f0812c271633d29313832211b482363726117a74c02f758b77",
     "scripts/tdq_ten_lenh.py": "3bfb2a8d1713c97670172f85af2fea107746655e4e325687fdcf0c660f7cb0c4",
     "scripts/tdq_test.py": "e8efe28933d194cd0423e01a95d222399fd795853203f0353b98bf1228a59c21",
@@ -345,7 +345,7 @@
         "bytes": 6456
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\overview.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\overview.html",
         "sha256": "4372081ce53baebbb84cafbbe973154e7e04a5c9017d5e0cb0149ff903ce9dcc",
         "bytes": 826497
       },
@@ -362,12 +362,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\overview.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\overview.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\overview.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\overview.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\overview.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\overview.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2842,
+      "durationMs": 2845,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -386,7 +386,7 @@
         "bytes": 4128
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.html",
         "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
         "bytes": 824757
       },
@@ -403,12 +403,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\pipeline-lifecycle.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\pipeline-lifecycle.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2829,
+      "durationMs": 2753,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -427,7 +427,7 @@
         "bytes": 4663
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\search-and-archify.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\search-and-archify.html",
         "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
         "bytes": 824633
       },
@@ -444,12 +444,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\search-and-archify.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\search-and-archify.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\search-and-archify.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\search-and-archify.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\search-and-archify.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\search-and-archify.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2910,
+      "durationMs": 2765,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -468,7 +468,7 @@
         "bytes": 4898
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\hooks-and-gates.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\hooks-and-gates.html",
         "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
         "bytes": 823078
       },
@@ -485,12 +485,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\hooks-and-gates.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\hooks-and-gates.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\hooks-and-gates.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\hooks-and-gates.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\hooks-and-gates.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\hooks-and-gates.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3389,
+      "durationMs": 3199,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -509,7 +509,7 @@
         "bytes": 4891
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\runtime-verification.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\runtime-verification.html",
         "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
         "bytes": 822816
       },
@@ -551,12 +551,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\runtime-verification.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\runtime-verification.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\runtime-verification.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\runtime-verification.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\runtime-verification.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\runtime-verification.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3078,
+      "durationMs": 2981,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -604,7 +604,7 @@
         "bytes": 4466
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\optimization-report.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\optimization-report.html",
         "sha256": "25e0219714bb2065bc3b7394b6f06a8ec4af1c8ac1b7b6c0521a39db0cda34f5",
         "bytes": 820910
       },
@@ -646,12 +646,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\optimization-report.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\optimization-report.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\optimization-report.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\optimization-report.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\optimization-report.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\optimization-report.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3001,
+      "durationMs": 2965,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -665,12 +665,12 @@
       "type": "explainer",
       "quality": "showcase",
       "specification": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\master.candidate.json",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\master.candidate.json",
         "sha256": "3fb5be901ac7adb1dd852870886bb6c345ebe3e128e15a8e94050b770ee2223c",
         "bytes": 10979
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\index.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\index.html",
         "sha256": "2f5f7f0c1421b2445f0691cba45f1cfe046a9f0af07fb5c0972c6c1e8b155217",
         "bytes": 2615737
       },
@@ -687,11 +687,11 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\index.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\index.finalize-summary.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\index.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\index.finalize-summary.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3450,
+      "durationMs": 3411,
       "browserCheck": {
         "requested": false,
         "ran": false

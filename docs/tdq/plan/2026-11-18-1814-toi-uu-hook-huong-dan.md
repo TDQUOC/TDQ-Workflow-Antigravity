@@ -3,7 +3,7 @@
 Ngày: 2026-11-18 · Spec: ../spec/2026-11-18-1814-toi-uu-hook-huong-dan.md (bản 1.1, ĐÃ DUYỆT) · Lane: full
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: subagent — `tdq_bench.py simulate --he-so-agent 1.5` cho Winner: đội (nhanh hơn 6,1 phút: 18,3 → 12,3 phút model; 9 task, giao 6/9, chia đợt song song) (ĐÃ CHỐT)
-Trạng thái plan: ĐÃ DUYỆT
+Trạng thái plan: HOÀN THÀNH
 
 ## Mục lục
 
@@ -149,7 +149,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: JSON string trong `Arguments` của `call_mcp_tool`, payload rỗng `{}` fail-open, file cũ 8 ngày bị dọn còn file mới 1 ngày giữ nguyên.
     - Tiêu chí: mọi assert đều kiểm giá trị cụ thể (không `assert True`), toàn bộ pass trên `plugins/tdq-workflow-agy/`.
 
-- [>] **T3.3** (e12m) Cập nhật `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py` khớp hợp đồng R1–R3 — Test: `py -3 -m pytest tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py -q`
+- [x] **T3.3** (e12m) Cập nhật `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py` khớp hợp đồng R1–R3 — Test: `py -3 -m pytest tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py -q`
   - Chạm: `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py`
   - Cần: T3.1
   - Mục tiêu: đồng bộ 3 bộ test giao thức Antigravity với `22` mã AGY (thay 24 cũ vì bỏ 7 mã trùng/thừa và gộp/thêm `TICK`/`DOD`/`DOC`), hành vi mềm mới (`TICK` không deny ở `edit_gate`, `SUBAGENT` `overwrite`, `LOG` không chặn `Stop`, `FEEDBACK` không còn phát ở `prompt_context`), và `hooks.json` dùng `python -X utf8 ... dispatch.py`.
@@ -181,17 +181,26 @@ Không có file nào bị từ `2` task trở lên khai ở `Chạm:` — mỗi 
 
 ## Px — Log & test bắt buộc
 
-- [ ] **Tx.1** (e4m) Kiểm tra `TDQ_LOG` trên `dispatch.py` bản biên dịch (bật mặc định có timestamp ISO, tắt khi `TDQ_LOG=0`) — Test: `py -3 -c "import subprocess,os,json; p='plugins/tdq-workflow-agy'; on=subprocess.run(['python','-X','utf8','hooks/scripts/dispatch.py','--event','PreInvocation'],input='{}',cwd=p,capture_output=True,text=True); off=subprocess.run(['python','-X','utf8','hooks/scripts/dispatch.py','--event','PreInvocation'],input='{}',cwd=p,capture_output=True,text=True,env=dict(os.environ,TDQ_LOG='0')); assert on.returncode==0 and off.returncode==0 and off.stderr.strip()==''"`
+- [x] **Tx.1** (e4m) Kiểm tra `TDQ_LOG` trên `dispatch.py` bản biên dịch (bật mặc định có timestamp ISO, tắt khi `TDQ_LOG=0`) — Test: `py -3 -c "import subprocess,os,json; p='plugins/tdq-workflow-agy'; on=subprocess.run(['python','-X','utf8','hooks/scripts/dispatch.py','--event','PreInvocation'],input='{}',cwd=p,capture_output=True,text=True); off=subprocess.run(['python','-X','utf8','hooks/scripts/dispatch.py','--event','PreInvocation'],input='{}',cwd=p,capture_output=True,text=True,env=dict(os.environ,TDQ_LOG='0')); assert on.returncode==0 and off.returncode==0 and off.stderr.strip()==''"`
   - Cần: T3.1, T3.2
-- [ ] **Tx.2** (e6m) Kiểm tra liên thông unit test + `i18n_check.py` + `token_budget.py` toàn vùng chạm — Test: `py -3 -m pytest tests/test_core_hook_perf_search.py tests/test_gate_guidance.py tests/test_hook_dispatch_r1_r3.py tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py tests/test_context_hooks.py tests/test_edit_gate.py tests/test_stop_gate.py tests/test_search_gate.py tests/test_lsp_gate.py -q`
+- [x] **Tx.2** (e6m) Kiểm tra liên thông unit test + `i18n_check.py` + `token_budget.py` toàn vùng chạm — Test: `py -3 -m pytest tests/test_core_hook_perf_search.py tests/test_gate_guidance.py tests/test_hook_dispatch_r1_r3.py tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py tests/test_context_hooks.py tests/test_edit_gate.py tests/test_stop_gate.py tests/test_search_gate.py tests/test_lsp_gate.py -q`
   - Cần: T3.2, T3.3
+
+## QC vòng 1 — fix
+
+- [x] **QC1.1** (e4m) Hỗ trợ đồng thời `toolCall.args` và `toolCall.arguments` trong `tools/patches/agy_hooks.py` (`_extract_raw_tool_container`), biên dịch lại `plugins/tdq-workflow-agy/` — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -q`
+
+## QC vòng 2 — fix
+
+- [x] **QC2.1** (e8m) Vá 3 lỗ hổng `TDQ:GIT`, `TDQ:TEAM` dùng `detect_subagent`, dedup `search_gate` malformed, `return` `TDQ:STATE`, fallback prompt > 64 KB và khóa file cache `repo_root` — Test: `py -3 -m pytest tests/test_core_hook_perf_search.py tests/test_hook_dispatch_r1_r3.py tests/test_bash_gate.py tests/test_edit_gate.py -q`
+- [x] **QC2.2** (e8m) Tối ưu `Stop` (dùng chung `status` + bỏ `diff HEAD` khi không có file tracked đổi) & `command_gate` RTK (bỏ qua builtin + cache `rtk rewrite` theo mtime), lọc `4` script AGY thừa (`agy_pretooluse_gate.py`, `agy_stop_gate.py`, `codex_edit_gate.py`, `subagent_start.py`) & tạo `bench_dispatch.py`, biên dịch lại `plugins/tdq-workflow-agy/` — Test: `py -3 -m pytest tests/test_command_gate.py tests/test_rtk_integration.py tests/test_agy_plugin_validate.py tests/test_stop_gate.py -q`
 
 ## Definition of Done
 
-- [ ] Q1 Độ trễ `PreInvocation` giữa lượt `<= 150 ms` và `PreToolUse` `<= 100 ms` (`command_gate <= 130 ms`); `PostToolUse` bỏ `run_command`/`read_file` — `py -3 docs/tdq/bench/2026-11-18-1346-hook-runtime/bench_hooks.py --n 12 --plugin-dir plugins/tdq-workflow-agy`
-- [ ] Q2 Triệt tiêu `0/8` `search_malformed`, `0/2` `tick_loop` deny, `TDQ:SEARCH` Hướng A ân xá lần 1 / chặn tái phạm lần 2 + `rtk bypass grep` — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "search or tick"`
-- [ ] Q3 Tự sửa `overwrite` an toàn cho `call_mcp_tool` (`Arguments`, `O(1)` `< 1 ms`) và `TDQ:SUBAGENT` (`Workspace="inherit"`) — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "overwrite"`
-- [ ] Q4 Thẻ `metadata.user_markdown` đủ 4 phần cho `22/22` mã AGY, tách `model_line <= 160` và `user_card <= 1.200` không lặp — `py -3 -m pytest tests/test_gate_guidance.py tests/test_hook_dispatch_r1_r3.py -k "user_markdown or guidance"`
-- [ ] Q5 Giữ nguyên `9/9` cổng cứng, `"1a"` lặp mở được `[TDQ:APPROVE]`, `Stop` `continuationActive=True` trả `allow`, `LOG` không chặn `Stop`, dọn `.tdq-runtime` > 7 ngày — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "hard or stop or repeated_1a or cleanup"`
-- [ ] Q6 `plugins/tdq-workflow-agy/hooks.json` hợp nhất `python -X utf8 hooks/scripts/dispatch.py`, lọc 3 script mồ côi (giữ ở gốc `hooks/scripts/`), `~/.gemini/config/plugins/tdq-workflow-agy` nguyên vẹn, `agy.EXE plugin validate` `0 findings` — `py -3 -m pytest tests/test_agy_plugin_validate.py tests/test_command_gate.py -q`
-- [ ] Q7 `i18n_check.py scripts/ hooks/ tools/patches/`, `doc_lint.py`, `token_budget.py --kiem` exit `0`; `tdq_test.py tron-bo` xanh; smoke test + runtime test (`<= 120s`) + biên bản `tdq-qc-tester` độc lập (`ultra`) PASS — `py -3 scripts/tdq_test.py tron-bo --workers 4 --fresh --reuse off`
+- [x] Q1 Độ trễ `PreInvocation` giữa lượt `<= 150 ms` và `PreToolUse` `<= 100 ms` (`command_gate <= 130 ms`); `PostToolUse` bỏ `run_command`/`read_file` — `py -3 docs/tdq/bench/2026-11-18-1346-hook-runtime/bench_hooks.py --n 12 --plugin-dir plugins/tdq-workflow-agy`
+- [x] Q2 Triệt tiêu `0/8` `search_malformed`, `0/2` `tick_loop` deny, `TDQ:SEARCH` Hướng A ân xá lần 1 / chặn tái phạm lần 2 + `rtk bypass grep` — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "search or tick"`
+- [x] Q3 Tự sửa `overwrite` an toàn cho `call_mcp_tool` (`Arguments`, `O(1)` `< 1 ms`) và `TDQ:SUBAGENT` (`Workspace="inherit"`) — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "overwrite"`
+- [x] Q4 Thẻ `metadata.user_markdown` đủ 4 phần cho `22/22` mã AGY, tách `model_line <= 160` và `user_card <= 1.200` không lặp — `py -3 -m pytest tests/test_gate_guidance.py tests/test_hook_dispatch_r1_r3.py -k "user_markdown or guidance"`
+- [x] Q5 Giữ nguyên `9/9` cổng cứng, `"1a"` lặp mở được `[TDQ:APPROVE]`, `Stop` `continuationActive=True` trả `allow`, `LOG` không chặn `Stop`, dọn `.tdq-runtime` > 7 ngày — `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -k "hard or stop or repeated_1a or cleanup"`
+- [x] Q6 `plugins/tdq-workflow-agy/hooks.json` hợp nhất `python -X utf8 hooks/scripts/dispatch.py`, lọc 3 script mồ côi (giữ ở gốc `hooks/scripts/`), `~/.gemini/config/plugins/tdq-workflow-agy` nguyên vẹn, `agy.EXE plugin validate` `0 findings` — `py -3 -m pytest tests/test_agy_plugin_validate.py tests/test_command_gate.py -q`
+- [x] Q7 `i18n_check.py scripts/ hooks/ tools/patches/`, `doc_lint.py`, `token_budget.py --kiem` exit `0`; `tdq_test.py tron-bo` xanh; smoke test + runtime test (`<= 120s`) + biên bản `tdq-qc-tester` độc lập (`ultra`) PASS — `py -3 scripts/tdq_test.py tron-bo --workers 4 --fresh --reuse off`

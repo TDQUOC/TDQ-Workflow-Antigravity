@@ -245,7 +245,7 @@ def eval_search(payload):
     _log(f"{ten_tool} · {pl.get('loai')} · doan_mo={pl.get('doan_mo')} · "
          f"{'cho' if ok else 'CHAN'} · {ly_do.splitlines()[0][:80]}")
     if ly_do == "agy_malformed_remind":
-        _common.queue_remind(cwd, payload, MA, f"Malformed command suspected search ({ten_tool})", check_turn=False)
+        _common.remind(cwd, payload, MA, [f"Malformed command suspected search ({ten_tool})"])
     elif ly_do == "agy_search_grace":
         _common.queue_remind(cwd, payload, MA, f"Use LSP or Graphify before consecutive {ten_tool}", check_turn=False)
     elif dung_xuong:

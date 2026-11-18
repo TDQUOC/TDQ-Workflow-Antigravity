@@ -173,9 +173,9 @@ def test_ec01_to_ec14_live_cmd_hooks(tmp_path):
     assert "[TDQ:TEST]" in pi_msg["systemMessage"]
     assert "[TDQ:TEST]" in pi_msg["metadata"]["user_markdown"]
 
-    # EC-13: codex_edit_gate enforces TDQ_CODEX_VUNG [TDQ:VUNG]
+    # EC-13: codex_edit_gate enforces TDQ_CODEX_VUNG [TDQ:VUNG] (lives in root hooks/ for Codex compat)
     cx = _run_hook(
-        "codex_edit_gate.py",
+        str(WORKSPACE / "hooks" / "scripts" / "codex_edit_gate.py"),
         {"cwd": str(repo), "tool_name": "apply_patch", "tool_input": {"command": "*** Update File: secret/out.py\n+x=1"}},
         cwd=repo,
         extra_env={"TDQ_CODEX_TASK": "T1.1", "TDQ_CODEX_VUNG": "app.py"},

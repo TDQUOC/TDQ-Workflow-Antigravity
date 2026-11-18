@@ -358,6 +358,42 @@ class TestSkipAndRewrite(unittest.TestCase):
         expected = f"cd sub && & '{bin_space}' git status; echo 'rtk literal'"
         self.assertEqual(out, expected)
 
+    def test_builtin_skip_and_disk_rewrite_cache_respect_runner_and_invalidation(self):
+        self.assertEqual(rtk.should_skip_rewrite("echo ok"), (True, "non_rtk_builtin"))
+        self.assertEqual(rtk.should_skip_rewrite("Set-Location src"), (True, "non_rtk_builtin"))
+        self.assertFalse(rtk.should_skip_rewrite("cd sub && git status")[0])
+
+        bin_path = os.path.join(self.tmp, "rtk.exe")
+        with open(bin_path, "wb") as fh:
+            fh.write(b"fake-bin-v1")
+
+        def probe_ok(cwd=None):
+            return {"valid": True, "path": bin_path, "version": "1.2.0"}
+
+        calls = 0
+
+        def count_runner(argv, **kw):
+            nonlocal calls
+            calls += 1
+            return SimpleNamespace(returncode=3, stdout="rtk git status\n", stderr="")
+
+        with mock.patch("tempfile.gettempdir", return_value=self.tmp), mock.patch(
+            "shutil.which", return_value=bin_path
+        ):
+            # When runner is explicitly supplied, mock always runs (no stale cache interference)
+            out1, changed1, _ = rtk.rewrite_command(
+                "git status", runner=count_runner, probe_fn=probe_ok
+            )
+            self.assertTrue(changed1 and out1 == "rtk git status")
+            self.assertEqual(calls, 1)
+            sig = rtk._rewrite_cache_sig(bin_path)
+            rtk._write_rewrite_cache(sig, "git status", "rtk git status")
+            with mock.patch("scripts.rtk_integration._default_runner", side_effect=AssertionError("should hit cache")) if "scripts.rtk_integration" in sys.modules else mock.patch.object(rtk, "_default_runner", side_effect=AssertionError("should hit cache")):
+                out2, changed2, reason2 = rtk.rewrite_command("git status", probe_fn=probe_ok)
+            self.assertTrue(changed2)
+            self.assertEqual(out2, "rtk git status")
+            self.assertEqual(reason2, "cached")
+
 
 class TestConfigAndInstaller(unittest.TestCase):
     def setUp(self):

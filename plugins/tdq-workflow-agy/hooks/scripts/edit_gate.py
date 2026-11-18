@@ -134,6 +134,7 @@ def main():
             "A sub-agent may not write TDQ state or its generated mirror.",
             "Return structured output to the TDQ leader; only tdq_state.py writes state.",
         ])
+        return
     if abs_target in (state_file, state_md):
         remind(cwd, payload, "TDQ:STATE", [
             "Do not hand-edit the state file — write it through the CLI.",
@@ -151,7 +152,8 @@ def main():
     # implement: it reports into docs/, the main agent alone changes the project before then.
     # ponytail: Edit/Write only, a sub-agent writing through Bash/PowerShell slips past — widen to
     # bash_gate once a real case is measured.
-    if isinstance(payload.get("agent_id"), str) and payload["agent_id"] \
+    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \
+            or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) \
             and within(abs_target, os.path.realpath(cwd)) \
             and effective_phase(state, warn=False) not in ("implement", "qc"):
         block(cwd, payload, "TDQ:TEAM", [

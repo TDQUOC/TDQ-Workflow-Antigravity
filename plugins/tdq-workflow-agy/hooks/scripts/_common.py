@@ -276,8 +276,9 @@ def _extract_raw_tool_container(payload, tool_call):
     for key in ("tool_input", "toolInput"):
         if key in payload and payload[key] is not None:
             return payload[key], True
-    if "args" in tool_call and tool_call["args"] is not None:
-        return tool_call["args"], True
+    for key in ("args", "arguments"):
+        if key in tool_call and tool_call[key] is not None:
+            return tool_call[key], True
     for key in ("arguments", "input"):
         if key in payload and payload[key] is not None:
             return payload[key], True

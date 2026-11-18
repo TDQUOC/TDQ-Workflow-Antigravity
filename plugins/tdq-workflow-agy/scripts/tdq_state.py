@@ -740,17 +740,45 @@ def _lookup_repo_root_cache(
 
 def _save_repo_root_cache(cache_path: str, cache_data: dict, cwd_key: str,
                           root: str, head_mtime_ns: int) -> None:
-    """Atomically persist bounded repo-root cache, failing open on disk errors."""
-    updated = dict(cache_data)
-    updated.pop(cwd_key, None)
-    updated[cwd_key] = {"root": root, "head_mtime_ns": head_mtime_ns}
-    if len(updated) > _REPO_ROOT_CACHE_MAX:
-        keep_keys = list(updated.keys())[-_REPO_ROOT_CACHE_MAX:]
-        updated = {key: updated[key] for key in keep_keys}
+    """Atomically persist bounded repo-root cache, merging disk state under lock."""
+    lock_path = cache_path + ".lock"
+    lf = None
     try:
+        lf = open(lock_path, "a+b")
+        if os.name == "nt":
+            import msvcrt
+            lf.seek(0)
+            try:
+                msvcrt.locking(lf.fileno(), msvcrt.LK_NBLCK, 1)
+            except OSError:
+                pass
+    except OSError:
+        lf = None
+    try:
+        fresh = _load_repo_root_cache(cache_path)
+        updated = dict(cache_data) if isinstance(cache_data, dict) else {}
+        updated.update(fresh)
+        updated.pop(cwd_key, None)
+        updated[cwd_key] = {"root": root, "head_mtime_ns": head_mtime_ns}
+        if len(updated) > _REPO_ROOT_CACHE_MAX:
+            keep_keys = list(updated.keys())[-_REPO_ROOT_CACHE_MAX:]
+            updated = {key: updated[key] for key in keep_keys}
         _atomic_write(cache_path, json.dumps(updated, ensure_ascii=False))
     except OSError as exc:
         _warn(f"could not write repo root cache ({exc.__class__.__name__})")
+    finally:
+        if lf is not None:
+            if os.name == "nt":
+                import msvcrt
+                try:
+                    lf.seek(0)
+                    msvcrt.locking(lf.fileno(), msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
+            try:
+                lf.close()
+            except OSError:
+                pass
 
 
 def repo_root(cwd: str) -> str | None:
@@ -797,6 +825,14 @@ def _untracked_mark(path, budget):
         return None, 0
 
 
+def _has_tracked_git_changes(status: bytes) -> bool:
+    """True when porcelain status reports at least one non-untracked (tracked) line."""
+    for line in status.splitlines():
+        if line.strip() and not line.startswith(b"?? "):
+            return True
+    return False
+
+
 def repo_status_digest(cwd, status=None):
     """Fingerprint of the repo working state, or None when it cannot be taken.
 
@@ -818,7 +854,11 @@ def repo_status_digest(cwd, status=None):
     if status is None:
         return None
     # a repo with no commit yet → no HEAD → rc!=0 → b""
-    diff = _git(cwd, "diff", "HEAD", "--", ":(top)", *_EXCLUDE) or b""
+    diff = (
+        _git(cwd, "diff", "HEAD", "--", ":(top)", *_EXCLUDE) or b""
+        if _has_tracked_git_changes(status)
+        else b""
+    )
     h = hashlib.sha256(status + b"\0" + diff)
     # Untracked files: porcelain prints `?? path`, which does not change when the
     # content changes, and `diff HEAD` never touches them — they need their own

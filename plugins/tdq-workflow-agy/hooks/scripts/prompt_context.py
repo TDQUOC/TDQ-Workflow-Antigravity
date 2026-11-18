@@ -259,7 +259,12 @@ def _nhac_gon(cwd, state, payload, session):
 _TAIL_BYTES = 65536
 
 
-def _extract_transcript_user_sig(tpath, prev_meta):
+def _prompt_sha(payload):
+    text = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16] if text else ""
+
+
+def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
     """Read <= 64 KB tail of transcriptPath in O(1) for the last USER_INPUT signature."""
     if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
         return None
@@ -297,6 +302,9 @@ def _extract_transcript_user_sig(tpath, prev_meta):
             return f"ui:{step_idx}:{created}"
         return f"ui_pos:{last_end}"
     prev_sig = str((prev_meta or {}).get("last_user_sig") or "")
+    prev_psha = str((prev_meta or {}).get("prompt_sha") or "")
+    if prompt_sha and prev_psha and prompt_sha != prev_psha:
+        return f"ui_big:{prompt_sha}"
     if prev_sig.startswith("ui") and not (prev_meta or {}).get("turn_closed"):
         return prev_sig
     return None
@@ -305,12 +313,12 @@ def _extract_transcript_user_sig(tpath, prev_meta):
 def _extract_user_turn_sig(payload, prev_meta):
     """Compute user-turn signature from transcriptPath tail or fallback prompt."""
     tpath = (payload or {}).get("transcriptPath") or (payload or {}).get("transcript_path")
-    sig = _extract_transcript_user_sig(tpath, prev_meta)
+    psha = _prompt_sha(payload)
+    sig = _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=psha)
     if sig is not None:
         return sig
-    prompt = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
-    if prompt:
-        return "prompt:" + hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+    if psha:
+        return "prompt:" + psha
     return ""
 
 
@@ -350,7 +358,7 @@ def _agy_pre_invocation_hook(payload, cwd):
                 os.remove(shard)
             except OSError:
                 pass
-        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False})
+        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload)})
     return False, is_new
 
 

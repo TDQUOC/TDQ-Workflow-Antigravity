@@ -23,6 +23,10 @@ EXCLUDED_AGY_HOOKS = {
     "doc_file_gate.py",
     "strategic_compact_gate.py",
     "stop_batch_checker.py",
+    "agy_pretooluse_gate.py",
+    "agy_stop_gate.py",
+    "codex_edit_gate.py",
+    "subagent_start.py",
 }
 
 

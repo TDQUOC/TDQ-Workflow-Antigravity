@@ -281,8 +281,9 @@ def _extract_raw_tool_container(payload, tool_call):
     for key in ("tool_input", "toolInput"):
         if key in payload and payload[key] is not None:
             return payload[key], True
-    if "args" in tool_call and tool_call["args"] is not None:
-        return tool_call["args"], True
+    for key in ("args", "arguments"):
+        if key in tool_call and tool_call[key] is not None:
+            return tool_call[key], True
     for key in ("arguments", "input"):
         if key in payload and payload[key] is not None:
             return payload[key], True
@@ -1485,7 +1486,12 @@ _PROMPT_TURN_META_HELPER = r'''
 _TAIL_BYTES = 65536
 
 
-def _extract_transcript_user_sig(tpath, prev_meta):
+def _prompt_sha(payload):
+    text = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16] if text else ""
+
+
+def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
     """Read <= 64 KB tail of transcriptPath in O(1) for the last USER_INPUT signature."""
     if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
         return None
@@ -1523,6 +1529,9 @@ def _extract_transcript_user_sig(tpath, prev_meta):
             return f"ui:{step_idx}:{created}"
         return f"ui_pos:{last_end}"
     prev_sig = str((prev_meta or {}).get("last_user_sig") or "")
+    prev_psha = str((prev_meta or {}).get("prompt_sha") or "")
+    if prompt_sha and prev_psha and prompt_sha != prev_psha:
+        return f"ui_big:{prompt_sha}"
     if prev_sig.startswith("ui") and not (prev_meta or {}).get("turn_closed"):
         return prev_sig
     return None
@@ -1531,12 +1540,12 @@ def _extract_transcript_user_sig(tpath, prev_meta):
 def _extract_user_turn_sig(payload, prev_meta):
     """Compute user-turn signature from transcriptPath tail or fallback prompt."""
     tpath = (payload or {}).get("transcriptPath") or (payload or {}).get("transcript_path")
-    sig = _extract_transcript_user_sig(tpath, prev_meta)
+    psha = _prompt_sha(payload)
+    sig = _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=psha)
     if sig is not None:
         return sig
-    prompt = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
-    if prompt:
-        return "prompt:" + hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+    if psha:
+        return "prompt:" + psha
     return ""
 
 
@@ -1642,6 +1651,45 @@ def _enforce_agy_bash_guards(payload, cwd):
     )
     replace_exact(
         bash_path,
+        '    if agy and re.search(r"git\\s+(?:checkout\\s+-[bB]|switch\\s+-[cC]|branch)\\s+[\'\\"]?(?:claude|antigravity|gemini|codex)[-_]", cmd, re.IGNORECASE):\n'
+        '        block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])\n'
+        '        return True',
+        '    if agy and _has_banned_agy_git(cmd, cwd, payload):\n        return True',
+        label="bash_gate_hard_git_checks",
+        sentinel="if agy and _has_banned_agy_git(",
+    )
+    if "def _has_banned_agy_git(" not in read_utf8(bash_path):
+        git_helper = (
+            "\n\ndef _has_banned_agy_git(cmd, cwd, payload):\n"
+            "    from _common import block\n"
+            "    branch_names = []\n"
+            "    for pattern in BRANCH_PATTERNS:\n"
+            "        branch_names += [_clean(m) for m in pattern.findall(cmd)]\n"
+            "    for b_name, w_path in WORKTREE.findall(cmd):\n"
+            "        if b_name:\n"
+            "            branch_names.append(_clean(b_name))\n"
+            "        if w_path:\n"
+            '            branch_names.append(os.path.basename(_clean(w_path).rstrip("/")))\n'
+            "    for name in branch_names:\n"
+            "        if BAN.match(name):\n"
+            '            block(cwd, payload, "TDQ:GIT", [f"AI-prefixed branch/worktree name {name!r} is banned; name it after the work."])\n'
+            "            return True\n"
+            '    if re.search(r"git\\b.*\\bcommit\\b", cmd, re.DOTALL) and any(p.search(cmd) for p in BAD_MSG):\n'
+            '        block(cwd, payload, "TDQ:GIT", ["AI trailers (Co-Authored-By / generated with) are banned in commit messages."])\n'
+            "        return True\n"
+            "    return False\n"
+        )
+        txt_b = read_utf8(bash_path).replace("def _enforce_agy_bash_guards(", git_helper + "\n\ndef _enforce_agy_bash_guards(", 1)
+        write_utf8(bash_path, txt_b)
+    replace_exact(
+        bash_path,
+        '    if payload.get("agent_id") and state.get("active_request") \\',
+        '    if (payload.get("agent_id") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \\',
+        label="bash_gate_agy_team_guard",
+        sentinel="is_agy() and detect_subagent(payload, cwd)",
+    )
+    replace_exact(
+        bash_path,
         '    if agy and _PS_WRITE_PATTERN.search(cmd) and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd):\n'
         '        block(cwd, payload, "STATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])\n'
         '        return True',
@@ -1703,6 +1751,32 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):',
         label="edit_gate_agy_state_block",
         sentinel='(payload.get("agent_id") or is_agy())',
+    )
+    replace_exact(
+        edit_path,
+        '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):\n'
+        '        block(cwd, payload, "TDQ:STATE", [\n'
+        '            "A sub-agent may not write TDQ state or its generated mirror.",\n'
+        '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
+        '        ])',
+        '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):\n'
+        '        block(cwd, payload, "TDQ:STATE", [\n'
+        '            "A sub-agent may not write TDQ state or its generated mirror.",\n'
+        '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
+        '        ])\n'
+        '        return',
+        label="edit_gate_state_block_return",
+        sentinel="Return structured output to the TDQ leader; only tdq_state.py writes state.\n        ])\n        return",
+    )
+    replace_exact(
+        edit_path,
+        '    if isinstance(payload.get("agent_id"), str) and payload["agent_id"] \\\n'
+        '            and within(abs_target, os.path.realpath(cwd)) \\',
+        '    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \\\n'
+        '            or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) \\\n'
+        '            and within(abs_target, os.path.realpath(cwd)) \\',
+        label="edit_gate_agy_team_subagent_block",
+        sentinel='or (is_agy() and detect_subagent(payload, cwd).get("is_subagent")))',
     )
     if "def _tick_notify(" not in read_utf8(edit_path):
         text = read_utf8(edit_path).replace(
@@ -1928,7 +2002,7 @@ def _patch_search_gate(hooks_scripts_dir: Path) -> None:
         "    if ok:\n"
         "        return True",
         '    if ly_do == "agy_malformed_remind":\n'
-        '        _common.queue_remind(cwd, payload, MA, f"Malformed command suspected search ({ten_tool})", check_turn=False)\n'
+        '        _common.remind(cwd, payload, MA, [f"Malformed command suspected search ({ten_tool})"])\n'
         '    elif ly_do == "agy_search_grace":\n'
         '        _common.queue_remind(cwd, payload, MA, f"Use LSP or Graphify before consecutive {ten_tool}", check_turn=False)\n'
         "    elif dung_xuong:\n"
@@ -2074,7 +2148,7 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "                os.remove(shard)\n"
             "            except OSError:\n"
             "                pass\n"
-            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False})\n'
+            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload)})\n'
             "    return False, is_new",
             label="prompt_context_agy_turn_hook",
         )
@@ -2275,9 +2349,9 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "    if snap:\n"
         "        if not logged:\n"
         "            logged = _log_changed(cwd, snap)\n"
-        "        if not culprit and _repo_changed(cwd, snap):\n"
-        "            cand = _shell_changed_path(cwd, snap)\n"
-        '            if not (is_agy() and "docs/.staging" in str(cand).replace("\\\\", "/")):\n'
+        "        if not culprit:\n"
+        "            changed, cand = _shell_change_check(cwd, snap)\n"
+        '            if changed and cand and not (is_agy() and "docs/.staging" in str(cand).replace("\\\\", "/")):\n'
         "                culprit = cand\n"
         '                source = "repo fingerprint"\n'
         "    if culprit and not logged:\n"
@@ -2293,6 +2367,35 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "            return",
         label="stop_gate_soft_log_agy",
         sentinel='queue_remind(cwd, payload, "LOG"',
+    )
+    replace_exact(
+        stop_path,
+        "def _repo_changed(cwd, snap):",
+        "def _shell_change_check(cwd, snap):\n"
+        '    before = snap.get("repo_sha")\n'
+        "    if not isinstance(before, str):\n"
+        '        return False, ""\n'
+        "    from tdq_state import _EXCLUDE as _tdq_exc, _git as _tdq_git\n"
+        '    status = _tdq_git(cwd, "status", "--porcelain", "--untracked-files=all", "--", ":(top)", *_tdq_exc)\n'
+        "    if status is None:\n"
+        '        return False, ""\n'
+        "    now = repo_status_digest(cwd, status=status)\n"
+        "    if not isinstance(now, str) or now == before:\n"
+        '        return False, ""\n'
+        '    prev = snap.get("repo_paths")\n'
+        "    prev_set = set(prev) if isinstance(prev, list) else set()\n"
+        '    fresh, known = "", ""\n'
+        "    for p in repo_status_paths(cwd, status=status):\n"
+        "        if not isinstance(p, str) or p.startswith(BOOKKEEPING):\n"
+        "            continue\n"
+        "        if p not in prev_set:\n"
+        "            fresh = fresh or p\n"
+        "        else:\n"
+        "            known = known or p\n"
+        "    return True, (fresh or known)[:MAX_PATH_CHARS]\n\n\n"
+        "def _repo_changed(cwd, snap):",
+        label="stop_gate_single_git_status_helper",
+        sentinel="def _shell_change_check(",
     )
     replace_exact(
         stop_path,

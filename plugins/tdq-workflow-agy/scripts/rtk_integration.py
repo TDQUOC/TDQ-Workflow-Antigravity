@@ -38,6 +38,15 @@ GIT_VALUE_FLAGS = frozenset({
 })
 AUDIT_ROLES = ("qc", "reviewer", "security")
 DUMP_GIT_SUBCOMMANDS = frozenset({"log", "diff", "show"})
+NON_RTK_BUILTINS = frozenset({
+    "echo", "printf", "cd", "pwd", "pushd", "popd", "true", "false",
+    "exit", "export", "set", "unset", "alias", "type", "mkdir", "rmdir",
+    "touch", "cp", "mv", "rm", "ln", "chmod", "chown", "sleep", "wait",
+    "test", "write-output", "set-location", "get-location", "new-item",
+    "remove-item", "copy-item", "move-item", "out-null", "select-object",
+    "format-table", "sort-object", "measure-object",
+})
+_REWRITE_CACHE_MAX = 128
 
 REQUIRED_RTK_CONFIG = (
     ("telemetry", (("enabled", "false"),)),
@@ -429,6 +438,20 @@ def _segment_skip_reason(tokens: list[str], audit_role: bool) -> str | None:
     return None
 
 
+def _all_segments_non_rtk(segments: list[tuple[str, str]]) -> bool:
+    """True when every non-empty command segment is a basic shell builtin never rewritten by rtk."""
+    saw_segment = False
+    for _, seg in segments:
+        core = _strip_wrappers(_tokenize_segment(seg))
+        if not core:
+            continue
+        saw_segment = True
+        _, stem, _ = _basename_stem(core[0])
+        if stem not in NON_RTK_BUILTINS:
+            return False
+    return saw_segment
+
+
 def should_skip_rewrite(cmd: str, role: str = "") -> tuple[bool, str]:
     """Return (True, reason) when rtk rewrite must be bypassed."""
     if os.environ.get("TDQ_RTK", "1") == "0" or os.environ.get("RTK_DISABLED") == "1":
@@ -439,10 +462,13 @@ def should_skip_rewrite(cmd: str, role: str = "") -> tuple[bool, str]:
         return True, "too_long"
     role_low = (role or "").lower()
     audit_role = any(tag in role_low for tag in AUDIT_ROLES)
-    for _, seg in _split_segments(cmd):
+    segments = _split_segments(cmd)
+    for _, seg in segments:
         reason = _segment_skip_reason(_tokenize_segment(seg), audit_role)
         if reason:
             return True, reason
+    if _all_segments_non_rtk(segments):
+        return True, "non_rtk_builtin"
     return False, ""
 
 
@@ -484,6 +510,60 @@ def _qualify_rtk_for_powershell(rewritten: str, bin_path: str) -> str:
     return "".join(out)
 
 
+def _rewrite_cache_path() -> str:
+    return os.path.join(tempfile.gettempdir(), "tdq-rtk-rewrite-cache.json")
+
+
+def _rewrite_cache_sig(bin_path: str) -> str:
+    """Build invalidation key from rtk binary path/mtime/size and config.toml mtime."""
+    try:
+        st = os.stat(bin_path)
+        bin_sig = f"{os.path.abspath(bin_path)}:{st.st_size}:{st.st_mtime_ns}"
+    except OSError:
+        bin_sig = os.path.abspath(bin_path)
+    try:
+        cfg_st = os.stat(default_rtk_config_path())
+        cfg_sig = f"{cfg_st.st_size}:{cfg_st.st_mtime_ns}"
+    except OSError:
+        cfg_sig = "nocfg"
+    return f"{bin_sig}|{cfg_sig}"
+
+
+def _read_rewrite_cache(sig: str, cmd: str) -> tuple[bool, str] | None:
+    """Return (hit_rewritten_changed, raw_rewritten) on cache hit, else None."""
+    try:
+        with open(_rewrite_cache_path(), encoding="utf-8") as fh:
+            data = json.load(fh)
+        if not isinstance(data, dict) or data.get("sig") != sig:
+            return None
+        entries = data.get("entries")
+        if isinstance(entries, dict) and cmd in entries:
+            val = entries[cmd]
+            if isinstance(val, str):
+                return (val != cmd.strip() and bool(val)), val
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def _write_rewrite_cache(sig: str, cmd: str, rewritten: str) -> None:
+    path = _rewrite_cache_path()
+    entries: dict[str, str] = {}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            old = json.load(fh)
+        if isinstance(old, dict) and old.get("sig") == sig and isinstance(old.get("entries"), dict):
+            entries = dict(old["entries"])
+    except (OSError, ValueError):
+        pass
+    entries.pop(cmd, None)
+    entries[cmd] = rewritten
+    if len(entries) > _REWRITE_CACHE_MAX:
+        keep = list(entries.keys())[-_REWRITE_CACHE_MAX:]
+        entries = {k: entries[k] for k in keep}
+    _write_json_best_effort(path, {"sig": sig, "entries": entries})
+
+
 def rewrite_command(
     cmd: str,
     cwd=None,
@@ -502,6 +582,15 @@ def rewrite_command(
     bin_path = probe.get("path") or locate_rtk_binary()
     if not bin_path:
         return cmd, False, "not_found"
+    use_cache = runner is None and len(cmd) <= 512
+    sig = _rewrite_cache_sig(bin_path) if use_cache else ""
+    if use_cache:
+        cached = _read_rewrite_cache(sig, cmd)
+        if cached is not None:
+            changed, cached_rew = cached
+            if not changed:
+                return cmd, False, "cached_unchanged"
+            return _qualify_rtk_for_powershell(cached_rew, bin_path), True, "cached"
     exec_fn = runner or _default_runner
     try:
         proc = exec_fn(
@@ -516,7 +605,11 @@ def rewrite_command(
         return cmd, False, f"rewrite_error:{type(exc).__name__}"
     rewritten = (proc.stdout or "").strip()
     if proc.returncode not in (0, 3) or not rewritten or rewritten == cmd.strip():
+        if use_cache:
+            _write_rewrite_cache(sig, cmd, cmd.strip())
         return cmd, False, f"unchanged_rc_{proc.returncode}"
+    if use_cache:
+        _write_rewrite_cache(sig, cmd, rewritten)
     final_cmd = _qualify_rtk_for_powershell(rewritten, bin_path)
     _log(f"rewrite_command: compressed ({len(cmd)} -> {len(final_cmd)} chars)")
     return final_cmd, True, "ok"
