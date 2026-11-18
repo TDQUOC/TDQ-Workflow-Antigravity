@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "b11fc062-db6a-43a9-91c7-61c96a298a28",
+  "receiptId": "32607b1c-c253-4bb0-b262-907a3ed4b0ed",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.f5225924a9ef490294b82671daae1cd7\\runtime-verification.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.456f4ba42663487aad078b1c18e0fa9b\\runtime-verification.html",
   "specification": {
     "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
     "bytes": 4891

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d32f17f2-a072-4e43-bb64-b906f70b7430",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-17-2156-tich-hop-caveman-agy\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-17-2156-tich-hop-caveman-agy.877f48c9e4f7451999c9cec3ab3bbcd8.html",
+  "specification": {
+    "sha256": "b9bcc14c5f36fc8815e03f7fdc51ef31fe67efbd4be04c5e3ed1cccc13d0752c",
+    "bytes": 2554
+  },
+  "artifact": {
+    "sha256": "9e40de0867acf8054fbb180a5ca478e4d0f0247e2b08bdce159942dd6b385556",
+    "bytes": 504737
+  },
+  "explainer": {
+    "preparedSha256": "beeeb72c2d30e5cf907be94a74904ba82f83bb64354d47aa9e3a9588ab6e6f4a",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "truoc-sau-ket-qua",
+        "inline": true,
+        "sha256": "2df84f341e3727d5d843316579da9421574cdcb79e5da148a1c643ad4370efc8",
+        "bytes": 1107
+      }
+    ]
+  }
+}

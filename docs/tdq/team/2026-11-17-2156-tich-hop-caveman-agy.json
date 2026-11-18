@@ -1,0 +1,141 @@
+{
+  "slug": "2026-11-17-2156-tich-hop-caveman-agy",
+  "plan_file": "docs\\tdq\\plan\\2026-11-17-2156-tich-hop-caveman-agy.md",
+  "plan_sha": "82d849a1ba6d99a29bbd1ce744a5202c3bb28e72360e3108470642dbf769e0cc",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "c1d34697969fc8713a4d30cc1c6cb691b5dfbc2ba3e0599b643a8b4547a3681e",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_mcp_shrink.py",
+        "tests/test_tdq_mcp_shrink.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/context_surface.py",
+        "scripts/token_budget.py"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "agents/tdq-build-resolver.md",
+        "agents/tdq-implementer.md",
+        "agents/tdq-qc-tester.md",
+        "agents/tdq-refactor-cleaner.md",
+        "agents/tdq-reviewer.md",
+        "agents/tdq-security-reviewer.md",
+        "tools/patches/skills_and_agents.py",
+        "tools/patches/agy_hooks.py",
+        "tests/test_subagent_start.py"
+      ],
+      "dot": 1
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-browser-research/SKILL.md"
+      ],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_ccr.py",
+        "tests/test_tdq_ccr.py"
+      ],
+      "dot": 1
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/read_gate.py",
+        "tests/test_read_gate.py"
+      ],
+      "dot": 2
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_transcript.py",
+        "scripts/token_audit.py",
+        "tests/test_transcript.py",
+        "tests/test_token_audit.py"
+      ],
+      "dot": 1
+    },
+    "T5.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/caveman_config.py",
+        "tests/test_caveman_setup.py"
+      ],
+      "dot": 2
+    },
+    "T5.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_setup.py",
+        "scripts/tdq_lsp.py",
+        "hooks/scripts/session_start.py"
+      ],
+      "dot": 3
+    },
+    "T5.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_manifests.py",
+        "tools/install_agy_plugin.py"
+      ],
+      "dot": 3
+    },
+    "T6.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 4
+    },
+    "T6.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 5
+    },
+    "T6.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    },
+    "T7.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    },
+    "T7.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 7
+    }
+  }
+}
