@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "67c5a7b2-327e-41bc-84cf-ca0baf94fe24",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan-preview.64fd6d351b4b46728a8da5e235845c43.html",
+  "specification": {
+    "sha256": "fe17ca5b6d976efd5bee95918d6d5a1eaea457fd68d7196a990475b6099fc317",
+    "bytes": 2951
+  },
+  "artifact": {
+    "sha256": "8d50b23044b874980e58bfed58d74fa154405fc43974a92edfe7c67c4fb6b352",
+    "bytes": 1249372
+  },
+  "explainer": {
+    "preparedSha256": "409a46cd9f30a280705bffeb3930ae1c012fa23e7dc6ec97539ea8c46f7a6a6c",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "hook-kien-truc-truoc",
+        "inline": true,
+        "sha256": "ccfef1019f9c7f8d5371f08b7b664d109310af1b756c359d076d1a923eb89c1e",
+        "bytes": 1048
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-kien-truc-sau",
+        "inline": true,
+        "sha256": "96cae42c85b64e5a917e3be691ad0cd221ca028b0ea0550ed9f100b56b6c42a2",
+        "bytes": 1088
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "luong-phan-loai-cong",
+        "inline": true,
+        "sha256": "cfc5c955f6a0f4a0371941a3d6b1630dc13186b0524aa085b80516f2edf98e36",
+        "bytes": 1297
+      }
+    ]
+  }
+}

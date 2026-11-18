@@ -1,0 +1,85 @@
+{
+  "slug": "2026-11-18-1814-toi-uu-hook-huong-dan",
+  "plan_file": "docs\\tdq\\plan\\2026-11-18-1814-toi-uu-hook-huong-dan.md",
+  "plan_sha": "045b0f27efe3b50839b4ca728d0a7383d8f5cdd209d5853e19185534b4e7ecc7",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "462e472883ad6cf2334b7915bb37ac1405499e36109f8f5ebc3244fefcb7e493",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py",
+        "scripts/search_rules.py",
+        "tests/test_core_hook_perf_search.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/gate_guidance.py",
+        "tests/test_gate_guidance.py"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_dispatch.py",
+        "tools/patches/agy_hooks.py"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/common_utils.py",
+        "tools/patches/agy_manifests.py",
+        "tools/build_agy_plugin.py",
+        "tools/install_agy_plugin.py"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 4
+    },
+    "T3.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_hook_dispatch_r1_r3.py"
+      ],
+      "dot": 5
+    },
+    "T3.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_hooks_dual_protocol.py",
+        "tests/test_command_gate.py",
+        "tests/test_agy_plugin_validate.py"
+      ],
+      "dot": 5
+    },
+    "Tx.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    },
+    "Tx.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    }
+  }
+}
