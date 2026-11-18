@@ -37,7 +37,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P1 — Tối ưu lõi chung & dữ liệu chỉ dẫn 4 phần
 
-- [>] **T1.1** (e12m) Cache bền vững `repo_root(cwd)` trong `tdq_state.py` & sửa parser PowerShell trong `search_rules.py` — Test: `py -3 -m pytest tests/test_core_hook_perf_search.py -q`
+- [x] **T1.1** (e12m) Cache bền vững `repo_root(cwd)` trong `tdq_state.py` & sửa parser PowerShell trong `search_rules.py` — Test: `py -3 -m pytest tests/test_core_hook_perf_search.py -q`
   - Chạm: `scripts/tdq_state.py`, `scripts/search_rules.py`, `tests/test_core_hook_perf_search.py`
   - Mục tiêu: cắt `git rev-parse` lặp lại giữa các lần spawn hook và triệt tiêu lỗi gán cờ `malformed` cho lệnh PowerShell `@'...'@`/backtick.
   - Vị trí neo: sau `_ROOT_CACHE = {}` và hàm `repo_root(cwd)` (`tdq_state.py:636-674`); trong `_bo_heredoc` (`search_rules.py:639-653`) và `_tach_script` (`search_rules.py:255-315`).
@@ -76,7 +76,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P2 — Dispatcher & cổng R1/R2/R3 trên Antigravity 2.0
 
-- [ ] **T2.1** (e22m) Xây `tools/patches/agy_dispatch.py` & nâng cấp `tools/patches/agy_hooks.py` (R1+R2+R3) — Test: `py -3 -c "import ast,pathlib,sys; sys.path.insert(0,'tools'); from patches import agy_hooks, agy_dispatch; assert hasattr(agy_dispatch,'DISPATCH_PY') and ast.parse(agy_dispatch.DISPATCH_PY) and ast.parse(agy_hooks.COMMON_PY)"`
+- [>] **T2.1** (e22m) Xây `tools/patches/agy_dispatch.py` & nâng cấp `tools/patches/agy_hooks.py` (R1+R2+R3) — Test: `py -3 -c "import ast,pathlib,sys; sys.path.insert(0,'tools'); from patches import agy_hooks, agy_dispatch; assert hasattr(agy_dispatch,'DISPATCH_PY') and ast.parse(agy_dispatch.DISPATCH_PY) and ast.parse(agy_hooks.COMMON_PY)"`
   - Chạm: `tools/patches/agy_dispatch.py`, `tools/patches/agy_hooks.py`
   - Cần: T1.1, T1.2
   - Mục tiêu: đóng gói toàn bộ logic `dispatch.py` (1 tiến trình/sự kiện), bọc `Arguments` cho `overwrite` `call_mcp_tool`, nhận diện lượt mới qua `transcriptPath`/`turn_closed`, tách 2 kênh hàng đợi `user_markdown` 4 phần, Hướng A cho `SEARCH`, `O(1)` cho `LSP`, bỏ chặn `TICK`/`LOG`, `Stop` tối đa 1 lần bằng `continuationActive`, dọn `.tdq-runtime` > 7 ngày, và cắt `7` mã thừa trên bản AGY.
@@ -100,7 +100,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Kiểm: `py -3 -c "import sys; sys.path.insert(0,'tools'); from patches import agy_hooks, agy_dispatch; assert 'user_markdown' in agy_hooks.COMMON_PY and 'continuationActive' in agy_dispatch.DISPATCH_PY"`
   - Không dùng cho: sửa file `.gemini/` bên ngoài repo (`4b`)
 
-- [ ] **T2.2** (e10m) Cập nhật `agy_manifests.py`, `common_utils.py`, `build_agy_plugin.py`, `install_agy_plugin.py` (R1+R3+2b) — Test: `py -3 -c "import tempfile,sys; from pathlib import Path; sys.path.insert(0,'tools'); from patches import agy_manifests, common_utils; d=Path(tempfile.mkdtemp()); (d/'hooks').mkdir(); agy_manifests.generate_hooks_json(d); s=(d/'hooks.json').read_text(encoding='utf-8'); assert 'dispatch.py' in s and 'python -X utf8' in s and '\"' not in s.replace('\"','') or '\"dispatch.py\"' not in s; assert len(common_utils.EXCLUDED_AGY_HOOKS)==3"`
+- [>] **T2.2** (e10m) Cập nhật `agy_manifests.py`, `common_utils.py`, `build_agy_plugin.py`, `install_agy_plugin.py` (R1+R3+2b) — Test: `py -3 -c "import tempfile,sys; from pathlib import Path; sys.path.insert(0,'tools'); from patches import agy_manifests, common_utils; d=Path(tempfile.mkdtemp()); (d/'hooks').mkdir(); agy_manifests.generate_hooks_json(d); s=(d/'hooks.json').read_text(encoding='utf-8'); assert 'dispatch.py' in s and 'python -X utf8' in s and '\"' not in s.replace('\"','') or '\"dispatch.py\"' not in s; assert len(common_utils.EXCLUDED_AGY_HOOKS)==3"`
   - Chạm: `tools/patches/common_utils.py`, `tools/patches/agy_manifests.py`, `tools/build_agy_plugin.py`, `tools/install_agy_plugin.py`
   - Cần: T1.1
   - Mục tiêu: trỏ toàn bộ `hooks.json` về `python -X utf8 hooks/scripts/dispatch.py --event <Event>`, thu hẹp `PostToolUse`, loại 3 script mồ côi khỏi gói AGY (`build_agy_plugin.py`), và thêm probe kiểm tra stub WindowsApps Python vào `install_agy_plugin.py`.
