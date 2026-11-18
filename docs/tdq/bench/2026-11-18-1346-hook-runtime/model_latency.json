@@ -1,0 +1,94 @@
+{
+  "schema": "tdq-model-latency/v1",
+  "days": 4.0,
+  "files": 120,
+  "planner_with_tokens": 11241,
+  "cache_read_pos": 10310,
+  "api_errors_total": 118,
+  "api_error_wait_minutes": 439.85,
+  "api_errors_top": [
+    {
+      "error": "API error (attempt 1): request failed: stream idle timeout (5m0s)",
+      "count": 41
+    },
+    {
+      "error": "API error (attempt 2): request failed: stream idle timeout (5m0s)",
+      "count": 18
+    },
+    {
+      "error": "API error (attempt 3): request failed: stream idle timeout (5m0s)",
+      "count": 8
+    },
+    {
+      "error": "The stream was interrupted. Please continue the task you were working on.",
+      "count": 7
+    },
+    {
+      "error": "API error (attempt 4): request failed: stream idle timeout (5m0s)",
+      "count": 5
+    },
+    {
+      "error": "API error (attempt 5): request failed: stream idle timeout (5m0s)",
+      "count": 4
+    },
+    {
+      "error": "API error (attempt 6): request failed: stream idle timeout (5m0s)",
+      "count": 3
+    },
+    {
+      "error": "API error (attempt 1): UNAVAILABLE (code 503): The service is currently unavailable.",
+      "count": 3
+    },
+    {
+      "error": "API error (attempt 2): UNAVAILABLE (code 503): No capacity available for model gemini-3.8-flash-high on the se",
+      "count": 3
+    },
+    {
+      "error": "API error (attempt 3): UNAVAILABLE (code 503): No capacity available for model gemini-3.8-flash-high on the se",
+      "count": 3
+    }
+  ],
+  "latency_by_uncached_tokens": [
+    {
+      "bucket": "0k-50k",
+      "n": 10316,
+      "median_s": 6.0,
+      "p90_s": 30.0
+    },
+    {
+      "bucket": "50k-100k",
+      "n": 118,
+      "median_s": 19.0,
+      "p90_s": 93.0
+    },
+    {
+      "bucket": "100k-200k",
+      "n": 246,
+      "median_s": 18.5,
+      "p90_s": 117.0
+    },
+    {
+      "bucket": "200k-300k",
+      "n": 163,
+      "median_s": 23.0,
+      "p90_s": 114.0
+    },
+    {
+      "bucket": "300k-400k",
+      "n": 98,
+      "median_s": 35.0,
+      "p90_s": 173.0
+    },
+    {
+      "bucket": "400k+",
+      "n": 91,
+      "median_s": 53.0,
+      "p90_s": 217.0
+    }
+  ],
+  "idle_timeout_last_tokens": {
+    "n": 80,
+    "median": 22256.0,
+    "ge_200k": 11
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "slug": "2026-11-18-1346-scan-hook-anh-huong-runtime",
+  "plan_file": "docs\\tdq\\plan\\2026-11-18-1346-scan-hook-anh-huong-runtime.md",
+  "plan_sha": "44ecc391af67f9a356ae2350b1dd7668180caf035ab22756a4e4be8613bfc8b2",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "079df1c23f7aa5dfec0bad39fd2a7e18f29a9e2550fceec906b6d67507086d67",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.py",
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.json"
+      ],
+      "dot": 2
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.py",
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/false_positive_repro.json"
+      ],
+      "dot": 2
+    },
+    "T1.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.py",
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/long_turns.json"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.py",
+        "docs/tdq/bench/2026-11-18-1346-hook-runtime/gate_inventory.json"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/research/2026-11-18-1346-scan-hook-anh-huong-runtime.md"
+      ],
+      "dot": 4
+    },
+    "Tx.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}
