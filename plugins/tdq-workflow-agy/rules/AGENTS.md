@@ -30,3 +30,4 @@ Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-
 - Whitelisted symbols in user-facing blocks: `➤`, `·`, `—`, `→`, `–`, `…` (emojis and box-drawing characters are strictly banned per `user-facing-block-vi-du.md`).
 - Reports require 4 sections: **Before Request**, **After Request**, **What Was Tested**, **Test Result** + Archify HTML (`docs/tdq/reports/<slug>.html`).
 - RTK CLI compression: when `rtk` rewrites noisy command output, recover lossless lines via `rtk recall <hash>`; need an explicit unfiltered pass → use `rtk bypass <cmd>`.
+- Caveman CCR & Compact Handoff: offload >32 KB data/DOM via `tdq_ccr.py summarize` (lossless `retrieve <id>`); keep subagent notes to `path:line — symbol — note`.

@@ -45,6 +45,7 @@ When dealing with slow endpoints, heavy dashboards, or paginated data tables, ap
    - Trigger infinite scroll or pagination clicks (`mcp_tdq-workflow-agy_chrome-devtools_click`) if needed.
 4. **Data Extraction**:
    - Run `mcp_tdq-workflow-agy_chrome-devtools_evaluate_script` to extract JSON payloads, structured tables, or article content.
+   - For large DOM snapshots or extracted payloads (`> 32 KB` or `>= 200` lines), store and summarize via `py -3 "${PLUGIN_ROOT}/scripts/tdq_ccr.py" summarize <file>`; recover lossless raw bytes anytime with `py -3 "${PLUGIN_ROOT}/scripts/tdq_ccr.py" retrieve <ccr_id>`.
    - For visual references or complex diagrams, take full-page screenshot into `docs/workinglog/images/`.
 
 Done when: dynamic content is fully captured from rendered DOM without truncated or missing data blocks.

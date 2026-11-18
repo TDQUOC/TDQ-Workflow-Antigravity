@@ -44,7 +44,8 @@
     },
     "notes": {
       "type": "string",
-      "maxLength": 1500
+      "maxLength": 1500,
+      "description": "Compact Handoff: report as `path:line — symbol — note` (Auto-Clarity: terse ASD-STE100 internally; full prose on security warnings and approval gates)."
     }
   }
 }
