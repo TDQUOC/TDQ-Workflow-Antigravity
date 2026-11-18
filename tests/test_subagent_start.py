@@ -134,5 +134,21 @@ class TestKhaiTrongHooksJson(unittest.TestCase):
         self.assertIn("${CLAUDE_PLUGIN_ROOT}", cmd)
 
 
+class TestAutoClarityAgents(unittest.TestCase):
+    """All 6 agents/tdq-*.md and plugin patches carry Auto-Clarity + Compact Handoff."""
+
+    def test_six_agents_have_auto_clarity_and_compact_handoff(self):
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        agent_dir = os.path.join(root, "agents")
+        files = sorted(f for f in os.listdir(agent_dir) if f.startswith("tdq-") and f.endswith(".md"))
+        self.assertEqual(len(files), 6, files)
+        for name in files:
+            with open(os.path.join(agent_dir, name), encoding="utf-8") as fh:
+                text = fh.read()
+            self.assertIn("Auto-Clarity", text, f"{name} missing Auto-Clarity")
+            self.assertIn("path:line", text, f"{name} missing Compact Handoff path:line")
+            self.assertIn("symbol", text, f"{name} missing Compact Handoff symbol")
+
+
 if __name__ == "__main__":
     unittest.main()
