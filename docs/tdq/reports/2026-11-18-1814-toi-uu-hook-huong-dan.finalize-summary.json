@@ -11,7 +11,7 @@
     "bytes": 2986
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
     "sha256": "e83abf0ddceddc533a242927b2f071516ea2a0cae1532e1dc3977d02a7eed84a",
     "bytes": 1216922
   },
@@ -28,11 +28,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2366,
+  "durationMs": 2462,
   "browserCheck": {
     "requested": false,
     "ran": false

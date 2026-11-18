@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "30436490-bf60-40ec-83c7-6c95094e3ad7",
+  "receiptId": "20f795b8-98d5-4dae-b2a1-50f0a60fde44",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
   "specification": {
     "sha256": "458d1dc09eccfb967e3b2ba945e1c8e90c3c4d01c92ff6889fe091a676f261f2",
     "bytes": 2986
@@ -15,7 +15,7 @@
     "bytes": 1216922
   },
   "explainer": {
-    "preparedSha256": "666772c85876038765a24a4005cbbecfcb3d44aaf1a9b7f52740e91fcc9ba151",
+    "preparedSha256": "972d069dae90f34536f92b43d2f3ec0f8ae5212506b149bad026261fba89ec57",
     "dependencies": [
       {
         "kind": "diagram-spec",

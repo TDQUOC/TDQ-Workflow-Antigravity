@@ -2,6 +2,14 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.100.0 — 2026-11-18
+
+Tối ưu toàn diện runtime hook Antigravity 2.0, chuẩn hóa chỉ dẫn 4 phần và tinh gọn cổng kiểm soát (`2026-11-18-1814-toi-uu-hook-huong-dan`). Báo cáo: `docs/tdq/reports/2026-11-18-1814-toi-uu-hook-huong-dan.md`.
+
+- **R1 Dispatcher & Lõi Hiệu Năng** (`tools/patches/agy_dispatch.py`, `scripts/tdq_state.py`, `scripts/rtk_integration.py`, `scripts/search_rules.py`): Chạy toàn bộ `hooks.json` qua 1 tiến trình `python -X utf8 hooks/scripts/dispatch.py`; cache `repo_root` có khóa `msvcrt` theo `.git/HEAD` và bỏ `git diff HEAD` khi sạch/untracked; `rtk` bỏ qua `NON_RTK_BUILTINS` + disk cache chữ ký; parser PowerShell here-string/backtick; `PreInvocation` giảm `449,5 → 126,1 ms`, `run_command(git status)` `132,3 → 93,4 ms`, `Stop` `235,1 → 77,3 ms`.
+- **R2 Chỉ Dẫn 4 Phần & An Toàn Overwrite** (`tools/patches/gate_guidance.py`, `tools/patches/agy_hooks.py`): Tách kênh model `<= 160` ký tự và thẻ `metadata.user_markdown` 4 phần `<= 1.200` ký tự (`22` mã AGY, loại `7` mã thừa); bọc `Arguments` `call_mcp_tool` cho cả `args`/`arguments`, tự vá `LSP` `O(1)` và `SUBAGENT` `overwrite`.
+- **R3 Chống Nghẽn & Đóng Gói AGY** (`tools/patches/common_utils.py`, `tools/install_agy_plugin.py`): Nhận diện lượt mới bằng `transcriptPath` + `prompt_sha` + `turn_closed`; áp Hướng A cho `TDQ:SEARCH` + dedup `malformed`; đồng bộ `TDQ:GIT`/`TDQ:TEAM`/`TDQ:STATE` và `Stop` `continuationActive` (1 `git status`); loại `7` script thừa khỏi gói `plugins/tdq-workflow-agy/` (`4.399` ca PASS, `agy plugin validate` `0 findings`).
+
 ## 0.99.0 — 2026-11-18
 
 Tích hợp Caveman `5` hướng tối ưu ngữ cảnh & token bằng `Python stdlib` thuần (`100%` `MIT`, cộng sinh `RTK v1.2.0`), hỗ trợ kích hoạt opt-in `--with-caveman` (`2026-11-17-2156-tich-hop-caveman-agy`). Báo cáo: `docs/tdq/reports/2026-11-17-2156-tich-hop-caveman-agy.md`.

@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-18T16:25:37.800Z",
+  "startedAt": "2026-11-18T16:35:08.444Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\bao-cao.archify.md",
     "sha256": "458d1dc09eccfb967e3b2ba945e1c8e90c3c4d01c92ff6889fe091a676f261f2",
     "bytes": 2986
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
     "sha256": "e83abf0ddceddc533a242927b2f071516ea2a0cae1532e1dc3977d02a7eed84a",
     "bytes": 1216922
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1244,
+      "durationMs": 1234,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "30436490-bf60-40ec-83c7-6c95094e3ad7",
+        "receiptId": "20f795b8-98d5-4dae-b2a1-50f0a60fde44",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-18-1814-toi-uu-hook-huong-dan\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
         "explainer": {
-          "preparedSha256": "666772c85876038765a24a4005cbbecfcb3d44aaf1a9b7f52740e91fcc9ba151",
+          "preparedSha256": "972d069dae90f34536f92b43d2f3ec0f8ae5212506b149bad026261fba89ec57",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -140,17 +140,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 640,
+      "durationMs": 634,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\32832_1795019136252\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.html",
         "family": "explainer",
         "artifact": {
           "sha256": "e83abf0ddceddc533a242927b2f071516ea2a0cae1532e1dc3977d02a7eed84a",
@@ -200,7 +200,7 @@
               "id": "bao-cao-truoc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-PGFlCD\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-frEwu6\\child.html",
                 "artifact": {
                   "sha256": "26e7388d0385ae92ca5ec989d17b0476c5a7e5db0151c7a92e1a200bf5b6c51b",
                   "bytes": 807932
@@ -327,7 +327,7 @@
               "id": "bao-cao-sau",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-U56BCd\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-7Gf3VY\\child.html",
                 "artifact": {
                   "sha256": "a2d0edc9eb48b4e44741ffa1f44134322b67a0ac8384a26e93144b1fcda57532",
                   "bytes": 807966
@@ -454,7 +454,7 @@
               "id": "bao-cao-qc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-VByzDx\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-YlK3lm\\child.html",
                 "artifact": {
                   "sha256": "ad6db89c341a11525869b0446102e183f745bfa78f197f32b6c48c35c0ed80f5",
                   "bytes": 811103
@@ -581,7 +581,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "30436490-bf60-40ec-83c7-6c95094e3ad7"
+        "deliveryReceiptId": "20f795b8-98d5-4dae-b2a1-50f0a60fde44"
       }
     }
   },
@@ -591,12 +591,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.bdb41d894b0940c9a21097177dc3d295.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-18-1814-toi-uu-hook-huong-dan.174d3b5537bc4ad68853b8cf24e5e0ae.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-18T16:25:40.167Z",
-  "durationMs": 2366,
+  "finishedAt": "2026-11-18T16:35:10.906Z",
+  "durationMs": 2462,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

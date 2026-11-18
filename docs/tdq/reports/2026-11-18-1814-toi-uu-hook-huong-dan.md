@@ -47,5 +47,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 **Rủi ro hồi quy:** Luồng Claude Code / Codex dùng chung `scripts/tdq_state.py`, `scripts/rtk_integration.py`, `scripts/search_rules.py` và `hooks/scripts/*` gốc — đã được khóa bởi toàn bộ suite `4,399` test (kể cả `test_core_hook_perf_search.py` kiểm lock/status-digest/PowerShell, `test_rtk_integration.py` kiểm cache/runner mock và `test_hooks_dual_protocol.py` kiểm Claude compat).
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-18-1814-toi-uu-hook-huong-dan.manifest.json -->
-<!-- manifest_digest: 7701768ef5c1dcefd928b226331913bc9219fcbfadf3974339ada04bc413620d -->
+<!-- manifest_digest: 8b12628471cf9695e341afa83df7a953d97992cd6250d309a872168bc7236b64 -->
 <!-- tdq-archify-binding:end -->

@@ -6,9 +6,9 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "00fd4ece-68e4-4aa3-9961-71fc3424ad14",
+  "deliveryReceiptId": "0317e1c9-8cea-47e0-8120-5f798378a66c",
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.96aa1598bb1d41b5aa5ad1937c17bfdf\\runtime-verification.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\runtime-verification.html",
     "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
     "bytes": 822816
   },
