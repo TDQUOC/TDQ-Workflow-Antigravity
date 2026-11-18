@@ -76,7 +76,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P2 — Dispatcher & cổng R1/R2/R3 trên Antigravity 2.0
 
-- [>] **T2.1** (e22m) Xây `tools/patches/agy_dispatch.py` & nâng cấp `tools/patches/agy_hooks.py` (R1+R2+R3) — Test: `py -3 -c "import ast,pathlib,sys; sys.path.insert(0,'tools'); from patches import agy_hooks, agy_dispatch; assert hasattr(agy_dispatch,'DISPATCH_PY') and ast.parse(agy_dispatch.DISPATCH_PY) and ast.parse(agy_hooks.COMMON_PY)"`
+- [x] **T2.1** (e22m) Xây `tools/patches/agy_dispatch.py` & nâng cấp `tools/patches/agy_hooks.py` (R1+R2+R3) — Test: `py -3 -c "import ast,pathlib,sys; sys.path.insert(0,'tools'); from patches import agy_hooks, agy_dispatch; assert hasattr(agy_dispatch,'DISPATCH_PY') and ast.parse(agy_dispatch.DISPATCH_PY) and ast.parse(agy_hooks.COMMON_PY)"`
   - Chạm: `tools/patches/agy_dispatch.py`, `tools/patches/agy_hooks.py`
   - Cần: T1.1, T1.2
   - Mục tiêu: đóng gói toàn bộ logic `dispatch.py` (1 tiến trình/sự kiện), bọc `Arguments` cho `overwrite` `call_mcp_tool`, nhận diện lượt mới qua `transcriptPath`/`turn_closed`, tách 2 kênh hàng đợi `user_markdown` 4 phần, Hướng A cho `SEARCH`, `O(1)` cho `LSP`, bỏ chặn `TICK`/`LOG`, `Stop` tối đa 1 lần bằng `continuationActive`, dọn `.tdq-runtime` > 7 ngày, và cắt `7` mã thừa trên bản AGY.
@@ -129,12 +129,12 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P3 — Biên dịch gói plugin & bộ kiểm thử R1–R3
 
-- [ ] **T3.1** (e10m) Biên dịch `plugins/tdq-workflow-agy/` + xác thực `agy.EXE plugin validate --strict --json` + kiểm `~/.gemini` nguyên vẹn (`4b`) — Test: `py -3 tools/build_agy_plugin.py && agy.EXE plugin validate --strict --json plugins/tdq-workflow-agy`
+- [x] **T3.1** (e10m) Biên dịch `plugins/tdq-workflow-agy/` + xác thực `agy.EXE plugin validate --strict --json` + kiểm `~/.gemini` nguyên vẹn (`4b`) — Test: `py -3 tools/build_agy_plugin.py && agy.EXE plugin validate --strict --json plugins/tdq-workflow-agy`
   - Cần: T2.1, T2.2
   - Mục tiêu: sinh bản `plugins/tdq-workflow-agy/` đầy đủ R1+R2+R3, khóa `token-budget.json`, kiểm `0 findings` từ `agy.EXE`, và xác nhận `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` chưa bị ghi đè.
   - Đặc tả kỹ thuật & Logic cốt lõi: chạy `py -3 tools/build_agy_plugin.py`, kiểm tra không tồn tại `doc_file_gate.py`/`strategic_compact_gate.py`/`stop_batch_checker.py` trong `plugins/tdq-workflow-agy/hooks/scripts/`, tồn tại `dispatch.py` & `gate_guidance.py`, và kiểm `agy.EXE plugin validate --strict --json plugins/tdq-workflow-agy`.
 
-- [ ] **T3.2** (e14m) Viết bộ test mới `tests/test_hook_dispatch_r1_r3.py` kiểm chứng trọn vẹn `Q1–Q5` & log service — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -v`
+- [>] **T3.2** (e14m) Viết bộ test mới `tests/test_hook_dispatch_r1_r3.py` kiểm chứng trọn vẹn `Q1–Q5` & log service — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py -v`
   - Chạm: `tests/test_hook_dispatch_r1_r3.py`
   - Cần: T3.1
   - Mục tiêu: khóa bằng test tự động các yêu cầu R1–R3 trên `plugins/tdq-workflow-agy/` đã biên dịch: phát hiện lượt mới khi gõ lặp `"1a"`, `0` lệnh git giữa lượt, `overwrite` `call_mcp_tool` + `SUBAGENT`, `SEARCH` Hướng A (`malformed` 0 deny, lần 1 allow + nhắc, lần 2 deny), `TICK`/`LOG` mềm, `Stop` `continuationActive` 1 lần, `user_markdown` 4 phần, dọn `.tdq-runtime` > 7 ngày, và `TDQ_LOG` mặc định/tắt.
@@ -149,7 +149,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: JSON string trong `Arguments` của `call_mcp_tool`, payload rỗng `{}` fail-open, file cũ 8 ngày bị dọn còn file mới 1 ngày giữ nguyên.
     - Tiêu chí: mọi assert đều kiểm giá trị cụ thể (không `assert True`), toàn bộ pass trên `plugins/tdq-workflow-agy/`.
 
-- [ ] **T3.3** (e12m) Cập nhật `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py` khớp hợp đồng R1–R3 — Test: `py -3 -m pytest tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py -q`
+- [>] **T3.3** (e12m) Cập nhật `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py` khớp hợp đồng R1–R3 — Test: `py -3 -m pytest tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_agy_plugin_validate.py -q`
   - Chạm: `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_agy_plugin_validate.py`
   - Cần: T3.1
   - Mục tiêu: đồng bộ 3 bộ test giao thức Antigravity với `22` mã AGY (thay 24 cũ vì bỏ 7 mã trùng/thừa và gộp/thêm `TICK`/`DOD`/`DOC`), hành vi mềm mới (`TICK` không deny ở `edit_gate`, `SUBAGENT` `overwrite`, `LOG` không chặn `Stop`, `FEEDBACK` không còn phát ở `prompt_context`), và `hooks.json` dùng `python -X utf8 ... dispatch.py`.

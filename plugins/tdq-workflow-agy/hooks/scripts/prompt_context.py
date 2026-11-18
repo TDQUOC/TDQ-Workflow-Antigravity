@@ -18,13 +18,15 @@ for _p in (_tdq_scripts, _tdq_here):
         _tdq_sys.path.insert(0, _p)
 import utf8_io  # noqa: E402,F401
 import hashlib
+import json
 import os
 import re
 import sys
 
-from _common import (_shard_turn_path, already_reminded, approve_hint,
-                     detect_subagent, emit_context, flush_pending_reminders,
-                     is_agy, payload_cwd, plan_mode, read_payload, session_id)
+from _common import (_RUNTIME_STATE, _shard_turn_path, already_reminded, approve_hint,
+                     detect_subagent, emit_context, emit_user_markdown,
+                     flush_pending_channels, is_agy, payload_cwd, plan_mode,
+                     read_payload, read_turn_meta, session_id, write_turn_meta)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
 from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
@@ -254,39 +256,118 @@ def _nhac_gon(cwd, state, payload, session):
     emit_context([dong])
 
 
+_TAIL_BYTES = 65536
+
+
+def _extract_transcript_user_sig(tpath, prev_meta):
+    """Read <= 64 KB tail of transcriptPath in O(1) for the last USER_INPUT signature."""
+    if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
+        return None
+    try:
+        with open(tpath, "rb") as fh:
+            fh.seek(0, os.SEEK_END)
+            size = fh.tell()
+            start = max(0, size - _TAIL_BYTES)
+            fh.seek(start)
+            if start > 0:
+                fh.readline()
+            last_rec = None
+            last_end = start
+            while True:
+                raw_line = fh.readline()
+                if not raw_line:
+                    break
+                cur_end = fh.tell()
+                text = raw_line.decode("utf-8", "replace").strip()
+                if not text:
+                    continue
+                try:
+                    rec = json.loads(text)
+                except ValueError:
+                    continue
+                if isinstance(rec, dict) and rec.get("type") == "USER_INPUT":
+                    last_rec = rec
+                    last_end = cur_end
+    except OSError:
+        return None
+    if last_rec is not None:
+        step_idx = last_rec.get("step_index")
+        created = last_rec.get("created_at") or last_rec.get("timestamp") or ""
+        if step_idx is not None or created:
+            return f"ui:{step_idx}:{created}"
+        return f"ui_pos:{last_end}"
+    prev_sig = str((prev_meta or {}).get("last_user_sig") or "")
+    if prev_sig.startswith("ui") and not (prev_meta or {}).get("turn_closed"):
+        return prev_sig
+    return None
+
+
+def _extract_user_turn_sig(payload, prev_meta):
+    """Compute user-turn signature from transcriptPath tail or fallback prompt."""
+    tpath = (payload or {}).get("transcriptPath") or (payload or {}).get("transcript_path")
+    sig = _extract_transcript_user_sig(tpath, prev_meta)
+    if sig is not None:
+        return sig
+    prompt = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
+    if prompt:
+        return "prompt:" + hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:16]
+    return ""
+
+
+def _detect_new_user_turn(cwd, payload, sid):
+    """Detect whether this PreInvocation starts a new user turn or continues mid-turn."""
+    meta = read_turn_meta(cwd, sid)
+    sig = _extract_user_turn_sig(payload, meta)
+    turns_exists = os.path.isfile(_shard_turn_path(cwd, sid))
+    if not meta:
+        return True, sig
+    if meta.get("turn_closed"):
+        return True, sig
+    if sig != meta.get("last_user_sig"):
+        return True, sig
+    if not sig and not turns_exists:
+        return True, sig
+    return False, sig
+
+
 def _agy_pre_invocation_hook(payload, cwd):
     sid = session_id(payload)
-    queued = flush_pending_reminders(cwd, sid)
-    if queued:
-        emit_context(queued)
+    model_text, user_md = flush_pending_channels(cwd, sid)
+    if model_text:
+        emit_context([model_text])
+    if user_md:
+        emit_user_markdown(user_md)
     sub = detect_subagent(payload, cwd)
     if sub.get("is_subagent"):
-        return True
-    shard = _shard_turn_path(cwd, sid)
-    if os.path.isfile(shard):
-        try:
-            os.remove(shard)
-        except OSError:
-            pass
-    prompt = str(payload.get("prompt") or payload.get("user_message") or "")
-    low = prompt.lower()
-    if any(k in low for k in ("lỗi", "bug", "sửa lại", "broken", "fail", "không chạy", "sai rồi")):  # i18n-allow
-        emit_context(["[TDQ:FEEDBACK] User reported bug/feedback: run `py -3 scripts/tdq_state.py hotfix <slug>` or open express fix cycle before editing."])
-    return False
+        _RUNTIME_STATE["new_user_turn"] = False
+        return True, False
+    is_new, sig = _detect_new_user_turn(cwd, payload, sid)
+    _RUNTIME_STATE["new_user_turn"] = is_new
+    if is_new:
+        shard = _shard_turn_path(cwd, sid)
+        if os.path.isfile(shard):
+            try:
+                os.remove(shard)
+            except OSError:
+                pass
+        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False})
+    return False, is_new
 
 
 def main():
     payload = read_payload()
     cwd = payload_cwd(payload)
-    if is_agy() and _agy_pre_invocation_hook(payload, cwd):
-        return
     sid = session_id(payload)
-    turn_log_clear(cwd, sid)
-    # Start-of-turn disk snapshot — so stop_gate can tell at end of turn what REALLY changed,
-    # even when the change went through the shell (the turn ledger only sees Edit/Write).
-    # Written to the ledger, NOT printed into context → costs the model no tokens.
-    turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
-    _nhac_worktree(cwd)
+    agy_mode = is_agy()
+    is_new_turn = True
+    if agy_mode:
+        should_stop, is_new_turn = _agy_pre_invocation_hook(payload, cwd)
+        if should_stop:
+            return
+    if not agy_mode or is_new_turn:
+        turn_log_clear(cwd, sid)
+        turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
+        _nhac_worktree(cwd)
 
     # No OPEN request (open = active_request exists AND phase != idle) → point at intake.
     # The INTAKE line comes FIRST so _truncate (which cuts from the tail) never clips it.
@@ -404,10 +485,9 @@ def main():
             lines.append("[TDQ:APPROVE] ⚠️ The spec changed after approval (sha256 mismatch) — "
                          "present it to the user for re-approval.")
     _emit(cwd, sid, lines, critical=drifted)
-    # AFTER the standing block: _emit cuts from the tail, and the law pointer must not be
-    # what pushes the NEXT line out of the 240-char ceiling.
-    _nhac_gon(cwd, state, payload, sid)
-    _nhac_qc(cwd, state, payload, sid)
+    if not agy_mode:
+        _nhac_gon(cwd, state, payload, sid)
+        _nhac_qc(cwd, state, payload, sid)
 
 
 def _nhac_qc(cwd, state, payload, session):
@@ -448,15 +528,18 @@ def _compact(text):
 
 
 def _emit(cwd, session, lines, critical=False):
-    """critical=True: a warning/action specific to this turn (ambiguous approval, mode
-    mismatch, spec drift) — never compacted, even when it repeats last turn word for word."""
-    # Paths are made absolute AFTER the cap, for the reason `_common._tuyet_doi` gives: a cut
-    # command is a command the agent cannot run.
+    """Emit standing prompt context, skipping same-as-last-turn repeats on Antigravity."""
     text = lenh_cho_project(_truncate("\n".join(lines[:MAX_LINES])), cwd)
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if is_agy():
+        is_new = bool(_RUNTIME_STATE.get("new_user_turn", True))
+        if is_new or prompt_context_last(cwd, session) != digest:
+            prompt_context_save(cwd, session, digest)
+            emit_context([text])
+        return
     if critical:
         emit_context([text])
         return
-    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
     if prompt_context_last(cwd, session) == digest:
         text = _compact(text)
     else:

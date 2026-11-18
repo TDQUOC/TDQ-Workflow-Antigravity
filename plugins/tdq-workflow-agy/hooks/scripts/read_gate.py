@@ -265,7 +265,7 @@ def main():
         else _tao_thong_diep(ten, kb, dau, cuoi, lap_count)
     )
     if _common.is_agy():
-        _common.remind_force(cwd, payload, "READ", messages)
+        _common.remind_force(cwd, payload, "DOC", messages)
     else:
         print(_common.json.dumps({
             "hookSpecificOutput": {

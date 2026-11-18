@@ -28,7 +28,8 @@ import json
 import os
 
 import _common
-from _common import TERMINAL_STOP_REASONS, emit_context, is_agy, payload_cwd, queue_remind, read_payload, stop_block, turn_rows
+from _common import (TERMINAL_STOP_REASONS, emit_context, is_agy, mark_turn_closed,
+                     payload_cwd, queue_remind, read_payload, session_id, stop_block, turn_rows)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
 from tdq_state import (BOOKKEEPING_PATHS, _TASK_LINE, _info, _warn,  # noqa: E402
@@ -245,19 +246,16 @@ def _chan_chua_xong(cwd, state, payload=None):
         # Nothing has moved for MAX_STREAK stops in a row: blocking again would only trap the
         # session. Step down to a hint and let the turn end.
         _info(f"stop_gate: TDQ:UNFINISHED stepped down after {dem - 1} block(s) with no progress")
+        if is_agy():
+            queue_remind(cwd, payload or {}, "UNFINISHED", f"{task_open_count(cwd)} open task(s){next_step}")
+            return False
         stuck_msg = (f"[TDQ:STUCK] {task_open_count(cwd)} open task(s).{next_step} "
                      "Finish plan or declare a genuine blocker with "
                      "`tdq_state.py pause --loai <kind> --ly-do \"<why>\"`.")
-        if is_agy():
-            if _common._RUNTIME_STATE.get("event") == "Stop":
-                queue_remind(cwd, payload or {}, "STOP", stuck_msg)
-            else:
-                emit_context([stuck_msg])
-        else:
-            print(json.dumps({"hookSpecificOutput": {
-                "hookEventName": "Stop",
-                "additionalContext": stuck_msg,
-            }}, ensure_ascii=False))
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "Stop",
+            "additionalContext": stuck_msg,
+        }}, ensure_ascii=False))
         return True
     _info(f"stop_gate: block TDQ:UNFINISHED · phase=implement · open={task_open_count(cwd)} "
           f"· plan={tick.get('path')} · streak={dem}")
@@ -268,15 +266,21 @@ def _chan_chua_xong(cwd, state, payload=None):
 
 def main():
     payload = read_payload()
-    if str(payload.get("terminationReason") or "") in TERMINAL_STOP_REASONS:
-        return
-    # Claude Code sets this flag after a block, as loop protection. The two older gates
-    # honour it; the [TDQ:UNFINISHED] gate must not, or a single stop would end the run
-    # with the plan half done — which is the whole defect it exists to close.
-    lap_lai = bool(payload.get("stop_hook_active"))
     cwd = payload_cwd(payload)
+    sid = session_id(payload)
+    if str(payload.get("terminationReason") or "") in TERMINAL_STOP_REASONS:
+        if is_agy():
+            mark_turn_closed(cwd, sid)
+        return
+    cont_active = bool(payload.get("continuationActive") or payload.get("continuation_active") or payload.get("stop_hook_active"))
+    if is_agy() and cont_active:
+        mark_turn_closed(cwd, sid)
+        return
+    lap_lai = cont_active
     state = load(cwd)
     if state is None or not state.get("active_request"):
+        if is_agy():
+            mark_turn_closed(cwd, sid)
         return
     if lap_lai and _chan_chua_xong(cwd, state, payload):
         return
@@ -293,30 +297,30 @@ def main():
 
     edited = [r.get("path", "") for r in rows
               if r.get("kind") == "observe" and r.get("event") == "edit"
-              and not str(r.get("path", "")).startswith(log_dir)]
+              and not str(r.get("path", "")).startswith(log_dir)
+              and not (is_agy() and "docs/.staging" in str(r.get("path", "")).replace("\\", "/"))]
     logged = any(r.get("kind") == "observe" and r.get("event") == "log_written" for r in rows)
-
-    # Second piece of evidence, independent of the tool name: the real effect on disk.
-    # Truncate the path here, not only in _shell_changed_path: a path read off the turn ledger
-    # also goes straight into `reason`, and a long path pushes the block past 300 chars.
     culprit = edited[0][:MAX_PATH_CHARS] if edited else ""
     source = "turn ledger" if culprit else "—"
     if snap:
         if not logged:
             logged = _log_changed(cwd, snap)
         if not culprit and _repo_changed(cwd, snap):
-            culprit = _shell_changed_path(cwd, snap)
-            source = "repo fingerprint"
-
+            cand = _shell_changed_path(cwd, snap)
+            if not (is_agy() and "docs/.staging" in str(cand).replace("\\", "/")):
+                culprit = cand
+                source = "repo fingerprint"
     if culprit and not logged:
-        # §6: a block decision has to be traceable — a wrong block must name its source at once.
-        _info(f"stop_gate: block TDQ:LOG · source={source} · path={culprit}")
-        reason = (f"[TDQ:LOG] Repo changed ({culprit}), {log_rel} not appended. "
-                  "Run `tdq_finish.py --files <file> --log \"<summary>\"`, no hand Edit. "
-                  "Then reprint the last chat block VERBATIM (question + options + "
-                  "the ➤ line), no summarising.")
-        stop_block(cwd, payload, reason, code="TDQ:LOG")
-        return
+        if is_agy():
+            queue_remind(cwd, payload, "LOG", f"Changed {culprit}, {log_rel} not appended")
+        else:
+            _info(f"stop_gate: block TDQ:LOG · source={source} · path={culprit}")
+            reason = (f"[TDQ:LOG] Repo changed ({culprit}), {log_rel} not appended. "
+                      "Run `tdq_finish.py --files <file> --log \"<summary>\"`, no hand Edit. "
+                      "Then reprint the last chat block VERBATIM (question + options + "
+                      "the ➤ line), no summarising.")
+            stop_block(cwd, payload, reason, code="TDQ:LOG")
+            return
 
     # Second block point: code changed during the turn while the plan checkboxes stood still.
     # A bulk tick at end of turn makes progress jump 0/N → N/N, and worse: the ETA loses its
@@ -331,11 +335,14 @@ def main():
                 and tick["sha"] == snap["plan_sha"]:
             _info(f"stop_gate: block TDQ:TICK · source={source} · path={culprit} "
                   f"· plan={tick['path']} · checkboxes unchanged during the turn")
-            reason = ("[TDQ:TICK] This turn edited code but the plan checkboxes did not change. "
-                      "Open the plan, mark [~] the task in progress and [x] the ones done (task by task). "
-                      "Then reprint the last chat block VERBATIM — no summarising.")
-            stop_block(cwd, payload, reason, code="TDQ:TICK")
-            return
+            if is_agy():
+                queue_remind(cwd, payload, "TICK", f"Changed {culprit} without plan checkbox update")
+            else:
+                reason = ("[TDQ:TICK] This turn edited code but the plan checkboxes did not change. "
+                          "Open the plan, mark [~] the task in progress and [x] the ones done (task by task). "
+                          "Then reprint the last chat block VERBATIM — no summarising.")
+                stop_block(cwd, payload, reason, code="TDQ:TICK")
+                return
 
     # Third block point: the turn is ending while the plan still has open tasks. Unlike the
     # two gates above it does NOT require the turn to have edited a file — a final "I'll stop

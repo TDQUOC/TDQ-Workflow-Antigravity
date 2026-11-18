@@ -28,6 +28,7 @@ for _p in (_tdq_scripts, _tdq_here):
 import utf8_io  # noqa: E402,F401
 import json
 import os
+import re as _re
 import sys
 import time
 from datetime import datetime
@@ -62,7 +63,7 @@ def _lenh(ten_tool, vao):
 
     Grep's `glob`/`path`/`type` decide whether it searches code or documents, so they travel too.
     """
-    if ten_tool == "Grep":
+    if ten_tool in ("Grep", "grep_search", "search_directory"):
         return vao
     return vao.get("command") or vao.get("cmd") or ""
 
@@ -136,9 +137,49 @@ def ly_do_dung_xuong(moc, tt):
     return None
 
 
+_RTK_BYPASS_RE = _re.compile(
+    r"(?:^|[;&|])\s*rtk(?:\.exe)?(?:\s+-[^\s]+)*\s+bypass\b",
+    _re.IGNORECASE,
+)
+
+
+def _is_rtk_bypass(ten_tool, vao):
+    if ten_tool == "Grep" or not isinstance(vao, dict):
+        return False
+    cmd = vao.get("command") or vao.get("cmd") or ""
+    if isinstance(cmd, list):
+        cmd = " ".join(str(x) for x in cmd)
+    return bool(_RTK_BYPASS_RE.search(str(cmd)))
+
+
+def _search_grace_state(cwd, phien):
+    """Return latest consecutive search_grace state from turns-<sid>.jsonl."""
+    rows = _common._read_jsonl(_common._shard_turn_path(cwd, phien))
+    state_val = "clean"
+    for row in rows:
+        if row.get("type") == "search_grace" or row.get("event") == "search_grace":
+            val = row.get("state")
+            if val in ("warned", "reset", "clean"):
+                state_val = val
+    return state_val
+
+
+def _mark_search_grace(cwd, phien, state_val, tool_name):
+    row = {
+        "ts": _common.tdq_state.now_iso(),
+        "kind": "observe",
+        "event": "search_grace",
+        "type": "search_grace",
+        "state": state_val,
+        "session": phien,
+        "tool": tool_name,
+    }
+    _common._lock_and_append_jsonl(_common._shard_turn_path(cwd, phien), row)
+
+
 def quyet(cwd, phien, ten_tool, vao):
     """-> (allowed, reason, classification, stand_down). Testable without a subprocess."""
-    cong_cu = "Grep" if ten_tool == "Grep" else "Bash"
+    cong_cu = "Grep" if ten_tool in ("Grep", "grep_search", "search_directory") else "Bash"
     pl = search_rules.phan_loai(cong_cu, _lenh(ten_tool, vao))
     if pl.get("status") != "unknown" and pl.get("loai") not in (search_rules.TIM_CODE, search_rules.LOC_FILE):
         return True, "not a search", pl, False
@@ -156,15 +197,30 @@ def quyet(cwd, phien, ten_tool, vao):
     except Exception:
         pass
     tt["phase"] = pha
+    if _common.is_agy() and pl.get("status") == "unknown":
+        if pl.get("loai") == search_rules.TIM_CODE:
+            search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
+                                        "cho_phep": True, "tinh_cua_so": False, "doan_mo": False})
+            if pha in ("implement", "qc"):
+                return True, "agy_malformed_remind", pl, False
+        return True, "agy_malformed_allow", pl, False
+    if _common.is_agy() and pl.get("loai") == search_rules.TIM_CODE and _is_rtk_bypass(ten_tool, vao):
+        search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
+                                    "cho_phep": False, "tinh_cua_so": False, "doan_mo": bool(pl.get("doan_mo"))})
+        return False, "[TDQ:SEARCH] rtk bypass grep/rg is denied; query LSP or Graphify first.", pl, False
     ok, ly_do = search_rules.quyet_dinh(pl, tt)
     dung_xuong = None
     if not ok:
-        _log(f"nhắc tầng: {', '.join(tt['tang_song']) if tt['tang_song'] is not None else 'mọi tầng (không có mốc)'}")  # i18n-allow
         dung_xuong = ly_do_dung_xuong(moc, tt)
         if dung_xuong:
             ok, ly_do = True, dung_xuong
+    if _common.is_agy() and not ok and not dung_xuong:
+        if _search_grace_state(cwd, phien) != "warned":
+            _mark_search_grace(cwd, phien, "warned", ten_tool)
+            search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
+                                        "cho_phep": True, "tinh_cua_so": False, "doan_mo": bool(pl.get("doan_mo"))})
+            return True, "agy_search_grace", pl, False
     if pl.get("loai") == search_rules.TIM_CODE or pl.get("status") == "unknown":
-        # Only a search that RAN counts toward the unlock window: a denied one never executed.
         search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
                                     "cho_phep": ok, "tinh_cua_so": ok,
                                     "doan_mo": bool(pl.get("doan_mo"))})
@@ -175,7 +231,7 @@ def eval_search(payload):
     """Evaluate search gate rules for an already-read payload; return True to allow continuing."""
     try:
         ten_tool = (payload or {}).get("tool_name") or ""
-        if ten_tool != "Grep" and ten_tool.lower() not in search_rules.CONG_CU_SHELL:
+        if ten_tool not in ("Grep", "grep_search", "search_directory") and ten_tool.lower() not in search_rules.CONG_CU_SHELL:
             return True
         cwd = _common.payload_cwd(payload)
         vao = (payload or {}).get("tool_input") or {}
@@ -188,11 +244,12 @@ def eval_search(payload):
 
     _log(f"{ten_tool} · {pl.get('loai')} · doan_mo={pl.get('doan_mo')} · "
          f"{'cho' if ok else 'CHAN'} · {ly_do.splitlines()[0][:80]}")
-    if dung_xuong:
-        # Say it — once per turn (`remind` dedupes by code): a gate that silently stops gating
-        # leaves the agent believing the rule holds (review 2026-10-03, spec §2 row 3).
-        _common.remind(cwd, payload, MA, [ly_do, "Concept layer: LSP find_symbol/find_references, "
-                                      "graphify query."])
+    if ly_do == "agy_malformed_remind":
+        _common.queue_remind(cwd, payload, MA, f"Malformed command suspected search ({ten_tool})", check_turn=False)
+    elif ly_do == "agy_search_grace":
+        _common.queue_remind(cwd, payload, MA, f"Use LSP or Graphify before consecutive {ten_tool}", check_turn=False)
+    elif dung_xuong:
+        _common.remind(cwd, payload, MA, [ly_do, "Concept layer: LSP find_symbol/find_references, graphify query."])
     if ok:
         return True
     # Every Claude Code deny goes through `_common.block()` (pinned by test_compliance_protocol).

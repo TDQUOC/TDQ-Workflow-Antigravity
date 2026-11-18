@@ -29,7 +29,7 @@ import sys
 import time
 from datetime import datetime
 
-from _common import (already_reminded, emit_context, is_agy, payload_cwd,
+from _common import (already_reminded, cleanup_stale_runtime, emit_context, is_agy, payload_cwd,
                      read_payload, session_id, turn_log_append)
 # Placed AFTER `from _common`: `_common` itself injects `scripts/` into sys.path. The
 # from-import shape (not a module attribute call) is what lets graphify emit a cross-file
@@ -215,6 +215,7 @@ def kiem_can_setup_lan_dau(cwd):
 def main():
     payload = read_payload()
     cwd = payload_cwd(payload)
+    cleanup_stale_runtime(cwd)
     state = load(cwd, heal=False) or default_state()
 
     lines = [RULE] + render_next(cwd, state, compact=True).splitlines()
@@ -258,10 +259,11 @@ def main():
         pass
     dung_nen = (can_khoi_tao(cwd) or can_setup) and kich_hoat_nen(cwd)
     nhac_devtool = ""
-    try:
-        nhac_devtool = tdq_devtool_mcp.check_session_start(cwd=cwd)
-    except Exception:
-        pass
+    if not is_agy():
+        try:
+            nhac_devtool = tdq_devtool_mcp.check_session_start(cwd=cwd)
+        except Exception:
+            pass
     nhac_setup = (
         f"[TDQ:SETUP] Plugin mới cài đặt hoặc chưa hoàn tất thiết lập: chạy "
         f"`python3 {os.path.join(GOC_PLUGIN, 'scripts', 'tdq_setup.py')}` (hoặc gọi skill tdq-setup)."

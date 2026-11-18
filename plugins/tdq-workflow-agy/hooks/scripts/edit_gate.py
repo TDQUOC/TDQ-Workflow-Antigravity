@@ -22,8 +22,8 @@ for _p in (_tdq_scripts, _tdq_here):
 import utf8_io  # noqa: E402,F401
 import os
 
-from _common import (already_reminded, block, detect_subagent, echo_line, observe,
-                     payload_cwd, read_payload, remind, turn_rows)
+from _common import (already_reminded, block, detect_subagent, echo_line, is_agy,
+                     observe, payload_cwd, read_payload, remind, turn_rows)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
 # `today_log_rel` comes straight from tdq_state — one single source, shared with stop_gate.
@@ -78,6 +78,13 @@ def goi_y_mode():
                       for ma in VALID_MODES if nhom.get(ma))
 
 
+def _tick_notify(cwd, payload, lines):
+    if is_agy():
+        remind(cwd, payload, "TICK", lines)
+    else:
+        _tick_notify(cwd, payload, lines)
+
+
 def within(child, parent):
     return child == parent or child.startswith(parent + os.sep)
 
@@ -122,7 +129,7 @@ def main():
     # (2) remind
     state_file = os.path.realpath(state_path(cwd))
     state_md = os.path.realpath(state_md_path(cwd))
-    if abs_target in (state_file, state_md) and payload.get("agent_id"):
+    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):
         block(cwd, payload, "TDQ:STATE", [
             "A sub-agent may not write TDQ state or its generated mirror.",
             "Return structured output to the TDQ leader; only tdq_state.py writes state.",
@@ -265,7 +272,7 @@ def main():
         tick = plan_tick_state(cwd)
         if tick["exists"] and tick["total"] > 0 \
                 and not tick["has_doing"] and not tick["all_done"]:
-            block(cwd, payload, "TDQ:TICK", [
+            _tick_notify(cwd, payload, [
                 "The plan carries no task marked [~] — mark the task in progress BEFORE editing code.",
                 "Open the plan, switch the next task to [~]; flip it to [x] the moment it is green.",
                 "Request already finished → tdq_state.py set phase=idle.",
@@ -273,7 +280,7 @@ def main():
         # several tasks marked [~] at once is equally a checkbox that no longer reflects what is
         # being done — close the old task ([x]) before opening a new one.
         if tick["exists"] and tick["doing_count"] > 1:
-            block(cwd, payload, "TDQ:TICK", [
+            _tick_notify(cwd, payload, [
                 "The plan has several tasks marked [~] — close the old one ([x]) before opening a new one.",
                 "Open the plan, tick [x] the finished task, keep exactly 1 task [~] at a time.",
                 "Request already finished → tdq_state.py set phase=idle.",
@@ -290,7 +297,7 @@ def main():
                 and r.get("plan_sha") == tick["sha"]
             )
             if streak >= STREAK_NGUONG:
-                block(cwd, payload, "TDQ:TICK", [
+                _tick_notify(cwd, payload, [
                     f"{streak} edits in a row with no tick in the plan — close the task before editing on.",
                     "Task still in progress → update notes or tasks in the plan file to reset the streak.",
                     "Test green → flip to [x] now; a different task → tick it before coding.",
@@ -299,7 +306,7 @@ def main():
             observe(cwd, payload, "code_edit", path=rel_target, plan_sha=tick["sha"])
 
         # (3) JIT micro-rules injection: remind language rules once on first edit to source file
-        if tick["exists"] and tick["has_doing"]:
+        if not is_agy() and tick["exists"] and tick["has_doing"]:
             _, ext = os.path.splitext(rel_target)
             ext = ext.lower()
             if ext in QUY_TAC_NGON_NGU:

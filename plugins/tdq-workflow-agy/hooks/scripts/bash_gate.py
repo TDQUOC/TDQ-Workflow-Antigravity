@@ -147,8 +147,12 @@ def _enforce_agy_bash_guards(payload, cwd):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
         return True
     norm_cmd = cmd.replace("\\", "/")
-    if agy and _PS_WRITE_PATTERN.search(cmd) and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd):
-        block(cwd, payload, "GATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])
+    if agy and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd) and (
+        _PS_WRITE_PATTERN.search(cmd)
+        or any(p.search(norm_cmd) for p in STATE_WRITES[:5])
+        or re.search(r"\bopen\([^)]*docs/tdq/(?:state\.json|STATE\.md)[^)]*['\"](?:w|a|x)[a-z+]*['\"]", norm_cmd)
+    ):
+        block(cwd, payload, "STATE", ["Do not mutate TDQ state directly; use tdq_state.py CLI."])
         return True
     if agy and re.search(r"git\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch)\s+['\"]?(?:claude|antigravity|gemini|codex)[-_]", cmd, re.IGNORECASE):
         block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])
