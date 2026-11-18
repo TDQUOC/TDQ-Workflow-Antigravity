@@ -37,7 +37,7 @@ Không áp dụng cho mã nguồn: request không sửa sản phẩm. Bảng Tr�
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/`
   - Mục tiêu: biến số đo ở brief thành bằng chứng tái chạy được (Q1).
   - Ràng buộc: thuần stdlib; không ghi vào state; N bench ≥ 12.
-- [>] **T1.2** (e8m) Viết & chạy `commit_merge_trial.py`: repo tạm 200 file, đo `git add -A`, `git commit`, `git switch -c` + `git merge --no-ff` thuần và khi mỗi lệnh đi qua `command_gate.py` bản cài (spawn hook với payload `run_command` trước lệnh), N ≥ 5 — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.json',encoding='utf-8')); assert d['n']>=5 and d['git_only']['median_ms']>0 and d['git_with_hook']['median_ms']>0"`
+- [x] **T1.2** (e8m) Viết & chạy `commit_merge_trial.py`: repo tạm 200 file, đo `git add -A`, `git commit`, `git switch -c` + `git merge --no-ff` thuần và khi mỗi lệnh đi qua `command_gate.py` bản cài (spawn hook với payload `run_command` trước lệnh), N ≥ 5 — Test: `py -3 -c "import json; d=json.load(open('docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.json',encoding='utf-8')); assert d['n']>=5 and d['git_only']['median_ms']>0 and d['git_with_hook']['median_ms']>0"`
   - Chạm: `docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.py`, `docs/tdq/bench/2026-11-18-1346-hook-runtime/commit_merge_trial.json`
   - Cần: T1.1
   - Mục tiêu: tách phần git + hook khỏi phần model cho ca "commit/merge 15 phút" (Q9).
