@@ -258,5 +258,29 @@ class NhoQuaNhieuLuot(BaseReadGate):
                             'đọc lại ở lượt sau vẫn là đọc lại — phải nhắc')
 
 
+class NhacCcrFileDuLieuLon(BaseReadGate):
+    """T3.2: non-blocking CCR hint when reading large structured/log files > 32 KB."""
+
+    def test_nhac_ccr_cho_file_log_lon_va_khong_chan(self):
+        tep_log = os.path.join(self.cwd, "app.log")
+        with io.open(tep_log, "w", encoding="utf-8") as fh:
+            fh.write("ERROR failed step\n" * 2500)
+        rc, out, _err = self.chay(tep=tep_log)
+        self.assertEqual(rc, 0)
+        nhac = self.nhac_trong(out)
+        self.assertIn("tdq_ccr.py summarize", nhac)
+        self.assertEqual(self.nhac_trong(self.goi(tep=tep_log)), "")
+
+    def test_im_voi_file_code_lon_va_doc_phan_doan(self):
+        tep_py = os.path.join(self.cwd, "big.py")
+        with io.open(tep_py, "w", encoding="utf-8") as fh:
+            fh.write("x = 1\n" * 7000)
+        self.assertEqual(self.nhac_trong(self.goi(tep=tep_py)), "")
+        tep_json = os.path.join(self.cwd, "big.json")
+        with io.open(tep_json, "w", encoding="utf-8") as fh:
+            fh.write('{"k": "' + ("a" * 35000) + '"}\n')
+        self.assertEqual(self.nhac_trong(self.goi(tep=tep_json, offset=1, limit=20)), "")
+
+
 if __name__ == "__main__":
     unittest.main()
