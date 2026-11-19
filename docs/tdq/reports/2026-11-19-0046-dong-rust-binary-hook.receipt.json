@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-0046-dong-rust-binary-hook\\truoc-sau.archify.md",
+    "sha256": "7309eca3d41088f77845c443dc433da67b9fcf48a39b6eb01026e304c1a4ca80",
+    "bytes": 3247
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-0046-dong-rust-binary-hook.41205985b40646ff8935db0d398a0fd9.html",
+    "sha256": "6278d50e9089cd62b95aa22096a106fa240bd782f679fab23e3dde896f45042c",
+    "bytes": 1245569
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-0046-dong-rust-binary-hook.41205985b40646ff8935db0d398a0fd9.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-0046-dong-rust-binary-hook.41205985b40646ff8935db0d398a0fd9.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2352,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

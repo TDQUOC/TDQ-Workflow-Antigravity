@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "receiptId": "a29a4d2c-81d2-46d8-b3a0-8fe0e4cad242",
+  "receiptId": "9e8d813a-c520-44a0-9b54-87803825f5b6",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-0046-dong-rust-binary-hook\\truoc-sau.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\2026-11-19-0046-dong-rust-binary-hook.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-0046-dong-rust-binary-hook.41205985b40646ff8935db0d398a0fd9.html",
   "specification": {
     "sha256": "7309eca3d41088f77845c443dc433da67b9fcf48a39b6eb01026e304c1a4ca80",
     "bytes": 3247
   },
   "artifact": {
-    "sha256": "71426c86d54558bf27c55aa53d9efa7a2bde1036404ffb98121111a154765809",
-    "bytes": 1245577
+    "sha256": "6278d50e9089cd62b95aa22096a106fa240bd782f679fab23e3dde896f45042c",
+    "bytes": 1245569
   },
   "explainer": {
-    "preparedSha256": "a6b696073cdc75205b204b5581bf00b203591b6dac26bbd60fcb2025cb54482b",
+    "preparedSha256": "bbef2be20986ffad7635316b8cfb2c76101a9a0cb9b6c3dc769b84b7a6cbdf8f",
     "dependencies": [
       {
         "kind": "diagram-spec",

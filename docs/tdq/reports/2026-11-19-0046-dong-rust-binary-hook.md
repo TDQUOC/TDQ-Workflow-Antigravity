@@ -109,3 +109,7 @@
 ## 5. Kết luận & Trạng thái nghiệm thu
 
 Yêu cầu đóng gói Rust binary độc lập thay thế `dispatch.py` cho 6 sự kiện hook trong plugin Antigravity đã hoàn thành xuất sắc 100% các tiêu chí trong Spec và Plan, đảm bảo tốc độ vượt trội gấp gần 10 lần, an toàn tuyệt đối trên Windows NTFS và duy trì cơ chế dự phòng an toàn. Sẵn sàng bàn giao cho người dùng nghiệm thu.
+<!-- tdq-archify-binding:start -->
+<!-- manifest: 2026-11-19-0046-dong-rust-binary-hook.manifest.json -->
+<!-- manifest_digest: cba8cb6759f01f1a718c003a9019355753d19dd3922e3d15aa4bf6c6927fa79f -->
+<!-- tdq-archify-binding:end -->
