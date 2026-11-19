@@ -3160,7 +3160,8 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/libtdq_dispatch.rlib",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
-    "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb"
+    "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb",
+    "Source file added: scripts/tdq_plan_scaffold.py"
   ],
-  "checked_at": "2026-11-19T19:28:56Z"
+  "checked_at": "2026-11-19T19:45:37Z"
 }
