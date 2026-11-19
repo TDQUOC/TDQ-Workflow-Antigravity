@@ -352,14 +352,37 @@ def _agy_pre_invocation_hook(payload, cwd):
     is_new, sig = _detect_new_user_turn(cwd, payload, sid)
     _RUNTIME_STATE["new_user_turn"] = is_new
     if is_new:
+        prev_meta = read_turn_meta(cwd, sid)
         shard = _shard_turn_path(cwd, sid)
         if os.path.isfile(shard):
             try:
                 os.remove(shard)
             except OSError:
                 pass
-        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload)})
+        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or "")})
     return False, is_new
+
+
+def _agy_phase_anchor(cwd, state, payload, sid):
+    """Inject 1-line [TDQ:GON] or [TDQ:QC] once per phase entry or post-compaction."""
+    req = str((state or {}).get("active_request") or "")
+    pha = effective_phase(state, warn=False)
+    if not req or pha not in ("implement", "qc"):
+        return
+    meta = read_turn_meta(cwd, sid)
+    anchor = f"{req}:{pha}"
+    is_compact = str(payload.get("source") or "").lower() == "compact"
+    if not is_compact and meta.get("phase_anchor") == anchor:
+        return
+    if pha == "implement":
+        muc = muc_gat_hieu_luc(state)
+        if muc != "off":
+            dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), min(MAX_GON_CHARS, 160))
+            emit_context([dong])
+    else:
+        emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])
+    meta["phase_anchor"] = anchor
+    write_turn_meta(cwd, sid, meta)
 
 
 def main():
@@ -493,7 +516,9 @@ def main():
             lines.append("[TDQ:APPROVE] ⚠️ The spec changed after approval (sha256 mismatch) — "
                          "present it to the user for re-approval.")
     _emit(cwd, sid, lines, critical=drifted)
-    if not agy_mode:
+    if agy_mode:
+        _agy_phase_anchor(cwd, state, payload, sid)
+    else:
         _nhac_gon(cwd, state, payload, sid)
         _nhac_qc(cwd, state, payload, sid)
 

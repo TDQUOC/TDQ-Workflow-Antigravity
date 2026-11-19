@@ -59,6 +59,23 @@ from search_rules import (TOKEN, la_goi_khai_niem, la_tool_tdq_lsp,  # noqa: E40
                           phan_loai_ket_qua_lsp, trang_thai)
 
 
+_SHELL_GRAPHIFY_RE = re.compile(
+    r"(?:^|[;&|]\s*)(?:(?:py|python3?)(?:\s+-\S+)*\s+(?:\S*tdq_graphify\.py|-m\s+graphify)|graphify)\s+"
+    r"(query|explain|path|god-nodes|affected)\b",
+    re.IGNORECASE,
+)
+
+
+def _shell_graphify_label(norm_name, tool_input):
+    if str(norm_name or "").lower() not in (search_rules.CONG_CU_SHELL | {"powershell"}):
+        return None
+    if not isinstance(tool_input, dict):
+        return None
+    cmd = str(tool_input.get("command") or tool_input.get("cmd") or "")
+    m = _SHELL_GRAPHIFY_RE.search(cmd)
+    return f"graphify:{m.group(1).lower()}" if m else None
+
+
 def _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan):
     if not _common.is_agy():
         return
@@ -182,7 +199,7 @@ def main():
     tool_use_id = payload.get("tool_use_id")
 
     if su_kien == "PreToolUse":
-        nhan = la_goi_khai_niem(tool_name, tool_input)
+        nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)
         _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
         if nhan:
             row = {
@@ -233,7 +250,7 @@ def main():
                 _log(f"lsp_ket_qua · {tool_name} · outcome={outcome} · duration={duration_ms}ms · {khoa}")
 
         if su_kien == "PostToolUse":
-            nhan = la_goi_khai_niem(tool_name, tool_input)
+            nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)
             _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
             if nhan:
                 ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "khai_niem", "cong_cu": nhan})
@@ -244,7 +261,6 @@ def main():
 
     # Fallback for events without explicit hook_event_name
     nhan = la_goi_khai_niem(tool_name, tool_input)
-    _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)
     if nhan:
         ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "khai_niem", "cong_cu": nhan})
         _log(f"khai_niem · {nhan} · {khoa}")
