@@ -8,7 +8,7 @@ from typing import Dict, List
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
-PLUGIN_VERSION = "0.100.0"
+PLUGIN_VERSION = "0.101.0"
 
 
 def _default_lsp_args() -> List[str]:
@@ -90,9 +90,13 @@ def generate_logo_svg(plugin_root: Path) -> None:
 def _hook_cmd(script_name: str, event_name: str) -> Dict[str, str]:
     """Return Antigravity dispatch hook entry using unquoted relative path for Windows cmd /c safety."""
     _ = script_name
+    if os.name == "nt":
+        cmd = f"bin\\tdq-dispatch.exe --event {event_name}"
+    else:
+        cmd = f"./bin/tdq-dispatch --event {event_name}"
     return {
         "type": "command",
-        "command": f"python -X utf8 hooks/scripts/dispatch.py --event {event_name}",
+        "command": cmd,
     }
 
 

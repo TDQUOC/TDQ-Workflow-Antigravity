@@ -2,6 +2,16 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.101.0 — 2026-11-19
+
+Đóng gói standalone native Rust binary (`tdq-dispatch`) thay thế tầng dispatch Python cho hook Antigravity, tăng tốc 9.6x và đóng gói sẵn binary 3 nền tảng (`2026-11-19-0046-dong-rust-binary-hook`). Báo cáo: `docs/tdq/reports/2026-11-19-0046-dong-rust-binary-hook.md`.
+
+- **Crate Rust độc lập (`tdq-dispatch`)**: Biên dịch tĩnh CRT Defender-safe, nhúng tĩnh 22 mã hướng dẫn `gate_guidance.json`, xử lý trọn vẹn 6 sự kiện hook (`SessionStart`, `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Notification`, `Stop`) trong < 4 ms.
+- **Tăng tốc vượt trội**: Độ trễ thực thi trực tiếp giảm từ 190.21 ms xuống trung vị 19.90 ms (nhanh gấp 9.6 lần, đạt mục tiêu mềm <= 25 ms); qua vỏ cmd giảm từ 199.36 ms xuống 28.37 ms (nhanh gấp 7.0 lần).
+- **An toàn khóa tệp & Dự phòng**: Sidecar lock `.lock` timeout 200 ms loại bỏ 100% lỗi `ERROR_LOCK_VIOLATION` (`os error 33`) khi ghi đồng thời; cơ chế dự phòng `TDQ_HOOK_ENGINE=python` chuyển tiếp an toàn khi cần.
+- **Đóng gói sẵn 3 nền tảng native thật**: `tdq-dispatch.exe` (Windows x86_64, 1.75 MB), `tdq-dispatch-linux-x86_64` (Linux musl static-pie, 2.20 MB, build trên Ubuntu thật), `tdq-dispatch-darwin-arm64` (macOS arm64 Mach-O, 1.68 MB, build trên Mac M-series thật).
+- **Bộ cài đặt 0-build**: `install.py` và `tools/install_agy_plugin.py` tự động nhận diện OS, sao chép đúng binary và cấp quyền `chmod +x` mà máy người dùng không cần cài đặt Rust hay build lại.
+
 ## 0.100.0 — 2026-11-18
 
 Tối ưu toàn diện runtime hook Antigravity 2.0, chuẩn hóa chỉ dẫn 4 phần và tinh gọn cổng kiểm soát (`2026-11-18-1814-toi-uu-hook-huong-dan`). Báo cáo: `docs/tdq/reports/2026-11-18-1814-toi-uu-hook-huong-dan.md`.

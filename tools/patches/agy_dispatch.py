@@ -254,10 +254,14 @@ if __name__ == "__main__":
 
 
 def apply_dispatch(hooks_scripts_dir: Path) -> None:
-    """Copy gate_guidance.py and write dispatch.py into hooks_scripts_dir."""
+    """Copy gate_guidance.py, gate_guidance.json and write dispatch.py into hooks_scripts_dir."""
     hooks_scripts_dir.mkdir(parents=True, exist_ok=True)
-    src_guidance = Path(__file__).resolve().parent / "gate_guidance.py"
+    patches_dir = Path(__file__).resolve().parent
+    src_guidance = patches_dir / "gate_guidance.py"
     if not src_guidance.is_file():
         raise FileNotFoundError(f"gate_guidance.py not found at {src_guidance}")
     write_utf8(hooks_scripts_dir / "gate_guidance.py", read_utf8(src_guidance))
+    src_json = patches_dir / "gate_guidance.json"
+    if src_json.is_file():
+        write_utf8(hooks_scripts_dir / "gate_guidance.json", read_utf8(src_json))
     write_utf8(hooks_scripts_dir / "dispatch.py", DISPATCH_PY)

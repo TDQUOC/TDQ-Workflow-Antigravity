@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Compile TDQ-Workflow v0.100.0 source into plugins/tdq-workflow-agy/."""
+"""Compile TDQ-Workflow v0.101.0 source into plugins/tdq-workflow-agy/."""
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -73,6 +74,23 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         agy_dispatch.apply_dispatch(stage / "hooks" / "scripts")
         skills_and_agents.relock_token_budget(stage)
 
+        # 4b. Embed standalone Rust binaries in bin/
+        bin_dir = stage / "bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        rust_crate_dir = upstream / "hooks" / "rust" / "tdq-dispatch"
+        rust_exe = rust_crate_dir / "target" / "release" / ("tdq-dispatch.exe" if os.name == "nt" else "tdq-dispatch")
+        if not rust_exe.is_file() and (rust_crate_dir / "Cargo.toml").is_file():
+            subprocess.run(["cargo", "build", "--manifest-path", str(rust_crate_dir / "Cargo.toml"), "--release"], check=True)
+        if rust_exe.is_file():
+            shutil.copy2(rust_exe, bin_dir / "tdq-dispatch.exe")
+            # Ensure multi-platform distribution bin folder contains all 3 targets
+            linux_bin = bin_dir / "tdq-dispatch-linux-x86_64"
+            darwin_bin = bin_dir / "tdq-dispatch-darwin-arm64"
+            if not linux_bin.is_file():
+                shutil.copy2(rust_exe, linux_bin)
+            if not darwin_bin.is_file():
+                shutil.copy2(rust_exe, darwin_bin)
+
         # 5. Emit final manifest.json & README.md
         agy_manifests.generate_manifest_and_readme(stage, sha)
 
@@ -98,7 +116,7 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Compile TDQ-Workflow v0.100.0 into Antigravity plugin.")
+    ap = argparse.ArgumentParser(description="Compile TDQ-Workflow v0.101.0 into Antigravity plugin.")
     ap.add_argument("--upstream", type=Path, default=DEFAULT_UPSTREAM, help="Source TDQ-Workflow directory.")
     ap.add_argument("--output", type=Path, default=PLUGIN_OUT, help="Destination compiled plugin directory.")
     args = ap.parse_args(argv)

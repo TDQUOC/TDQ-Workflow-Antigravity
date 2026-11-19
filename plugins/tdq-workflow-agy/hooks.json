@@ -4,7 +4,7 @@
     "SessionStart": [
       {
         "type": "command",
-        "command": "python -X utf8 hooks/scripts/dispatch.py --event SessionStart"
+        "command": "bin\\tdq-dispatch.exe --event SessionStart"
       }
     ]
   },
@@ -13,7 +13,7 @@
     "PreInvocation": [
       {
         "type": "command",
-        "command": "python -X utf8 hooks/scripts/dispatch.py --event PreInvocation"
+        "command": "bin\\tdq-dispatch.exe --event PreInvocation"
       }
     ]
   },
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       },
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PreToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PreToolUse"
           }
         ]
       }
@@ -93,7 +93,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -X utf8 hooks/scripts/dispatch.py --event PostToolUse"
+            "command": "bin\\tdq-dispatch.exe --event PostToolUse"
           }
         ]
       }
@@ -104,7 +104,7 @@
     "PostInvocation": [
       {
         "type": "command",
-        "command": "python -X utf8 hooks/scripts/dispatch.py --event PostInvocation"
+        "command": "bin\\tdq-dispatch.exe --event PostInvocation"
       }
     ]
   },
@@ -113,7 +113,7 @@
     "Stop": [
       {
         "type": "command",
-        "command": "python -X utf8 hooks/scripts/dispatch.py --event Stop"
+        "command": "bin\\tdq-dispatch.exe --event Stop"
       }
     ]
   }

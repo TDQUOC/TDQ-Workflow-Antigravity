@@ -290,6 +290,28 @@ GUIDANCE_TABLE: dict[str, dict[str, str]] = {
 }
 
 
+def _load_guidance_from_json() -> None:
+    """Optionally load or update guidance table from gate_guidance.json if present."""
+    import json
+    from pathlib import Path
+
+    json_path = Path(__file__).resolve().with_name("gate_guidance.json")
+    if json_path.is_file():
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            guidance = data.get("guidance_codes")
+            if isinstance(guidance, dict) and guidance:
+                for k, v in guidance.items():
+                    if isinstance(v, dict):
+                        GUIDANCE_TABLE[k] = v
+        except Exception as exc:
+            _log(f"failed to load guidance json: {exc}")
+
+
+_load_guidance_from_json()
+
+
 def _log(message: str) -> None:
     """Emit one ISO-timestamped stderr log line unless TDQ_LOG=0."""
     if os.environ.get("TDQ_LOG", "1") != "0":

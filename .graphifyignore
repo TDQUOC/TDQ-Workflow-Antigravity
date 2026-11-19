@@ -22,3 +22,7 @@ claude-export/
 
 # Đầu ra của chính graphify
 graphify-out/
+
+# Rust build target
+hooks/rust/*/target/
+**/target/

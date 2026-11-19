@@ -68,8 +68,46 @@ def probe_python_path_command(timeout: float = 5.0) -> dict:
     }
 
 
+def _ensure_binary_executable_and_hooks(dst: Path) -> dict:
+    """Ensure binary exists and hooks.json uses correct binary path for OS, or falls back to Python."""
+    bin_dir = dst / "bin"
+    hooks_file = dst / "hooks.json"
+    status = {"engine": "rust", "binary": None}
+
+    if os.name == "nt":
+        exe = bin_dir / "tdq-dispatch.exe"
+        if exe.is_file():
+            status["binary"] = str(exe)
+            return status
+    else:
+        target_name = "tdq-dispatch-darwin-arm64" if sys.platform == "darwin" else "tdq-dispatch-linux-x86_64"
+        unix_bin = bin_dir / "tdq-dispatch"
+        specific_bin = bin_dir / target_name
+        if specific_bin.is_file() and not unix_bin.exists():
+            shutil.copy2(specific_bin, unix_bin)
+        if unix_bin.is_file():
+            try:
+                unix_bin.chmod(0o755)
+            except OSError:
+                pass
+            status["binary"] = str(unix_bin)
+            return status
+
+    # Fallback to python if no executable binary
+    if hooks_file.is_file():
+        content = hooks_file.read_text(encoding="utf-8")
+        if "bin\\tdq-dispatch.exe" in content or "./bin/tdq-dispatch" in content:
+            new_content = content.replace("bin\\tdq-dispatch.exe --event", "python -X utf8 hooks/scripts/dispatch.py --event")
+            new_content = new_content.replace("./bin/tdq-dispatch --event", "python -X utf8 hooks/scripts/dispatch.py --event")
+            hooks_file.write_text(new_content, encoding="utf-8")
+            status["engine"] = "python_fallback"
+    return status
+
+
 def _copy_plugin(src: Path, dst: Path) -> int:
-    return sync_tree_inplace(src, dst)
+    count = sync_tree_inplace(src, dst)
+    _ensure_binary_executable_and_hooks(dst)
+    return count
 
 
 def _sync_local_mcp(dst: Path) -> dict:
