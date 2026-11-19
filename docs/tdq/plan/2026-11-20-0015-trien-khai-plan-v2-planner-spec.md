@@ -70,7 +70,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Task không có `Chạm:` (legacy fallback), dòng `- Chạm:` nằm trong code fence, hàm đích > `120` dòng, `task_id` không tồn tại (trả exit `1` kèm thông báo rõ).
     - Tiêu chí: `assert t.vung_file == ["scripts/a.py"] and "scripts/ref.py" in t.tham_chieu`, `assert sha_before == sha_after`, `assert all(f in out for f in ("TASK:", "WORKTREE:", "VÙNG FILE:", "TEST:", "TRẢ VỀ:"))`
 
-- [>] **T1.2** (e20m) Tạo mới công cụ `scripts/tdq_plan_scaffold.py` (AST/Spec Scaffolder, Card Emitter, Verifier & Wave Checker có `TDQ_LOG`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_scaffold.py -v`
+- [x] **T1.2** (e20m) Tạo mới công cụ `scripts/tdq_plan_scaffold.py` (AST/Spec Scaffolder, Card Emitter, Verifier & Wave Checker có `TDQ_LOG`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_scaffold.py -v`
   - Req: `§2 #2, §3c, §4, §6 Q2` · Ngoài phạm vi: Không spawn server LSP mới, không sửa trực tiếp `docs/tdq/state.json`, không cài gói ngoài stdlib
   - Chạm: `scripts/tdq_plan_scaffold.py`, `tests/test_plan_scaffold.py`
   - Cần: `T1.1`
@@ -104,7 +104,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Từ `TBD` nằm trong code fence (không báo lỗi giả), plan cũ ngày `2026-11-15` (giữ hành vi cũ), task Sweep `<= 6` file vs `7` file (vượt ngưỡng phải báo lỗi), task DoD non-code dùng `assert True` (vẫn bị chặn `ANTI-2`).
     - Tiêu chí: `assert any("[R15]" in e and "ANTI-2" in e for e in errs)`, `assert any("TBD" in e or "placeholder" in e.lower() for e in errs_ph)`, `assert errs_old == []`, `assert _r12_van_xuoi("  1. Initialize state and parse input args") is None`
 
-- [ ] **T1.4** (e14m) Vá `scripts/tdq_state.py` (cổng tiền-duyệt R15 & đọc `Chạm:` nhiều dòng) và đồng bộ `RE_TICK` trong `scripts/tdq_eval.py` — Test: `py -3 -X utf8 -m unittest tests/test_state_plan_v2_gate.py tests/test_quick_qc.py tests/test_hooks_dual_protocol.py -v`
+- [>] **T1.4** (e14m) Vá `scripts/tdq_state.py` (cổng tiền-duyệt R15 & đọc `Chạm:` nhiều dòng) và đồng bộ `RE_TICK` trong `scripts/tdq_eval.py` — Test: `py -3 -X utf8 -m unittest tests/test_state_plan_v2_gate.py tests/test_quick_qc.py tests/test_hooks_dual_protocol.py -v`
   - Req: `§2 #4, §3c, §6 Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ chữ ký CLI state hiện hành và fail-open sạch khi lane `quick` không tạo tệp plan trên đĩa
   - Chạm: `scripts/tdq_state.py`, `scripts/tdq_eval.py`, `tests/test_state_plan_v2_gate.py`
   - Cần: `T1.3`
