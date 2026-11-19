@@ -53,7 +53,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P1 — Chặng 1: Nền Parser, Scaffolder, Linter & Cổng State
 
-- [>] **T1.1** (e18m) Vá parser `doc_plan`, ổn định `plan_assignment_sha`, mở rộng `_TASK_REF` và thêm lệnh `packet` trong `tdq_team.py` + `tdq_ten_lenh.py` — Test: `py -3 -X utf8 -m unittest tests/test_team_packet_v2.py tests/test_team_mode.py tests/test_team_chong_conflict.py -v`
+- [x] **T1.1** (e18m) Vá parser `doc_plan`, ổn định `plan_assignment_sha`, mở rộng `_TASK_REF` và thêm lệnh `packet` trong `tdq_team.py` + `tdq_ten_lenh.py` — Test: `py -3 -X utf8 -m unittest tests/test_team_packet_v2.py tests/test_team_mode.py tests/test_team_chong_conflict.py -v`
   - Req: `§2 #1, §3c, §6 Q1` · Ngoài phạm vi: `GIỮ NGUYÊN` fallback `t.text[0]` khi task không khai `Chạm:` và toàn bộ hành vi `assign`/`wave`/`merge`/`resolve` hiện có
   - Chạm: `scripts/tdq_team.py`, `scripts/tdq_ten_lenh.py`, `tests/test_team_packet_v2.py`
   - Cần: Không

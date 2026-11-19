@@ -1,10 +1,10 @@
 {
   "slug": "2026-11-20-0015-trien-khai-plan-v2-planner-spec",
   "plan_file": "docs\\tdq\\plan\\2026-11-20-0015-trien-khai-plan-v2-planner-spec.md",
-  "plan_sha": "15be5563def7adc6fef2fcccb651fb11670144d4fd3b1a11c1be09e918ee1a97",
+  "plan_sha": "fd748fd5f684cd8645a24ca2d161707904a6ee4ec054e015a38aee7f2e611203",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "ea8472b33f3baab0db8fa8af458fc01d0a3ccad7cc330dcdfda349971709c73a",
+  "plan_assignment_sha": "47421e798470c8a4d2688b29aabceb8cd568a7cfa9113f35777d8bb840af24a1",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
@@ -21,7 +21,6 @@
       "ly_do": "",
       "vung_file": [
         "scripts/tdq_plan_scaffold.py",
-        "docs/tdq/state.json",
         "tests/test_plan_scaffold.py"
       ],
       "dot": 2
@@ -49,14 +48,11 @@
       "quyet_dinh": "tu_lam",
       "ly_do": "file-luat",
       "vung_file": [
-        "src/foo.py",
         "skills/tdq-plan/SKILL.md",
         "skills/tdq-plan/references/plan-template.md",
         "skills/tdq-plan/references/plan-template-huong-dan.md",
         "skills/tdq-plan/references/planner-rules.md",
-        "skills/tdq-plan/references/plan-examples.md",
-        "tdq-plan/SKILL.md",
-        "spec_cases/test_foo.py"
+        "skills/tdq-plan/references/plan-examples.md"
       ],
       "dot": 3
     },
@@ -70,8 +66,7 @@
         "skills/tdq-build/references/qc.md",
         "skills/tdq-build/references/qc-vong-fix.md",
         "skills/tdq-build/references/team-mode.md",
-        "skills/tdq-build/references/team-mode-tra-cuu.md",
-        "tdq-build/SKILL.md"
+        "skills/tdq-build/references/team-mode-tra-cuu.md"
       ],
       "dot": 3
     },
@@ -88,12 +83,8 @@
       "quyet_dinh": "giao",
       "ly_do": "",
       "vung_file": [
-        "tools/install_agy_plugin.py",
         "tools/patches/agy_hooks.py",
-        "docs/tdq/token-budget.json",
-        "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py",
-        "plugins/tdq-workflow-agy/manifest.json",
-        "tools/build_agy_plugin.py"
+        "docs/tdq/token-budget.json"
       ],
       "dot": 4
     },
@@ -101,8 +92,7 @@
       "quyet_dinh": "giao",
       "ly_do": "",
       "vung_file": [
-        "tests/test_plan_v2_e2e.py",
-        "docs/kien-truc.md"
+        "tests/test_plan_v2_e2e.py"
       ],
       "dot": 5
     },
