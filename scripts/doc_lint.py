@@ -60,7 +60,9 @@ SKILL_LINE_LIMITS = {
     # 2026-08-18: 100 → 110. The mode proposal moved from eyeballing the task count to
     # running `tdq_bench.py simulate` — the command block plus the reason for factor 1.5
     # must sit in the skill body to be read every time a plan is written.
-    "tdq-plan": 121,
+    # 2026-11-20: 121 -> 132. Two-Pass Plan V2+ steps plus Tier-1 sibling pointers
+    # (planner-rules.md, plan-examples.md) and scaffolder/verifier CLI references.
+    "tdq-plan": 132,
     # 2026-09-17: 150 → 165. The build-less-than-asked law landed 2 rules in the body (climb
     # the ladder before creating anything; make it run first and refactor after). Both are
     # tier 1–2 by soul.md:99, so they may not be pushed into a reference file, and soul.md:101
@@ -522,49 +524,370 @@ def kiem_tran_token(paths):
     return [f"{token_budget.FILE_KHOA}:1: [R13] {d}" for d in token_budget.kiem_khoa(goc)]
 
 
-# --------------------- R15: a task touching source code in a plan must carry technical specs / pseudo-code
-def rule_r15(doc, out):
-    """A task modifying source code in a plan must carry technical specs or pseudo-code."""
-    if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "plan":
-        return
-    EXT_MA_NGUON = (".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".c", ".cpp", ".cs", ".rb", ".php", ".java")
-    TU_KHOA_LOGIC = ("đặc tả", "logic", "giải thuật", "thuật toán", "pseudo-code")  # i18n-allow
+# --------------------- R15: Plan V2+ task completeness, placeholders, and ANTI-2 guard
+R15_MOC = "2026-11-20"
+EXT_MA_NGUON = (
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs",
+    ".c", ".cpp", ".cs", ".rb", ".php", ".java",
+)
+EXT_CAU_HINH = (".json", ".yaml", ".yml", ".toml", ".ini", ".cfg")
+TU_KHOA_LOGIC = ("đặc tả", "logic", "giải thuật", "thuật toán", "pseudo-code")  # i18n-allow
+BANNED_PLACEHOLDERS = (
+    "tbd",
+    "todo",
+    "handle edge cases",
+    "appropriate validation",
+    "xử lý các edge case",  # i18n-allow
+    "thêm validation phù hợp",  # i18n-allow
+    "cập nhật các file liên quan",  # i18n-allow
+    "viết test cho các hàm trên",  # i18n-allow
+    "tối ưu nếu cần",  # i18n-allow
+)
+_BANNED_PH_RES = tuple(
+    (phrase, re.compile(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", re.IGNORECASE))
+    for phrase in BANNED_PLACEHOLDERS
+)
+_BANNED_ELLIPSIS_RE = re.compile(r"^\s*(?:\d+\.|[-*])\s+.*\.\.\.\s*$")
+_FIELD_VALUE_RE = re.compile(r"^\s*[-*]\s*[^:]+:\s*`([^`]*)`\s*$")
 
+ANTI2_PATTERNS = (
+    ("assert True", re.compile(r"\bassert\s*\(?\s*True\s*\)?(?=$|[\s,;)\"'`])")),
+    ("assert 1 == 1", re.compile(r"\bassert\s*\(?\s*(\d+)\s*==\s*\1\s*\)?")),
+    ("assert len(...) >= 0", re.compile(r"\bassert\s+len\([^)]*\)\s*>=\s*0\b")),
+    ("bare os.path.exists", re.compile(r"\bos\.path\.exists\s*\(")),
+    ("bare Test-Path", re.compile(r"\bTest-Path\b", re.IGNORECASE)),
+)
+_CONTENT_OR_EXIT_RE = re.compile(
+    r"(?:['\")\]]\s+in\s+[A-Za-z_]|open\(|read_text|\.read\(|json\.load|"
+    r"get-content|select-string|-match|\bgrep\b|\brg\b|\bdiff\b|"
+    r"returncode|lastexitcode|\bexit\s+\d|==|!=|&&|\|\|)",
+    re.IGNORECASE,
+)
+
+_R15_TASK_RE = re.compile(r"^-\s*\[[ ~x>]\]\s*\*\*((?:T|QC)\d+(?:[A-Za-z0-9.]*))\*\*")
+_R15_LEGACY_PREFIXES = ("- [ ] **T", "- [x] **T", "- [~] **T", "- [>] **T")
+_R15_PATH_RE = re.compile(r"[A-Za-z0-9_./\\-]+\.[A-Za-z][A-Za-z0-9]*")
+_R15_SWEEP_RE = re.compile(
+    r"(?:uniform\s+mechanical\s+sweep|[\(\[]\s*sweep\s*[\)\]]|"
+    r"(?:loại|type|nhãn|nhan_loai)\s*:\s*[^.\n]*\bsweep\b)",  # i18n-allow
+    re.IGNORECASE,
+)
+_R15_SYNC_SIG_RE = re.compile(r"(?:dong-bo-chu-ky|đồng\s+bộ\s+chữ\s+ký)", re.IGNORECASE)  # i18n-allow
+_R15_LOGIC_LABEL_RE = re.compile(r"^\s*[-*]\s*(?:\*\*)?logic\b", re.IGNORECASE | re.MULTILINE)
+_R15_REQ_RE = re.compile(r"(?:^|\s|[-*])(?:\*\*)?req(?:\*\*)?\s*:", re.IGNORECASE)
+_R15_ORACLE_HEAD_PREFIXES = (
+    "tiêu chí:", "assert:", "test oracle:", "kiểm:", "ca hiểm:", "ca góc hiểm",  # i18n-allow
+)
+_R15_CONTRACT_RE = re.compile(r"\b(?:giao tiếp|consumes|produces)\s*:", re.IGNORECASE)  # i18n-allow
+_R15_MAX_FULL_LINES = 35
+_R15_MAX_SWEEP_FILES = 6
+_R15_MAX_SYNC_SIG_FILES = 5
+
+_R15_COMPACT_RULES = (
+    ("Chạm/Sinh ra", lambda s: any(k in s for k in ("chạm:", "cham:", "sinh ra:"))),  # i18n-allow
+    ("Vị trí neo/Quy luật", lambda s: any(k in s for k in ("vị trí neo:", "vi tri neo:", "neo & công cụ:", "quy luật:", "quy luat:"))),  # i18n-allow
+    ("Trước → Sau", lambda s: any(k in s for k in ("trước → sau:", "trước -> sau:", "truoc -> sau:"))),  # i18n-allow
+    ("Logic", lambda s: bool(_R15_LOGIC_LABEL_RE.search(s))),
+    ("Tiêu chí", lambda s: any(k in s for k in ("tiêu chí:", "tiêu chí chấp nhận", "ca góc hiểm", "test oracle", "assert:"))),  # i18n-allow
+)
+_R15_FULL_RULES = (
+    ("Req", lambda s: bool(_R15_REQ_RE.search(s))),
+    ("Ngoài phạm vi/GIỮ NGUYÊN", lambda s: any(k in s for k in ("ngoài phạm vi:", "ngoai pham vi:", "giữ nguyên"))),  # i18n-allow
+    ("Chạm", lambda s: "chạm:" in s or "cham:" in s),  # i18n-allow
+    ("Neo & Công cụ/Vị trí neo", lambda s: any(k in s for k in ("neo & công cụ:", "vị trí neo:", "vi tri neo:"))),  # i18n-allow
+    ("Trước → Sau", lambda s: any(k in s for k in ("trước → sau:", "trước -> sau:", "truoc -> sau:"))),  # i18n-allow
+    ("Tiêu chí chấp nhận/EARS", lambda s: "tiêu chí chấp nhận" in s or bool(re.search(r"\bears\b", s))),  # i18n-allow
+    ("Logic", lambda s: bool(_R15_LOGIC_LABEL_RE.search(s))),
+    ("Ca góc hiểm/Assert/Tiêu chí", lambda s: any(k in s for k in ("ca góc hiểm", "tiêu chí:", "test oracle", "assert:"))),  # i18n-allow
+)
+_R15_CONFIG_RULES = (
+    ("schema/key", lambda s: any(k in s for k in ("schema", "key", "khóa", "trường", "trước → sau", "trước -> sau", "logic", "đặc tả"))),  # i18n-allow
+    ("verification", lambda s: any(k in s for k in ("tiêu chí", "assert", "kiểm", "test oracle", "ca góc hiểm", "ears"))),  # i18n-allow
+)
+
+
+def _plan_sau_moc(path):
+    """Return True only when filename begins with YYYY-MM-DD >= R15_MOC."""
+    name = os.path.basename(path)
+    return name[:10] >= R15_MOC if re.match(r"^\d{4}-\d{2}-\d{2}", name) else False
+
+
+def _line_indent(line):
+    prefix = line[:len(line) - len(line.lstrip(" \t"))]
+    return len(prefix.expandtabs(4))
+
+
+def _extract_legacy_tasks(doc):
     tasks = []
     curr_idx = None
     curr_lines = []
     for i, line in enumerate(doc.lines):
-        if line.startswith(("- [ ] **T", "- [x] **T", "- [~] **T", "- [>] **T")):
+        if doc.in_fence[i]:
+            continue
+        if line.startswith(_R15_LEGACY_PREFIXES):
             if curr_idx is not None:
                 tasks.append((curr_idx, curr_lines))
-            curr_idx = i
-            curr_lines = []
+            curr_idx, curr_lines = i, []
         elif curr_idx is not None:
             if line.startswith((" ", "\t")):
                 curr_lines.append(line)
-            elif not line.strip():
-                continue
-            else:
+            elif line.strip():
                 tasks.append((curr_idx, curr_lines))
-                curr_idx = None
-                curr_lines = []
+                curr_idx, curr_lines = None, []
     if curr_idx is not None:
         tasks.append((curr_idx, curr_lines))
+    return tasks
 
-    for task_idx, indented_lines in tasks:
-        has_code = False
-        for l in indented_lines:
-            low = l.lower()
-            if "chạm:" in low or "cham:" in low:  # i18n-allow
-                paths = re.findall(r"[A-Za-z0-9_./\\-]+\.[A-Za-z0-9]+", l)
-                if any(p.lower().endswith(EXT_MA_NGUON) for p in paths):
-                    has_code = True
-                    break
-        if has_code:
-            has_logic = any(any(kw in l.lower() for kw in TU_KHOA_LOGIC) for l in indented_lines)
-            if not has_logic:
-                _report(out, doc, task_idx, "R15",
-                        "task can thiệp mã nguồn nhưng thiếu khối đặc tả kỹ thuật/pseudo-code (Rule R15: Self-Contained Task Block)")  # i18n-allow
+
+def _legacy_has_code(indented):
+    for line in indented:
+        low = line.lower()
+        if ("chạm:" in low or "cham:" in low) and any(  # i18n-allow
+            p.lower().endswith(EXT_MA_NGUON) for p in _R15_PATH_RE.findall(line)
+        ):
+            return True
+    return False
+
+
+def _legacy_r15(doc):
+    out = []
+    for task_idx, indented in _extract_legacy_tasks(doc):
+        if _legacy_has_code(indented) and not any(any(kw in l.lower() for kw in TU_KHOA_LOGIC) for l in indented):
+            _report(out, doc, task_idx, "R15",
+                    "task can thiệp mã nguồn nhưng thiếu khối đặc tả kỹ thuật/pseudo-code (Rule R15: Self-Contained Task Block)")  # i18n-allow
+    return out
+
+
+def _append_task(tasks, curr):
+    if curr is not None:
+        tasks.append((curr["idx"], curr["id"], curr["head"], curr["body"], curr["end"]))
+
+
+def _extract_plan_tasks(doc):
+    tasks, curr = [], None
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            if curr is not None:
+                curr["end"] = i
+            continue
+        m = _R15_TASK_RE.match(line)
+        if m:
+            _append_task(tasks, curr)
+            curr = {"idx": i, "id": m.group(1), "head": line, "body": [], "end": i}
+        elif curr is not None and line.startswith((" ", "\t")):
+            curr["body"].append((i, line))
+            if line.strip():
+                curr["end"] = i
+        elif line.strip():
+            _append_task(tasks, curr)
+            curr = None
+    _append_task(tasks, curr)
+    return tasks
+
+
+def _cham_paths(body_items):
+    """Extract unique declared paths from single-line or multiline `Chạm:` sections."""  # i18n-allow
+    in_cham = False
+    cham_indent = 0
+    paths = []
+    for _, line in body_items:
+        if not line.strip():
+            continue
+        indent = _line_indent(line)
+        clean = re.sub(r"^\s*[-*]\s*", "", line).replace("**", "").strip().lower()
+        if clean.startswith(("chạm:", "cham:")):  # i18n-allow
+            in_cham, cham_indent = True, indent
+            for p in _R15_PATH_RE.findall(line.partition(":")[2]):
+                if p not in paths:
+                    paths.append(p)
+            continue
+        if not in_cham:
+            continue
+        if indent <= cham_indent:
+            in_cham = False
+            continue
+        for p in _R15_PATH_RE.findall(line):
+            if p not in paths:
+                paths.append(p)
+    return paths
+
+
+def _find_banned_placeholder(line):
+    outside = INLINE_CODE.sub(" ", line)
+    for phrase, regex in _BANNED_PH_RES:
+        if regex.search(outside):
+            return phrase
+    if _BANNED_ELLIPSIS_RE.match(outside):
+        return "..."
+    m = _FIELD_VALUE_RE.match(line)
+    if m:
+        val = m.group(1).strip()
+        if val == "..." or val.lower() in BANNED_PLACEHOLDERS:
+            return val.lower()
+    return None
+
+
+def _match_anti2(text):
+    for label, regex in ANTI2_PATTERNS:
+        if not regex.search(text):
+            continue
+        if label.startswith("bare ") and _CONTENT_OR_EXIT_RE.search(text):
+            continue
+        return label
+    return None
+
+
+def _oracle_lines(body_items):
+    """Yield (idx, line) belonging to oracle/check sub-sections inside a task block."""
+    in_oracle, oracle_indent = False, 0
+    for idx, line in body_items:
+        if not line.strip():
+            continue
+        indent = _line_indent(line)
+        clean = re.sub(r"^\s*[-*]\s*", "", line).replace("**", "").strip().lower()
+        if clean.startswith(_R15_ORACLE_HEAD_PREFIXES):
+            in_oracle, oracle_indent = True, indent
+            if clean.startswith("ca hiểm:") and ("anti-2" in clean or "anti2" in clean):  # i18n-allow
+                continue
+            yield idx, line
+        elif in_oracle and indent > oracle_indent:
+            yield idx, line
+        else:
+            in_oracle = False
+
+
+def _check_anti2_task(doc, task_idx, header_line, body_items, out):
+    m = re.search(r"\bTest:\s*(.+)$", header_line)
+    if m:
+        hit = _match_anti2(m.group(1))
+        if hit:
+            _report(out, doc, task_idx, "R15", f"ANTI-2 blind assertion/check ({hit}) in Test clause")
+    for idx, line in _oracle_lines(body_items):
+        hit = _match_anti2(line)
+        if hit:
+            _report(out, doc, idx, "R15", f"ANTI-2 blind assertion/check ({hit}) in test oracle")
+
+
+def _is_quick_plan(doc):
+    for i, line in enumerate(doc.lines[:15]):
+        if doc.in_fence[i]:
+            continue
+        if line.lstrip().startswith("# QUICK") or _lane_cua_spec(doc) == "quick":
+            return True
+    return False
+
+
+def _missing_fields(body_norm, rules):
+    return [name for name, predicate in rules if not predicate(body_norm)]
+
+
+def _check_sweep_and_sync_caps(doc, task_idx, full_norm, cham_paths, out):
+    is_sweep = bool(_R15_SWEEP_RE.search(full_norm))
+    is_sync_sig = bool(_R15_SYNC_SIG_RE.search(full_norm))
+    if is_sweep and len(cham_paths) > _R15_MAX_SWEEP_FILES:
+        _report(out, doc, task_idx, "R15",
+                f"Uniform Mechanical Sweep touches {len(cham_paths)} files (> {_R15_MAX_SWEEP_FILES})")
+    if is_sync_sig and len(cham_paths) > _R15_MAX_SYNC_SIG_FILES:
+        _report(out, doc, task_idx, "R15",
+                f"dong-bo-chu-ky touches {len(cham_paths)} files (> {_R15_MAX_SYNC_SIG_FILES})")
+    return is_sweep or is_sync_sig
+
+
+def _check_code_or_config(doc, task_idx, task_id, body_norm, flags, line_count, out):
+    has_code, has_config, is_compact = flags
+    if has_code and (is_compact or task_id.upper().startswith("QC")):
+        miss = _missing_fields(body_norm, _R15_COMPACT_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15", f"R15-Compact task missing field(s): {', '.join(miss)}")
+        return
+    if has_code:
+        miss = _missing_fields(body_norm, _R15_FULL_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15",
+                    f"R15-Full task missing Per-Task Mini-Spec field(s): {', '.join(miss)}")
+        if line_count > _R15_MAX_FULL_LINES:
+            _report(out, doc, task_idx, "R15",
+                    f"R15-Full task block has {line_count} lines (> {_R15_MAX_FULL_LINES})")
+        return
+    if has_config:
+        miss = _missing_fields(body_norm, _R15_CONFIG_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15", f"config task missing required detail(s): {', '.join(miss)}")
+
+
+def _check_task_v2(doc, task, is_quick, out):
+    task_idx, task_id, header_line, body_items, end_idx = task
+    for idx, line in [(task_idx, header_line)] + body_items:
+        ph = _find_banned_placeholder(line)
+        if ph:
+            _report(out, doc, idx, "R15", f"banned placeholder \"{ph}\" — replace with concrete spec")
+    _check_anti2_task(doc, task_idx, header_line, body_items, out)
+
+    cham_paths = _cham_paths(body_items)
+    has_code = any(p.lower().endswith(EXT_MA_NGUON) for p in cham_paths)
+    has_config = any(p.lower().endswith(EXT_CAU_HINH) for p in cham_paths)
+    body_norm = "\n".join(l.replace("**", "") for _, l in body_items).lower()
+    full_norm = header_line.replace("**", "").lower() + "\n" + body_norm
+    compact_flag = _check_sweep_and_sync_caps(doc, task_idx, full_norm, cham_paths, out) or is_quick
+    _check_code_or_config(doc, task_idx, task_id, body_norm,
+                          (has_code, has_config, compact_flag), end_idx - task_idx + 1, out)
+    return (has_code or has_config) and bool(_R15_CONTRACT_RE.search(body_norm))
+
+
+def _check_dod_v2(doc, out):
+    in_dod = False
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m:
+            in_dod = "definition of done" in m.group(2).strip().lower()
+            continue
+        if not in_dod or not re.match(r"^\s*[-*]\s+", line):
+            continue
+        ph = _find_banned_placeholder(line)
+        if ph:
+            _report(out, doc, i, "R15", f"banned placeholder \"{ph}\" in Definition of Done")
+        hit = _match_anti2(line)
+        if hit:
+            _report(out, doc, i, "R15", f"ANTI-2 blind assertion/check ({hit}) in Definition of Done")
+
+
+def _has_ownership_map(doc):
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        s = line.strip()
+        if not (HEADING.match(s) or s.startswith(("|", "**"))):
+            continue
+        low = s.lower()
+        if "sở hữu hợp đồng" in low or "ownership map" in low:  # i18n-allow
+            return True
+    return False
+
+
+def r15_loi(doc: Doc, check_dir: bool = True) -> list[str]:
+    """Validate plan task blocks for R15 (legacy before R15_MOC, full V2+ from R15_MOC onward)."""
+    if check_dir and os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "plan":
+        return []
+    if not _plan_sau_moc(doc.path):
+        return _legacy_r15(doc)
+    out = []
+    is_quick = _is_quick_plan(doc)
+    contract_tasks = 0
+    for task in _extract_plan_tasks(doc):
+        if _check_task_v2(doc, task, is_quick, out):
+            contract_tasks += 1
+    _check_dod_v2(doc, out)
+    if contract_tasks >= 2 and not _has_ownership_map(doc):
+        _report(out, doc, 0, "R15",
+                "plan has >= 2 contract code tasks without an Ownership Map section")
+    return out
+
+
+def rule_r15(doc, out):
+    """Enforce R15 plan task specifications and ANTI-2 / placeholder guards."""
+    out.extend(r15_loi(doc, check_dir=True))
 
 
 RULES = [rule_r1, rule_r2, rule_r3, rule_r4, rule_r5, rule_r6, rule_r7, rule_r8,
@@ -609,6 +932,7 @@ def pair(spec_path, plan_path):
     except OSError as exc:
         print(f"--pair: cannot read the file ({exc})", file=sys.stderr)
         return 1
+    plan_doc = Doc(plan_path)
     rows = _spec3b_rows(spec)
     if not rows:
         print(f"{spec_path}:1: [R8] the spec has no §3b table to pair against")
@@ -632,6 +956,7 @@ def pair(spec_path, plan_path):
         for field in CONTRACT_FIELDS:
             if field not in fields:
                 problems.append(f"{plan_path}:{line_no + 1}: [R8] skill {skill} missing the field {field}")
+    problems.extend(r15_loi(plan_doc, check_dir=False))
     for problem in problems:
         print(problem)
     return 1 if problems else 0
@@ -663,7 +988,8 @@ R12_TOI_THIEU_DONG = 3
 def _r12_van_xuoi(line):
     """None = does not qualify as prose (breaks the run). True/False = carries Vietnamese marks or not."""
     text = R12_INLINE.sub(" ", line)
-    if text.strip().startswith(("|", ">", "#", "-", "*", "<!--")):
+    stripped = text.strip()
+    if stripped.startswith(("|", ">", "#", "-", "*", "<!--")) or re.match(r"^\d+\.\s", stripped):
         return None
     if len(R12_TU.findall(text)) < R12_TOI_THIEU_TU:
         return None
