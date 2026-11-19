@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "e1b18091-12c4-421f-9d1f-d2669a58c008",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-1457-audit-sai-sot-noi-hook\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-1457-audit-sai-sot-noi-hook.08774fe4ad0345b5871cdb306a1b2f89.html",
+  "specification": {
+    "sha256": "a11e02d8a5d50b117d61b6e6c7bea6ef2e35d9d69dca93220d2944fece96fe13",
+    "bytes": 3197
+  },
+  "artifact": {
+    "sha256": "e654bb69c4584a23532f5e897689e6c7f5a2903add7d80cf636d1062234dc0b5",
+    "bytes": 1241473
+  },
+  "explainer": {
+    "preparedSha256": "4b6105020a82a8386a1b7792738cf77eb4d04cfc2758fb19840a4e5150f00e3e",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "hook-audit-truoc",
+        "inline": true,
+        "sha256": "1b3aac6993fd42023277c5e9f318dd6c828ba5847843f63a03eeda945665327d",
+        "bytes": 1010
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-audit-hientrang",
+        "inline": true,
+        "sha256": "64881ab45e377e0164d62788edf847aca717300316b6dabd1e59367efc3eb25d",
+        "bytes": 1003
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-audit-lotrinh",
+        "inline": true,
+        "sha256": "16ae1a015ee35beab79f065c6d97b6a7fa0a244976fff4ec6085500ab820c63e",
+        "bytes": 948
+      }
+    ]
+  }
+}
