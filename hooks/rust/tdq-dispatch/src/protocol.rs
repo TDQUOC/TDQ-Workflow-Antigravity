@@ -105,13 +105,6 @@ pub struct HookDecision {
     pub overwrite: Option<Value>,
     #[serde(rename = "injectSteps", skip_serializing_if = "Option::is_none")]
     pub inject_steps: Option<Vec<InjectStep>>,
-    // Temporary non-serialized bridge fields kept only until T2.1 migrates events/*.rs tests.
-    #[serde(skip)]
-    pub explanation: Option<String>,
-    #[serde(skip)]
-    pub additional_context: Option<String>,
-    #[serde(skip)]
-    pub metadata: Option<HookMetadata>,
 }
 
 impl HookDecision {
@@ -122,9 +115,6 @@ impl HookDecision {
             reason: None,
             overwrite: None,
             inject_steps: None,
-            explanation: None,
-            additional_context: None,
-            metadata: None,
         }
     }
 
@@ -138,22 +128,20 @@ impl HookDecision {
 
     /// Build `{"decision":"deny","reason":...}` response.
     pub fn deny(reason: impl Into<String>) -> Self {
-        let msg = reason.into();
+        let msg = cap_markdown(reason.into().trim(), MAX_USER_MARKDOWN_CHARS);
         Self {
             decision: DecisionKind::Deny,
-            reason: Some(msg.clone()),
-            explanation: Some(msg),
+            reason: Some(msg),
             ..Self::empty_json()
         }
     }
 
     /// Build `{"decision":"continue","reason":...}` Stop block response.
     pub fn continue_run(reason: impl Into<String>) -> Self {
-        let msg = reason.into();
+        let msg = cap_markdown(reason.into().trim(), MAX_USER_MARKDOWN_CHARS);
         Self {
             decision: DecisionKind::Continue,
-            reason: Some(msg.clone()),
-            explanation: Some(msg),
+            reason: Some(msg),
             ..Self::empty_json()
         }
     }
@@ -172,13 +160,13 @@ impl HookDecision {
         if text.trim().is_empty() && clean_md.is_none() {
             return Self::empty_json();
         }
-        let metadata = clean_md.clone().map(|md| HookMetadata {
+        let metadata = clean_md.map(|md| HookMetadata {
             user_markdown: Some(md),
         });
         let step = InjectStep {
             system_message: InjectSystemMessage {
-                system_message: text.clone(),
-                metadata: metadata.clone(),
+                system_message: text,
+                metadata,
             },
         };
         Self {
@@ -186,39 +174,13 @@ impl HookDecision {
             reason: None,
             overwrite: None,
             inject_steps: Some(vec![step]),
-            explanation: None,
-            additional_context: if text.is_empty() { None } else { Some(text) },
-            metadata,
         }
-    }
-
-    /// Attach user markdown metadata (promotes `reason` on Deny/Continue or builds InjectStep).
-    pub fn with_user_markdown(mut self, md: impl Into<String>) -> Self {
-        let card = cap_markdown(md.into().trim(), MAX_USER_MARKDOWN_CHARS);
-        let meta = self.metadata.get_or_insert_with(Default::default);
-        meta.user_markdown = Some(card.clone());
-        if matches!(self.decision, DecisionKind::Deny | DecisionKind::Continue) {
-            self.reason = Some(card);
-        }
-        self
     }
 
     /// Attach shallow `overwrite` fields onto PreToolUse allow response.
     pub fn with_overwrite(mut self, overwrite_val: Value) -> Self {
         self.overwrite = Some(overwrite_val);
         self
-    }
-
-    /// Attach inject context text (temporary bridge + populates AGY `injectSteps`).
-    pub fn with_additional_context(self, ctx: impl Into<String>) -> Self {
-        let msg = ctx.into();
-        let existing_md = self.metadata.as_ref().and_then(|m| m.user_markdown.clone());
-        let mut out = Self::inject(msg.clone(), existing_md);
-        out.decision = self.decision;
-        out.reason = self.reason;
-        out.explanation = self.explanation;
-        out.additional_context = Some(msg);
-        out
     }
 
     /// Serialize response to compact single-line JSON for stdout.
@@ -305,6 +267,7 @@ pub struct ToolCallPayload {
 pub struct NormalizedToolCall {
     pub raw_tool_name: String,
     pub tool_name: String,
+    pub server_name: Option<String>,
     pub args: Map<String, Value>,
     pub is_mcp_wrapper: bool,
     pub raw_args_is_str: bool,
@@ -472,14 +435,22 @@ impl HookPayload {
             return NormalizedToolCall {
                 raw_tool_name: raw_name.clone(),
                 tool_name: raw_name,
+                server_name: None,
                 args: outer,
                 is_mcp_wrapper: false,
                 raw_args_is_str: false,
                 raw_arguments: Map::new(),
             };
         }
+        let server_name = outer
+            .get("ServerName")
+            .or_else(|| outer.get("server"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let inner_name = outer
-            .get("Name")
+            .get("ToolName")
+            .or_else(|| outer.get("tool"))
+            .or_else(|| outer.get("Name"))
             .or_else(|| outer.get("name"))
             .and_then(|v| v.as_str())
             .unwrap_or("call_mcp_tool")
@@ -491,6 +462,7 @@ impl HookPayload {
         NormalizedToolCall {
             raw_tool_name: raw_name,
             tool_name: inner_name,
+            server_name,
             args: inner_args.clone(),
             is_mcp_wrapper: true,
             raw_args_is_str: is_str,

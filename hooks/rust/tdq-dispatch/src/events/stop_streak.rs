@@ -1,95 +1,134 @@
-//! StopStreak hook event handler in pure Rust.
-//! Detects and prevents infinite model stop loops.
+//! StopStreak / Stop Hybrid Router in pure Rust.
+//! Closes turns and allows immediately when idle/terminal/no-request;
+//! delegates active open-request stops to Python `stop_gate.py`.
 
 use crate::protocol::{GuidanceRepo, HookDecision, HookPayload};
-use crate::storage::record_stop_streak;
-use sha2::{Digest, Sha256};
+use crate::storage::{
+    effective_phase, mark_turn_closed, read_plan_tick_state, read_tdq_state, record_stop_streak,
+};
+use crate::RouteOutcome;
 use std::path::Path;
 
-fn get_plan_info(workspace_root: &Path) -> Option<(String, usize)> {
-    let state_path = workspace_root.join("docs").join("tdq").join("state.json");
-    let content = std::fs::read_to_string(&state_path).ok()?;
-    let val: serde_json::Value = serde_json::from_str(&content).ok()?;
-    let phase = val.get("phase").and_then(|v| v.as_str()).unwrap_or("");
-    let paused = val.get("implement_pause").map(|v| !v.is_null() && v.as_str() != Some("")).unwrap_or(false);
-    if phase == "implement" && !paused {
-        if let Some(req) = val.get("active_request").and_then(|v| v.as_str()) {
-            let plan_path = workspace_root
-                .join("docs")
-                .join("tdq")
-                .join("plan")
-                .join(format!("{}.md", req));
-            if let Ok(plan_content) = std::fs::read_to_string(&plan_path) {
-                let mut hasher = Sha256::new();
-                hasher.update(plan_content.as_bytes());
-                let sha = format!("{:x}", hasher.finalize());
-                let mut open_count = 0;
-                for line in plan_content.lines() {
-                    let trimmed = line.trim_start();
-                    if trimmed.starts_with("- [ ]") || trimmed.starts_with("- [~]") {
-                        open_count += 1;
-                    }
-                }
-                return Some((sha, open_count));
-            }
-        }
-    }
-    None
+const TERMINAL_STOP_REASONS: &[&str] = &[
+    "USER_CANCELED",
+    "CANCELLED",
+    "CANCELED",
+    "ABORTED",
+    "TIMEOUT",
+    "ERROR",
+    "INTERRUPTED",
+];
+
+fn is_terminal_stop(payload: &HookPayload) -> bool {
+    let reason = payload.termination_reason.as_deref().unwrap_or("");
+    TERMINAL_STOP_REASONS.iter().any(|r| r.eq_ignore_ascii_case(reason))
 }
 
-/// Handle Antigravity StopStreak / Stop event.
-pub fn handle_stop_streak(_payload: &HookPayload, workspace_root: &Path) -> HookDecision {
-    if let Some((sha, open_count)) = get_plan_info(workspace_root) {
-        if open_count > 0 {
-            let dem = record_stop_streak(workspace_root, &sha);
-            if dem > 3 {
-                let card = GuidanceRepo::format_4part_card(
-                    "INTAKE",
-                    &format!("Phát hiện vòng lặp dừng liên tiếp {} lần khi chưa xong việc", dem),
-                );
-                return HookDecision::allow()
-                    .with_user_markdown(card)
-                    .with_additional_context(format!(
-                        "[TDQ:STUCK] {} open task(s). Finish plan or declare a genuine blocker.",
-                        open_count
-                    ));
-            }
-            return HookDecision::continue_run(format!(
-                "[TDQ:UNFINISHED] {} open task(s). Keep working to the approved spec: mark [~], test, mark [x].",
-                open_count
-            ));
-        }
+/// Evaluate pure-Rust Stop plan streak (also used by unit checks).
+pub fn evaluate_open_plan_stop(workspace_root: &Path) -> HookDecision {
+    let Some(state) = read_tdq_state(workspace_root) else {
+        return HookDecision::allow();
+    };
+    let paused = state
+        .implement_pause
+        .as_ref()
+        .map(|v| !v.is_null() && v.as_str() != Some(""))
+        .unwrap_or(false);
+    if effective_phase(&state) != "implement" || paused {
+        return HookDecision::allow();
     }
+    let tick = read_plan_tick_state(workspace_root, &state);
+    let open_count = tick.total.saturating_sub(tick.done_count);
+    if !tick.exists || open_count == 0 || tick.dispatched_count > 0 {
+        return HookDecision::allow();
+    }
+    let dem = record_stop_streak(workspace_root, &tick.sha);
+    if dem > 2 {
+        return HookDecision::allow();
+    }
+    let card = GuidanceRepo::format_4part_card(
+        "UNFINISHED",
+        &format!("{} open task(s) remain in active implement plan.", open_count),
+    );
+    HookDecision::continue_run(card)
+}
 
-    HookDecision::allow()
+/// Hybrid Stop entrypoint: Hot-path allow on terminal/idle/no-request, else Cold-path Python.
+pub fn handle_stop_streak(payload: &HookPayload, workspace_root: &Path) -> RouteOutcome {
+    let sid = payload.canonical_session_id();
+    if is_terminal_stop(payload) {
+        mark_turn_closed(workspace_root, &sid);
+        return RouteOutcome::Decided(HookDecision::allow());
+    }
+    let state = read_tdq_state(workspace_root);
+    let active_req = state
+        .as_ref()
+        .and_then(|s| s.active_request.as_deref())
+        .map(str::trim)
+        .unwrap_or("");
+    let phase = state.as_ref().map(effective_phase).unwrap_or("idle");
+    if active_req.is_empty() || phase == "idle" {
+        mark_turn_closed(workspace_root, &sid);
+        return RouteOutcome::Decided(HookDecision::allow());
+    }
+    RouteOutcome::DelegatePython
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::events::post_tool_use::handle_post_tool_use;
+    use crate::protocol::DecisionKind;
     use serde_json::json;
     use std::fs;
 
     #[test]
-    fn test_post_tool_and_stop_streak() {
+    fn test_post_tool_and_stop_hybrid_routes() {
         let tmp = std::env::temp_dir().join(format!("tdq_post_stop_test_{}", std::process::id()));
-        let _ = fs::create_dir_all(tmp.join("docs").join("tdq"));
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::create_dir_all(tmp.join("docs").join("tdq").join("plan"));
 
-        // PostToolUse test
         let post_payload = HookPayload {
-            session_id: Some("sid-002".to_string()),
+            conversation_id: Some("sid-002".to_string()),
             tool_name: Some("read_file".to_string()),
             arguments: Some(json!({ "Path": "C:/demo/file.txt" })),
             ..Default::default()
         };
         let p_res = handle_post_tool_use(&post_payload, &tmp);
-        assert_eq!(p_res.decision, crate::protocol::DecisionKind::Allow);
+        assert_eq!(p_res.to_json_string(), "{}");
+        assert!(tmp.join("docs").join("tdq").join(".tdq-read.jsonl").is_file());
 
-        // StopStreak test without plan -> allow
-        let stop_payload = HookPayload::default();
-        let s_res = handle_stop_streak(&stop_payload, &tmp);
-        assert_eq!(s_res.decision, crate::protocol::DecisionKind::Allow);
+        let stop_idle = HookPayload {
+            conversation_id: Some("sid-002".to_string()),
+            ..Default::default()
+        };
+        assert!(matches!(handle_stop_streak(&stop_idle, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
+
+        fs::write(
+            tmp.join("docs").join("tdq").join("state.json"),
+            r#"{"active_request":"req1","phase":"implement","lane":"full","plan_file":"docs/tdq/plan/req1.md"}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs").join("tdq").join("plan").join("req1.md"),
+            "- [>] **T1.1** delegated — Test: `x`\n- [ ] **T1.2** todo — Test: `x`\n",
+        )
+        .unwrap();
+        assert!(matches!(handle_stop_streak(&stop_idle, &tmp), RouteOutcome::DelegatePython));
+        // Dispatched `[>]` task counts as active progress and does not UNFINISHED-block
+        assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Allow);
+
+        // Active without `[>]`: streak 1, 2 -> Continue ("UNFINISHED"), streak 3 -> Allow
+        fs::write(
+            tmp.join("docs").join("tdq").join("plan").join("req1.md"),
+            "- [~] **T1.1** active — Test: `x`\n- [ ] **T1.2** todo — Test: `x`\n",
+        )
+        .unwrap();
+        let d1 = evaluate_open_plan_stop(&tmp);
+        assert_eq!(d1.decision, DecisionKind::Continue);
+        assert!(d1.reason.unwrap_or_default().contains("UNFINISHED"));
+        assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Continue);
+        assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Allow);
 
         let _ = fs::remove_dir_all(&tmp);
     }

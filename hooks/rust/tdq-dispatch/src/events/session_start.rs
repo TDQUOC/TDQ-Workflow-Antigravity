@@ -1,69 +1,47 @@
 //! SessionStart hook event handler in pure Rust (0 Python subprocesses).
 
-use crate::protocol::{GuidanceRepo, HookDecision, HookPayload};
+use crate::protocol::{cap_markdown, GuidanceRepo, HookDecision, HookPayload};
 use crate::storage::{clean_old_runtime_files, read_tdq_state};
 use std::fs;
 use std::path::Path;
 use std::time::Duration;
 
-/// Handle Antigravity SessionStart event.
+/// Handle Antigravity SessionStart event with UTF-8 boundary safety.
 pub fn handle_session_start(_payload: &HookPayload, workspace_root: &Path) -> HookDecision {
-    // 1. Clean stale runtime logs older than 7 days
     let _cleaned = clean_old_runtime_files(workspace_root, Duration::from_secs(7 * 86400));
-
     let mut context_blocks = Vec::new();
-
-    // 2. Check setup readiness (.tdq-san-sang.json)
     let san_sang_path = workspace_root.join("docs").join("tdq").join(".tdq-san-sang.json");
     if !san_sang_path.exists() {
-        let setup_card = GuidanceRepo::format_4part_card("SETUP", "Dự án chưa chạy khởi tạo TDQ ban đầu");
-        let search_card = GuidanceRepo::format_4part_card("SEARCH", "Ưu tiên tra cứu LSP/Grep trước khi sửa đổi");
-        context_blocks.push(format!("{}\n\n{}", setup_card, search_card));
+        context_blocks.push(GuidanceRepo::format_4part_card("SETUP", "Project setup incomplete"));
     }
-
-    // 3. Inspect TDQ state
     if let Some(state) = read_tdq_state(workspace_root) {
         if let Some(ref req) = state.active_request {
             let phase = state.phase.as_deref().unwrap_or("idle");
             let lane = state.lane.as_deref().unwrap_or("full");
             let muc_gat = state.muc_gat.as_deref().unwrap_or("full");
-
-            let banner = format!(
-                "[TDQ:SESSION] Request: {} · Lane: {} · Phase: {} · Mức gắt: {}",
+            context_blocks.push(format!(
+                "[TDQ:SESSION] Request: {} · Lane: {} · Phase: {} · Level: {}",
                 req, lane, phase, muc_gat
-            );
-            context_blocks.push(banner);
-
-            // Read concise rules from chung.md if available
+            ));
             let chung_md_path = workspace_root
                 .join("skills")
                 .join("tdq-build")
                 .join("references")
                 .join("rules")
                 .join("chung.md");
-
             if let Ok(rules_content) = fs::read_to_string(&chung_md_path) {
-                // Extract first 1500 chars of core rules
-                let slice = if rules_content.len() > 1500 {
-                    &rules_content[..1500]
-                } else {
-                    &rules_content
-                };
+                let slice = cap_markdown(&rules_content, 1500);
                 context_blocks.push(format!("[TDQ:GON]\n{}", slice.trim()));
             }
         }
     } else {
-        // No request open
-        let intake_hint = GuidanceRepo::format_4part_card("INTAKE", "Chưa có request TDQ nào đang mở");
-        context_blocks.push(intake_hint);
+        context_blocks.push(GuidanceRepo::format_4part_card("INTAKE", "No active TDQ request"));
     }
 
-    let decision = HookDecision::allow();
-    if !context_blocks.is_empty() {
-        let full_context = context_blocks.join("\n\n");
-        decision.with_additional_context(full_context)
+    if context_blocks.is_empty() {
+        HookDecision::empty_json()
     } else {
-        decision
+        HookDecision::inject(context_blocks.join("\n\n"), None)
     }
 }
 
@@ -74,15 +52,38 @@ mod tests {
     #[test]
     fn test_session_start_clean_and_context() {
         let tmp = std::env::temp_dir().join(format!("tdq_session_test_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
         let _ = fs::create_dir_all(tmp.join("docs").join("tdq"));
 
         let payload = HookPayload::default();
         let decision = handle_session_start(&payload, &tmp);
+        let json_out = decision.to_json_string();
+        assert!(json_out.contains("\"injectSteps\""));
+        assert!(json_out.contains("[TDQ:SETUP]"));
 
-        assert_eq!(decision.decision, crate::protocol::DecisionKind::Allow);
-        assert!(decision.additional_context.is_some());
-        let ctx = decision.additional_context.unwrap();
-        assert!(ctx.contains("[TDQ:SETUP]"));
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_session_start_multibyte_utf8_no_panic() {
+        let tmp = std::env::temp_dir().join(format!("tdq_utf8_test_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let rules_dir = tmp.join("skills").join("tdq-build").join("references").join("rules");
+        let _ = fs::create_dir_all(tmp.join("docs").join("tdq"));
+        let _ = fs::create_dir_all(&rules_dir);
+        fs::write(
+            tmp.join("docs").join("tdq").join("state.json"),
+            r#"{"active_request":"req-utf8","phase":"implement","lane":"full"}"#,
+        )
+        .unwrap();
+        // Prefixing 1 ASCII byte shifts byte 1500 inside 3-byte 'ệ'.
+        let repeated = format!("x{}", "ệ".repeat(600));
+        fs::write(rules_dir.join("chung.md"), &repeated).unwrap();
+
+        let payload = HookPayload::default();
+        let decision = handle_session_start(&payload, &tmp);
+        let json_out = decision.to_json_string();
+        assert!(json_out.contains("[TDQ:GON]"));
 
         let _ = fs::remove_dir_all(&tmp);
     }

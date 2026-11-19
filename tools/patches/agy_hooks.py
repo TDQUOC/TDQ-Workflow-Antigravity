@@ -1468,6 +1468,21 @@ def _search_grace_state(cwd, phien):
     return state_val
 
 
+_SEARCH_CMD_LEAK_RE = _re.compile(r"(?:\b(?:rg|grep|findstr)\b|Select-String)", _re.IGNORECASE)
+_PS_HERESTRING_RE = _re.compile(r"(?s)@'\r?\n.*?\r?\n'@|@\"\r?\n.*?\r?\n\"@")
+
+
+def _has_search_leak(ten_tool, vao):
+    """Detect raw search CLI invocations inside malformed shell strings outside PS here-strings."""
+    if ten_tool in ("Grep", "grep_search", "search_directory") or not isinstance(vao, dict):
+        return False
+    cmd = vao.get("command") or vao.get("cmd") or ""
+    if isinstance(cmd, list):
+        cmd = " ".join(str(x) for x in cmd)
+    stripped = _PS_HERESTRING_RE.sub(" ", str(cmd))
+    return bool(_SEARCH_CMD_LEAK_RE.search(stripped))
+
+
 def _mark_search_grace(cwd, phien, state_val, tool_name):
     row = {
         "ts": _common.tdq_state.now_iso(),
@@ -1621,7 +1636,7 @@ def _enforce_agy_bash_guards(payload, cwd):
     cmd = str((payload.get("tool_input") or {}).get("command") or "")
     info = detect_subagent(payload, cwd)
     role = (info.get("role") or "").lower()
-    if any(r in role for r in ("reviewer", "browser")) and (
+    if any(r in role for r in ("reviewer", "qc-tester", "browser")) and (
         ">" in cmd or _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv "))
     ):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
@@ -1694,6 +1709,38 @@ def _enforce_agy_bash_guards(payload, cwd):
         '    if (payload.get("agent_id") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \\',
         label="bash_gate_agy_team_guard",
         sentinel="is_agy() and detect_subagent(payload, cwd)",
+    )
+    replace_exact(
+        bash_path,
+        '        block(cwd, payload, "TDQ:TEAM", [\n'
+        '            "A sub-agent may not mutate the project through Bash/PowerShell before implement.",\n'
+        '            "Return structured output, or write only the assigned report under docs/tdq/artifacts/.",\n'
+        '            "The TDQ leader remains the state and source writer.",\n'
+        '        ])\n'
+        '        return False\n\n'
+        '    # (1) observe',
+        '        block(cwd, payload, "TDQ:TEAM", [\n'
+        '            "A sub-agent may not mutate the project through Bash/PowerShell before implement.",\n'
+        '            "Return structured output, or write only the assigned report under docs/tdq/artifacts/.",\n'
+        '            "The TDQ leader remains the state and source writer.",\n'
+        '        ])\n'
+        '        return False\n'
+        '    _mutates_src_shell = any(\n'
+        '        (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\\s\'\\"=])docs[\\\\/]", part, re.IGNORECASE))\n'
+        '        or any(not re.search(r"^(?:\\./)?docs[\\\\/]", t.lstrip("\'\\"").replace("\\\\", "/"), re.IGNORECASE)\n'
+        '               and t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part))\n'
+        '        for part in parts)\n'
+        '    if is_agy() and state.get("active_request") and _mutates_src_shell:\n'
+        '        from tdq_state import cong_dang_cho\n'
+        '        _pending_gate = cong_dang_cho(state)\n'
+        '        if _pending_gate:\n'
+        '            block(cwd, payload, "TDQ:APPROVE", [\n'
+        '                f"{_pending_gate} has no recorded approval — do not mutate source via shell.",\n'
+        '            ])\n'
+        '            return False\n\n'
+        '    # (1) observe',
+        label="bash_gate_agy_approve_shell_mutator",
+        sentinel="do not mutate source via shell.",
     )
     replace_exact(
         bash_path,
@@ -1785,22 +1832,29 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         label="edit_gate_agy_team_subagent_block",
         sentinel='or (is_agy() and detect_subagent(payload, cwd).get("is_subagent")))',
     )
-    if "def _tick_notify(" not in read_utf8(edit_path):
-        text = read_utf8(edit_path).replace(
-            'block(cwd, payload, "TDQ:TICK",', "_tick_notify(cwd, payload,"
-        )
-        write_utf8(edit_path, text)
     replace_exact(
         edit_path,
-        "def within(child, parent):",
-        "def _tick_notify(cwd, payload, lines):\n"
-        "    if is_agy():\n"
-        '        remind(cwd, payload, "TICK", lines)\n'
-        "    else:\n"
-        '        block(cwd, payload, "TDQ:TICK", lines)\n\n\n'
-        "def within(child, parent):",
-        label="edit_gate_tick_notify_helper",
-        sentinel="def _tick_notify(",
+        '            if streak >= STREAK_NGUONG:\n'
+        '                block(cwd, payload, "TDQ:TICK", [\n'
+        '                    f"{streak} edits in a row with no tick in the plan — close the task before editing on.",\n'
+        '                    "Task still in progress → update notes or tasks in the plan file to reset the streak.",\n'
+        '                    "Test green → flip to [x] now; a different task → tick it before coding.",\n'
+        '                    "Request already finished → tdq_state.py set phase=idle.",\n'
+        '                ])',
+        '            streak_limit = 8 if is_agy() else STREAK_NGUONG\n'
+        '            if streak >= streak_limit:\n'
+        '                block(cwd, payload, "TDQ:TICK", [\n'
+        '                    f"{streak} edits in a row with no tick in the plan — close the task before editing on.",\n'
+        '                    "Task still in progress → update notes or tasks in the plan file to reset the streak.",\n'
+        '                    "Test green → flip to [x] now; a different task → tick it before coding.",\n'
+        '                    "Request already finished → tdq_state.py set phase=idle.",\n'
+        '                ])\n'
+        '            elif is_agy() and streak >= 4:\n'
+        '                remind(cwd, payload, "TICK", [\n'
+        '                    f"{streak}/8 source edits without a plan checkbox tick (blocks at 8).",\n'
+        '                ])',
+        label="edit_gate_agy_smart_tick",
+        sentinel="streak_limit = 8 if is_agy() else STREAK_NGUONG",
     )
     replace_exact(
         edit_path,
@@ -1969,12 +2023,15 @@ def _patch_search_gate(hooks_scripts_dir: Path) -> None:
         '                                    "doan_mo": bool(pl.get("doan_mo"))})\n'
         "    return ok, ly_do, pl, bool(dung_xuong)",
         '    if _common.is_agy() and pl.get("status") == "unknown":\n'
-        '        if pl.get("loai") == search_rules.TIM_CODE:\n'
-        '            search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",\n'
-        '                                        "cho_phep": True, "tinh_cua_so": False, "doan_mo": False})\n'
-        '            if pha in ("implement", "qc"):\n'
-        '                return True, "agy_malformed_remind", pl, False\n'
-        '        return True, "agy_malformed_allow", pl, False\n'
+        '        if _has_search_leak(ten_tool, vao):\n'
+        '            pl = dict(pl, loai=search_rules.TIM_CODE, status="leak_search")\n'
+        '        else:\n'
+        '            if pl.get("loai") == search_rules.TIM_CODE:\n'
+        '                search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",\n'
+        '                                            "cho_phep": True, "tinh_cua_so": False, "doan_mo": False})\n'
+        '                if pha in ("implement", "qc"):\n'
+        '                    return True, "agy_malformed_remind", pl, False\n'
+        '            return True, "agy_malformed_allow", pl, False\n'
         '    if _common.is_agy() and pl.get("loai") == search_rules.TIM_CODE and _is_rtk_bypass(ten_tool, vao):\n'
         '        search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",\n'
         '                                    "cho_phep": False, "tinh_cua_so": False, "doan_mo": bool(pl.get("doan_mo"))})\n'
@@ -2038,6 +2095,19 @@ def _patch_search_observe(hooks_scripts_dir: Path) -> None:
         "import search_rules  # noqa: E402\n"
         "from search_rules import (TOKEN, la_goi_khai_niem, la_tool_tdq_lsp,  # noqa: E402,F401\n"
         "                          phan_loai_ket_qua_lsp, trang_thai)\n\n\n"
+        "_SHELL_GRAPHIFY_RE = re.compile(\n"
+        '    r"(?:^|[;&|]\\s*)(?:(?:py|python3?)(?:\\s+-\\S+)*\\s+(?:\\S*tdq_graphify\\.py|-m\\s+graphify)|graphify)\\s+"\n'
+        '    r"(query|explain|path|god-nodes|affected)\\b",\n'
+        "    re.IGNORECASE,\n"
+        ")\n\n\n"
+        "def _shell_graphify_label(norm_name, tool_input):\n"
+        '    if str(norm_name or "").lower() not in (search_rules.CONG_CU_SHELL | {"powershell"}):\n'
+        "        return None\n"
+        "    if not isinstance(tool_input, dict):\n"
+        "        return None\n"
+        '    cmd = str(tool_input.get("command") or tool_input.get("cmd") or "")\n'
+        "    m = _SHELL_GRAPHIFY_RE.search(cmd)\n"
+        '    return f"graphify:{m.group(1).lower()}" if m else None\n\n\n'
         "def _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan):\n"
         "    if not _common.is_agy():\n"
         "        return\n"
@@ -2049,7 +2119,7 @@ def _patch_search_observe(hooks_scripts_dir: Path) -> None:
         '           "type": "search_grace", "state": "reset", "session": phien, "tool": str(norm_name)}\n'
         "    _common._lock_and_append_jsonl(_common._shard_turn_path(cwd, phien), row)",
         label="search_observe_reset_helper",
-        sentinel="def _maybe_reset_search_grace(",
+        sentinel="def _shell_graphify_label(",
     )
     replace_exact(
         so_path,
@@ -2057,11 +2127,11 @@ def _patch_search_observe(hooks_scripts_dir: Path) -> None:
         "        nhan = la_goi_khai_niem(tool_name, tool_input)\n"
         "        if nhan:",
         "    if su_kien == \"PreToolUse\":\n"
-        "        nhan = la_goi_khai_niem(tool_name, tool_input)\n"
+        "        nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)\n"
         "        _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)\n"
         "        if nhan:",
         label="search_observe_pre_reset",
-        sentinel="_maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)\n        if nhan:",
+        sentinel="nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)\n        _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)\n        if nhan:",
     )
     replace_exact(
         so_path,
@@ -2069,21 +2139,21 @@ def _patch_search_observe(hooks_scripts_dir: Path) -> None:
         "            nhan = la_goi_khai_niem(tool_name, tool_input)\n"
         "            if nhan:",
         "        if su_kien == \"PostToolUse\":\n"
-        "            nhan = la_goi_khai_niem(tool_name, tool_input)\n"
+        "            nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)\n"
         "            _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)\n"
         "            if nhan:",
         label="search_observe_post_reset",
-        sentinel="if su_kien == \"PostToolUse\":\n            nhan = la_goi_khai_niem(tool_name, tool_input)\n            _maybe_reset_search_grace",
+        sentinel="if su_kien == \"PostToolUse\":\n            nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label",
     )
     replace_exact(
         so_path,
         "    # Fallback for events without explicit hook_event_name\n"
         "    nhan = la_goi_khai_niem(tool_name, tool_input)",
         "    # Fallback for events without explicit hook_event_name\n"
-        "    nhan = la_goi_khai_niem(tool_name, tool_input)\n"
+        "    nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label(tool_name, tool_input)\n"
         "    _maybe_reset_search_grace(cwd, phien, tool_name, tool_input, nhan)",
         label="search_observe_fallback_reset",
-        sentinel="nhan = la_goi_khai_niem(tool_name, tool_input)\n    _maybe_reset_search_grace",
+        sentinel="nhan = la_goi_khai_niem(tool_name, tool_input) or _shell_graphify_label",
     )
 
 
@@ -2149,14 +2219,35 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "    is_new, sig = _detect_new_user_turn(cwd, payload, sid)\n"
             '    _RUNTIME_STATE["new_user_turn"] = is_new\n'
             "    if is_new:\n"
+            "        prev_meta = read_turn_meta(cwd, sid)\n"
             "        shard = _shard_turn_path(cwd, sid)\n"
             "        if os.path.isfile(shard):\n"
             "            try:\n"
             "                os.remove(shard)\n"
             "            except OSError:\n"
             "                pass\n"
-            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload)})\n'
-            "    return False, is_new",
+            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or "")})\n'
+            "    return False, is_new\n\n\n"
+            "def _agy_phase_anchor(cwd, state, payload, sid):\n"
+            '    """Inject 1-line [TDQ:GON] or [TDQ:QC] once per phase entry or post-compaction."""\n'
+            '    req = str((state or {}).get("active_request") or "")\n'
+            '    pha = effective_phase(state, warn=False)\n'
+            '    if not req or pha not in ("implement", "qc"):\n'
+            "        return\n"
+            "    meta = read_turn_meta(cwd, sid)\n"
+            '    anchor = f"{req}:{pha}"\n'
+            '    is_compact = str(payload.get("source") or "").lower() == "compact"\n'
+            '    if not is_compact and meta.get("phase_anchor") == anchor:\n'
+            "        return\n"
+            '    if pha == "implement":\n'
+            '        muc = muc_gat_hieu_luc(state)\n'
+            '        if muc != "off":\n'
+            "            dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), min(MAX_GON_CHARS, 160))\n"
+            "            emit_context([dong])\n"
+            "    else:\n"
+            '        emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])\n'
+            '    meta["phase_anchor"] = anchor\n'
+            "    write_turn_meta(cwd, sid, meta)",
             label="prompt_context_agy_turn_hook",
         )
     replace_exact(
@@ -2192,11 +2283,13 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "    _nhac_gon(cwd, state, payload, sid)\n"
         "    _nhac_qc(cwd, state, payload, sid)",
         "    _emit(cwd, sid, lines, critical=drifted)\n"
-        "    if not agy_mode:\n"
+        "    if agy_mode:\n"
+        "        _agy_phase_anchor(cwd, state, payload, sid)\n"
+        "    else:\n"
         "        _nhac_gon(cwd, state, payload, sid)\n"
         "        _nhac_qc(cwd, state, payload, sid)",
-        label="prompt_context_skip_gon_qc_agy",
-        sentinel="if not agy_mode:\n        _nhac_gon(cwd, state, payload, sid)",
+        label="prompt_context_agy_phase_anchor",
+        sentinel="if agy_mode:\n        _agy_phase_anchor(cwd, state, payload, sid)",
     )
     replace_exact(
         pc_path,
@@ -2248,6 +2341,13 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "                     payload_cwd, queue_remind, read_payload, session_id, stop_block, turn_rows)",
         label="stop_gate_imports",
         sentinel="mark_turn_closed",
+    )
+    replace_exact(
+        stop_path,
+        "    if dem > MAX_STREAK:",
+        "    if dem > (2 if is_agy() else MAX_STREAK):",
+        label="stop_gate_max_streak_2_agy",
+        sentinel="if dem > (2 if is_agy() else MAX_STREAK):",
     )
     replace_exact(
         stop_path,
@@ -2304,9 +2404,6 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "            mark_turn_closed(cwd, sid)\n"
         "        return\n"
         '    cont_active = bool(payload.get("continuationActive") or payload.get("continuation_active") or payload.get("stop_hook_active"))\n'
-        "    if is_agy() and cont_active:\n"
-        "        mark_turn_closed(cwd, sid)\n"
-        "        return\n"
         "    lap_lai = cont_active\n"
         "    state = load(cwd)\n"
         '    if state is None or not state.get("active_request"):\n'
@@ -2316,9 +2413,11 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "    if lap_lai and _chan_chua_xong(cwd, state, payload):\n"
         "        return\n"
         "    if lap_lai:\n"
+        "        if is_agy():\n"
+        "            mark_turn_closed(cwd, sid)\n"
         "        return",
         label="stop_gate_continuation_active",
-        sentinel="if is_agy() and cont_active:",
+        sentinel="lap_lai = cont_active\n",
     )
     replace_exact(
         stop_path,
@@ -2349,7 +2448,7 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         '    edited = [r.get("path", "") for r in rows\n'
         '              if r.get("kind") == "observe" and r.get("event") == "edit"\n'
         '              and not str(r.get("path", "")).startswith(log_dir)\n'
-        '              and not (is_agy() and "docs/.staging" in str(r.get("path", "")).replace("\\\\", "/"))]\n'
+        '              and not (is_agy() and _is_agy_log_exempt(r.get("path", "")))]\n'
         '    logged = any(r.get("kind") == "observe" and r.get("event") == "log_written" for r in rows)\n'
         '    culprit = edited[0][:MAX_PATH_CHARS] if edited else ""\n'
         '    source = "turn ledger" if culprit else "—"\n'
@@ -2358,26 +2457,30 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "            logged = _log_changed(cwd, snap)\n"
         "        if not culprit:\n"
         "            changed, cand = _shell_change_check(cwd, snap)\n"
-        '            if changed and cand and not (is_agy() and "docs/.staging" in str(cand).replace("\\\\", "/")):\n'
+        "            if changed and cand and not (is_agy() and _is_agy_log_exempt(cand)):\n"
         "                culprit = cand\n"
         '                source = "repo fingerprint"\n'
         "    if culprit and not logged:\n"
-        "        if is_agy():\n"
-        '            queue_remind(cwd, payload, "LOG", f"Changed {culprit}, {log_rel} not appended")\n'
-        "        else:\n"
-        '            _info(f"stop_gate: block TDQ:LOG · source={source} · path={culprit}")\n'
-        '            reason = (f"[TDQ:LOG] Repo changed ({culprit}), {log_rel} not appended. "\n'
-        '                      "Run `tdq_finish.py --files <file> --log \\"<summary>\\"`, no hand Edit. "\n'
-        '                      "Then reprint the last chat block VERBATIM (question + options + "\n'
-        '                      "the ➤ line), no summarising.")\n'
-        '            stop_block(cwd, payload, reason, code="TDQ:LOG")\n'
-        "            return",
-        label="stop_gate_soft_log_agy",
-        sentinel='queue_remind(cwd, payload, "LOG"',
+        '        _info(f"stop_gate: block TDQ:LOG · source={source} · path={culprit}")\n'
+        '        reason = (f"[TDQ:LOG] Repo changed ({culprit}), {log_rel} not appended. "\n'
+        '                  "Run `tdq_finish.py --files <file> --log \\"<summary>\\"`, no hand Edit. "\n'
+        '                  "Then reprint the last chat block VERBATIM (question + options + "\n'
+        '                  "the ➤ line), no summarising.")\n'
+        '        stop_block(cwd, payload, reason, code="TDQ:LOG")\n'
+        "        return",
+        label="stop_gate_hard_log_agy_exemptions",
+        sentinel="_is_agy_log_exempt(cand)",
     )
     replace_exact(
         stop_path,
         "def _repo_changed(cwd, snap):",
+        "def _is_agy_log_exempt(path):\n"
+        '    p = str(path or "").replace("\\\\", "/").lstrip("./").lower()\n'
+        "    if not p:\n"
+        "        return True\n"
+        '    if p.startswith(("docs/.staging", "docs/tdq/", "graphify-out/")) or "/.staging" in p:\n'
+        "        return True\n"
+        '    return p.endswith(".tmp")\n\n\n'
         "def _shell_change_check(cwd, snap):\n"
         '    before = snap.get("repo_sha")\n'
         "    if not isinstance(before, str):\n"
@@ -2393,7 +2496,7 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "    prev_set = set(prev) if isinstance(prev, list) else set()\n"
         '    fresh, known = "", ""\n'
         "    for p in repo_status_paths(cwd, status=status):\n"
-        "        if not isinstance(p, str) or p.startswith(BOOKKEEPING):\n"
+        "        if not isinstance(p, str) or p.startswith(BOOKKEEPING) or (is_agy() and _is_agy_log_exempt(p)):\n"
         "            continue\n"
         "        if p not in prev_set:\n"
         "            fresh = fresh or p\n"
@@ -2403,24 +2506,6 @@ def _patch_stop_gate(hooks_scripts_dir: Path) -> None:
         "def _repo_changed(cwd, snap):",
         label="stop_gate_single_git_status_helper",
         sentinel="def _shell_change_check(",
-    )
-    replace_exact(
-        stop_path,
-        '            reason = ("[TDQ:TICK] This turn edited code but the plan checkboxes did not change. "\n'
-        '                      "Open the plan, mark [~] the task in progress and [x] the ones done (task by task). "\n'
-        '                      "Then reprint the last chat block VERBATIM — no summarising.")\n'
-        '            stop_block(cwd, payload, reason, code="TDQ:TICK")\n'
-        "            return",
-        "            if is_agy():\n"
-        '                queue_remind(cwd, payload, "TICK", f"Changed {culprit} without plan checkbox update")\n'
-        "            else:\n"
-        '                reason = ("[TDQ:TICK] This turn edited code but the plan checkboxes did not change. "\n'
-        '                          "Open the plan, mark [~] the task in progress and [x] the ones done (task by task). "\n'
-        '                          "Then reprint the last chat block VERBATIM — no summarising.")\n'
-        '                stop_block(cwd, payload, reason, code="TDQ:TICK")\n'
-        "                return",
-        label="stop_gate_soft_tick_agy",
-        sentinel='queue_remind(cwd, payload, "TICK"',
     )
     replace_exact(
         stop_path,

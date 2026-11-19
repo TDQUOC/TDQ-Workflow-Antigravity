@@ -62,7 +62,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: `Arguments` lồng dưới dạng chuỗi JSON; `workspacePaths` dạng URI `file:///C:/...` trên Windows.
     - Tiêu chí: `assert!(json.contains("\"injectSteps\""))`, `assert!(!json.contains("\"explanation\""))`, `assert!(get_runtime_dir(&tmp).ends_with("docs/tdq/.tdq-runtime"))`.
 
-- [ ] **T1.2** (e15m) Nâng cấp Hybrid 2 tầng Router và phân giải PLUGIN_ROOT trong main.rs + lib.rs — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml --bin tdq-dispatch`
+- [x] **T1.2** (e15m) Nâng cấp Hybrid 2 tầng Router và phân giải PLUGIN_ROOT trong main.rs + lib.rs — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml --bin tdq-dispatch`
   - Chạm: `hooks/rust/tdq-dispatch/src/main.rs`, `hooks/rust/tdq-dispatch/src/lib.rs`
   - Cần: `T1.1`
   - Mục tiêu: Đón đủ 6 sự kiện AGY 2.0, phân loại `Hot-path` vs `Cold-path` và tìm đúng `dispatch.py` khi chạy từ mọi project ngoài repo TDQ.
@@ -83,7 +83,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P2 — Tầng Hot-path Rust, Python Smart Hardening & Multi-OS Build Guard (M2 + M3)
 
-- [ ] **T2.1** (e22m) Hoàn thiện Rust Hot-path cho 6 sự kiện, Shell Mutator Guard và sửa cắt UTF-8 — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+- [x] **T2.1** (e22m) Hoàn thiện Rust Hot-path cho 6 sự kiện, Shell Mutator Guard và sửa cắt UTF-8 — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
   - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`, `hooks/rust/tdq-dispatch/src/events/mod.rs`, `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs`, `hooks/rust/tdq-dispatch/src/events/post_invocation.rs`, `hooks/rust/tdq-dispatch/src/events/session_start.rs`, `hooks/rust/tdq-dispatch/src/events/stop_streak.rs`
   - Cần: `T1.1`, `T1.2`
   - Mục tiêu: Đảm nhận ~91% lưu lượng `Hot-path` bằng Rust thuần và giữ an toàn UTF-8 + đồng bộ Smart Hardening với Python.
@@ -100,7 +100,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Chuỗi tiếng Việt 3 byte cắt tại vị trí 1500 trong `session_start.rs`; `write_to_file` truyền `TargetFile` vào `docs/tdq/state.json`.
     - Tiêu chí: `assert_eq!(res.decision, DecisionKind::Deny)` cho `qc-tester` shell mutator và `TICK` 0 `[~]`, không panic khi cắt chuỗi UTF-8.
 
-- [ ] **T2.2** (e22m) Áp dụng 6 quy tắc Smart Hardening trên agy_hooks.py, agy_dispatch.py, agy_manifests.py và thêm qc-tester ở bash_gate.py — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py tests/test_bash_gate.py tests/test_edit_gate.py tests/test_stop_gate.py tests/test_search_gate.py -q`
+- [x] **T2.2** (e22m) Áp dụng 6 quy tắc Smart Hardening trên agy_hooks.py, agy_dispatch.py, agy_manifests.py và thêm qc-tester ở bash_gate.py — Test: `py -3 -m pytest tests/test_hook_dispatch_r1_r3.py tests/test_bash_gate.py tests/test_edit_gate.py tests/test_stop_gate.py tests/test_search_gate.py -q`
   - Chạm: `tools/patches/agy_hooks.py`, `tools/patches/agy_dispatch.py`, `tools/patches/agy_manifests.py`, `hooks/scripts/bash_gate.py`
   - Cần: `T1.1`
   - Mục tiêu: Áp dụng trọn 6 quy tắc Smart Hardening cho tầng Antigravity và giữ nguyên 0 hồi quy cho `hooks/scripts/` gốc Claude/Codex (`3a`).
@@ -117,7 +117,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Tệp `docs/.staging/x.md` hay `graphify-out/x.json` sửa trong lượt không kích hoạt `TDQ:LOG`; `continuationActive=True` với `plan_sha` đổi vẫn giữ gate `UNFINISHED`.
     - Tiêu chí: `assert resp["decision"] == "continue"` khi sửa code thiếu log ở `Stop` và `assert resp["decision"] == "deny"` cho `qc-tester` dùng `Set-Content`.
 
-- [>] **T2.3** (e12m) Sửa lỗi ghi đè binary đa nền tảng và thêm Magic-Byte Guard ở tools/build_agy_plugin.py — Test: `py -3 -c "import sys; sys.path.insert(0, 'tools'); import build_agy_plugin as b; assert callable(b.verify_binary_magic)"`
+- [x] **T2.3** (e12m) Sửa lỗi ghi đè binary đa nền tảng và thêm Magic-Byte Guard ở tools/build_agy_plugin.py — Test: `py -3 -c "import sys; sys.path.insert(0, 'tools'); import build_agy_plugin as b; assert callable(b.verify_binary_magic)"`
   - Chạm: `tools/build_agy_plugin.py`
   - Cần: không
   - Mục tiêu: Chấm dứt lỗi copy đè `.exe` Windows thành binary Linux/macOS trong `stage/bin/` và xác thực magic bytes trước khi đóng gói.

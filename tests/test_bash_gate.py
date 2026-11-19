@@ -435,6 +435,22 @@ class TestEvalHelpers(unittest.TestCase):
             _common._RUNTIME_STATE.clear()
             _common._RUNTIME_STATE.update(saved)
 
+    def test_qc_tester_readonly_shell_mutator_denied(self):
+        write_state(self.cwd, active_request="r1", lane="full", phase="qc")
+        for cmd in (
+            "Set-Content src/a.py x",
+            "python -c \"open('src/a.py','w').write('x')\"",
+            "echo y > src/a.py",
+        ):
+            payload = load_fixture("bash_cmd.json", cwd=self.cwd, session_id="qc-ro-" + cmd[:12])
+            payload["agent_id"] = "agent-qc"
+            payload["agent_type"] = "tdq-qc-tester"
+            payload["tool_input"] = {"command": cmd}
+            rc, out, _ = run_hook("bash_gate.py", payload)
+            self.assertEqual(rc, 0, cmd)
+            self.assertEqual(decision(out)[0], "deny", f"Expected deny for qc-tester: {cmd} -> {out}")
+            self.assertIn("READONLY", out, cmd)
+
 
 if __name__ == "__main__":
     unittest.main()

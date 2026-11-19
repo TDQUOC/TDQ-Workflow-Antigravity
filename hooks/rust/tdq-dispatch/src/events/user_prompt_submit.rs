@@ -23,14 +23,14 @@ pub fn handle_user_prompt_submit(payload: &HookPayload, workspace_root: &Path) -
     }
 
     // 3. Inject concise guidance if in implement phase
-    let mut decision = HookDecision::allow();
     if let Some(state) = read_tdq_state(workspace_root) {
         if state.phase.as_deref() == Some("implement") && state.muc_gat.as_deref() != Some("off") {
-            decision = decision.with_additional_context(
-                "[TDQ:GON] Phase implement: bám sát plan, TDD đỏ-xanh, không code ngoài task."
+            return HookDecision::inject(
+                "[TDQ:GON] Phase implement: follow plan, TDD red-green, no out-of-scope edits.",
+                None,
             );
         }
     }
 
-    decision
+    HookDecision::allow()
 }

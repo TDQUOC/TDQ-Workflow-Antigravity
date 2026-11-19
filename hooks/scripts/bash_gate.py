@@ -127,6 +127,17 @@ _PS_WRITE_PATTERN = re.compile(
 )
 
 
+def _is_shell_write(cmd):
+    if _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv ")):
+        return True
+    for part in (p.strip() for p in re.split(r"[;&]", cmd) if p.strip()):
+        if SHELL_MUTATOR.search(part):
+            return True
+        if any(t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part)):
+            return True
+    return False
+
+
 def _enforce_agy_bash_guards(payload, cwd):
     info = detect_subagent(payload, cwd)
     agy = is_agy()
@@ -134,9 +145,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         return False
     cmd = str((payload.get("tool_input") or {}).get("command") or "")
     role = (info.get("role") or "").lower()
-    if any(r in role for r in ("reviewer", "browser")) and (
-        ">" in cmd or _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv "))
-    ):
+    if any(r in role for r in ("reviewer", "qc-tester", "browser")) and _is_shell_write(cmd):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
         return True
     norm_cmd = cmd.replace("\\", "/")

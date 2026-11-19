@@ -141,6 +141,82 @@ pub struct TurnMeta {
     pub turn_closed: bool,
     #[serde(default)]
     pub prompt_sha: String,
+    #[serde(default)]
+    pub phase_anchor: String,
+}
+
+/// Return path to canonical `turn-meta-<sid>.json` inside `docs/tdq/.tdq-runtime/`.
+pub fn turn_meta_path(workspace_root: &Path, sid: &str) -> PathBuf {
+    get_runtime_dir(workspace_root).join(format!("turn-meta-{}.json", sid))
+}
+
+/// Return path to canonical search ledger (`docs/tdq/.tdq-search.jsonl`).
+pub fn search_ledger_path(workspace_root: &Path) -> PathBuf {
+    workspace_root.join("docs").join("tdq").join(".tdq-search.jsonl")
+}
+
+/// Return path to canonical read ledger (`docs/tdq/.tdq-read.jsonl`).
+pub fn read_ledger_path(workspace_root: &Path) -> PathBuf {
+    workspace_root.join("docs").join("tdq").join(".tdq-read.jsonl")
+}
+
+/// Return current Unix epoch seconds as f64 matching Python `time.time()`.
+pub fn unix_timestamp_f64() -> f64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs_f64()
+}
+
+/// Compute ledger scope key (`yc:<req>` or `phien:<sid>`) mirroring `search_observe.khoa_hien_tai`.
+pub fn khoa_hien_tai(state: Option<&TdqState>, sid: &str) -> String {
+    if let Some(st) = state {
+        if effective_phase(st) != "idle" {
+            if let Some(ref req) = st.active_request {
+                if !req.trim().is_empty() {
+                    return format!("yc:{}", req);
+                }
+            }
+        }
+    }
+    format!("phien:{}", sid)
+}
+
+fn parse_tz_offset_secs(iso: &str) -> i64 {
+    let b = iso.trim().as_bytes();
+    if b.len() < 6 {
+        return 0;
+    }
+    let tail = &b[b.len() - 6..];
+    let sign = match tail[0] {
+        b'+' => 1_i64,
+        b'-' => -1_i64,
+        _ => return 0,
+    };
+    if tail[3] != b':' {
+        return 0;
+    }
+    let hh = std::str::from_utf8(&tail[1..3]).ok().and_then(|s| s.parse::<i64>().ok());
+    let mm = std::str::from_utf8(&tail[4..6]).ok().and_then(|s| s.parse::<i64>().ok());
+    match (hh, mm) {
+        (Some(h), Some(m)) if h <= 14 && m < 60 => sign * (h * 3600 + m * 60),
+        _ => 0,
+    }
+}
+
+/// Compute today's `docs/workinglog/YYYY-MM-DD.md` path honoring state `updated_at` TZ offset.
+pub fn today_log_rel_for_state(state: Option<&TdqState>) -> String {
+    let secs = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+    let offset = state.and_then(|s| s.updated_at.as_deref()).map(parse_tz_offset_secs).unwrap_or(0);
+    let local_days = (secs + offset).max(0) / 86_400;
+    let (y, m, d) = civil_from_days(local_days);
+    format!("docs/workinglog/{:04}-{:02}-{:02}.md", y, m, d)
+}
+
+/// Append one JSON row to `turns-<sid>.jsonl` fail-open under sidecar lock.
+pub fn append_turn_row(workspace_root: &Path, sid: &str, row: &Value) {
+    let path = shard_turn_path(workspace_root, sid);
+    let _ = append_jsonl_record(&path, row);
 }
 
 /// Read `docs/tdq/.tdq-runtime/turn-meta-<sid>.json` fail-open.
@@ -412,6 +488,9 @@ pub fn clean_old_runtime_files(workspace_root: &Path, max_age: Duration) -> usiz
 
 /// Append a JSON record to a JSONL log file under sidecar lock protection.
 pub fn append_jsonl_record(log_path: &Path, record: &Value) -> Result<(), String> {
+    if let Some(parent) = log_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
     let _guard = acquire_sidecar_lock(log_path, Duration::from_millis(200))?;
 
     let mut line = serde_json::to_string(record).map_err(|e| e.to_string())?;
@@ -551,6 +630,7 @@ mod tests {
             last_user_sig: "ui:10:t".to_string(),
             turn_closed: false,
             prompt_sha: "abc123".to_string(),
+            ..Default::default()
         };
         assert!(write_turn_meta(&tmp, "s1", &meta).is_ok());
         mark_turn_closed(&tmp, "s1");
