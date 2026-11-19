@@ -179,7 +179,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P3 — Chặng 3: AGY Patch, Đóng gói Bundle & Nghiệm thu E2E
 
-- [>] **T3.1** (e14m) Cập nhật `SUBAGENT_DISPATCH_GATE_PY`, khóa `token-budget.json`, tái dựng `plugins/tdq-workflow-agy/` và kiểm `validate --strict` + `build_portable.py --sinh-main --dry-run` — Test: `py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_build_portable.py tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py -q`
+- [x] **T3.1** (e14m) Cập nhật `SUBAGENT_DISPATCH_GATE_PY`, khóa `token-budget.json`, tái dựng `plugins/tdq-workflow-agy/` và kiểm `validate --strict` + `build_portable.py --sinh-main --dry-run` — Test: `py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_build_portable.py tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py -q`
   - Req: `§2 #8, §6 Q4, §6 Q5` · Ngoài phạm vi: KHÔNG chạy `tools/install_agy_plugin.py` và KHÔNG chỉnh sửa bất kỳ tệp nào trong `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` (`3a`)
   - Chạm: `tools/patches/agy_hooks.py`, `docs/tdq/token-budget.json`, `tests/test_build_portable.py`
   - Sinh ra: `plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py`, `plugins/tdq-workflow-agy/skills/**`, `plugins/tdq-workflow-agy/agents/**`, `plugins/tdq-workflow-agy/scripts/**`, `plugins/tdq-workflow-agy/manifest.json`
@@ -197,7 +197,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Môi trường thiếu `anthropic-tokenizer` ở venv mặc định (chạy bằng interpreter có cài hoặc kiểm `token_budget.py` đúng nguồn), test parity nhạy cảm với chuỗi `remind` mới khi đủ `5` trường.
     - Tiêu chí: `assert validate_rc == 0`, `assert parity_rc == 0`, `assert portable_rc == 0`
 
-- [ ] **T3.2** (e16m) Xây dựng và chạy kiểm thử E2E `tests/test_plan_v2_e2e.py` trên `3` kịch bản (`Two-Pass + --emit-cards + packet + --verify-plan + R15 + state gate`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v`
+- [>] **T3.2** (e16m) Xây dựng và chạy kiểm thử E2E `tests/test_plan_v2_e2e.py` trên `3` kịch bản (`Two-Pass + --emit-cards + packet + --verify-plan + R15 + state gate`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v`
   - Req: `§2 #9, §4, §6 Q6` · Ngoài phạm vi: Không gọi API LLM ngoài; toàn bộ E2E chạy cô lập trên thư mục tạm (`tempfile.TemporaryDirectory` + `TDQ_PROJECT_DIR`)
   - Chạm: `tests/test_plan_v2_e2e.py`
   - Cần: `T1.4, T3.1`
@@ -255,5 +255,5 @@ Trỏ về §6 của spec (`muc_qc=full`). Mỗi dòng một ô tick kiểm đư
 - [ ] Q2 `scripts/tdq_plan_scaffold.py` thuần stdlib có `TDQ_LOG` đạt đủ `--files`/`--refs`/`--from-spec`/`--emit-cards`/`--verify-plan`/`--check-wave` — `py -3 -X utf8 -m unittest tests/test_plan_scaffold.py -v`
 - [ ] Q3 `doc_lint.py` (`R15-Full`/`R15-Compact`, Per-Task Spec, Banned-Placeholder, `ANTI-2`, `R15_MOC`) & cổng `tdq_state.py`/`tdq_eval.py` xanh, không làm đỏ `236` plan cũ — `py -3 -X utf8 -m unittest tests/test_plan_v2_linter.py tests/test_state_plan_v2_gate.py tests/test_doc_lint.py tests/test_quick_qc.py -v && py -3 -X utf8 -m pytest tests/test_hooks_dual_protocol.py -q`
 - [ ] Q4 Toàn bộ `skills/` dưới trần `3,500` token (`anthropic-tokenizer`) & `<= 235` dòng/ref, `tdq-plan/SKILL.md <= 132` dòng, `plan-examples.md <= 1,300` tok, `tdq-implementer.md <= 42` dòng, `doc_lint`/`i18n_check`/`doc_index`/`test_reference_mot_tang` `0` lỗi — `py -3 -X utf8 scripts/doc_lint.py skills && py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 scripts/i18n_check.py skills agents scripts && py -3 -X utf8 -m unittest tests/test_token_budget.py tests/test_reference_mot_tang.py tests/test_agent_frontmatter.py -v`
-- [ ] Q5 Đóng gói `plugins/tdq-workflow-agy/` sạch `agy.EXE plugin validate --strict`, `build_portable.py --sinh-main --dry-run` xanh, 100% Parity Rust-Python và không sửa plugin ngoài repo — `py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m unittest tests/test_build_portable.py -v && py -3 -X utf8 -m pytest tests/test_agy_plugin_validate.py tests/test_rust_dispatch_parity.py -q`
+- [ ] Q5 Đóng gói `plugins/tdq-workflow-agy/` sạch `agy.EXE plugin validate --strict`, `build_portable.py --sinh-main --dry-run` xanh, 100% Parity Rust-Python và không sửa plugin ngoài repo — `py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_agy_plugin_validate.py tests/test_rust_dispatch_parity.py -q`
 - [ ] Q6 Nghiệm thu E2E `3` kịch bản và trọn bộ unit test toàn repo (`muc_qc=full`) đạt `0` thất bại, `0` bỏ sót — `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v && py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 1 --fresh --reuse off`
