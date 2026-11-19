@@ -15,15 +15,18 @@ translate headings and labels while preserving the shape. <!-- i18n-allow: canon
 - NGOÀI: <gạch đầu dòng>
 
 ## Task
-- [ ] **T1** <việc cụ thể> — Test: <lệnh hoặc tiêu chí pass>
+- [ ] **T1** (e6m) <việc cụ thể> — Test: <lệnh hoặc tiêu chí pass>
+  - Chạm: `<src/file.py>` (code task dùng `R15-Compact`; nếu `> 4` file nguồn → lên `full`)
+  - Neo & Công cụ: `Edit` trên `<file>` tại `<hàm neo()>` (hoặc `Write` tạo file mới)
+  - Trước → Sau: `<trạng thái cũ> → <trạng thái mới>`
+  - Tiêu chí & Assert: `<cụ thể> · assert <thực_tế> == <kỳ_vọng>` (cấm `ANTI-2`)
 - [ ] **T2** <việc cụ thể> — Test: <lệnh>
 
 ## Definition of Done
 - <điều kiện đo được, có lệnh kiểm>
 ```
 
-Going past 40 lines means this work is no longer quick — say so to the user and propose
-moving to the deep pipeline.
+Going past 40 lines (`<= 80` lines for `R15-Compact` code mini-plans, or `> 4` source files) means this work is no longer quick — say so to the user and propose moving to the deep pipeline.
 
 Per [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md), present it with
 all 5 components, the approval block at the end of the message, and no emoji:

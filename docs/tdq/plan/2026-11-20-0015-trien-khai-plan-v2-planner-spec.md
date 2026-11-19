@@ -104,7 +104,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Từ `TBD` nằm trong code fence (không báo lỗi giả), plan cũ ngày `2026-11-15` (giữ hành vi cũ), task Sweep `<= 6` file vs `7` file (vượt ngưỡng phải báo lỗi), task DoD non-code dùng `assert True` (vẫn bị chặn `ANTI-2`).
     - Tiêu chí: `assert any("[R15]" in e and "ANTI-2" in e for e in errs)`, `assert any("TBD" in e or "placeholder" in e.lower() for e in errs_ph)`, `assert errs_old == []`, `assert _r12_van_xuoi("  1. Initialize state and parse input args") is None`
 
-- [>] **T1.4** (e14m) Vá `scripts/tdq_state.py` (cổng tiền-duyệt R15 & đọc `Chạm:` nhiều dòng) và đồng bộ `RE_TICK` trong `scripts/tdq_eval.py` — Test: `py -3 -X utf8 -m unittest tests/test_state_plan_v2_gate.py tests/test_quick_qc.py tests/test_hooks_dual_protocol.py -v`
+- [x] **T1.4** (e14m) Vá `scripts/tdq_state.py` (cổng tiền-duyệt R15 & đọc `Chạm:` nhiều dòng) và đồng bộ `RE_TICK` trong `scripts/tdq_eval.py` — Test: `py -3 -X utf8 -m unittest tests/test_state_plan_v2_gate.py tests/test_quick_qc.py tests/test_hooks_dual_protocol.py -v`
   - Req: `§2 #4, §3c, §6 Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ chữ ký CLI state hiện hành và fail-open sạch khi lane `quick` không tạo tệp plan trên đĩa
   - Chạm: `scripts/tdq_state.py`, `scripts/tdq_eval.py`, `tests/test_state_plan_v2_gate.py`
   - Cần: `T1.3`
@@ -125,7 +125,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P2 — Chặng 2: Bộ Skill `tdq-plan` V2+, Tài liệu Hỗ trợ & Agents
 
-- [ ] **T2.1** (e18m) Tạo `planner-rules.md` (`<= 30` luật) & `plan-examples.md` (`3` cặp Contrastive Few-Shot `<= 1,300` tok) và nâng cấp bộ `skills/tdq-plan/` — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-plan && py -3 -X utf8 scripts/i18n_check.py skills/tdq-plan && py -3 -X utf8 -m unittest tests/test_reference_mot_tang.py -v`
+- [x] **T2.1** (e18m) Tạo `planner-rules.md` (`<= 30` luật) & `plan-examples.md` (`3` cặp Contrastive Few-Shot `<= 1,300` tok) và nâng cấp bộ `skills/tdq-plan/` — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-plan && py -3 -X utf8 scripts/i18n_check.py skills/tdq-plan && py -3 -X utf8 -m unittest tests/test_reference_mot_tang.py -v`
   - Req: `§2 #5, §6 Q4` · Ngoài phạm vi: Không vượt `132` dòng cho `SKILL.md`, không vượt `235` dòng và `3,500` token (`anthropic-tokenizer`) cho mỗi file ref, không dùng đường dẫn `scripts/`/`hooks/` trong ví dụ mẫu (dùng `src/foo.py`)
   - Chạm: `skills/tdq-plan/SKILL.md`, `skills/tdq-plan/references/plan-template.md`, `skills/tdq-plan/references/plan-template-huong-dan.md`, `skills/tdq-plan/references/planner-rules.md`, `skills/tdq-plan/references/plan-examples.md`
   - Cần: `T1.2, T1.3`
@@ -142,7 +142,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Liên kết 2 tầng (bị `test_reference_mot_tang.py` chặn), viết chuỗi `scripts/` trong ví dụ (bị `build_portable.py:346` viết lại), quên `<!-- i18n-allow -->` quanh khối mẫu tiếng Việt.
     - Tiêu chí: `assert len(skill_lines) <= 132`, `assert tok_examples <= 1300`, `assert "scripts/" not in open("skills/tdq-plan/references/plan-examples.md").read()`
 
-- [ ] **T2.2** (e16m) Tách `qc-vong-fix.md` và đồng bộ `qc.md`, `team-mode.md`, `team-mode-tra-cuu.md`, `spec-template-huong-dan.md`, `quick-lane-mini.md` dưới trần `R13` — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-build skills/tdq-spec skills/tdq-intake && py -3 -X utf8 scripts/i18n_check.py skills/tdq-build skills/tdq-spec skills/tdq-intake && py -3 -X utf8 -m unittest tests/test_reference_mot_tang.py tests/test_team_mode.py -v`
+- [x] **T2.2** (e16m) Tách `qc-vong-fix.md` và đồng bộ `qc.md`, `team-mode.md`, `team-mode-tra-cuu.md`, `spec-template-huong-dan.md`, `quick-lane-mini.md` dưới trần `R13` — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-build skills/tdq-spec skills/tdq-intake && py -3 -X utf8 scripts/i18n_check.py skills/tdq-build skills/tdq-spec skills/tdq-intake && py -3 -X utf8 -m unittest tests/test_reference_mot_tang.py tests/test_team_mode.py -v`
   - Req: `§2 #6, §6 Q4` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ mục bắt buộc của `test_team_mode.py` (`## when it applies`, `## what to do`, `## self-check`, đủ `LY_DO_GIU`, `>= 4` cặp `RIGHT:`/`WRONG:`, đủ `7` `TRUONG_PROMPT`) và trần `<= 3,500` token mỗi file
   - Chạm: `skills/tdq-spec/references/spec-template-huong-dan.md`, `skills/tdq-intake/references/quick-lane-mini.md`, `skills/tdq-build/SKILL.md`, `skills/tdq-build/references/qc.md`, `skills/tdq-build/references/qc-vong-fix.md`, `skills/tdq-build/references/team-mode.md`, `skills/tdq-build/references/team-mode-tra-cuu.md`
   - Cần: `T1.1, T1.3`
@@ -159,7 +159,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: `tdq-build/SKILL.md` đang `171/174` dòng (chỉ thêm `<= 2` dòng trỏ `qc-vong-fix.md` để không chạm trần `174`), `test_team_mode.py` kiểm `RIGHT:`/`WRONG:` và `TRUONG_PROMPT`.
     - Tiêu chí: `assert len(build_skill_lines) <= 174`, `assert max(tok_map.values()) <= 3500`, `assert "packet" in open("skills/tdq-build/references/team-mode-tra-cuu.md").read()`
 
-- [ ] **T2.3** (e10m) Tối giản `agents/tdq-implementer.md` (`<= 42` dòng, `<= 6` luật + circuit breaker `2` retry) và nâng checklist `agents/tdq-reviewer.md` — Test: `py -3 -X utf8 -m unittest tests/test_agent_frontmatter.py tests/test_team_mode.py -v`
+- [x] **T2.3** (e10m) Tối giản `agents/tdq-implementer.md` (`<= 42` dòng, `<= 6` luật + circuit breaker `2` retry) và nâng checklist `agents/tdq-reviewer.md` — Test: `py -3 -X utf8 -m unittest tests/test_agent_frontmatter.py tests/test_team_mode.py -v`
   - Req: `§2 #7, §6 Q4` · Ngoài phạm vi: `GIỮ NGUYÊN` frontmatter Claude (`model: inherit`, `effort: high`), đủ `7` trường `TRUONG_PROMPT`, chuỗi `1,500 characters` và câu cấm dán output thô (`pasting ... is banned`)
   - Chạm: `agents/tdq-implementer.md`, `agents/tdq-reviewer.md`
   - Cần: `T1.1`
@@ -179,7 +179,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P3 — Chặng 3: AGY Patch, Đóng gói Bundle & Nghiệm thu E2E
 
-- [ ] **T3.1** (e14m) Cập nhật `SUBAGENT_DISPATCH_GATE_PY`, khóa `token-budget.json`, tái dựng `plugins/tdq-workflow-agy/` và kiểm `validate --strict` + `build_portable.py --kiem` — Test: `py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 -m unittest tests/test_token_budget.py tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py tests/test_build_portable.py -v`
+- [>] **T3.1** (e14m) Cập nhật `SUBAGENT_DISPATCH_GATE_PY`, khóa `token-budget.json`, tái dựng `plugins/tdq-workflow-agy/` và kiểm `validate --strict` + `build_portable.py --kiem` — Test: `py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 -m unittest tests/test_token_budget.py tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py tests/test_build_portable.py -v`
   - Req: `§2 #8, §6 Q4, §6 Q5` · Ngoài phạm vi: KHÔNG chạy `tools/install_agy_plugin.py` và KHÔNG chỉnh sửa bất kỳ tệp nào trong `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` (`3a`)
   - Chạm: `tools/patches/agy_hooks.py`, `docs/tdq/token-budget.json`
   - Sinh ra: `plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py`, `plugins/tdq-workflow-agy/skills/**`, `plugins/tdq-workflow-agy/agents/**`, `plugins/tdq-workflow-agy/scripts/**`, `plugins/tdq-workflow-agy/manifest.json`
