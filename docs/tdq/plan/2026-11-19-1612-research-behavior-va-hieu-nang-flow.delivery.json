@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "28dfcd79-941b-4964-a7bd-7d1726ee6db9",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-1612-research-behavior-va-hieu-nang\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\plan\\.tmp.2026-11-19-1612-research-behavior-va-hieu-nang-flow.c5f737533d254cca9059d63196f068d0.html",
+  "specification": {
+    "sha256": "470c407fc622bfa066f381c1de091ef665cd0ce18235b8d728704bac382803b2",
+    "bytes": 2814
+  },
+  "artifact": {
+    "sha256": "e6983f95a216022f44c5d9df6d65b1b5264174f684421b9278eb8b654c6e8016",
+    "bytes": 1231323
+  },
+  "explainer": {
+    "preparedSha256": "cf82e141fd1cc79a557892c3848f08a63f4838853ccb4723e1f49414611e37b0",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "hook-res-truoc",
+        "inline": true,
+        "sha256": "3b5b33ae1b2ada2f3304abd6d4dce678e4835de6cc14602075e488ca96701188",
+        "bytes": 926
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-res-sau",
+        "inline": true,
+        "sha256": "1717ff52e97a2374f8ec433b9e905cb0252a4d6e5466e4833fe844d902693c88",
+        "bytes": 1001
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-res-kiemchung",
+        "inline": true,
+        "sha256": "5425ff3e9b1b08214a4a5aeda0720d480ba16513efecb8049b525bc401526225",
+        "bytes": 929
+      }
+    ]
+  }
+}
