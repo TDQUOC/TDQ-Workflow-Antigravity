@@ -63,6 +63,12 @@ prints one `[TDQ:WORKTREE]` line for as long as that is true.
    - WRONG: delegate all three tasks needing that constant in parallel — each sub-agent invents its
      own name, and only the merge reveals three mismatched versions.
 
+## Pre-built Task Packet (`tdq_team.py packet`) & `CONTRACT-DELTA:`
+
+- Run `python3 "${PLUGIN_ROOT}/scripts/tdq_team.py" packet <task_id>` before dispatching `tdq-implementer`.
+- It injects `TASK` + `CỤM` + `BASE` + `WORKTREE` + `VÙNG FILE` + `TEST` + `TRẢ VỀ`, enclosing AST Symbol-Spans (`<= 120` lines each), `Tham chiếu:` 1-line caller signatures, `[NEW FILE]` markers, and `docs/kien-truc.md` invariants. <!-- i18n-allow -->
+- Record cross-task interface changes under `CONTRACT-DELTA:` so `tdq_plan_scaffold.py --check-wave` catches signature mismatches across waves.
+
 ## Dynamic Model Tier Routing
 
 Subagent defaults to `model: inherit` (`effort: high`). When the host supports explicit model selection, the leader may override `model` per task complexity (for example lighter tiers on mechanical tasks or stronger tiers on heavy math, security, or core modules). Never hard-locked.
