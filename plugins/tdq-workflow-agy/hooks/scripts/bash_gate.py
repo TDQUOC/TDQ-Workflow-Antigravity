@@ -134,6 +134,17 @@ _PS_WRITE_PATTERN = re.compile(
 )
 
 
+def _is_shell_write(cmd):
+    if _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv ")):
+        return True
+    for part in (p.strip() for p in re.split(r"[;&]", cmd) if p.strip()):
+        if SHELL_MUTATOR.search(part):
+            return True
+        if any(t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part)):
+            return True
+    return False
+
+
 
 
 def _has_banned_agy_git(cmd, cwd, payload):
@@ -170,9 +181,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         return False
     cmd = str((payload.get("tool_input") or {}).get("command") or "")
     role = (info.get("role") or "").lower()
-    if any(r in role for r in ("reviewer", "browser")) and (
-        ">" in cmd or _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv "))
-    ):
+    if any(r in role for r in ("reviewer", "qc-tester", "browser")) and _is_shell_write(cmd):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
         return True
     norm_cmd = cmd.replace("\\", "/")
@@ -274,6 +283,19 @@ def eval_bash(payload, suppress_output_remind=False):
             "The TDQ leader remains the state and source writer.",
         ])
         return False
+    _mutates_src_shell = any(
+        (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\s'\"=])docs[\\/]", part, re.IGNORECASE))
+        or any(not re.search(r"^(?:\./)?docs[\\/]", t.lstrip("'\"").replace("\\", "/"), re.IGNORECASE)
+               and t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part))
+        for part in parts)
+    if is_agy() and state.get("active_request") and _mutates_src_shell:
+        from tdq_state import cong_dang_cho
+        _pending_gate = cong_dang_cho(state)
+        if _pending_gate:
+            block(cwd, payload, "TDQ:APPROVE", [
+                f"{_pending_gate} has no recorded approval — do not mutate source via shell.",
+            ])
+            return False
 
     # (1) observe
     for sub in STATE_CLI.findall(cmd):

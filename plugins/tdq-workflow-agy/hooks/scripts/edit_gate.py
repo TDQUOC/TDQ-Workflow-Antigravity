@@ -78,13 +78,6 @@ def goi_y_mode():
                       for ma in VALID_MODES if nhom.get(ma))
 
 
-def _tick_notify(cwd, payload, lines):
-    if is_agy():
-        remind(cwd, payload, "TICK", lines)
-    else:
-        block(cwd, payload, "TDQ:TICK", lines)
-
-
 def within(child, parent):
     return child == parent or child.startswith(parent + os.sep)
 
@@ -274,7 +267,7 @@ def main():
         tick = plan_tick_state(cwd)
         if tick["exists"] and tick["total"] > 0 \
                 and not tick["has_doing"] and not tick["all_done"]:
-            _tick_notify(cwd, payload, [
+            block(cwd, payload, "TDQ:TICK", [
                 "The plan carries no task marked [~] — mark the task in progress BEFORE editing code.",
                 "Open the plan, switch the next task to [~]; flip it to [x] the moment it is green.",
                 "Request already finished → tdq_state.py set phase=idle.",
@@ -282,7 +275,7 @@ def main():
         # several tasks marked [~] at once is equally a checkbox that no longer reflects what is
         # being done — close the old task ([x]) before opening a new one.
         if tick["exists"] and tick["doing_count"] > 1:
-            _tick_notify(cwd, payload, [
+            block(cwd, payload, "TDQ:TICK", [
                 "The plan has several tasks marked [~] — close the old one ([x]) before opening a new one.",
                 "Open the plan, tick [x] the finished task, keep exactly 1 task [~] at a time.",
                 "Request already finished → tdq_state.py set phase=idle.",
@@ -298,12 +291,17 @@ def main():
                 if r.get("kind") == "observe" and r.get("event") == "code_edit"
                 and r.get("plan_sha") == tick["sha"]
             )
-            if streak >= STREAK_NGUONG:
-                _tick_notify(cwd, payload, [
+            streak_limit = 8 if is_agy() else STREAK_NGUONG
+            if streak >= streak_limit:
+                block(cwd, payload, "TDQ:TICK", [
                     f"{streak} edits in a row with no tick in the plan — close the task before editing on.",
                     "Task still in progress → update notes or tasks in the plan file to reset the streak.",
                     "Test green → flip to [x] now; a different task → tick it before coding.",
                     "Request already finished → tdq_state.py set phase=idle.",
+                ])
+            elif is_agy() and streak >= 4:
+                remind(cwd, payload, "TICK", [
+                    f"{streak}/8 source edits without a plan checkbox tick (blocks at 8).",
                 ])
             observe(cwd, payload, "code_edit", path=rel_target, plan_sha=tick["sha"])
 

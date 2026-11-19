@@ -164,6 +164,21 @@ def _search_grace_state(cwd, phien):
     return state_val
 
 
+_SEARCH_CMD_LEAK_RE = _re.compile(r"(?:\b(?:rg|grep|findstr)\b|Select-String)", _re.IGNORECASE)
+_PS_HERESTRING_RE = _re.compile(r"(?s)@'\r?\n.*?\r?\n'@|@\"\r?\n.*?\r?\n\"@")
+
+
+def _has_search_leak(ten_tool, vao):
+    """Detect raw search CLI invocations inside malformed shell strings outside PS here-strings."""
+    if ten_tool in ("Grep", "grep_search", "search_directory") or not isinstance(vao, dict):
+        return False
+    cmd = vao.get("command") or vao.get("cmd") or ""
+    if isinstance(cmd, list):
+        cmd = " ".join(str(x) for x in cmd)
+    stripped = _PS_HERESTRING_RE.sub(" ", str(cmd))
+    return bool(_SEARCH_CMD_LEAK_RE.search(stripped))
+
+
 def _mark_search_grace(cwd, phien, state_val, tool_name):
     row = {
         "ts": _common.tdq_state.now_iso(),
@@ -198,12 +213,15 @@ def quyet(cwd, phien, ten_tool, vao):
         pass
     tt["phase"] = pha
     if _common.is_agy() and pl.get("status") == "unknown":
-        if pl.get("loai") == search_rules.TIM_CODE:
-            search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
-                                        "cho_phep": True, "tinh_cua_so": False, "doan_mo": False})
-            if pha in ("implement", "qc"):
-                return True, "agy_malformed_remind", pl, False
-        return True, "agy_malformed_allow", pl, False
+        if _has_search_leak(ten_tool, vao):
+            pl = dict(pl, loai=search_rules.TIM_CODE, status="leak_search")
+        else:
+            if pl.get("loai") == search_rules.TIM_CODE:
+                search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
+                                            "cho_phep": True, "tinh_cua_so": False, "doan_mo": False})
+                if pha in ("implement", "qc"):
+                    return True, "agy_malformed_remind", pl, False
+            return True, "agy_malformed_allow", pl, False
     if _common.is_agy() and pl.get("loai") == search_rules.TIM_CODE and _is_rtk_bypass(ten_tool, vao):
         search_observe.ghi_so(cwd, {"ts": time.time(), "khoa": khoa, "loai": "tim",
                                     "cho_phep": False, "tinh_cua_so": False, "doan_mo": bool(pl.get("doan_mo"))})
