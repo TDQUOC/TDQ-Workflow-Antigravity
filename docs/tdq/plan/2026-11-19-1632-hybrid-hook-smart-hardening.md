@@ -138,7 +138,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P3 — Build 3 OS (Windows + SSH Linux/macOS) & Đóng gói Plugin (M3)
 
-- [>] **T3.1** (e18m) Rebuild và test Rust trên đủ 3 OS (Windows, Linux ubuntu-100-95, macOS mbair) rồi build gói plugins/tdq-workflow-agy/ — Test: `agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json`
+- [x] **T3.1** (e18m) Rebuild và test Rust trên đủ 3 OS (Windows, Linux ubuntu-100-95, macOS mbair) rồi build gói plugins/tdq-workflow-agy/ — Test: `agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json`
   - Dùng: `tdq-checkportable`
   - Để: kiểm tra tính toàn vẹn manifest, cấu trúc thư mục và yêu cầu runtime của gói `plugins/tdq-workflow-agy/` sau khi build.
   - Ra: `plugins/tdq-workflow-agy/manifest.json` và 3 binary native trong `plugins/tdq-workflow-agy/bin/` đạt `--strict`.
