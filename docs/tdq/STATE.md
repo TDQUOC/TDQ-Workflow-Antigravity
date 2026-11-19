@@ -1,18 +1,18 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-19T22:05:47+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-20T00:22:08+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-19-1632-hybrid-hook-smart-hardening |
+| Request | 2026-11-19-2213-chi-tiet-plan-model-thap |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-19-1632-hybrid-hook-smart-hardening.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-19-1632-hybrid-hook-smart-hardening.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-19-2213-chi-tiet-plan-model-thap.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-19-2213-chi-tiet-plan-model-thap.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | ultra |
-| Run mode | subagent |
+| QC level | full |
+| Run mode | main |
 
 ## Where we are
 Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.

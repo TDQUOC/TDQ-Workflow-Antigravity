@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-2213-chi-tiet-plan-model-thap\\truoc-sau.archify.md",
+    "sha256": "ec33e262183fe5d3e0588b9afbd56a7518cf6bd76dc0c3fcb86eb688a8ea529e",
+    "bytes": 2612
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-19-2213-chi-tiet-plan-model-thap-preview.3b8d4e94a8084670ba6c9cfddcbcc967.html",
+    "sha256": "2adc6e9515c06e908e85e1179bb11ac96a7134fe6ad5568f4c343f5fb42d2b01",
+    "bytes": 1230061
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-19-2213-chi-tiet-plan-model-thap-preview.3b8d4e94a8084670ba6c9cfddcbcc967.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-19-2213-chi-tiet-plan-model-thap-preview.3b8d4e94a8084670ba6c9cfddcbcc967.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2368,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
