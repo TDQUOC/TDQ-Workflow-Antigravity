@@ -1,13 +1,13 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-19T15:39:57+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-19T16:28:37+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-19-1457-audit-sai-sot-noi-hook |
+| Request | 2026-11-19-1612-research-behavior-va-hieu-nang |
 | Lane | quick |
 | Phase | idle |
 | Spec | (none) |
-| Plan | docs/tdq/plan/2026-11-19-1457-audit-sai-sot-noi-hook.md — ⏳ awaiting approval |
+| Plan | docs/tdq/plan/2026-11-19-1612-research-behavior-va-hieu-nang.md — ⏳ awaiting approval |
 | Quick approval | ✔ approved |
 | Doc language | vi |
 | Lean level | full |

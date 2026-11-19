@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-1612-research-behavior-va-hieu-nang\\truoc-sau.archify.md",
+    "sha256": "470c407fc622bfa066f381c1de091ef665cd0ce18235b8d728704bac382803b2",
+    "bytes": 2814
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-1612-research-behavior-va-hieu-nang.610f0f1b6fbc45c991f0b0952e954ba5.html",
+    "sha256": "e6983f95a216022f44c5d9df6d65b1b5264174f684421b9278eb8b654c6e8016",
+    "bytes": 1231323
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-1612-research-behavior-va-hieu-nang.610f0f1b6fbc45c991f0b0952e954ba5.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-1612-research-behavior-va-hieu-nang.610f0f1b6fbc45c991f0b0952e954ba5.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2339,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
