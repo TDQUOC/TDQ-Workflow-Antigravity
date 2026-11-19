@@ -27,7 +27,8 @@ mod tests {
 
     #[test]
     fn test_prompt_and_notification() {
-        let tmp = std::env::temp_dir().join(format!("tdq_prompt_notif_test_{}", std::process::id()));
+        let tmp =
+            std::env::temp_dir().join(format!("tdq_prompt_notif_test_{}", std::process::id()));
         let _ = fs::create_dir_all(tmp.join("docs").join("tdq"));
 
         // Prompt submit test

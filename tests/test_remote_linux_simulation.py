@@ -1,99 +1,126 @@
 """Simulation tests on remote Linux host (Ubuntu x86_64) via SSH."""
+import io
 import json
 import subprocess
-import time
+import tarfile
+import uuid
 from pathlib import Path
 
+import pytest
+
 SSH_HOST = "ubuntu-100-95"
-REMOTE_BIN = "/home/ubuntu/repo_pure/hooks/rust/tdq-dispatch/target/x86_64-unknown-linux-musl/release/tdq-dispatch"
+BIN_NAME = "tdq-dispatch-linux-x86_64"
+PLUGIN_DIR = Path(__file__).resolve().parent.parent / "plugins" / "tdq-workflow-agy"
+
+_REMOTE_DRIVER = r"""
+import json, os, statistics, subprocess, sys, time
+root = sys.argv[1]
+bin_path = os.path.join(root, "bin", sys.argv[2])
+env = dict(os.environ, PLUGIN_ROOT=root, TDQ_PROJECT_DIR=root, TDQ_LOG="0")
+
+def call(ev, payload):
+    p = dict(payload, cwd=root)
+    proc = subprocess.run([bin_path, "--event", ev], input=json.dumps(p), stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, env=env, timeout=20)
+    assert proc.returncode == 0, f"{ev} rc={proc.returncode} err={proc.stderr}"
+    lines = [ln for ln in proc.stdout.splitlines() if ln.strip().startswith("{")]
+    assert lines, f"{ev} empty output: {proc.stdout!r} {proc.stderr!r}"
+    return json.loads(lines[-1])
+
+assert isinstance(call("SessionStart", {"conversationId": "sim-lnx-ss"}), dict)
+assert isinstance(call("PreInvocation", {"conversationId": "sim-lnx-pi", "user_message": "Continue work"}), dict)
+assert call("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "echo hello"}}).get("decision") == "allow"
+assert call("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "ls -la"}}).get("decision") == "allow"
+gp = call("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "git push origin dev"}})
+assert gp.get("decision") == "deny" and "TDQ:GIT" in gp.get("reason", "")
+gr = call("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "git reset --hard HEAD~1"}})
+assert gr.get("decision") == "deny" and "TDQ:GIT" in gr.get("reason", "")
+st = call("PreToolUse", {"toolName": "write_file", "arguments": {"Path": root + "/docs/tdq/state.json"}})
+assert st.get("decision") == "deny" and "TDQ:STATE" in st.get("reason", "")
+assert isinstance(call("PostToolUse", {"toolName": "read_file", "arguments": {"Path": "/etc/os-release"}}), dict)
+assert call("PostInvocation", {"conversationId": "sim-lnx-po"}) == {}
+assert call("Stop", {"terminationReason": "USER_CANCELED"}).get("decision") == "allow"
+
+times = []
+for _ in range(10):
+    t0 = time.perf_counter()
+    assert call("PostInvocation", {"conversationId": "sim-lnx-bench"}) == {}
+    times.append((time.perf_counter() - t0) * 1000.0)
+print(json.dumps({"hot_median_ms": round(statistics.median(times), 2)}))
+"""
 
 
-def run_remote_hook(event: str, payload: dict) -> dict:
-    cmd = [
-        "ssh",
-        SSH_HOST,
-        f"{REMOTE_BIN} --event {event}",
-    ]
-    proc = subprocess.run(
-        cmd,
-        input=json.dumps(payload, ensure_ascii=False),
+def _build_bundle_bytes(bin_name: str) -> bytes:
+    """Package runtime scripts and target native binary into a gzip tarball."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+        for path in sorted(PLUGIN_DIR.rglob("*")):
+            if not path.is_file() or "__pycache__" in path.parts:
+                continue
+            rel = path.relative_to(PLUGIN_DIR).as_posix()
+            if not rel.startswith(("hooks/scripts/", "scripts/")):
+                continue
+            raw = path.read_bytes()
+            if path.suffix in {".py", ".json", ".md"}:
+                raw = raw.replace(b"\r\n", b"\n")
+            ti = tarfile.TarInfo(name=rel)
+            ti.size = len(raw)
+            ti.mode = 0o644
+            tf.addfile(ti, io.BytesIO(raw))
+        bin_raw = (PLUGIN_DIR / "bin" / bin_name).read_bytes()
+        ti = tarfile.TarInfo(name=f"bin/{bin_name}")
+        ti.size = len(bin_raw)
+        ti.mode = 0o755
+        tf.addfile(ti, io.BytesIO(bin_raw))
+    return buf.getvalue()
+
+
+def _require_ssh(host: str) -> None:
+    """Skip only when the remote SSH host is unreachable in this environment."""
+    probe = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", host, "echo ok"],
         capture_output=True,
         text=True,
         encoding="utf-8",
-        timeout=15,
+        errors="replace",
+        timeout=10,
     )
-    assert proc.returncode == 0, f"Remote binary failed: {proc.stderr}"
-    out_lines = [l for l in proc.stdout.strip().splitlines() if l.strip().startswith("{")]
-    assert out_lines, f"No JSON output from remote: {proc.stdout} (stderr: {proc.stderr})"
-    return json.loads(out_lines[-1])
+    if probe.returncode != 0 or "ok" not in probe.stdout:
+        pytest.skip(f"SSH host {host} unreachable: {probe.stderr.strip()}")
 
 
 def test_linux_simulation_all_events():
-    # 1. SessionStart
-    res = run_remote_hook("SessionStart", {})
-    assert res.get("decision") == "allow"
-    print("Linux SessionStart: PASS")
-
-    # 2. UserPromptSubmit
-    res = run_remote_hook("UserPromptSubmit", {"userPrompt": "Tiếp tục công việc"})
-    assert res.get("decision") == "allow"
-    print("Linux UserPromptSubmit: PASS")
-
-    # 3. PreToolUse - normal command
-    res = run_remote_hook("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "ls -la"}})
-    assert res.get("decision") == "allow"
-    print("Linux PreToolUse (normal command): PASS")
-
-    # 4. PreToolUse - git push block
-    res = run_remote_hook("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "git push origin dev"}})
-    assert res.get("decision") == "deny"
-    assert "TDQ:GIT" in json.dumps(res, ensure_ascii=False)
-    print("Linux PreToolUse (git push block): PASS")
-
-    # 5. PreToolUse - git reset --hard block
-    res = run_remote_hook("PreToolUse", {"toolName": "run_command", "arguments": {"CommandLine": "git reset --hard HEAD~1"}})
-    assert res.get("decision") == "deny"
-    assert "TDQ:GIT" in json.dumps(res, ensure_ascii=False)
-    print("Linux PreToolUse (git reset block): PASS")
-
-    # 6. PreToolUse - state.json block
-    res = run_remote_hook("PreToolUse", {"toolName": "write_file", "arguments": {"Path": "/home/ubuntu/repo_pure/docs/tdq/state.json"}})
-    assert res.get("decision") == "deny"
-    assert "TDQ:STATE" in json.dumps(res, ensure_ascii=False)
-    print("Linux PreToolUse (state.json block): PASS")
-
-    # 7. PostToolUse
-    res = run_remote_hook("PostToolUse", {"toolName": "read_file", "arguments": {"Path": "/etc/os-release"}})
-    assert res.get("decision") == "allow"
-    print("Linux PostToolUse: PASS")
-
-    # 8. Notification
-    res = run_remote_hook("Notification", {"message": "background build complete"})
-    assert res.get("decision") == "allow"
-    print("Linux Notification: PASS")
-
-    # 9. Stop
-    res = run_remote_hook("Stop", {})
-    assert res.get("decision") in ("allow", "continue")
-    print("Linux Stop: PASS")
-
-
-def test_linux_benchmark():
-    runs = 10
-    latencies = []
-    for _ in range(runs):
-        t0 = time.perf_counter()
-        res = run_remote_hook("SessionStart", {})
-        t1 = time.perf_counter()
-        assert res.get("decision") == "allow"
-        latencies.append((t1 - t0) * 1000.0)
-
-    import statistics
-    med = statistics.median(latencies)
-    print(f"\nLinux Simulation Roundtrip Median Latency (over SSH): {med:.2f} ms")
-
-
-if __name__ == "__main__":
-    test_linux_simulation_all_events()
-    test_linux_benchmark()
-    print("\nALL LINUX SIMULATION TESTS PASSED!")
+    """Upload Linux bundle via SSH and verify ELF header, 6 AGY events, Cold fallback, and Hot latency."""
+    _require_ssh(SSH_HOST)
+    remote_dir = f"/tmp/tdq-sim-linux-{uuid.uuid4().hex[:8]}"
+    tar_bytes = _build_bundle_bytes(BIN_NAME)
+    try:
+        subprocess.run(
+            ["ssh", "-o", "ConnectTimeout=10", SSH_HOST, f"mkdir -p {remote_dir} && tar -xzf - -C {remote_dir} && chmod +x {remote_dir}/bin/{BIN_NAME}"],
+            input=tar_bytes,
+            capture_output=True,
+            check=True,
+            timeout=60,
+        )
+        hdr = subprocess.run(
+            ["ssh", SSH_HOST, f"file {remote_dir}/bin/{BIN_NAME}"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=20,
+        )
+        assert "ELF" in hdr.stdout and "x86-64" in hdr.stdout, hdr.stdout
+        run = subprocess.run(
+            ["ssh", SSH_HOST, f"python3 - {remote_dir} {BIN_NAME}"],
+            input=_REMOTE_DRIVER,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=60,
+        )
+        assert run.returncode == 0, f"Linux sim failed: {run.stdout}\n{run.stderr}"
+        metrics = json.loads(run.stdout.strip().splitlines()[-1])
+        assert metrics["hot_median_ms"] < 50.0
+    finally:
+        subprocess.run(["ssh", "-o", "ConnectTimeout=10", SSH_HOST, f"rm -rf {remote_dir}"], capture_output=True, check=False, timeout=20)

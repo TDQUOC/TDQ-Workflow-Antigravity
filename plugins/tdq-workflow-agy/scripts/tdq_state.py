@@ -11,6 +11,8 @@ Principles since 0.3.0:
 - `next` is the single source answering "where am I, what comes next" — hooks call
   that same function instead of copying its words into a second place.
 """
+from __future__ import annotations
+
 import hashlib
 import json
 import os

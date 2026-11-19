@@ -51,7 +51,10 @@ mod tests {
         assert!(out.contains("\"injectSteps\""));
         assert!(out.contains("\"user_markdown\""));
         assert!(out.contains("TDQ:TICK"));
-        assert_eq!(handle_post_invocation(&payload, &tmp).to_json_string(), "{}");
+        assert_eq!(
+            handle_post_invocation(&payload, &tmp).to_json_string(),
+            "{}"
+        );
 
         let _ = fs::remove_dir_all(&tmp);
     }

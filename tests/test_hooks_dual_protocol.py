@@ -148,14 +148,14 @@ def test_ec01_to_ec14_live_cmd_hooks(tmp_path):
     assert so.returncode == 0
     assert json.loads(so.stdout.strip()) == {}
 
-    # EC-08: prompt_context emits [TDQ:NEXT], drops [TDQ:FEEDBACK]/[TDQ:GON], skips repeat mid-turn
+    # EC-08: prompt_context emits [TDQ:NEXT] and 1-line [TDQ:GON], drops [TDQ:FEEDBACK], skips repeat mid-turn
     pc_payload = {"cwd": str(repo), "conversation_id": "conv-ec", "prompt": "cái này lỗi rồi sửa lại giúp tôi"}  # i18n-allow
     pc = _run_hook("prompt_context.py", pc_payload, event="PreInvocation", cwd=repo)
     assert pc.returncode == 0
     pc_msg = json.loads(pc.stdout.strip())["injectSteps"][0]["systemMessage"]["systemMessage"]
     assert "[TDQ:NEXT]" in pc_msg
     assert "[TDQ:FEEDBACK]" not in pc_msg
-    assert "[TDQ:GON]" not in pc_msg
+    assert "[TDQ:GON]" in pc_msg
     pc_mid = _run_hook("prompt_context.py", pc_payload, event="PreInvocation", cwd=repo)
     assert pc_mid.returncode == 0
     assert json.loads(pc_mid.stdout.strip()) == {}
@@ -182,17 +182,14 @@ def test_ec01_to_ec14_live_cmd_hooks(tmp_path):
     )
     assert "[TDQ:VUNG]" in cx.stdout
 
-    # EC-03: stop_gate softens [TDQ:LOG] on AGY (allow + queue 4-part card + turn_closed=True)
+    # EC-03: stop_gate hard-blocks [TDQ:LOG] on AGY when real source changed without workinglog
     _run_hook("prompt_context.py", {"cwd": str(repo), "conversation_id": "conv-stop", "prompt": "check stop"}, event="PreInvocation", cwd=repo)
     (repo / "app.py").write_text("def add(a, b):\n    return a + b + 1\n", encoding="utf-8")
     sg = _run_hook("stop_gate.py", {"cwd": str(repo), "conversation_id": "conv-stop"}, event="Stop", cwd=repo)
     assert sg.returncode == 0
-    assert json.loads(sg.stdout.strip()) == {"decision": "allow"}
-    assert _common.read_turn_meta(str(repo), "conv-stop").get("turn_closed") is True
-    pi_stop = _run_hook("post_invocation.py", {"cwd": str(repo), "conversation_id": "conv-stop"}, event="PostInvocation", cwd=repo)
-    pi_stop_msg = json.loads(pi_stop.stdout.strip())["injectSteps"][0]["systemMessage"]
-    assert "[TDQ:LOG]" in pi_stop_msg["systemMessage"]
-    assert "[TDQ:LOG]" in pi_stop_msg["metadata"]["user_markdown"]
+    sg_json = json.loads(sg.stdout.strip())
+    assert sg_json["decision"] == "continue"
+    assert "[TDQ:LOG]" in sg_json["reason"]
 
     # Backward compat: Claude Code payload (no --event, Claude tool names) still emits hookSpecificOutput
     ak_claude = _run_hook("ask_" + "gate.py", {"cwd": str(repo), "session_id": "claude-1", "tool_name": "AskUserQuestion", "tool_input": {}}, event=None, cwd=repo)
@@ -220,7 +217,7 @@ def test_ec15_protojson_toolcall_workspacepaths_and_terminal_stop(tmp_path):
     assert "additionalContext" not in ss_json
     assert "[TDQ:ANCHOR]" in ss_json["injectSteps"][0]["systemMessage"]["systemMessage"]
 
-    # EC-02 + EC-15 guard: missing workinglog + unticked plan allow on AGY and queue [TDQ:LOG] + [TDQ:TICK]
+    # EC-02 + EC-15 guard: unticked plan (0 [~]) hard-denies edit_gate on AGY with 4-part [TDQ:TICK]
     plan_file = repo / "docs" / "tdq" / "plan" / "2026-11-14-0400-test-proto.md"
     plan_file.parent.mkdir(parents=True, exist_ok=True)
     plan_file.write_text("- [ ] **T1.1**: Unticked item\n", encoding="utf-8")
@@ -237,11 +234,10 @@ def test_ec15_protojson_toolcall_workspacepaths_and_terminal_stop(tmp_path):
         cwd=PLUGIN_DIR,
     )
     assert eg.returncode == 0
-    assert json.loads(eg.stdout.strip()) == {"decision": "allow"}
-    model_q, user_q = _common.flush_pending_channels(str(repo), "conv-proto")
-    assert "[TDQ:LOG]" in model_q and "[TDQ:TICK]" in model_q
-    assert "[TDQ:LOG]" in user_q and "[TDQ:TICK]" in user_q
-    assert "Chuyện gì" in user_q and "Làm gì" in user_q  # i18n-allow
+    eg_json = json.loads(eg.stdout.strip())
+    assert eg_json["decision"] == "deny"
+    assert "[TDQ:TICK]" in eg_json["reason"]
+    assert "Chuyện gì" in eg_json["reason"] and "Làm gì" in eg_json["reason"]  # i18n-allow
 
     # PreToolUse with nested toolCall.args.CommandLine + workspacePaths blocks banned branch name
     bg = _run_hook(
@@ -280,41 +276,50 @@ def test_ec15_protojson_toolcall_workspacepaths_and_terminal_stop(tmp_path):
     assert json.loads(sg.stdout.strip())["decision"] == "allow"
     assert _common.read_turn_meta(str(repo), "conv-proto").get("turn_closed") is True
 
-    # On analyze phase, modified repo without workinglog allows Stop and queues soft [TDQ:LOG]
+    # On analyze phase, modified repo without workinglog hard-blocks Stop with [TDQ:LOG]
     assert _state_cli(repo, "set", "phase=analyze").returncode == 0
-    sg_soft = _run_hook(
+    sg_log = _run_hook(
         "stop_gate.py",
         {"workspacePaths": [str(repo)], "conversation_id": "conv-proto"},
         event="Stop",
         cwd=PLUGIN_DIR,
     )
-    assert sg_soft.returncode == 0
-    assert json.loads(sg_soft.stdout.strip()) == {"decision": "allow"}
-    stop_model, stop_md = _common.flush_pending_channels(str(repo), "conv-proto")
-    assert "[TDQ:LOG]" in stop_model and "[TDQ:LOG]" in stop_md
+    assert sg_log.returncode == 0
+    sg_log_json = json.loads(sg_log.stdout.strip())
+    assert sg_log_json["decision"] == "continue"
+    assert "[TDQ:LOG]" in sg_log_json["reason"]
 
-    # On implement phase with open tasks, Stop continues once then allows when continuationActive=True
+    # On implement phase with open tasks (clean turn), Stop enforces MAX_STREAK_AGY=2 across continuationActive
     assert _state_cli(repo, "set", "phase=implement").returncode == 0
-    sg_block = _run_hook(
-        "stop_gate.py",
-        {"workspacePaths": [str(repo)], "conversation_id": "conv-proto"},
-        event="Stop",
+    assert _run_hook(
+        "prompt_context.py",
+        {"workspacePaths": [str(repo)], "conversation_id": "conv-proto-unf", "prompt": "check unfinished stop"},
+        event="PreInvocation",
         cwd=PLUGIN_DIR,
-    )
-    assert sg_block.returncode == 0
-    sg_block_json = json.loads(sg_block.stdout.strip())
-    assert sg_block_json["decision"] == "continue"
-    assert "[TDQ:UNFINISHED]" in sg_block_json["reason"]
+    ).returncode == 0
+    for extra in ({}, {"continuationActive": True}):
+        sg_block = _run_hook(
+            "stop_gate.py",
+            {"workspacePaths": [str(repo)], "conversation_id": "conv-proto-unf", **extra},
+            event="Stop",
+            cwd=PLUGIN_DIR,
+        )
+        assert sg_block.returncode == 0
+        sg_block_json = json.loads(sg_block.stdout.strip())
+        assert sg_block_json["decision"] == "continue"
+        assert "[TDQ:UNFINISHED]" in sg_block_json["reason"]
 
     sg_cont = _run_hook(
         "stop_gate.py",
-        {"workspacePaths": [str(repo)], "conversation_id": "conv-proto", "continuationActive": True},
+        {"workspacePaths": [str(repo)], "conversation_id": "conv-proto-unf", "continuationActive": True},
         event="Stop",
         cwd=PLUGIN_DIR,
     )
     assert sg_cont.returncode == 0
     assert json.loads(sg_cont.stdout.strip()) == {"decision": "allow"}
-    assert _common.read_turn_meta(str(repo), "conv-proto").get("turn_closed") is True
+    assert _common.read_turn_meta(str(repo), "conv-proto-unf").get("turn_closed") is True
+    unf_model, _ = _common.flush_pending_channels(str(repo), "conv-proto-unf")
+    assert "[TDQ:UNFINISHED]" in unf_model
 
     # Claude compat backward-check for edit_gate [TDQ:TICK] block (guards _tick_notify recursion)
     log_file = repo / _common.tdq_state.today_log_rel()

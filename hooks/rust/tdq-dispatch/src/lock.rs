@@ -49,12 +49,19 @@ pub fn acquire_sidecar_lock(
             .open(&lock_path)
         {
             Ok(f) => f,
-            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied && start.elapsed() < timeout => {
+            Err(e)
+                if e.kind() == std::io::ErrorKind::PermissionDenied
+                    && start.elapsed() < timeout =>
+            {
                 thread::sleep(poll_interval);
                 continue;
             }
             Err(e) => {
-                return Err(format!("Failed to open sidecar lock {}: {}", lock_path.display(), e));
+                return Err(format!(
+                    "Failed to open sidecar lock {}: {}",
+                    lock_path.display(),
+                    e
+                ));
             }
         };
 
@@ -88,11 +95,8 @@ pub fn atomic_write_file(target_path: &Path, data: &[u8]) -> std::io::Result<()>
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("tmp");
-    let tmp_path = target_path.with_file_name(format!(
-        ".tmp.{}.{}.dat",
-        std::process::id(),
-        file_name
-    ));
+    let tmp_path =
+        target_path.with_file_name(format!(".tmp.{}.{}.dat", std::process::id(), file_name));
 
     fs::write(&tmp_path, data)?;
 
@@ -153,7 +157,11 @@ mod tests {
         fs::write(&anchor_lock, b"").unwrap();
 
         let guard = acquire_sidecar_lock(&test_file, Duration::from_millis(100));
-        assert!(guard.is_ok(), "must acquire OS lock even when Python leaves anchor .lock file: {:?}", guard.err());
+        assert!(
+            guard.is_ok(),
+            "must acquire OS lock even when Python leaves anchor .lock file: {:?}",
+            guard.err()
+        );
 
         let _ = fs::remove_dir_all(&tmp_dir);
     }

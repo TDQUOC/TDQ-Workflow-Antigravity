@@ -405,7 +405,7 @@ def _assert_inject_step_parity(r_step: dict, p_step: dict, expected_code: str | 
 def _assert_inject_parity(rust_steps: list, py_steps: list, expected_code: str | None) -> None:
     """Verify injectSteps systemMessage and 4-part metadata.user_markdown parity."""
     assert len(rust_steps) == len(py_steps) >= 1, f"injectSteps length mismatch: {rust_steps} vs {py_steps}"
-    for r_step, p_step in zip(rust_steps, py_steps):
+    for r_step, p_step in zip(rust_steps, py_steps, strict=True):
         _assert_inject_step_parity(r_step, p_step, expected_code)
 
 

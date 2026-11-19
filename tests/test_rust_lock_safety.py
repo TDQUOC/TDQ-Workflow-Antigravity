@@ -3,11 +3,8 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
-import time
 from pathlib import Path
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_DIR = REPO_ROOT / "plugins" / "tdq-workflow-agy"
@@ -39,7 +36,7 @@ def test_concurrent_sidecar_locks():
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if os.name == "nt" else 0
 
         # Launch 20 concurrent processes
-        for i in range(num_processes):
+        for _ in range(num_processes):
             p = subprocess.Popen(
                 [str(RUST_BIN), "--event", "PostToolUse"],
                 stdin=subprocess.PIPE,
@@ -64,19 +61,17 @@ def test_concurrent_sidecar_locks():
             assert "os error 33" not in err, f"Process {idx} experienced ERROR_LOCK_VIOLATION: {err}"
             assert "LOCK_VIOLATION" not in err, f"Process {idx} experienced LOCK_VIOLATION: {err}"
 
-        # Verify output log file integrity
-        runtime_dir = temp_dir / ".tdq-runtime"
-        turns_file = runtime_dir / "turns-lock-session-42.jsonl"
-        read_file = runtime_dir / ".tdq-read.jsonl"
+        # Verify canonical Q2 output ledger integrity without creating root .tdq-runtime
+        assert not (temp_dir / ".tdq-runtime").exists(), "Legacy root .tdq-runtime must not be created"
+        read_ledger = docs_dir / ".tdq-read.jsonl"
+        assert read_ledger.is_file(), "Read ledger docs/tdq/.tdq-read.jsonl was not created"
 
-        assert turns_file.exists() or read_file.exists(), "Log files were not created in .tdq-runtime"
-
-        if turns_file.exists():
-            lines = [l.strip() for l in turns_file.read_text(encoding="utf-8").splitlines() if l.strip()]
-            assert len(lines) == num_processes, f"Expected {num_processes} lines in turns log, got {len(lines)}"
-            for line in lines:
-                parsed = json.loads(line)
-                assert parsed.get("tool") == "read_file" or parsed.get("tool_name") == "read_file"
+        lines = [line.strip() for line in read_ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
+        assert len(lines) == num_processes, f"Expected {num_processes} lines in .tdq-read.jsonl, got {len(lines)}"
+        for line in lines:
+            parsed = json.loads(line)
+            assert "sample.txt" in str(parsed.get("path") or "")
+            assert parsed.get("khoa") == "yc:lock-test"
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)

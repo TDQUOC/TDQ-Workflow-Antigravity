@@ -6,7 +6,9 @@ use std::path::Path;
 use std::sync::OnceLock;
 
 fn compiled_regex(cell: &'static OnceLock<Regex>, pattern: &str) -> &'static Regex {
-    cell.get_or_init(|| Regex::new(pattern).unwrap_or_else(|_| Regex::new(r"$^").expect("fallback")))
+    cell.get_or_init(|| {
+        Regex::new(pattern).unwrap_or_else(|_| Regex::new(r"$^").expect("fallback"))
+    })
 }
 
 /// Clean PowerShell here-strings (@'...'@ and @"..."@) to prevent false-positives.
@@ -103,15 +105,27 @@ fn part_stdout_targets(part: &str) -> Vec<String> {
     static RE_RED: OnceLock<Regex> = OnceLock::new();
     let red = compiled_regex(&RE_RED, r"(?:^|[^0-9])>{1,2}\s*([^\s;&|]+)");
     red.captures_iter(part)
-        .filter_map(|c| c.get(1).map(|m| m.as_str().trim_matches(|ch| ch == '\'' || ch == '"').to_string()))
-        .filter(|t| !t.starts_with('&') && !matches!(t.to_ascii_lowercase().as_str(), "/dev/null" | "$null"))
+        .filter_map(|c| {
+            c.get(1).map(|m| {
+                m.as_str()
+                    .trim_matches(|ch| ch == '\'' || ch == '"')
+                    .to_string()
+            })
+        })
+        .filter(|t| {
+            !t.starts_with('&') && !matches!(t.to_ascii_lowercase().as_str(), "/dev/null" | "$null")
+        })
         .collect()
 }
 
 /// Detect shell/PowerShell/inline-Python commands that mutate files on disk.
 pub fn is_shell_mutator(raw_cmd: &str) -> bool {
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    for part in cleaned.split([';', '&']).map(str::trim).filter(|p| !p.is_empty()) {
+    for part in cleaned
+        .split([';', '&'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+    {
         if part_has_shell_mutator(part) || !part_stdout_targets(part).is_empty() {
             return true;
         }
@@ -124,10 +138,14 @@ pub fn mutates_outside_docs(raw_cmd: &str) -> bool {
     static RE_ART: OnceLock<Regex> = OnceLock::new();
     let art = compiled_regex(&RE_ART, r"(?i)docs[\\/]tdq[\\/]artifacts[\\/]");
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    cleaned.split([';', '&']).map(str::trim).filter(|p| !p.is_empty()).any(|part| {
-        (part_has_shell_mutator(part) && !art.is_match(part))
-            || part_stdout_targets(part).iter().any(|t| !art.is_match(t))
-    })
+    cleaned
+        .split([';', '&'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .any(|part| {
+            (part_has_shell_mutator(part) && !art.is_match(part))
+                || part_stdout_targets(part).iter().any(|t| !art.is_match(t))
+        })
 }
 
 /// Detect shell writes outside `docs/` completely (for `TDQ:APPROVE` guard).
@@ -135,13 +153,18 @@ pub fn mutates_outside_docs_any(raw_cmd: &str) -> bool {
     static RE_DOCS: OnceLock<Regex> = OnceLock::new();
     let docs = compiled_regex(&RE_DOCS, r#"(?i)(?:^|[\s'"=])docs[\\/]"#);
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    cleaned.split([';', '&']).map(str::trim).filter(|p| !p.is_empty()).any(|part| {
-        (part_has_shell_mutator(part) && !docs.is_match(part))
-            || part_stdout_targets(part).iter().any(|t| {
-                let norm = t.replace('\\', "/");
-                !norm.to_ascii_lowercase().starts_with("docs/") && !norm.to_ascii_lowercase().starts_with("./docs/")
-            })
-    })
+    cleaned
+        .split([';', '&'])
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .any(|part| {
+            (part_has_shell_mutator(part) && !docs.is_match(part))
+                || part_stdout_targets(part).iter().any(|t| {
+                    let norm = t.replace('\\', "/");
+                    !norm.to_ascii_lowercase().starts_with("docs/")
+                        && !norm.to_ascii_lowercase().starts_with("./docs/")
+                })
+        })
 }
 
 /// Detect direct shell writes targeting `docs/tdq/state.json` or `docs/tdq/STATE.md`.
@@ -163,7 +186,10 @@ pub fn has_banned_ai_branch(raw_cmd: &str) -> Option<String> {
     static RE_BR: OnceLock<Regex> = OnceLock::new();
     static RE_WT: OnceLock<Regex> = OnceLock::new();
     static RE_BAN: OnceLock<Regex> = OnceLock::new();
-    let br = compiled_regex(&RE_BR, r"(?i)git\s+(?:checkout\s+-[bB]|switch\s+(?:-c|--create)|branch)\s+(\S+)");
+    let br = compiled_regex(
+        &RE_BR,
+        r"(?i)git\s+(?:checkout\s+-[bB]|switch\s+(?:-c|--create)|branch)\s+(\S+)",
+    );
     let wt = compiled_regex(&RE_WT, r"git\s+worktree\s+add\s+(?:-b\s+(\S+)\s+)?(\S+)");
     let ban = compiled_regex(&RE_BAN, r"(?i)^(?:claude|antigravity|gemini|codex)");
     let cleaned = strip_powershell_herestrings(raw_cmd);
@@ -178,11 +204,21 @@ pub fn has_banned_ai_branch(raw_cmd: &str) -> Option<String> {
     }
     for cap in wt.captures_iter(&cleaned) {
         if let Some(m) = cap.get(1) {
-            names.push(m.as_str().trim_matches(|c| c == '\'' || c == '"').to_string());
+            names.push(
+                m.as_str()
+                    .trim_matches(|c| c == '\'' || c == '"')
+                    .to_string(),
+            );
         }
         if let Some(m) = cap.get(2) {
-            let clean_w = m.as_str().trim_matches(|c| c == '\'' || c == '"').replace('\\', "/");
-            if let Some(base) = Path::new(clean_w.trim_end_matches('/')).file_name().and_then(|s| s.to_str()) {
+            let clean_w = m
+                .as_str()
+                .trim_matches(|c| c == '\'' || c == '"')
+                .replace('\\', "/");
+            if let Some(base) = Path::new(clean_w.trim_end_matches('/'))
+                .file_name()
+                .and_then(|s| s.to_str())
+            {
                 names.push(base.to_string());
             }
         }
@@ -219,7 +255,8 @@ pub fn needs_python_command_gate(raw_cmd: &str) -> bool {
     if sq % 2 == 1 || dq % 2 == 1 {
         return true;
     }
-    let rtk_off = env::var("TDQ_RTK").as_deref() == Ok("0") || env::var("RTK_DISABLED").as_deref() == Ok("1");
+    let rtk_off =
+        env::var("TDQ_RTK").as_deref() == Ok("0") || env::var("RTK_DISABLED").as_deref() == Ok("1");
     if !rtk_off {
         let rtk_cli = compiled_regex(
             &RE_RTK_CLI,
@@ -289,7 +326,9 @@ mod tests {
         assert!(!is_shell_mutator("python -m pytest -q 2>&1 | tail -5"));
 
         assert!(mutates_outside_docs_any("Set-Content app.py x"));
-        assert!(!mutates_outside_docs_any("Set-Content docs/tdq/spec/s.md x"));
+        assert!(!mutates_outside_docs_any(
+            "Set-Content docs/tdq/spec/s.md x"
+        ));
         assert!(mutates_tdq_state("echo '{}' > docs/tdq/state.json"));
         assert!(!mutates_tdq_state("cat docs/tdq/state.json"));
 

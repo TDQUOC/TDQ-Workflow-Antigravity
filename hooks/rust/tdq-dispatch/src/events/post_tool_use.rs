@@ -33,7 +33,10 @@ fn is_lsp_concept_op(op: &str) -> bool {
     )
 }
 
-pub(crate) fn extract_concept_label(norm: &NormalizedToolCall, raw_cmd: Option<&str>) -> Option<String> {
+pub(crate) fn extract_concept_label(
+    norm: &NormalizedToolCall,
+    raw_cmd: Option<&str>,
+) -> Option<String> {
     let t = norm.tool_name.as_str();
     let srv = norm.server_name.as_deref().unwrap_or("");
     if srv.ends_with("lsp") || t.contains("lsp") {
@@ -43,7 +46,11 @@ pub(crate) fn extract_concept_label(norm: &NormalizedToolCall, raw_cmd: Option<&
             return Some(format!("lsp:{}", op));
         }
     }
-    if srv.contains("graphify") || srv.contains("txtai") || t.contains("graphify") || t.contains("txtai") {
+    if srv.contains("graphify")
+        || srv.contains("txtai")
+        || t.contains("graphify")
+        || t.contains("txtai")
+    {
         return Some(format!("graphify:{}", t));
     }
     if matches!(t, "run_command" | "Bash" | "PowerShell") {
@@ -93,7 +100,11 @@ pub fn handle_post_tool_use(payload: &HookPayload, workspace_root: &Path) -> Hoo
         });
         append_turn_row(workspace_root, &sid, &reset_row);
     }
-    if let Some(extra) = payload.extra.get("response").or_else(|| payload.extra.get("output")) {
+    if let Some(extra) = payload
+        .extra
+        .get("response")
+        .or_else(|| payload.extra.get("output"))
+    {
         if let Some(text) = extra.as_str() {
             let _ = check_and_store_ccr(text, workspace_root);
         }

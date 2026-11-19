@@ -343,7 +343,12 @@ pub struct HookPayload {
     pub arguments: Option<Value>,
     #[serde(rename = "toolInput", alias = "tool_input", alias = "input", default)]
     pub tool_input: Option<Value>,
-    #[serde(rename = "userPrompt", alias = "prompt", alias = "user_message", default)]
+    #[serde(
+        rename = "userPrompt",
+        alias = "prompt",
+        alias = "user_message",
+        default
+    )]
     pub user_prompt: Option<String>,
     #[serde(rename = "lastUserInput", default)]
     pub last_user_input: Option<String>,
@@ -366,6 +371,35 @@ pub struct HookPayload {
     pub hook_event_name: Option<String>,
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
+}
+
+fn unwrap_mcp_tool_call(raw_name: String, outer: Map<String, Value>) -> NormalizedToolCall {
+    let server_name = outer
+        .get("ServerName")
+        .or_else(|| outer.get("server"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let inner_name = outer
+        .get("ToolName")
+        .or_else(|| outer.get("tool"))
+        .or_else(|| outer.get("Name"))
+        .or_else(|| outer.get("name"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("call_mcp_tool")
+        .to_string();
+    let raw_args_val = outer.get("Arguments").or_else(|| outer.get("arguments"));
+    let (inner_args, is_str) = raw_args_val
+        .and_then(decode_json_object_val)
+        .unwrap_or_default();
+    NormalizedToolCall {
+        raw_tool_name: raw_name,
+        tool_name: inner_name,
+        server_name,
+        args: inner_args.clone(),
+        is_mcp_wrapper: true,
+        raw_args_is_str: is_str,
+        raw_arguments: inner_args,
+    }
 }
 
 impl HookPayload {
@@ -442,32 +476,7 @@ impl HookPayload {
                 raw_arguments: Map::new(),
             };
         }
-        let server_name = outer
-            .get("ServerName")
-            .or_else(|| outer.get("server"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        let inner_name = outer
-            .get("ToolName")
-            .or_else(|| outer.get("tool"))
-            .or_else(|| outer.get("Name"))
-            .or_else(|| outer.get("name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("call_mcp_tool")
-            .to_string();
-        let raw_args_val = outer.get("Arguments").or_else(|| outer.get("arguments"));
-        let (inner_args, is_str) = raw_args_val
-            .and_then(decode_json_object_val)
-            .unwrap_or_default();
-        NormalizedToolCall {
-            raw_tool_name: raw_name,
-            tool_name: inner_name,
-            server_name,
-            args: inner_args.clone(),
-            is_mcp_wrapper: true,
-            raw_args_is_str: is_str,
-            raw_arguments: inner_args,
-        }
+        unwrap_mcp_tool_call(raw_name, outer)
     }
 
     /// Extract shell command across `CommandLine` / `command` / `cmd` / `script`.
@@ -568,7 +577,10 @@ impl GuidanceRepo {
         } else if clean_detail.is_empty() {
             format!("**[TDQ:{}]**", key)
         } else {
-            cap_markdown(&format!("**[TDQ:{}]**: {}", key, clean_detail), MAX_USER_MARKDOWN_CHARS)
+            cap_markdown(
+                &format!("**[TDQ:{}]**: {}", key, clean_detail),
+                MAX_USER_MARKDOWN_CHARS,
+            )
         }
     }
 
@@ -581,11 +593,15 @@ impl GuidanceRepo {
             .map(|e| e.model_hint)
             .unwrap_or_else(|| format!("Gate {} triggered; check policy before retrying.", key));
         let base_line = format!("{}{}", prefix, model_hint);
-        let model_line = if !clean_detail.is_empty() && base_line.chars().count() < MAX_MODEL_HINT_CHARS - 8 {
-            cap_chars(&format!("{} ({})", base_line, clean_detail), MAX_MODEL_HINT_CHARS)
-        } else {
-            cap_chars(&base_line, MAX_MODEL_HINT_CHARS)
-        };
+        let model_line =
+            if !clean_detail.is_empty() && base_line.chars().count() < MAX_MODEL_HINT_CHARS - 8 {
+                cap_chars(
+                    &format!("{} ({})", base_line, clean_detail),
+                    MAX_MODEL_HINT_CHARS,
+                )
+            } else {
+                cap_chars(&base_line, MAX_MODEL_HINT_CHARS)
+            };
         ReminderEntry {
             code: key.clone(),
             model_line: model_line.clone(),

@@ -10,9 +10,15 @@ use std::time::Duration;
 pub fn handle_session_start(_payload: &HookPayload, workspace_root: &Path) -> HookDecision {
     let _cleaned = clean_old_runtime_files(workspace_root, Duration::from_secs(7 * 86400));
     let mut context_blocks = Vec::new();
-    let san_sang_path = workspace_root.join("docs").join("tdq").join(".tdq-san-sang.json");
+    let san_sang_path = workspace_root
+        .join("docs")
+        .join("tdq")
+        .join(".tdq-san-sang.json");
     if !san_sang_path.exists() {
-        context_blocks.push(GuidanceRepo::format_4part_card("SETUP", "Project setup incomplete"));
+        context_blocks.push(GuidanceRepo::format_4part_card(
+            "SETUP",
+            "Project setup incomplete",
+        ));
     }
     if let Some(state) = read_tdq_state(workspace_root) {
         if let Some(ref req) = state.active_request {
@@ -35,7 +41,10 @@ pub fn handle_session_start(_payload: &HookPayload, workspace_root: &Path) -> Ho
             }
         }
     } else {
-        context_blocks.push(GuidanceRepo::format_4part_card("INTAKE", "No active TDQ request"));
+        context_blocks.push(GuidanceRepo::format_4part_card(
+            "INTAKE",
+            "No active TDQ request",
+        ));
     }
 
     if context_blocks.is_empty() {
@@ -68,7 +77,11 @@ mod tests {
     fn test_session_start_multibyte_utf8_no_panic() {
         let tmp = std::env::temp_dir().join(format!("tdq_utf8_test_{}", std::process::id()));
         let _ = fs::remove_dir_all(&tmp);
-        let rules_dir = tmp.join("skills").join("tdq-build").join("references").join("rules");
+        let rules_dir = tmp
+            .join("skills")
+            .join("tdq-build")
+            .join("references")
+            .join("rules");
         let _ = fs::create_dir_all(tmp.join("docs").join("tdq"));
         let _ = fs::create_dir_all(&rules_dir);
         fs::write(

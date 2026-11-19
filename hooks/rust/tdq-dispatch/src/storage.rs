@@ -152,12 +152,18 @@ pub fn turn_meta_path(workspace_root: &Path, sid: &str) -> PathBuf {
 
 /// Return path to canonical search ledger (`docs/tdq/.tdq-search.jsonl`).
 pub fn search_ledger_path(workspace_root: &Path) -> PathBuf {
-    workspace_root.join("docs").join("tdq").join(".tdq-search.jsonl")
+    workspace_root
+        .join("docs")
+        .join("tdq")
+        .join(".tdq-search.jsonl")
 }
 
 /// Return path to canonical read ledger (`docs/tdq/.tdq-read.jsonl`).
 pub fn read_ledger_path(workspace_root: &Path) -> PathBuf {
-    workspace_root.join("docs").join("tdq").join(".tdq-read.jsonl")
+    workspace_root
+        .join("docs")
+        .join("tdq")
+        .join(".tdq-read.jsonl")
 }
 
 /// Return current Unix epoch seconds as f64 matching Python `time.time()`.
@@ -196,8 +202,12 @@ fn parse_tz_offset_secs(iso: &str) -> i64 {
     if tail[3] != b':' {
         return 0;
     }
-    let hh = std::str::from_utf8(&tail[1..3]).ok().and_then(|s| s.parse::<i64>().ok());
-    let mm = std::str::from_utf8(&tail[4..6]).ok().and_then(|s| s.parse::<i64>().ok());
+    let hh = std::str::from_utf8(&tail[1..3])
+        .ok()
+        .and_then(|s| s.parse::<i64>().ok());
+    let mm = std::str::from_utf8(&tail[4..6])
+        .ok()
+        .and_then(|s| s.parse::<i64>().ok());
     match (hh, mm) {
         (Some(h), Some(m)) if h <= 14 && m < 60 => sign * (h * 3600 + m * 60),
         _ => 0,
@@ -206,8 +216,14 @@ fn parse_tz_offset_secs(iso: &str) -> i64 {
 
 /// Compute today's `docs/workinglog/YYYY-MM-DD.md` path honoring state `updated_at` TZ offset.
 pub fn today_log_rel_for_state(state: Option<&TdqState>) -> String {
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
-    let offset = state.and_then(|s| s.updated_at.as_deref()).map(parse_tz_offset_secs).unwrap_or(0);
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs() as i64;
+    let offset = state
+        .and_then(|s| s.updated_at.as_deref())
+        .map(parse_tz_offset_secs)
+        .unwrap_or(0);
     let local_days = (secs + offset).max(0) / 86_400;
     let (y, m, d) = civil_from_days(local_days);
     format!("docs/workinglog/{:04}-{:02}-{:02}.md", y, m, d)
@@ -396,12 +412,7 @@ pub fn already_reminded(workspace_root: &Path, sid: &str, code: &str) -> bool {
 }
 
 /// Queue a deduplicated dual-channel reminder into `pending-reminders-<sid>.jsonl`.
-pub fn queue_pending_reminder(
-    workspace_root: &Path,
-    sid: &str,
-    code: &str,
-    detail: &str,
-) -> bool {
+pub fn queue_pending_reminder(workspace_root: &Path, sid: &str, code: &str, detail: &str) -> bool {
     let qpath = pending_reminders_path(workspace_root, sid);
     let Ok(_guard) = acquire_sidecar_lock(&qpath, Duration::from_millis(200)) else {
         return false;
@@ -502,8 +513,7 @@ pub fn append_jsonl_record(log_path: &Path, record: &Value) -> Result<(), String
         .open(log_path)
         .map_err(|e| e.to_string())?;
 
-    file.write_all(line.as_bytes())
-        .map_err(|e| e.to_string())?;
+    file.write_all(line.as_bytes()).map_err(|e| e.to_string())?;
     file.flush().map_err(|e| e.to_string())?;
 
     Ok(())
@@ -552,7 +562,10 @@ pub struct StopStreak {
 
 /// Increment consecutive stop counter when `plan_sha` stays unchanged.
 pub fn record_stop_streak(workspace_root: &Path, plan_sha: &str) -> u32 {
-    let streak_path = workspace_root.join("docs").join("tdq").join("stop_streak.json");
+    let streak_path = workspace_root
+        .join("docs")
+        .join("tdq")
+        .join("stop_streak.json");
     let _guard = acquire_sidecar_lock(&streak_path, Duration::from_millis(200));
 
     let mut current: StopStreak = fs::read_to_string(&streak_path)
@@ -576,7 +589,10 @@ pub fn record_stop_streak(workspace_root: &Path, plan_sha: &str) -> u32 {
 
 /// Reset consecutive stop streak to zero.
 pub fn reset_stop_streak(workspace_root: &Path) {
-    let streak_path = workspace_root.join("docs").join("tdq").join("stop_streak.json");
+    let streak_path = workspace_root
+        .join("docs")
+        .join("tdq")
+        .join("stop_streak.json");
     let _guard = acquire_sidecar_lock(&streak_path, Duration::from_millis(200));
 
     let current = StopStreak {

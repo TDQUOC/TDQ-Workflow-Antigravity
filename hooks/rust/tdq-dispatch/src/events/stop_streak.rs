@@ -21,7 +21,9 @@ const TERMINAL_STOP_REASONS: &[&str] = &[
 
 fn is_terminal_stop(payload: &HookPayload) -> bool {
     let reason = payload.termination_reason.as_deref().unwrap_or("");
-    TERMINAL_STOP_REASONS.iter().any(|r| r.eq_ignore_ascii_case(reason))
+    TERMINAL_STOP_REASONS
+        .iter()
+        .any(|r| r.eq_ignore_ascii_case(reason))
 }
 
 /// Evaluate pure-Rust Stop plan streak (also used by unit checks).
@@ -48,7 +50,10 @@ pub fn evaluate_open_plan_stop(workspace_root: &Path) -> HookDecision {
     }
     let card = GuidanceRepo::format_4part_card(
         "UNFINISHED",
-        &format!("{} open task(s) remain in active implement plan.", open_count),
+        &format!(
+            "{} open task(s) remain in active implement plan.",
+            open_count
+        ),
     );
     HookDecision::continue_run(card)
 }
@@ -96,13 +101,19 @@ mod tests {
         };
         let p_res = handle_post_tool_use(&post_payload, &tmp);
         assert_eq!(p_res.to_json_string(), "{}");
-        assert!(tmp.join("docs").join("tdq").join(".tdq-read.jsonl").is_file());
+        assert!(tmp
+            .join("docs")
+            .join("tdq")
+            .join(".tdq-read.jsonl")
+            .is_file());
 
         let stop_idle = HookPayload {
             conversation_id: Some("sid-002".to_string()),
             ..Default::default()
         };
-        assert!(matches!(handle_stop_streak(&stop_idle, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
+        assert!(
+            matches!(handle_stop_streak(&stop_idle, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow)
+        );
 
         fs::write(
             tmp.join("docs").join("tdq").join("state.json"),
@@ -114,7 +125,10 @@ mod tests {
             "- [>] **T1.1** delegated — Test: `x`\n- [ ] **T1.2** todo — Test: `x`\n",
         )
         .unwrap();
-        assert!(matches!(handle_stop_streak(&stop_idle, &tmp), RouteOutcome::DelegatePython));
+        assert!(matches!(
+            handle_stop_streak(&stop_idle, &tmp),
+            RouteOutcome::DelegatePython
+        ));
         // Dispatched `[>]` task counts as active progress and does not UNFINISHED-block
         assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Allow);
 
@@ -127,7 +141,10 @@ mod tests {
         let d1 = evaluate_open_plan_stop(&tmp);
         assert_eq!(d1.decision, DecisionKind::Continue);
         assert!(d1.reason.unwrap_or_default().contains("UNFINISHED"));
-        assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Continue);
+        assert_eq!(
+            evaluate_open_plan_stop(&tmp).decision,
+            DecisionKind::Continue
+        );
         assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Allow);
 
         let _ = fs::remove_dir_all(&tmp);

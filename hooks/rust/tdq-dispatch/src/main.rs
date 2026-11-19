@@ -42,7 +42,13 @@ fn find_project_ancestor(start: &Path) -> PathBuf {
     let mut git_root: Option<PathBuf> = None;
     let mut state_root: Option<PathBuf> = None;
     loop {
-        if state_root.is_none() && current.join("docs").join("tdq").join("state.json").is_file() {
+        if state_root.is_none()
+            && current
+                .join("docs")
+                .join("tdq")
+                .join("state.json")
+                .is_file()
+        {
             state_root = Some(current.clone());
         }
         if git_root.is_none() && current.join(".git").exists() {
@@ -53,7 +59,9 @@ fn find_project_ancestor(start: &Path) -> PathBuf {
             _ => break,
         }
     }
-    git_root.or(state_root).unwrap_or_else(|| start.to_path_buf())
+    git_root
+        .or(state_root)
+        .unwrap_or_else(|| start.to_path_buf())
 }
 
 fn resolve_workspace_root(payload: &HookPayload) -> PathBuf {
@@ -90,7 +98,12 @@ fn resolve_dispatch_script_with(
     if let Some(exe) = exe_path {
         if let Some(bin_dir) = exe.parent() {
             if let Some(bundle_root) = bin_dir.parent() {
-                candidates.push(bundle_root.join("hooks").join("scripts").join("dispatch.py"));
+                candidates.push(
+                    bundle_root
+                        .join("hooks")
+                        .join("scripts")
+                        .join("dispatch.py"),
+                );
             }
         }
     }
@@ -102,7 +115,12 @@ fn resolve_dispatch_script_with(
             .join("scripts")
             .join("dispatch.py"),
     );
-    candidates.push(workspace_root.join("hooks").join("scripts").join("dispatch.py"));
+    candidates.push(
+        workspace_root
+            .join("hooks")
+            .join("scripts")
+            .join("dispatch.py"),
+    );
     candidates.into_iter().find(|p| p.is_file())
 }
 
@@ -153,7 +171,8 @@ fn execute_python_fallback(
         )
     })?;
     let primary = if cfg!(windows) { "python" } else { "python3" };
-    let output = match spawn_python_dispatch(primary, &[], &dispatch_script, event_name, raw_stdin) {
+    let output = match spawn_python_dispatch(primary, &[], &dispatch_script, event_name, raw_stdin)
+    {
         Ok(out) => out,
         Err(err) if cfg!(windows) && err.kind() == io::ErrorKind::NotFound => {
             spawn_python_dispatch("py", &["-3"], &dispatch_script, event_name, raw_stdin)?
@@ -216,7 +235,12 @@ fn main() {
 
     if env::var("TDQ_HOOK_ENGINE").as_deref() == Ok("python") {
         if let Ok(exit_code) = execute_python_fallback(&event_name, &raw_stdin, &workspace_root) {
-            emit_log(&event_name, "cold-forced", start.elapsed().as_secs_f64() * 1000.0, &sid);
+            emit_log(
+                &event_name,
+                "cold-forced",
+                start.elapsed().as_secs_f64() * 1000.0,
+                &sid,
+            );
             std::process::exit(exit_code);
         }
     }
@@ -224,12 +248,22 @@ fn main() {
     match route_event(&event_name, &payload, &workspace_root) {
         RouteOutcome::Decided(decision) => {
             println!("{}", decision.to_json_string());
-            emit_log(&event_name, "hot", start.elapsed().as_secs_f64() * 1000.0, &sid);
+            emit_log(
+                &event_name,
+                "hot",
+                start.elapsed().as_secs_f64() * 1000.0,
+                &sid,
+            );
         }
         RouteOutcome::DelegatePython => {
             match execute_python_fallback(&event_name, &raw_stdin, &workspace_root) {
                 Ok(code) => {
-                    emit_log(&event_name, "cold", start.elapsed().as_secs_f64() * 1000.0, &sid);
+                    emit_log(
+                        &event_name,
+                        "cold",
+                        start.elapsed().as_secs_f64() * 1000.0,
+                        &sid,
+                    );
                     std::process::exit(code);
                 }
                 Err(err) => {
@@ -254,7 +288,11 @@ mod tests {
     #[test]
     fn test_parse_event_arg() {
         assert_eq!(
-            parse_event_arg_from(["tdq-dispatch".to_string(), "--event".to_string(), "PreInvocation".to_string()]),
+            parse_event_arg_from([
+                "tdq-dispatch".to_string(),
+                "--event".to_string(),
+                "PreInvocation".to_string()
+            ]),
             Some("PreInvocation".to_string())
         );
         assert_eq!(parse_event_arg_from(["tdq-dispatch".to_string()]), None);
@@ -266,7 +304,9 @@ mod tests {
         let _ = fs::create_dir_all(&tmp);
         let uri = format!(
             "file:///{}",
-            tmp.to_string_lossy().replace('\\', "/").trim_start_matches('/')
+            tmp.to_string_lossy()
+                .replace('\\', "/")
+                .trim_start_matches('/')
         );
         let payload = HookPayload::from_json_str(&format!(r#"{{"workspacePaths": ["{}"]}}"#, uri));
         assert_eq!(resolve_workspace_root(&payload), tmp);

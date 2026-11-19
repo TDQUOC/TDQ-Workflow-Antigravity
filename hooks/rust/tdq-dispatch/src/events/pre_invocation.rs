@@ -22,7 +22,32 @@ fn prompt_sha16(payload: &HookPayload) -> String {
     digest.chars().take(16).collect()
 }
 
-fn scan_tail_user_input(tpath: &Path, prev_sig: &str, prev_psha: &str, prev_closed: bool, psha: &str) -> Option<String> {
+fn format_user_input_sig(rec: &Value, last_end: u64) -> String {
+    let step_idx = rec.get("step_index").and_then(|v| v.as_i64());
+    let created = rec
+        .get("created_at")
+        .or_else(|| rec.get("timestamp"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if step_idx.is_some() || !created.is_empty() {
+        return format!(
+            "ui:{}:{}",
+            step_idx
+                .map(|i| i.to_string())
+                .unwrap_or_else(|| "None".to_string()),
+            created
+        );
+    }
+    format!("ui_pos:{}", last_end)
+}
+
+fn scan_tail_user_input(
+    tpath: &Path,
+    prev_sig: &str,
+    prev_psha: &str,
+    prev_closed: bool,
+    psha: &str,
+) -> Option<String> {
     if !tpath.is_file() {
         return None;
     }
@@ -54,16 +79,7 @@ fn scan_tail_user_input(tpath: &Path, prev_sig: &str, prev_psha: &str, prev_clos
         buf.clear();
     }
     if let Some(rec) = last_rec {
-        let step_idx = rec.get("step_index").and_then(|v| v.as_i64());
-        let created = rec.get("created_at").or_else(|| rec.get("timestamp")).and_then(|v| v.as_str()).unwrap_or("");
-        if step_idx.is_some() || !created.is_empty() {
-            return Some(format!(
-                "ui:{}:{}",
-                step_idx.map(|i| i.to_string()).unwrap_or_else(|| "None".to_string()),
-                created
-            ));
-        }
-        return Some(format!("ui_pos:{}", last_end));
+        return Some(format_user_input_sig(&rec, last_end));
     }
     if !psha.is_empty() && !prev_psha.is_empty() && psha != prev_psha {
         return Some(format!("ui_big:{}", psha));
@@ -74,10 +90,17 @@ fn scan_tail_user_input(tpath: &Path, prev_sig: &str, prev_psha: &str, prev_clos
     None
 }
 
-fn compute_user_turn_sig(payload: &HookPayload, prev_sig: &str, prev_psha: &str, prev_closed: bool) -> String {
+fn compute_user_turn_sig(
+    payload: &HookPayload,
+    prev_sig: &str,
+    prev_psha: &str,
+    prev_closed: bool,
+) -> String {
     let psha = prompt_sha16(payload);
     if let Some(ref tpath) = payload.transcript_path {
-        if let Some(sig) = scan_tail_user_input(Path::new(tpath), prev_sig, prev_psha, prev_closed, &psha) {
+        if let Some(sig) =
+            scan_tail_user_input(Path::new(tpath), prev_sig, prev_psha, prev_closed, &psha)
+        {
             return sig;
         }
     }
@@ -103,8 +126,14 @@ fn state_newer_than_meta(workspace_root: &Path, sid: &str) -> bool {
 /// Route `PreInvocation`: flush subagent/mid-turn in Rust or delegate new turns to Python.
 pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> RouteOutcome {
     let sid = payload.canonical_session_id();
-    let is_subagent = payload.agent_type.as_deref().is_some_and(|s| !s.trim().is_empty())
-        || payload.agent_id.as_deref().is_some_and(|s| !s.trim().is_empty())
+    let is_subagent = payload
+        .agent_type
+        .as_deref()
+        .is_some_and(|s| !s.trim().is_empty())
+        || payload
+            .agent_id
+            .as_deref()
+            .is_some_and(|s| !s.trim().is_empty())
         || read_sessions_role(workspace_root, &sid).is_some();
     if is_subagent {
         return RouteOutcome::Decided(handle_post_invocation(payload, workspace_root));
@@ -115,12 +144,18 @@ pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> Ro
     if meta.turn_closed || state_newer_than_meta(workspace_root, &sid) {
         return RouteOutcome::DelegatePython;
     }
-    let sig = compute_user_turn_sig(payload, &meta.last_user_sig, &meta.prompt_sha, meta.turn_closed);
+    let sig = compute_user_turn_sig(
+        payload,
+        &meta.last_user_sig,
+        &meta.prompt_sha,
+        meta.turn_closed,
+    );
     let turns_exists = shard_turn_path(workspace_root, &sid).is_file();
     if sig != meta.last_user_sig || (sig.is_empty() && !turns_exists) {
         return RouteOutcome::DelegatePython;
     }
-    if matches!(payload.extra.get("source").and_then(|v| v.as_str()), Some(s) if s.eq_ignore_ascii_case("compact")) {
+    if matches!(payload.extra.get("source").and_then(|v| v.as_str()), Some(s) if s.eq_ignore_ascii_case("compact"))
+    {
         return RouteOutcome::DelegatePython;
     }
     RouteOutcome::Decided(handle_post_invocation(payload, workspace_root))
@@ -141,7 +176,10 @@ mod tests {
             last_user_input: Some("continue work".to_string()),
             ..Default::default()
         };
-        assert!(matches!(handle_pre_invocation(&p, &tmp), RouteOutcome::DelegatePython));
+        assert!(matches!(
+            handle_pre_invocation(&p, &tmp),
+            RouteOutcome::DelegatePython
+        ));
 
         let sig = format!("prompt:{}", prompt_sha16(&p));
         let meta = TurnMeta {
@@ -154,9 +192,15 @@ mod tests {
         let outcome = handle_pre_invocation(&p, &tmp);
         assert!(matches!(outcome, RouteOutcome::Decided(_)));
 
-        let closed = TurnMeta { turn_closed: true, ..meta };
+        let closed = TurnMeta {
+            turn_closed: true,
+            ..meta
+        };
         write_turn_meta(&tmp, "conv-pre", &closed).unwrap();
-        assert!(matches!(handle_pre_invocation(&p, &tmp), RouteOutcome::DelegatePython));
+        assert!(matches!(
+            handle_pre_invocation(&p, &tmp),
+            RouteOutcome::DelegatePython
+        ));
 
         let _ = fs::remove_dir_all(&tmp);
     }

@@ -6,6 +6,8 @@ Stop events in-process without spawning child Python interpreters.
 
 Env: TDQ_PROJECT_DIR anchors project root; TDQ_LOG=0 mutes stderr logs.
 """
+from __future__ import annotations
+
 import importlib
 import json
 import os

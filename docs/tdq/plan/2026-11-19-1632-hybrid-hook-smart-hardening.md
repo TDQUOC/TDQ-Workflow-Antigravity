@@ -164,7 +164,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P4 — Golden Parity Test Suite 22/22 Mã, Benchmark & Validator (M4)
 
-- [>] **T4.1** (e25m) Viết bộ Golden Parity Test Suite 22/22 mã cổng x 6 sự kiện và Smoke Test vòng đời — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
+- [x] **T4.1** (e25m) Viết bộ Golden Parity Test Suite 22/22 mã cổng x 6 sự kiện và Smoke Test vòng đời — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
   - Chạm: `tests/test_rust_dispatch_parity.py`
   - Cần: `T3.1`
   - Mục tiêu: Khóa 100% tương đương hành vi giữa mặc định Hybrid và `TDQ_HOOK_ENGINE=python` trên đủ 22 mã cổng và 6 sự kiện AGY 2.0.
@@ -181,7 +181,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Ghi/xóa đồng thời trên Windows NTFS với file `.lock` và URI `file:///C:/...` trong `workspacePaths`.
     - Tiêu chí: `assert set(covered_codes) == set(AGY_CODES)` và 100% assertion JSON parity pass.
 
-- [>] **T4.2** (e12m) Cập nhật Benchmark Hot/Cold/Trọng số, Validator Magic Bytes 3 OS và test Smart Hardening R1–R3 — Test: `py -3 -m pytest tests/test_rust_latency_benchmark.py tests/test_agy_plugin_validate.py tests/test_hook_dispatch_r1_r3.py -q`
+- [x] **T4.2** (e12m) Cập nhật Benchmark Hot/Cold/Trọng số, Validator Magic Bytes 3 OS và test Smart Hardening R1–R3 — Test: `py -3 -m pytest tests/test_rust_latency_benchmark.py tests/test_agy_plugin_validate.py tests/test_hook_dispatch_r1_r3.py -q`
   - Chạm: `tests/test_rust_latency_benchmark.py`, `tests/test_agy_plugin_validate.py`, `tests/test_hook_dispatch_r1_r3.py`
   - Cần: `T3.1`
   - Mục tiêu: Đo thực nghiệm hiệu năng Hot-path/Cold-path/trọng số, khóa kiểm magic bytes 3 binary trong validator và cập nhật test R1–R3 theo Smart Hardening.
@@ -202,7 +202,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P5 — Log service, Rà soát Clean Code & Kiểm chứng Trọn bộ (M4 / QC Ultra)
 
-- [ ] **T5.1** (e8m) Xác minh Log service bật mặc định (Rust + Python) và rà soát tối giản (tdq-lean) trên toàn bộ diff — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k "log or fallback"`
+- [x] **T5.1** (e8m) Xác minh Log service bật mặc định (Rust + Python) và rà soát tối giản (tdq-lean) trên toàn bộ diff — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k "log or fallback"`
   - Dùng: `tdq-lean`
   - Để: soát thừa, trùng lặp logic hoặc hàm vượt 50 dòng trong toàn bộ diff Rust và Python sau implement.
   - Ra: danh sách rà soát sạch (0 mục thừa hoặc đã xử lý gọn trước QC ultra).
@@ -210,9 +210,33 @@ Trạng thái plan: ĐÃ DUYỆT
   - Không dùng cho: thay đổi thiết kế đã duyệt hoặc bỏ bớt cổng Smart Hardening.
   - Cần: `T4.1`, `T4.2`
 
-- [ ] **T5.2** (e10m) Chạy trọn bộ test toàn repo, kiểm i18n/doc_lint, cross-OS smoke check và chuẩn bị QC ultra — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py -q`
+- [x] **T5.2** (e10m) Chạy trọn bộ test toàn repo, kiểm i18n/doc_lint, cross-OS smoke check và chuẩn bị QC ultra — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py tests/test_agy_plugin_validate.py -q`
   - Chạm: `docs/tdq/qc/2026-11-19-1632-hybrid-hook-smart-hardening.md`
   - Cần: `T5.1`
+
+## QC vòng 1 — fix
+
+- [x] **QC1.1** (e6m) Bổ sung tương thích Python 3.9 (`from __future__ import annotations`) cho nhánh Cold-path trên macOS và đóng gói lại `plugins/tdq-workflow-agy/` — Test: `py -3 -m pytest tests/test_state.py tests/test_search_rules.py tests/test_tdq_ccr.py tests/test_agy_plugin_validate.py -q`
+  - Chạm: `scripts/tdq_state.py`, `scripts/search_rules.py`, `scripts/tdq_ccr.py`, `tools/patches/agy_dispatch.py`, `plugins/tdq-workflow-agy/`
+  - Cần: `T5.1`
+
+- [x] **QC1.2** (e8m) Đồng bộ 5 tệp test di sản (trước Q2/Smart Hardening/Hybrid Rust) theo đặc tả đã duyệt — Test: `py -3 -m pytest tests/test_rust_lock_safety.py tests/test_hooks_dual_protocol.py tests/test_command_gate.py tests/test_remote_linux_simulation.py tests/test_remote_mac_simulation.py -q`
+  - Chạm: `tests/test_rust_lock_safety.py`, `tests/test_hooks_dual_protocol.py`, `tests/test_command_gate.py`, `tests/test_remote_linux_simulation.py`, `tests/test_remote_mac_simulation.py`
+  - Cần: `QC1.1`
+
+- [x] **QC1.3** (e2m) Đồng bộ `"version": "0.101.0"` ở `.claude-plugin/plugin.json` và `.codex-plugin/plugin.json` cho khớp `CHANGELOG.md` (sót từ commit `72f1e2e9`) — Test: `py -3 -m pytest tests/test_docs_consistency.py -q`
+  - Chạm: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`
+  - Cần: `T5.1`
+
+## QC vòng 2 — fix
+
+- [x] **QC2.1** (e3m) Loại `hooks/rust/**` khỏi `la_duong_dan_release` trong `scripts/build_portable.py` để khớp ngân sách nhánh release Claude/Codex (`<= 161`) — Test: `py -3 -m pytest tests/test_build_portable.py -q`
+  - Chạm: `scripts/build_portable.py`
+  - Cần: `QC1.3`
+
+- [x] **QC2.2** (e4m) Bổ sung `encoding="utf-8", errors="replace"` và lọc `PLUGIN_DIR.rglob("*")` trong `tests/test_remote_linux_simulation.py` và `tests/test_remote_mac_simulation.py` — Test: `py -3 -m pytest tests/test_ma_hoa_subprocess.py tests/test_tdq_test.py tests/test_remote_linux_simulation.py tests/test_remote_mac_simulation.py -q`
+  - Chạm: `tests/test_remote_linux_simulation.py`, `tests/test_remote_mac_simulation.py`
+  - Cần: `QC2.1`
 
 ## Cụm song song
 
@@ -229,11 +253,11 @@ Không có tệp mã nguồn nào bị từ 2 task trở lên khai chung ở `Ch
 
 ## Definition of Done
 
-- [ ] Q1 Schema AGY 2.0 & đủ 6 sự kiện (0 khóa sai tên) — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml protocol::`
-- [ ] Q2 Thống nhất docs/tdq/.tdq-runtime/ & phân giải PLUGIN_ROOT ngoài repo — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k "runtime or plugin_root"`
-- [ ] Q3 Golden Parity 22/22 mã cổng x 6 sự kiện khớp 100% — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
-- [ ] Q4 Đủ 6 quy tắc Smart Hardening & an toàn UTF-8 — `py -3 -m pytest tests/test_rust_dispatch_parity.py tests/test_hook_dispatch_r1_r3.py -q`
-- [ ] Q5 Hiệu năng Hot-path <= 25 ms direct, <= 32 ms cmd /c, trọng số <= 40 ms — `py -3 -m pytest tests/test_rust_latency_benchmark.py -s -q`
-- [ ] Q6 Magic Bytes PE/ELF/Mach-O 3 OS & test thật Windows/Linux/macOS — `py -3 -m pytest tests/test_agy_plugin_validate.py -q -k magic`
-- [ ] Q7 Trọn bộ unit test hồi quy Claude/Codex, strict validator & giữ nguyên local plugin — `py -3 -m pytest -q && agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json && py -3 scripts/i18n_check.py`
-- [ ] Q8 QC mức ultra: Smoke test vòng đời 6 sự kiện & báo cáo PASS từ agent tdq-qc-tester độc lập — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k smoke`
+- [x] Q1 Schema AGY 2.0 & đủ 6 sự kiện (0 khóa sai tên) — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml protocol::`
+- [x] Q2 Thống nhất docs/tdq/.tdq-runtime/ & phân giải PLUGIN_ROOT ngoài repo — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k "runtime or plugin_root"`
+- [x] Q3 Golden Parity 22/22 mã cổng x 6 sự kiện khớp 100% — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
+- [x] Q4 Đủ 6 quy tắc Smart Hardening & an toàn UTF-8 — `py -3 -m pytest tests/test_rust_dispatch_parity.py tests/test_hook_dispatch_r1_r3.py -q`
+- [x] Q5 Hiệu năng Hot-path <= 25 ms direct, <= 32 ms cmd /c, trọng số <= 40 ms — `py -3 -m pytest tests/test_rust_latency_benchmark.py -s -q`
+- [x] Q6 Magic Bytes PE/ELF/Mach-O 3 OS & test thật Windows/Linux/macOS — `py -3 -m pytest tests/test_agy_plugin_validate.py -q -k magic`
+- [x] Q7 Trọn bộ unit test hồi quy Claude/Codex, strict validator & giữ nguyên local plugin — `py -3 -m pytest -q && agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json && py -3 scripts/i18n_check.py`
+- [x] Q8 QC mức ultra: Smoke test vòng đời 6 sự kiện & báo cáo PASS từ agent tdq-qc-tester độc lập — `py -3 -m pytest tests/test_rust_dispatch_parity.py -q -k smoke`

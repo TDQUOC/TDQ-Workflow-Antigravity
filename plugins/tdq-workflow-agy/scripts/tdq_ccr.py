@@ -16,6 +16,8 @@ Env:
     TDQ_CCR_DIR    Override default `.tdq-runtime/ccr` storage directory.
 """
 
+from __future__ import annotations
+
 import argparse
 import collections
 import csv
