@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7f44cfd0-6463-4e0c-94c1-4e8e70614eb7",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-0015-trien-khai-plan-v2-planner-spec\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-0015-trien-khai-plan-v2-planner-spec-preview.cb4962e2126d4e9491d5119b82dd1fd2.html",
+  "specification": {
+    "sha256": "677e9a196b82f5a12e9dfc537e9db5515e05cc50c7c6ece04adc387f4358a4a3",
+    "bytes": 3476
+  },
+  "artifact": {
+    "sha256": "c0fb0e8419b78b2d58ad9242348bff55e20bf38079cea380aa91f4ca162ff8e1",
+    "bytes": 1272952
+  },
+  "explainer": {
+    "preparedSha256": "455bc175784c350c69f21b9da80ca4e61ddd0b5c64624fac8b480596594e18f5",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "v2plus-truoc",
+        "inline": true,
+        "sha256": "ef31fcfadb0d14c9094efb01517a9a399cc309b275165884f0462c0e4812728c",
+        "bytes": 1160
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v2plus-sau",
+        "inline": true,
+        "sha256": "8ded19b81dd1fbacb20a1c411976359fa0140d9afb072bd4247a420058556f55",
+        "bytes": 1308
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v2plus-arch",
+        "inline": true,
+        "sha256": "731d3d9102d720d2d5a4cb62f7dfbc9241bd2a9bde7337534b67bec9366ec4b3",
+        "bytes": 1375
+      }
+    ]
+  }
+}
