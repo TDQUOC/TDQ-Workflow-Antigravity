@@ -1,10 +1,10 @@
 {
   "slug": "2026-11-20-0015-trien-khai-plan-v2-planner-spec",
   "plan_file": "docs\\tdq\\plan\\2026-11-20-0015-trien-khai-plan-v2-planner-spec.md",
-  "plan_sha": "7e82a81ac2c1ca92e8c1ed2e7d62def1d9cee078868ad8dbeb04b748d51effa1",
+  "plan_sha": "64eb9b3a031b7e8187537e2e062db70f6e093d79c2764564ea5947120449dc8e",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "47421e798470c8a4d2688b29aabceb8cd568a7cfa9113f35777d8bb840af24a1",
+  "plan_assignment_sha": "581f3d2e02634cec532ad2317ccfc9240955c9daa5878ba451f83b8f26d1eaef",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
@@ -84,7 +84,8 @@
       "ly_do": "",
       "vung_file": [
         "tools/patches/agy_hooks.py",
-        "docs/tdq/token-budget.json"
+        "docs/tdq/token-budget.json",
+        "tests/test_build_portable.py"
       ],
       "dot": 4
     },

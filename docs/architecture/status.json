@@ -2,14 +2,26 @@
   "schema_version": 1,
   "status": "stale",
   "reasons": [
+    "Source file modified: agents/tdq-implementer.md",
+    "Source file modified: agents/tdq-reviewer.md",
     "Source file modified: hooks/scripts/bash_gate.py",
     "Source file modified: scripts/build_portable.py",
     "Source file modified: scripts/doc_lint.py",
     "Source file modified: scripts/search_rules.py",
     "Source file modified: scripts/tdq_ccr.py",
+    "Source file modified: scripts/tdq_eval.py",
     "Source file modified: scripts/tdq_state.py",
     "Source file modified: scripts/tdq_team.py",
     "Source file modified: scripts/tdq_ten_lenh.py",
+    "Source file modified: skills/tdq-build/SKILL.md",
+    "Source file modified: skills/tdq-build/references/qc.md",
+    "Source file modified: skills/tdq-build/references/team-mode-tra-cuu.md",
+    "Source file modified: skills/tdq-build/references/team-mode.md",
+    "Source file modified: skills/tdq-intake/references/quick-lane-mini.md",
+    "Source file modified: skills/tdq-plan/SKILL.md",
+    "Source file modified: skills/tdq-plan/references/plan-template-huong-dan.md",
+    "Source file modified: skills/tdq-plan/references/plan-template.md",
+    "Source file modified: skills/tdq-spec/references/spec-template-huong-dan.md",
     "Source file added: hooks/rust/tdq-dispatch/.cargo/config.toml",
     "Source file added: hooks/rust/tdq-dispatch/Cargo.lock",
     "Source file added: hooks/rust/tdq-dispatch/Cargo.toml",
@@ -3161,7 +3173,10 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb",
-    "Source file added: scripts/tdq_plan_scaffold.py"
+    "Source file added: scripts/tdq_plan_scaffold.py",
+    "Source file added: skills/tdq-build/references/qc-vong-fix.md",
+    "Source file added: skills/tdq-plan/references/plan-examples.md",
+    "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-19T19:45:37Z"
+  "checked_at": "2026-11-19T20:07:45Z"
 }
