@@ -4,6 +4,7 @@
   "reasons": [
     "Source file modified: hooks/scripts/bash_gate.py",
     "Source file modified: scripts/build_portable.py",
+    "Source file modified: scripts/doc_lint.py",
     "Source file modified: scripts/search_rules.py",
     "Source file modified: scripts/tdq_ccr.py",
     "Source file modified: scripts/tdq_state.py",
@@ -3161,5 +3162,5 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb"
   ],
-  "checked_at": "2026-11-19T19:27:13Z"
+  "checked_at": "2026-11-19T19:28:56Z"
 }

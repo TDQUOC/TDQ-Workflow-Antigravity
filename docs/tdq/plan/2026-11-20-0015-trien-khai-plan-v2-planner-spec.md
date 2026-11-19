@@ -87,7 +87,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: File tạo mới Greenfield thiếu `--from-spec` (fail-closed exit `1`), file `.rs`/`.ts` không có cache LSP (gắn `ANCHOR_CONFIDENCE: LOW`), biểu thức `assert` bị lỗi cú pháp hoặc hằng luôn đúng, chạy với `TDQ_LOG=0` không in dòng log stderr.
     - Tiêu chí: `assert rc == 1 and "§3c" in err`, `assert "ANCHOR_CONFIDENCE: HIGH" in out`, `assert verify_rc == 1 and any("symbol" in m.lower() for m in errs)`, `assert stderr_silent == ""`
 
-- [>] **T1.3** (e22m) Nâng cấp `scripts/doc_lint.py` với `R15` V2+ (Per-Task Mini-Spec, `R15-Full`/`R15-Compact`, Banned-Placeholder, `ANTI-2` 100% task/DoD, `R15_MOC`, `--pair`, `R12`, `SKILL_LINE_LIMITS`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_linter.py tests/test_doc_lint.py -v`
+- [x] **T1.3** (e22m) Nâng cấp `scripts/doc_lint.py` với `R15` V2+ (Per-Task Mini-Spec, `R15-Full`/`R15-Compact`, Banned-Placeholder, `ANTI-2` 100% task/DoD, `R15_MOC`, `--pair`, `R12`, `SKILL_LINE_LIMITS`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_linter.py tests/test_doc_lint.py -v`
   - Req: `§2 #3, §3c, §6 Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` kết quả xanh cho toàn bộ `236` plan cũ trước mốc `2026-11-20`, `evals/tuan-thu/` và các luật `R1`..`R14` hiện hành
   - Chạm: `scripts/doc_lint.py`, `tests/test_plan_v2_linter.py`
   - Cần: `T1.1`
