@@ -1,23 +1,22 @@
 //! Cross-platform sidecar file locking and atomic writes.
-//! Protects against Windows NTFS ERROR_LOCK_VIOLATION (os error 33).
+//! Uses OS advisory/byte-range locking (`std::fs::File::try_lock`) matching Python
+//! `with_ntfs_lock` so lock anchor files left on disk never cause false timeouts.
 
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
-/// RAII Guard that releases the lock when dropped.
+/// RAII Guard that releases the OS file lock when dropped.
 pub struct SidecarLockGuard {
-    lock_path: PathBuf,
     _file: Option<File>,
 }
 
 impl Drop for SidecarLockGuard {
     fn drop(&mut self) {
-        // Drop the file handle first so any OS-level lock is released.
+        // Closing the handle releases the OS lock atomically; keep the anchor file
+        // on disk to avoid create/unlink races with Python's msvcrt.locking().
         self._file.take();
-        // Best-effort cleanup of sidecar lock file.
-        let _ = fs::remove_file(&self.lock_path);
     }
 }
 
@@ -28,15 +27,12 @@ pub fn sidecar_lock_path(target_path: &Path) -> PathBuf {
     PathBuf::from(os_str)
 }
 
-/// Acquire an exclusive sidecar lock with a given timeout.
-/// The lock is placed at `<target_path>.lock`.
+/// Acquire an exclusive OS sidecar lock at `<target_path>.lock` with bounded timeout.
 pub fn acquire_sidecar_lock(
     target_path: &Path,
     timeout: Duration,
 ) -> Result<SidecarLockGuard, String> {
     let lock_path = sidecar_lock_path(target_path);
-
-    // Ensure parent directory exists
     if let Some(parent) = lock_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
@@ -45,31 +41,27 @@ pub fn acquire_sidecar_lock(
     let poll_interval = Duration::from_millis(5);
 
     loop {
-        // Attempt to create the lock file exclusively (create_new is atomic on OS level)
-        match OpenOptions::new()
+        let file = match OpenOptions::new()
             .read(true)
             .write(true)
-            .create_new(true)
+            .create(true)
+            .truncate(false)
             .open(&lock_path)
         {
-            Ok(file) => {
-                return Ok(SidecarLockGuard {
-                    lock_path,
-                    _file: Some(file),
-                });
+            Ok(f) => f,
+            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied && start.elapsed() < timeout => {
+                thread::sleep(poll_interval);
+                continue;
             }
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                // If the lock file is stale (> 30s old), remove it defensively
-                if let Ok(metadata) = fs::metadata(&lock_path) {
-                    if let Ok(mod_time) = metadata.modified() {
-                        if let Ok(elapsed) = mod_time.elapsed() {
-                            if elapsed > Duration::from_secs(30) {
-                                let _ = fs::remove_file(&lock_path);
-                            }
-                        }
-                    }
-                }
+            Err(e) => {
+                return Err(format!("Failed to open sidecar lock {}: {}", lock_path.display(), e));
+            }
+        };
 
+        match file.try_lock() {
+            Ok(()) => return Ok(SidecarLockGuard { _file: Some(file) }),
+            Err(TryLockError::WouldBlock) => {
+                drop(file);
                 if start.elapsed() >= timeout {
                     return Err(format!(
                         "Timed out acquiring sidecar lock for {} after {:?}",
@@ -79,12 +71,8 @@ pub fn acquire_sidecar_lock(
                 }
                 thread::sleep(poll_interval);
             }
-            Err(e) => {
-                return Err(format!(
-                    "Failed to open sidecar lock {}: {}",
-                    lock_path.display(),
-                    e
-                ));
+            Err(TryLockError::Error(e)) => {
+                return Err(format!("Failed locking {}: {}", lock_path.display(), e));
             }
         }
     }
@@ -151,6 +139,21 @@ mod tests {
         drop(guard);
         let third_try = acquire_sidecar_lock(&test_file, Duration::from_millis(100));
         assert!(third_try.is_ok());
+
+        let _ = fs::remove_dir_all(&tmp_dir);
+    }
+
+    #[test]
+    fn test_sidecar_lock_succeeds_with_existing_anchor_file() {
+        let tmp_dir = std::env::temp_dir().join(format!("tdq_lock_anchor_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp_dir);
+        let _ = fs::create_dir_all(&tmp_dir);
+        let test_file = tmp_dir.join("pending-reminders-s1.jsonl");
+        let anchor_lock = sidecar_lock_path(&test_file);
+        fs::write(&anchor_lock, b"").unwrap();
+
+        let guard = acquire_sidecar_lock(&test_file, Duration::from_millis(100));
+        assert!(guard.is_ok(), "must acquire OS lock even when Python leaves anchor .lock file: {:?}", guard.err());
 
         let _ = fs::remove_dir_all(&tmp_dir);
     }

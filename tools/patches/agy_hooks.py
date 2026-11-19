@@ -1699,6 +1699,13 @@ def _enforce_agy_bash_guards(payload, cwd):
             '    if "git reset --hard" in low or "git clean -f" in low:\n'
             '        block(cwd, payload, "TDQ:GIT", ["Destructive git reset/clean is prohibited to protect user worktree."])\n'
             "        return True\n"
+            '    cleaned = re.sub(r"(?s)@\'\\r?\\n.*?\\r?\\n\'@|@\\"\\r?\\n.*?\\r?\\n\\"@", " ", cmd).lower()\n'
+            '    if any(w in cleaned for w in ("curl ", "wget ", "invoke-webrequest")) and any(p in cleaned for p in ("| bash", "| sh", "| iex")):\n'
+            '        block(cwd, payload, "TDQ:VUNG", ["Piping remote downloads to shell is forbidden."])\n'
+            "        return True\n"
+            '    if "-executionpolicy bypass" in cleaned or "-ep bypass" in cleaned:\n'
+            '        block(cwd, payload, "TDQ:VUNG", ["PowerShell ExecutionPolicy bypass is blocked."])\n'
+            "        return True\n"
             "    return False\n"
         )
         txt_b = read_utf8(bash_path).replace("def _enforce_agy_bash_guards(", git_helper + "\n\ndef _enforce_agy_bash_guards(", 1)

@@ -164,7 +164,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P4 — Golden Parity Test Suite 22/22 Mã, Benchmark & Validator (M4)
 
-- [ ] **T4.1** (e25m) Viết bộ Golden Parity Test Suite 22/22 mã cổng x 6 sự kiện và Smoke Test vòng đời — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
+- [>] **T4.1** (e25m) Viết bộ Golden Parity Test Suite 22/22 mã cổng x 6 sự kiện và Smoke Test vòng đời — Test: `py -3 -m pytest tests/test_rust_dispatch_parity.py -q`
   - Chạm: `tests/test_rust_dispatch_parity.py`
   - Cần: `T3.1`
   - Mục tiêu: Khóa 100% tương đương hành vi giữa mặc định Hybrid và `TDQ_HOOK_ENGINE=python` trên đủ 22 mã cổng và 6 sự kiện AGY 2.0.
@@ -181,7 +181,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Ghi/xóa đồng thời trên Windows NTFS với file `.lock` và URI `file:///C:/...` trong `workspacePaths`.
     - Tiêu chí: `assert set(covered_codes) == set(AGY_CODES)` và 100% assertion JSON parity pass.
 
-- [ ] **T4.2** (e12m) Cập nhật Benchmark Hot/Cold/Trọng số, Validator Magic Bytes 3 OS và test Smart Hardening R1–R3 — Test: `py -3 -m pytest tests/test_rust_latency_benchmark.py tests/test_agy_plugin_validate.py tests/test_hook_dispatch_r1_r3.py -q`
+- [>] **T4.2** (e12m) Cập nhật Benchmark Hot/Cold/Trọng số, Validator Magic Bytes 3 OS và test Smart Hardening R1–R3 — Test: `py -3 -m pytest tests/test_rust_latency_benchmark.py tests/test_agy_plugin_validate.py tests/test_hook_dispatch_r1_r3.py -q`
   - Chạm: `tests/test_rust_latency_benchmark.py`, `tests/test_agy_plugin_validate.py`, `tests/test_hook_dispatch_r1_r3.py`
   - Cần: `T3.1`
   - Mục tiêu: Đo thực nghiệm hiệu năng Hot-path/Cold-path/trọng số, khóa kiểm magic bytes 3 binary trong validator và cập nhật test R1–R3 theo Smart Hardening.

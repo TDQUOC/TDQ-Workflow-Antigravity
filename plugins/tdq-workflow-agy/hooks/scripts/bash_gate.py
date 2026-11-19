@@ -171,6 +171,13 @@ def _has_banned_agy_git(cmd, cwd, payload):
     if "git reset --hard" in low or "git clean -f" in low:
         block(cwd, payload, "TDQ:GIT", ["Destructive git reset/clean is prohibited to protect user worktree."])
         return True
+    cleaned = re.sub(r"(?s)@'\r?\n.*?\r?\n'@|@\"\r?\n.*?\r?\n\"@", " ", cmd).lower()
+    if any(w in cleaned for w in ("curl ", "wget ", "invoke-webrequest")) and any(p in cleaned for p in ("| bash", "| sh", "| iex")):
+        block(cwd, payload, "TDQ:VUNG", ["Piping remote downloads to shell is forbidden."])
+        return True
+    if "-executionpolicy bypass" in cleaned or "-ep bypass" in cleaned:
+        block(cwd, payload, "TDQ:VUNG", ["PowerShell ExecutionPolicy bypass is blocked."])
+        return True
     return False
 
 
