@@ -764,7 +764,7 @@ def _assert_nine_hard_gates(tmp_path: Path) -> None:
 
 
 def test_r2_user_markdown_4part_and_tick_log_soft(tmp_path: Path) -> None:
-    """Verify soft TICK/LOG/DOC guidance flushes 4-part user_markdown; 9 hard deny."""
+    """Verify Smart Hardening TICK (0 deny, 4-7 remind, 8 deny), LOG/DOC 4-part flush, 9 hard."""
     repo, fake_home = _setup_implement_repo(
         tmp_path,
         "soft_repo",
@@ -775,7 +775,7 @@ def test_r2_user_markdown_4part_and_tick_log_soft(tmp_path: Path) -> None:
     big_file = repo / "large_mod.py"
     big_file.write_text(("x = 1\n" * 450), encoding="utf-8")
 
-    # Trigger TICK + LOG at edit_gate -> must allow (0 deny tick_loop) and queue
+    # 0 [~] task at edit_gate -> hard deny [TDQ:TICK] and queue LOG reminder
     _, e1, _ = _run_dispatch(
         "PreToolUse",
         {
@@ -787,14 +787,16 @@ def test_r2_user_markdown_4part_and_tick_log_soft(tmp_path: Path) -> None:
         repo,
         fake_home,
     )
-    assert e1 == {"decision": "allow"}
+    assert e1["decision"] == "deny"
+    _assert_four_parts(e1["reason"], "TICK")
 
-    # Even with 1 [~] task and 4 consecutive edits (>= 3), tick stays soft allow
+    # With 1 [~] task: edits 1..8 allow (streak 4..7 queues TICK remind), edit 9 (streak==8) denies
     plan_file = repo / "docs" / "tdq" / "plan" / "2026-11-18-1204-soft.md"
     plan_file.write_text(
         "- [~] **T1.1** Active item — Test: `py -3 -m pytest`\n", encoding="utf-8"
     )
-    for idx in range(4):
+    rem_path = repo / "docs" / "tdq" / ".tdq-runtime" / f"pending-reminders-{sid}.jsonl"
+    for idx in range(8):
         _, streak_out, _ = _run_dispatch(
             "PreToolUse",
             {
@@ -807,6 +809,23 @@ def test_r2_user_markdown_4part_and_tick_log_soft(tmp_path: Path) -> None:
             fake_home,
         )
         assert streak_out == {"decision": "allow"}
+        if idx == 4:
+            queued_codes = {r.get("code") for r in _read_jsonl(rem_path)}
+            assert "TICK" in queued_codes
+
+    _, ninth_out, _ = _run_dispatch(
+        "PreToolUse",
+        {
+            "cwd": str(repo),
+            "conversation_id": sid,
+            "tool_name": "edit_file",
+            "tool_input": {"TargetFile": str(repo / "m8.py")},
+        },
+        repo,
+        fake_home,
+    )
+    assert ninth_out["decision"] == "deny"
+    _assert_four_parts(ninth_out["reason"], "TICK")
 
     # Trigger DOC via two whole-file reads of >2KB file
     read_payload = {
@@ -833,7 +852,7 @@ def test_r2_user_markdown_4part_and_tick_log_soft(tmp_path: Path) -> None:
 
 
 def test_r3_stop_continuation_active_once_and_cleanup_7d(tmp_path: Path) -> None:
-    """Verify Stop continuationActive 1-shot, .staging exemption, and 7d cleanup."""
+    """Verify Stop continuationActive MAX_STREAK=2 + plan_sha reset, .staging, 7d cleanup."""
     repo, fake_home = _setup_implement_repo(
         tmp_path,
         "stop_repo",
@@ -853,7 +872,7 @@ def test_r3_stop_continuation_active_once_and_cleanup_7d(tmp_path: Path) -> None
     meta_path = repo / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json"
     assert json.loads(meta_path.read_text(encoding="utf-8"))["turn_closed"] is False
 
-    # 1. Stop with continuationActive=False -> continue once with 4-part UNFINISHED
+    # 1. Stop #1 (continuationActive=False) -> continue (streak=1)
     _, s1, _ = _run_dispatch(
         "Stop",
         {"cwd": str(repo), "conversation_id": sid, "continuationActive": False},
@@ -863,15 +882,50 @@ def test_r3_stop_continuation_active_once_and_cleanup_7d(tmp_path: Path) -> None
     assert s1["decision"] == "continue"
     _assert_four_parts(s1["reason"], "UNFINISHED")
 
-    # 2. Stop with continuationActive=True -> allow and close turn
+    # 2. Stop #2 (continuationActive=True, unchanged plan_sha) -> still continue (streak=2)
     _, s2, _ = _run_dispatch(
         "Stop",
         {"cwd": str(repo), "conversation_id": sid, "continuationActive": True},
         repo,
         fake_home,
     )
-    assert s2 == {"decision": "allow"}
+    assert s2["decision"] == "continue"
+    _assert_four_parts(s2["reason"], "UNFINISHED")
+    assert json.loads(meta_path.read_text(encoding="utf-8"))["turn_closed"] is False
+
+    # 3. Stop #3 (continuationActive=True, unchanged plan_sha) -> exceeds MAX_STREAK=2, allow
+    _, s3, _ = _run_dispatch(
+        "Stop",
+        {"cwd": str(repo), "conversation_id": sid, "continuationActive": True},
+        repo,
+        fake_home,
+    )
+    assert s3 == {"decision": "allow"}
     assert json.loads(meta_path.read_text(encoding="utf-8"))["turn_closed"] is True
+
+    # 4. Changing plan_sha resets streak so continuationActive=True blocks again
+    plan_file = repo / "docs" / "tdq" / "plan" / "2026-11-18-1205-stop.md"
+    plan_file.write_text(
+        (
+            "- [x] **T1.1** Done — Test: `py -3 -m pytest`\n"
+            "- [~] **T1.2** Next — Test: `py -3 -m pytest`\n"
+        ),
+        encoding="utf-8",
+    )
+    _run_dispatch(
+        "PreInvocation",
+        {"cwd": str(repo), "conversation_id": sid, "prompt": "continue"},
+        repo,
+        fake_home,
+    )
+    _, s4, _ = _run_dispatch(
+        "Stop",
+        {"cwd": str(repo), "conversation_id": sid, "continuationActive": True},
+        repo,
+        fake_home,
+    )
+    assert s4["decision"] == "continue"
+    _assert_four_parts(s4["reason"], "UNFINISHED")
 
     # 3. Editing docs/.staging/x.log does not trigger LOG reminder or block at Stop
     assert _run_state_cli(repo, fake_home, "set", "phase=analyze").returncode == 0
@@ -1080,7 +1134,7 @@ def test_qc2_malformed_search_deduped_and_prompt_over_64kb(tmp_path: Path) -> No
         repo,
         fake_home,
     )
-    bad_cmd = {"name": "run_command", "args": {"CommandLine": 'rg "unterminated'}}
+    bad_cmd = {"name": "run_command", "args": {"CommandLine": 'ag "unterminated'}}
     for _ in range(2):
         _, cg_out, _ = _run_dispatch(
             "PreToolUse",
@@ -1110,6 +1164,24 @@ def test_qc2_malformed_search_deduped_and_prompt_over_64kb(tmp_path: Path) -> No
         fake_home,
     )
     assert pi2 == {}, f"Malformed SEARCH reminder should dedupe within same turn: {pi2}"
+
+    # Smart Hardening: malformed shell containing rg/grep/findstr/Select-String triggers leak guard
+    leak_cmd = {"name": "run_command", "args": {"CommandLine": 'rg "unterminated'}}
+    _, leak1, _ = _run_dispatch(
+        "PreToolUse",
+        {"cwd": str(repo), "conversation_id": "conv-edge-leak", "toolCall": leak_cmd},
+        repo,
+        fake_home,
+    )
+    assert leak1.get("decision") == "allow"
+    _, leak2, _ = _run_dispatch(
+        "PreToolUse",
+        {"cwd": str(repo), "conversation_id": "conv-edge-leak", "toolCall": leak_cmd},
+        repo,
+        fake_home,
+    )
+    assert leak2.get("decision") == "deny"
+    _assert_four_parts(leak2["reason"], "SEARCH")
 
     # Now append > 70 KB padding & huge > 70 KB USER_INPUT line with changed prompt (turn not closed)
     with tr.open("a", encoding="utf-8") as fh:
