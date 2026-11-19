@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7dc791f6-f274-432e-bc83-4ea72fbd9c65",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-2213-chi-tiet-plan-model-thap\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-19-2213-chi-tiet-plan-model-thap.c92dd21245a74ada887b9165d12296db.html",
+  "specification": {
+    "sha256": "c911ef91cd88ca3976adf79c8ee8f23bb441c399c96cea663bb105ac92a43af6",
+    "bytes": 3301
+  },
+  "artifact": {
+    "sha256": "869053f63ff059dcbf04a75fb21f97e9b54234b209661cd745890ce8da819449",
+    "bytes": 1613090
+  },
+  "explainer": {
+    "preparedSha256": "573f425ee2a4ff35bf67ae710e91b05c5ad22cb8620f889dd28cdf80d3edeb55",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "v2-truoc",
+        "inline": true,
+        "sha256": "97346867e9e2786242de317583149770773a0d9d11f87006cb1614695d205fff",
+        "bytes": 986
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v2-redteam",
+        "inline": true,
+        "sha256": "fcc4e89b94a959f1b05ba82d95221bd80f240e7717623666657ca22baffbf5cc",
+        "bytes": 1320
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v2-sau",
+        "inline": true,
+        "sha256": "f7cc6d93798a51e697900dc4dfc5998be77e2ea8da48ab3a6c9bacf37011047c",
+        "bytes": 946
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v2-kiemchung",
+        "inline": true,
+        "sha256": "9ffe53a64bc1047408ce78bd932ad126f90a332693122a7685b8f9a4b34ca42e",
+        "bytes": 992
+      }
+    ]
+  }
+}
