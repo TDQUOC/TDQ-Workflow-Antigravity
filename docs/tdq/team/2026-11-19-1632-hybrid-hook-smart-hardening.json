@@ -1,0 +1,121 @@
+{
+  "slug": "2026-11-19-1632-hybrid-hook-smart-hardening",
+  "plan_file": "docs\\tdq\\plan\\2026-11-19-1632-hybrid-hook-smart-hardening.md",
+  "plan_sha": "8b4c2ab001f5640d476a72264ad5d09260fad4e3388825691ef8110114c61916",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "ec3e6d619e22c1d9c1688ce7f928c56695623c3c5323207f4adec650187d2231",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "docs/hooks.md",
+        "hooks/rust/tdq-dispatch/src/protocol.rs",
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/lock.rs"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/main.rs",
+        "hooks/rust/tdq-dispatch/src/lib.rs"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/command_parser.rs",
+        "hooks/rust/tdq-dispatch/src/events/mod.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs",
+        "hooks/rust/tdq-dispatch/src/events/post_invocation.rs",
+        "hooks/rust/tdq-dispatch/src/events/session_start.rs",
+        "hooks/rust/tdq-dispatch/src/events/stop_streak.rs",
+        "events/pre_invocation.rs",
+        "events/post_invocation.rs",
+        "events/mod.rs",
+        "docs/tdq/state.json"
+      ],
+      "dot": 3
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/patches/agy_hooks.py",
+        "tools/patches/agy_dispatch.py",
+        "tools/patches/agy_manifests.py",
+        "hooks/scripts/bash_gate.py",
+        "hooks/scripts/edit_gate.py",
+        "docs/.staging/x.md",
+        "graphify-out/x.json"
+      ],
+      "dot": 2
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/build_agy_plugin.py"
+      ],
+      "dot": 1
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "plugins/tdq-workflow-agy/manifest.json",
+        "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe",
+        "plugins/tdq-workflow-agy/hooks/scripts/dispatch.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/_common.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/search_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py",
+        "plugins/tdq-workflow-agy/hooks.json",
+        "tools/build_agy_plugin.py"
+      ],
+      "dot": 4
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_rust_dispatch_parity.py"
+      ],
+      "dot": 5
+    },
+    "T4.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_rust_latency_benchmark.py",
+        "tests/test_agy_plugin_validate.py",
+        "tests/test_hook_dispatch_r1_r3.py"
+      ],
+      "dot": 5
+    },
+    "T5.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    },
+    "T5.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-19-1632-hybrid-hook-smart-hardening.md"
+      ],
+      "dot": 7
+    }
+  }
+}

@@ -21,16 +21,20 @@ impl Drop for SidecarLockGuard {
     }
 }
 
+/// Build the canonical `<target_path>.lock` path without replacing existing extensions.
+pub fn sidecar_lock_path(target_path: &Path) -> PathBuf {
+    let mut os_str = target_path.as_os_str().to_os_string();
+    os_str.push(".lock");
+    PathBuf::from(os_str)
+}
+
 /// Acquire an exclusive sidecar lock with a given timeout.
 /// The lock is placed at `<target_path>.lock`.
 pub fn acquire_sidecar_lock(
     target_path: &Path,
     timeout: Duration,
 ) -> Result<SidecarLockGuard, String> {
-    let lock_path = target_path.with_extension(format!(
-        "{}.lock",
-        target_path.extension().and_then(|s| s.to_str()).unwrap_or("")
-    ));
+    let lock_path = sidecar_lock_path(target_path);
 
     // Ensure parent directory exists
     if let Some(parent) = lock_path.parent() {
@@ -104,22 +108,25 @@ pub fn atomic_write_file(target_path: &Path, data: &[u8]) -> std::io::Result<()>
 
     fs::write(&tmp_path, data)?;
 
-    // Atomically rename temporary file over target
-    #[cfg(windows)]
-    {
-        // On Windows, rename over an existing file may fail if not handled cleanly;
-        // removing existing target first if present ensures cross-platform consistency.
-        if target_path.exists() {
-            let _ = fs::remove_file(target_path);
+    // Atomically rename temporary file over target with bounded Windows lock backoff.
+    let mut last_err = None;
+    for attempt in 0..5u64 {
+        #[cfg(windows)]
+        {
+            if target_path.exists() {
+                let _ = fs::remove_file(target_path);
+            }
+        }
+        match fs::rename(&tmp_path, target_path) {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                last_err = Some(e);
+                thread::sleep(Duration::from_millis(5 * (attempt + 1)));
+            }
         }
     }
-
-    if let Err(e) = fs::rename(&tmp_path, target_path) {
-        let _ = fs::remove_file(&tmp_path);
-        return Err(e);
-    }
-
-    Ok(())
+    let _ = fs::remove_file(&tmp_path);
+    Err(last_err.unwrap_or_else(|| std::io::Error::other("rename failed")))
 }
 
 #[cfg(test)]

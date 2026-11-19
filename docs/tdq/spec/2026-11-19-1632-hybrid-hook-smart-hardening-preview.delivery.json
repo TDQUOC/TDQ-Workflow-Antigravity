@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4d1bb317-1906-4018-a0f3-d04be217abef",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-1632-hybrid-hook-smart-hardening\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-19-1632-hybrid-hook-smart-hardening-preview.8249b6d73eeb4e34bada24d922718ec5.html",
+  "specification": {
+    "sha256": "38ecc1377b3a1e043483eac061311f0f093154b7ca5945e318a35746110fe081",
+    "bytes": 2393
+  },
+  "artifact": {
+    "sha256": "5990e4460b9d643597b1cc2381f501d0d7256cb4c36802bf46714a823f25248c",
+    "bytes": 1229401
+  },
+  "explainer": {
+    "preparedSha256": "a4b12e97985bf3a24568c6dd9aebe1d5b696a3f10da9d28671c06cecc6b6189e",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "hybrid-spec-truoc",
+        "inline": true,
+        "sha256": "a080d8bcedffdc7dbd4563dc6668bde932635d2026abdc3a7eab8818ba14d9dc",
+        "bytes": 916
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hybrid-spec-sau",
+        "inline": true,
+        "sha256": "1e4c3f8dbed8fc4d0bf4437db3ec9ce27b39cbf6f7d707271f88e09da2120bb6",
+        "bytes": 895
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hybrid-spec-hardening",
+        "inline": true,
+        "sha256": "fb07caa90a1519ef50a0c9671d9e2bedc148358475c7c5217884e11228874892",
+        "bytes": 872
+      }
+    ]
+  }
+}
