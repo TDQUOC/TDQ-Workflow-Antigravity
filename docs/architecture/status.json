@@ -7,6 +7,8 @@
     "Source file modified: scripts/search_rules.py",
     "Source file modified: scripts/tdq_ccr.py",
     "Source file modified: scripts/tdq_state.py",
+    "Source file modified: scripts/tdq_team.py",
+    "Source file modified: scripts/tdq_ten_lenh.py",
     "Source file added: hooks/rust/tdq-dispatch/.cargo/config.toml",
     "Source file added: hooks/rust/tdq-dispatch/Cargo.lock",
     "Source file added: hooks/rust/tdq-dispatch/Cargo.toml",
@@ -3159,5 +3161,5 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb"
   ],
-  "checked_at": "2026-11-19T19:02:18Z"
+  "checked_at": "2026-11-19T19:27:13Z"
 }
