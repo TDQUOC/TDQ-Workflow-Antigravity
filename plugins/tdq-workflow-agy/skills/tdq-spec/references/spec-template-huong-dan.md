@@ -1,10 +1,11 @@
 # Checking a spec before presenting it
 <!-- muc-luc-dong:
-  §6 holds the CONDITION, never the check command=14-32 ·
-  Measure every numeric threshold BEFORE approval=33-48 · Check before presenting=49-62 ·
-  The scope checklist — every box answered before presenting=63-76 ·
-  Fresher Accessibility Check — thẩm định độ thấu suốt cho Fresher Dev=77-93 ·
-  Quy tắc chi tiết các phần điều kiện trong Spec=94
+  §6 holds the CONDITION, never the check command=15-33 ·
+  Measure every numeric threshold BEFORE approval=34-49 · Check before presenting=50-63 ·
+  The scope checklist — every box answered before presenting=64-77 ·
+  Fresher Accessibility Check — thẩm định độ thấu suốt cho Fresher Dev=78-94 ·
+  Contract Signatures Table (`§3c` — Greenfield `--from-spec`)=95-98 ·
+  Quy tắc chi tiết các phần điều kiện trong Spec=99
 -->
 
 Split out of `spec-template.md` on 2026-10-02 (954 tokens). The three sections below are SELF-CHECK
@@ -90,6 +91,10 @@ Tự kiểm tra độ thân thiện và minh bạch của bản đặc tả vớ
 | **Thuật ngữ (§3d)** | Giải nghĩa các khái niệm mới hoặc viết tắt | §3d Glossary |
 
 Tiêu chí quyết định: "Một lập trình viên fresher đọc bản spec này có nắm trọn kiến trúc và giải thuật mà AI chuẩn bị làm hay không?". Nếu câu trả lời là chưa rõ ràng, phải viết lại trước khi trình duyệt.
+
+## Contract Signatures Table (`§3c` — Greenfield `--from-spec`)
+
+When §3c defines new functions, classes, or schemas across tasks, write exact typed signatures or fenced definitions (e.g. `` `make_token(uid: str) -> str` `` or `` `class Config` ``) under `## 3c. Giải thuật & Xử lý cốt lõi` so `tdq_plan_scaffold.py --from-spec` registers them as grounded contracts before files exist on disk. <!-- i18n-allow -->
 
 ## Quy tắc chi tiết các phần điều kiện trong Spec
 

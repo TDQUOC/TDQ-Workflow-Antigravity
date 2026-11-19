@@ -2389,6 +2389,7 @@ def _cli_approve(cwd, rest):
     if not hash_match:
         _fail(f"Approval hash mismatch: expected {expected_sha}, computed {actual_sha}.")
 
+    _r15_gate_approve(cwd, state, target, lane)
     _r14_gate(cwd, state, target, bo_qua_do)
     _archify_gate(cwd, state, target, bo_qua_archify)
 
@@ -2468,29 +2469,105 @@ def _chan_worktree_con_mo(cwd, state=None):
           "Clean them up first: python3 scripts/tdq_team.py sweep --clean")
 
 
-def _extract_plan_targets(cwd, state):
-    """Extract all target paths declared on `Chạm:` lines in the plan."""
-    rel = state.get("plan_file")
-    if not rel:
-        req = state.get("active_request")
-        if not req:
-            return []
-        rel = os.path.join("docs", "tdq", "plan", f"{req}.md")
-    path = rel if os.path.isabs(rel) else os.path.join(cwd, rel)
+def _import_doc_lint():
+    """Import doc_lint cleanly whether run as a script or package; None if unavailable."""
+    try:
+        import doc_lint
+        return doc_lint
+    except ImportError:
+        pass
+    try:
+        from scripts import doc_lint  # type: ignore[no-redef]
+        return doc_lint
+    except Exception as exc:  # noqa: BLE001 — fail-open only when doc_lint cannot be imported
+        _warn(f"R15 check skipped — doc_lint unavailable ({type(exc).__name__}).")
+        return None
+
+
+def _kiem_r15_plan(cwd, plan_path, lane):
+    """Run doc_lint R15 pre-approval check on plans from R15_MOC onward; exit 1 on errors."""
+    if not plan_path:
+        return
+    path = plan_path if os.path.isabs(plan_path) else os.path.join(cwd, plan_path)
     if not os.path.isfile(path):
-        return []
-    targets = []
+        # Fail-open when quick has no plan file on disk (or plan_file is pre-registered).
+        return
+    doc_lint = _import_doc_lint()
+    if doc_lint is None:
+        return
+    if hasattr(doc_lint, "_plan_sau_moc") and not doc_lint._plan_sau_moc(path):
+        return
+    errs = doc_lint.r15_loi(doc_lint.Doc(path), check_dir=False)
+    if errs:
+        detail = "\n".join(f"  - {e}" for e in errs)
+        print(f"R15 pre-approval check failed on {plan_path}:\n{detail}", file=sys.stderr)
+        _warn(f"R15 pre-approval gate blocked {plan_path} (lane={lane}): {len(errs)} finding(s).")
+        sys.exit(1)
+
+
+def _r15_gate_approve(cwd, state, target, lane):
+    """Run R15 pre-approval check when approving plan or quick."""
+    if target not in ("plan", "quick"):
+        return
+    req = state.get("active_request")
+    cand_plan = state.get("plan_file") or (
+        os.path.join("docs", "tdq", "plan", f"{req}.md") if req else None
+    )
+    _kiem_r15_plan(cwd, cand_plan, lane)
+
+
+def _read_plan_lines(path):
+    """Read lines from an existing plan file, or return None when missing/unreadable."""
+    if not path or not os.path.isfile(path):
+        return None
     try:
         with open(path, encoding="utf-8") as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped.startswith("- Chạm:") or stripped.startswith("Chạm:"):
-                    for target in re.findall(r"`([^`]+)`", stripped):
-                        clean = target.strip().replace("\\", "/")
-                        if clean and clean not in targets:
-                            targets.append(clean)
+            return f.read().splitlines()
     except OSError:
-        pass
+        return None
+
+
+def _step_fence(fence_marker, line):
+    """Advance markdown fence state for one line; return (new_marker, should_skip)."""
+    m_fence = _FENCE.match(line)
+    if m_fence:
+        marker = m_fence.group(1)
+        if fence_marker is None:
+            return marker, True
+        if marker == fence_marker:
+            return None, True
+        return fence_marker, True
+    return fence_marker, fence_marker is not None
+
+
+def _add_backtick_targets(text, targets):
+    """Append deduplicated normalized backtick tokens from text into targets."""
+    for target in re.findall(r"`([^`]+)`", text):
+        clean = target.strip().replace("\\", "/")
+        if clean and clean not in targets:
+            targets.append(clean)
+
+
+def _extract_plan_targets(cwd, state):
+    """Extract all target paths declared on single-line or multi-line `Chạm:` fields."""  # i18n-allow
+    lines = _read_plan_lines(_plan_path(cwd, state))
+    if not lines:
+        return []
+    targets, in_cham, cham_indent, fence_marker = [], False, 0, None
+    for line in lines:
+        fence_marker, skip = _step_fence(fence_marker, line)
+        if skip or not line.strip():
+            in_cham = False
+            continue
+        indent = len((line[:len(line) - len(line.lstrip(" \t"))]).expandtabs(4))
+        clean = re.sub(r"^\s*[-*]\s*", "", line).replace("**", "").strip().lower()
+        if clean.startswith(("chạm:", "cham:")):  # i18n-allow
+            in_cham, cham_indent = True, indent
+            _add_backtick_targets(line.split(":", 1)[1], targets)
+        elif in_cham and indent > cham_indent:
+            _add_backtick_targets(line.strip(), targets)
+        else:
+            in_cham = False
     return targets
 
 
@@ -3095,6 +3172,8 @@ def cli(argv):
                 _chan_eval_plan_chua_co(cwd, state)
             if key == "phase" and value == "report":
                 _chan_eval_evidence_chua_co(cwd, state)
+            if key == "plan_file" and value:
+                _kiem_r15_plan(cwd, value, effective_lane(state, warn=False))
             state[key] = value
             if key == "phase":
                 ghi_moc_phase(state, value)

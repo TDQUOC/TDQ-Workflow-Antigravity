@@ -37,17 +37,16 @@ runtime, not human waiting time). The unit is always minutes, an integer 1–999
 - The first task of each phase opens a red → green path early.
 - No task depends on a task placed after it.
 
-## Phân tầng thích ứng (Adaptive Granularity)
+## Adaptive 3-Tier Granularity (`R15-Full` / `R15-Compact` / Sweep)
 
-- **Task can thiệp mã nguồn** (`.py`, `.ts`, `.tsx`, `.js`, `.jsx`, `.go`, `.rs`, `.c`, `.cpp`, `.cs`...):
-  BẮT BUỘC dùng cấu trúc **Self-Contained Task Block** đầy đủ (8 trường con: `Chạm:`, `Cần:`, `Mục tiêu:`, `Vị trí neo:`, `Công cụ:`, `Ràng buộc:`, `Đặc tả kỹ thuật:`, `Logic cốt lõi:`, `Ca góc hiểm & TDD:`). Linter Rule R15 tự động cưỡng chế chặn cứng (exit 1) nếu phát hiện task sửa code mà thiếu khối đặc tả kỹ thuật / pseudo-code.
-- **Task tài liệu, cấu hình, template** (`.md`, `.json`, `.yaml`, `.txt`...):
-  Cho phép dùng dạng **Compact** ngắn gọn: dòng task 1 dòng `- [ ] **Tx.y** (eNm) <nội dung> — Test: <lệnh>` kèm `Chạm:` nếu chạm nhiều file. Không ép buộc khối đặc tả hàm hay pseudo-code để tối ưu token.
+1. **Full code & config/script changes (`R15-Full`):** Code and rule/config tasks MUST carry the Per-Task Mini-Spec (`Req:`, `Ngoài phạm vi:` / `GIỮ NGUYÊN`, `Chạm:`, `Cần:`, `Giao tiếp:`, `Neo & Công cụ:`, `Trước → Sau:`, `Tiêu chí chấp nhận (EARS):`, `Logic cốt lõi:`, `Ca góc hiểm & Assert:`). <!-- i18n-allow -->
+   Keep each task within `<= 30` lines (`<= 35` hard cap). Place shared `Ràng buộc toàn cục` and `Ownership Map` once at top. <!-- i18n-allow -->
+2. **Pure doc / template edits & `QCn.x` fix loops (`R15-Compact`):** Use the 5-field compact form (`- [ ] **Tx.y** (eNm) ... — Test: ...`, `Chạm:`, `Neo & Công cụ:`, `Trước → Sau:`, `Tiêu chí & Assert:`) to save context tokens. <!-- i18n-allow -->
+3. **Uniform Mechanical Sweep & Signature Sync:** Homogeneous pattern changes use `Uniform Mechanical Sweep` (`<= 6` files) or `dong-bo-chu-ky` (`<= 5` call sites). Any `quick` code task touching `> 4` source files must escalate to `full`.
 
-## 4 chốt an toàn cơ học cho Model nhỏ (30B / Haiku)
+## 4 Mechanical Safety Anchors for Small Models
 
-Mọi task can thiệp mã nguồn BẮT BUỘC tích hợp 4 chốt an toàn cơ học trong Task Block:
-1. **Vị trí neo chính xác (Exact Insertion Anchor):** Nêu rõ hàm đứng trước và đứng sau thay vì chỉ dùng số dòng. Cách này giúp model giữ định vị không gian trong file lớn trên 1.000 dòng.
-2. **Chỉ thị công cụ dứt khoát (Tool Directives):** Bắt buộc dùng `edit_file` trên file có sẵn, CẤM dùng `write_file` để triệt tiêu lỗi cắt cụt mã (`# ... rest of code unchanged ...`). Chỉ dùng `write_file` khi tạo file mới 100%.
-3. **Đoạn mã Assertion cụ thể (Concrete Test Snippets):** Cung cấp cú pháp assert cụ thể trong phần `Ca góc hiểm & TDD` để chống bẫy assert mù (`ANTI-2 Blind Assertion`).
-4. **Bất biến môi trường (Environment Invariants):** Giới hạn thư viện thuần stdlib, cấm tự ý cài đặt hoặc import thư viện lạ để tránh ảo giác dependency.
+1. **Exact Symbol-Span Anchors:** Name enclosing function/class signatures and real symbols verified by `tdq_plan_scaffold.py --files`/`--refs`, not bare guesses.
+2. **Strict Tool Directives:** Always specify `edit_file` on existing files and `write_file` strictly for new files (`CẤM` / ban overwriting existing code with `write_file`). <!-- i18n-allow -->
+3. **Executable Test Oracles:** Put real input → expected output asserts in `Ca góc hiểm & Assert:` — `ANTI-2` blind assertions (`assert True`, `is not None`) are blocked. <!-- i18n-allow -->
+4. **Environment Invariants:** Declare stdlib-only / dependency boundaries upfront under `Ràng buộc toàn cục` and `Ngoài phạm vi:`. <!-- i18n-allow -->

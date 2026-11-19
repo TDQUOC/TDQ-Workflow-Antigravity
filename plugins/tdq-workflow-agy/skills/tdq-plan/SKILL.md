@@ -36,14 +36,13 @@ scope. Spec approved → plan NOW.
    `--he-so-agent 1.5` assumes a sub-agent 1.5× slower than the leader, so a team winning at that conservative factor wins for real.
    Command errors (the plan has no `Chạm:` line) → fix the plan and measure again, guessing is banned. <!-- i18n-allow: canonical name kept verbatim -->
 
-2. **Write** `docs/tdq/plan/<slug>.md` out of the APPROVED spec — the full template lives in
-   [references/plan-template.md](references/plan-template.md) — that is the template to copy.
-   Two TIER-1 siblings, linked straight from here as the one-tier rule requires, each read when
-   its case comes up:
-   [references/plan-template-co-che.md](references/plan-template-co-che.md) for how the three
-   conditional sections work, and
-   [references/plan-template-huong-dan.md](references/plan-template-huong-dan.md) for scoring
-   `eNm`, the `Mode thực thi` line (`main|subagent|codex`) and the self-check.
+2. **Two-Pass Draft** `docs/tdq/plan/<slug>.md` out of the APPROVED spec via [references/plan-template.md](references/plan-template.md)
+   following [references/planner-rules.md](references/planner-rules.md) (`<= 30` invariants) and [references/plan-examples.md](references/plan-examples.md) (contrastive pairs).
+   Other TIER-1 siblings, read when their case applies:
+   [references/plan-template-co-che.md](references/plan-template-co-che.md) (conditional sections) and
+   [references/plan-template-huong-dan.md](references/plan-template-huong-dan.md) (`eNm`, Adaptive 3-Tier, `Mode thực thi` (`main|subagent|codex`)). <!-- i18n-allow -->
+   Pass 1 writes `Ràng buộc toàn cục`, `Ownership Map`, and the task DAG (`Chạm:`/`Cần:`/`Test:`), then runs <!-- i18n-allow -->
+   `tdq_plan_scaffold.py --files <spec>` / `--from-spec <spec>` + `--emit-cards` to emit grounded Per-Task Mini-Spec skeletons; Pass 2 fills exact symbols, `Req:`, `Ngoài phạm vi:`, `Giao tiếp:`, and `EARS` criteria (`<= 30` lines/task). <!-- i18n-allow -->
    Must be there: the status header + source spec · **a line of its own**
    `Mode thực thi: <main|subagent|codex> — <reason>` · phases with checkbox tasks · <!-- i18n-allow: canonical name kept verbatim -->
    the log service and for unit tests · a Definition of Done pointing back at §6 of the spec, **every
@@ -57,7 +56,7 @@ scope. Spec approved → plan NOW.
    waves. Template: the 2 sections `Chạm:`/`Cụm song song` of plan-template. <!-- i18n-allow: canonical name kept verbatim -->
    **Build `Chạm:` from "who calls this", never by eye:** `mcp_tdq-workflow-agy_lsp_find_references` on every <!-- i18n-allow: canonical name kept verbatim -->
    symbol the task changes, so a caller outside the obvious folder still lands on the line. <!-- i18n-allow: canonical rule sentence in the default language -->
-   The 3-layer search order is a MANDATORY rule (BẮT BUỘC) in every phase. Read sections 1
+   The 3-layer search order is a MANDATORY rule in every phase. Read sections 1
    and 2 of `skills/tdq-setup/references/uu-tien-tim-kiem.md` — the line-index block at the
    top of that file gives the exact line range, so the whole file never has to be read.
    **Score `eNm` as you write the task**, never later and never padded: minutes the agent SPENDS
@@ -66,9 +65,9 @@ scope. Spec approved → plan NOW.
    **The `(mcp)` label rule:** a task with a `Dùng:` block whose skill needs an MCP tool at runtime → <!-- i18n-allow: canonical name kept verbatim -->
    that `Dùng:` line ends with ` (mcp)` OUTSIDE the backticks: that task must be done by Claude. <!-- i18n-allow: canonical name kept verbatim -->
 
-3. **Optimise.** Selected `deep_ultracode` plan review follows the [Ultracode contract](../tdq-conventions/references/ultracode.md). Cut redundancy, check the dependency order, cross-check the 2 mapping rules: every
+3. **Optimise & Verify.** Selected `deep_ultracode` plan review follows the [Ultracode contract](../tdq-conventions/references/ultracode.md). Cut redundancy, check the dependency order, run the 5-Question Semantic Self-Review from [references/planner-rules.md](references/planner-rules.md), and cross-check the 2 mapping rules: every
    output in spec §2 → ≥ 1 task; every `DÙNG` row in spec §3b → ≥ 1 contract block with all 5 fields <!-- i18n-allow: canonical name kept verbatim -->
-   (`Dùng/Để/Ra/Kiểm/Không dùng cho`). Machine check: `python3 "${PLUGIN_ROOT}/scripts/doc_lint.py" --pair <spec> <plan>` must exit 0; a deeper review only when the user asks (`tdq-reviewer`). <!-- i18n-allow: canonical name kept verbatim -->
+   (`Dùng/Để/Ra/Kiểm/Không dùng cho`). Machine check: `tdq_plan_scaffold.py --verify-plan <plan> --from-spec <spec>`, `tdq_plan_scaffold.py --check-wave <plan>`, and `python3 "${PLUGIN_ROOT}/scripts/doc_lint.py" --pair <spec> <plan>` must exit 0; a deeper review only when the user asks (`tdq-reviewer`). <!-- i18n-allow: canonical name kept verbatim -->
 
 4. **Register the file into state:**
    ```

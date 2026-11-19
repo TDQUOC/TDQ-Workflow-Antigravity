@@ -34,6 +34,7 @@ BANG_DOI_TEN = {
         "don": "clean", "clean": "clean",
         # `resolve` is new in this request and never had a Vietnamese name.
         "resolve": "resolve",
+        "packet": "packet",
     },
     "tdq_bench.py": {
         "dung-plan": "gen-plan", "gen-plan": "gen-plan",
