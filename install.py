@@ -66,17 +66,35 @@ def _copy_tree(src: Path, dst: Path) -> int:
 
 
 def _adjust_hooks_for_platform(installed_dir: Path) -> None:
-    """Ensure hooks.json uses python3 on POSIX and py -3 on Windows."""
+    """Ensure hooks.json uses binary path on Windows/Unix or fallback to python."""
     hooks_file = installed_dir / "hooks.json"
+    bin_dir = installed_dir / "bin"
     if not hooks_file.is_file():
         return
     text = hooks_file.read_text(encoding="utf-8").replace("\r\n", "\n")
     if platform.system() == "Windows":
-        text = text.replace("python3 -X utf8", "py -3 -X utf8")
-        text = text.replace("python3 ", "py -3 ")
+        exe = bin_dir / "tdq-dispatch.exe"
+        if exe.is_file():
+            text = text.replace("./bin/tdq-dispatch --event", "bin\\tdq-dispatch.exe --event")
+            text = text.replace("bin/tdq-dispatch --event", "bin\\tdq-dispatch.exe --event")
+        else:
+            text = text.replace("bin\\tdq-dispatch.exe --event", "py -3 -X utf8 hooks/scripts/dispatch.py --event")
+            text = text.replace("./bin/tdq-dispatch --event", "py -3 -X utf8 hooks/scripts/dispatch.py --event")
     else:
-        text = text.replace("py -3 -X utf8", "python3 -X utf8")
-        text = text.replace("py -3 ", "python3 ")
+        target_name = "tdq-dispatch-darwin-arm64" if platform.system() == "Darwin" else "tdq-dispatch-linux-x86_64"
+        unix_bin = bin_dir / "tdq-dispatch"
+        specific_bin = bin_dir / target_name
+        if specific_bin.is_file() and not unix_bin.exists():
+            shutil.copy2(specific_bin, unix_bin)
+        if unix_bin.is_file():
+            try:
+                unix_bin.chmod(0o755)
+            except OSError:
+                pass
+            text = text.replace("bin\\tdq-dispatch.exe --event", "./bin/tdq-dispatch --event")
+        else:
+            text = text.replace("bin\\tdq-dispatch.exe --event", "python3 -X utf8 hooks/scripts/dispatch.py --event")
+            text = text.replace("./bin/tdq-dispatch --event", "python3 -X utf8 hooks/scripts/dispatch.py --event")
     with open(hooks_file, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text)
 

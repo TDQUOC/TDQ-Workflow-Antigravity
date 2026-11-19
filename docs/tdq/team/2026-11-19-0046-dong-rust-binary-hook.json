@@ -1,0 +1,156 @@
+{
+  "slug": "2026-11-19-0046-dong-rust-binary-hook",
+  "plan_file": "docs\\tdq\\plan\\2026-11-19-0046-dong-rust-binary-hook.md",
+  "plan_sha": "a0fae934b7234dbcf3452366e803069b4a4a0ca13d19399ba73ef48a78336927",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "48a410841c172918d753d4e5938d8e12b21d68dbb88f90c64ef77252f7bde07e",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/gate_guidance.json"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/Cargo.toml",
+        "hooks/rust/tdq-dispatch/.cargo/config.toml",
+        ".cargo/config.toml"
+      ],
+      "dot": 2
+    },
+    "T1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "src/protocol.rs",
+        "src/command_parser.rs",
+        "src/lock.rs",
+        "hooks/rust/tdq-dispatch/src/lib.rs",
+        "hooks/rust/tdq-dispatch/src/protocol.rs",
+        "hooks/rust/tdq-dispatch/src/command_parser.rs",
+        "hooks/rust/tdq-dispatch/src/lock.rs"
+      ],
+      "dot": 3
+    },
+    "T1.4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "docs/tdq/state.json"
+      ],
+      "dot": 4
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/session_start.rs",
+        "hooks/rust/tdq-dispatch/src/events/mod.rs",
+        "docs/tdq/state.json",
+        "skills/tdq-build/references/rules/chung.md"
+      ],
+      "dot": 5
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs",
+        "hooks/rust/tdq-dispatch/src/events/notification.rs"
+      ],
+      "dot": 6
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs"
+      ],
+      "dot": 6
+    },
+    "T2.4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/stop_streak.rs"
+      ],
+      "dot": 7
+    },
+    "T2.5": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "src/main.rs",
+        "hooks/rust/tdq-dispatch/src/main.rs"
+      ],
+      "dot": 8
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "plugins/tdq-workflow-agy/hooks.json"
+      ],
+      "dot": 1
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "T3.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        ".github/workflows/build-rust-hooks.yml"
+      ],
+      "dot": 2
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_rust_dispatch_parity.py"
+      ],
+      "dot": 2
+    },
+    "T4.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_rust_lock_safety.py"
+      ],
+      "dot": 2
+    },
+    "T4.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_rust_latency_benchmark.py"
+      ],
+      "dot": 2
+    },
+    "Tx.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Tx.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}

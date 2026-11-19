@@ -56,9 +56,14 @@ def test_v1_hooks_json_windows_cmd_c_no_quotes_and_protojson():
 
     _walk(hooks_data)
     assert commands, "hooks.json must contain hook commands"
+    valid_prefixes = (
+        "bin\\tdq-dispatch.exe --event ",
+        "./bin/tdq-dispatch --event ",
+        "python -X utf8 hooks/scripts/dispatch.py --event ",
+    )
     for cmd in commands:
         assert '"' not in cmd, f"Windows cmd /c escapes double quotes in command: {cmd!r}"
-        assert cmd.startswith("python -X utf8 hooks/scripts/dispatch.py --event "), (
+        assert any(cmd.startswith(prefix) for prefix in valid_prefixes), (
             f"Unexpected hook command: {cmd!r}"
         )
 

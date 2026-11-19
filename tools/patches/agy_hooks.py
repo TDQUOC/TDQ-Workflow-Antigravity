@@ -1677,6 +1677,13 @@ def _enforce_agy_bash_guards(payload, cwd):
             '    if re.search(r"git\\b.*\\bcommit\\b", cmd, re.DOTALL) and any(p.search(cmd) for p in BAD_MSG):\n'
             '        block(cwd, payload, "TDQ:GIT", ["AI trailers (Co-Authored-By / generated with) are banned in commit messages."])\n'
             "        return True\n"
+            '    low = cmd.lower()\n'
+            '    if "git push" in low:\n'
+            '        block(cwd, payload, "TDQ:GIT", ["git push is forbidden by TDQ policy; only push when explicitly asked."])\n'
+            "        return True\n"
+            '    if "git reset --hard" in low or "git clean -f" in low:\n'
+            '        block(cwd, payload, "TDQ:GIT", ["Destructive git reset/clean is prohibited to protect user worktree."])\n'
+            "        return True\n"
             "    return False\n"
         )
         txt_b = read_utf8(bash_path).replace("def _enforce_agy_bash_guards(", git_helper + "\n\ndef _enforce_agy_bash_guards(", 1)

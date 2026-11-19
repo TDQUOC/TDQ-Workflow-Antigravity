@@ -153,6 +153,13 @@ def _has_banned_agy_git(cmd, cwd, payload):
     if re.search(r"git\b.*\bcommit\b", cmd, re.DOTALL) and any(p.search(cmd) for p in BAD_MSG):
         block(cwd, payload, "TDQ:GIT", ["AI trailers (Co-Authored-By / generated with) are banned in commit messages."])
         return True
+    low = cmd.lower()
+    if "git push" in low:
+        block(cwd, payload, "TDQ:GIT", ["git push is forbidden by TDQ policy; only push when explicitly asked."])
+        return True
+    if "git reset --hard" in low or "git clean -f" in low:
+        block(cwd, payload, "TDQ:GIT", ["Destructive git reset/clean is prohibited to protect user worktree."])
+        return True
     return False
 
 

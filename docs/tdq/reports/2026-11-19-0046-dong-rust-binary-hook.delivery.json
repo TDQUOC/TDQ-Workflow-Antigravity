@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a29a4d2c-81d2-46d8-b3a0-8fe0e4cad242",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-19-0046-dong-rust-binary-hook\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\2026-11-19-0046-dong-rust-binary-hook.html",
+  "specification": {
+    "sha256": "7309eca3d41088f77845c443dc433da67b9fcf48a39b6eb01026e304c1a4ca80",
+    "bytes": 3247
+  },
+  "artifact": {
+    "sha256": "71426c86d54558bf27c55aa53d9efa7a2bde1036404ffb98121111a154765809",
+    "bytes": 1245577
+  },
+  "explainer": {
+    "preparedSha256": "a6b696073cdc75205b204b5581bf00b203591b6dac26bbd60fcb2025cb54482b",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "hook-rust-truoc",
+        "inline": true,
+        "sha256": "94d7c5f62d136957d438a2b41a79e66a7b8e7f5e8a5ffdf11cc7587b3fd2cf20",
+        "bytes": 1197
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-rust-sau",
+        "inline": true,
+        "sha256": "5e2123542bdb5f206bc2a097f3986a1a5dbea319b4c47e030cde36676d05700b",
+        "bytes": 1211
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "hook-rust-phan-phoi",
+        "inline": true,
+        "sha256": "f080ada4635349aa87536302d084c63a1519feae433772c743488a6f96aa5860",
+        "bytes": 1276
+      }
+    ]
+  }
+}
