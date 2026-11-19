@@ -7,11 +7,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from patches import agy_dispatch, agy_hooks, agy_manifests, cli_fixes_a, cli_fixes_b, common_utils, skills_and_agents
-
+from patches import (
+    agy_dispatch,
+    agy_hooks,
+    agy_manifests,
+    cli_fixes_a,
+    cli_fixes_b,
+    common_utils,
+    skills_and_agents,
+)
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
 _EXTERNAL_UPSTREAM = Path(r"C:\Users\admin\Documents\Projects\ForAgentCode\TDQ-Workflow")
@@ -21,6 +29,144 @@ DEFAULT_UPSTREAM = (
     else _EXTERNAL_UPSTREAM
 )
 PLUGIN_OUT = WORKSPACE_ROOT / "plugins" / "tdq-workflow-agy"
+_BINARY_TARGETS: tuple[tuple[str, str], ...] = (
+    ("windows", "tdq-dispatch.exe"),
+    ("linux", "tdq-dispatch-linux-x86_64"),
+    ("darwin", "tdq-dispatch-darwin-arm64"),
+)
+_MAGIC_PREFIXES: dict[str, tuple[bytes, ...]] = {
+    "windows": (b"MZ",),
+    "linux": (b"\x7fELF",),
+    "darwin": (
+        b"\xcf\xfa\xed\xfe",
+        b"\xfe\xed\xfa\xcf",
+        b"\xce\xfa\xed\xfe",
+        b"\xca\xfe\xba\xbe",
+    ),
+}
+
+
+def _log(message: str) -> None:
+    """Emit an ISO-timestamped diagnostic line to stderr unless TDQ_LOG=0."""
+    if os.environ.get("TDQ_LOG", "1") != "0":
+        stamp = datetime.now().isoformat(timespec="seconds")
+        print(f"[{stamp}] build_agy_plugin: {message}", file=sys.stderr)
+
+
+def verify_binary_magic(path: Path, target: str) -> bool:
+    """Validate binary header bytes against expected target OS magic prefixes."""
+    prefixes = _MAGIC_PREFIXES.get(target)
+    if prefixes is None:
+        return False
+    candidate = Path(path)
+    if not candidate.is_file():
+        return False
+    try:
+        with candidate.open("rb") as fh:
+            header = fh.read(4)
+    except OSError:
+        return False
+    if not header:
+        return False
+    return any(header.startswith(prefix) for prefix in prefixes)
+
+
+def _current_host_os() -> str:
+    """Return normalized target OS key for the currently executing host."""
+    if os.name == "nt":
+        return "windows"
+    if sys.platform == "darwin":
+        return "darwin"
+    if sys.platform.startswith("linux"):
+        return "linux"
+    return sys.platform
+
+
+def _build_host_rust_binary(rust_crate_dir: Path, host_os: str) -> Path:
+    """Build release Rust dispatcher for current host OS when missing."""
+    exe_name = "tdq-dispatch.exe" if host_os == "windows" else "tdq-dispatch"
+    rust_exe = rust_crate_dir / "target" / "release" / exe_name
+    manifest = rust_crate_dir / "Cargo.toml"
+    if not rust_exe.is_file() and manifest.is_file():
+        _log(f"building native {host_os} binary via cargo build --release")
+        kw: dict[str, object] = {}
+        if os.name == "nt":
+            kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        subprocess.run(
+            ["cargo", "build", "--manifest-path", str(manifest), "--release"],
+            check=True,
+            **kw,
+        )
+    return rust_exe
+
+
+def _resolve_binary_source(
+    target_os: str,
+    bin_name: str,
+    host_os: str,
+    rust_exe: Path,
+    prebuilt_dir: Path,
+    existing_output_bin: Path,
+) -> Path | None:
+    """Resolve a magic-verified binary path for target_os without cross-OS copying."""
+    candidates: list[Path] = []
+    if target_os == host_os:
+        candidates.append(rust_exe)
+    candidates.append(prebuilt_dir / bin_name)
+    candidates.append(existing_output_bin / bin_name)
+    for cand in candidates:
+        if not cand.is_file():
+            continue
+        if verify_binary_magic(cand, target_os):
+            return cand
+        _log(f"rejected {bin_name} at {cand}: invalid magic bytes for {target_os}")
+        return None
+    return None
+
+
+def _stage_rust_binaries(
+    upstream: Path, stage_bin: Path, existing_output_bin: Path
+) -> dict[str, Path]:
+    """Stage and magic-verify native binaries for all three target OSes into stage_bin."""
+    stage_bin.mkdir(parents=True, exist_ok=True)
+    host_os = _current_host_os()
+    rust_crate_dir = upstream / "hooks" / "rust" / "tdq-dispatch"
+    prebuilt_dir = rust_crate_dir / "prebuilt"
+    rust_exe = _build_host_rust_binary(rust_crate_dir, host_os)
+
+    staged: dict[str, Path] = {}
+    failures: list[str] = []
+    for target_os, bin_name in _BINARY_TARGETS:
+        source = _resolve_binary_source(
+            target_os, bin_name, host_os, rust_exe, prebuilt_dir, existing_output_bin
+        )
+        if source is None:
+            failures.append(
+                f"{bin_name} (expected OS: {target_os}; checked "
+                f"{prebuilt_dir / bin_name} and {existing_output_bin / bin_name})"
+            )
+            continue
+        dest = stage_bin / bin_name
+        if source.resolve() != dest.resolve():
+            shutil.copy2(source, dest)
+        if os.name != "nt":
+            os.chmod(dest, 0o755)
+        if not verify_binary_magic(dest, target_os):
+            failures.append(
+                f"{bin_name} (expected OS: {target_os}; staged {dest} failed magic check)"
+            )
+            continue
+        _log(f"staged {target_os} binary {bin_name} from {source}")
+        staged[target_os] = dest
+
+    if failures:
+        detail = "; ".join(failures)
+        raise RuntimeError(
+            "Missing or invalid multi-OS Rust binaries; populate "
+            "hooks/rust/tdq-dispatch/prebuilt/ or run SSH cargo build --release "
+            f"on target host: {detail}"
+        )
+    return staged
 
 
 def _upstream_sha(upstream: Path) -> str:
@@ -28,7 +174,9 @@ def _upstream_sha(upstream: Path) -> str:
     kw = {"capture_output": True, "text": True, "encoding": "utf-8", "timeout": 15}
     if os.name == "nt":
         kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
-    res = subprocess.run(["git", "-C", str(upstream), "rev-parse", "--short", "HEAD"], **kw)
+    res = subprocess.run(
+        ["git", "-C", str(upstream), "rev-parse", "--short", "HEAD"], check=False, **kw
+    )
     return res.stdout.strip() if res.returncode == 0 else "unknown"
 
 
@@ -75,21 +223,7 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         skills_and_agents.relock_token_budget(stage)
 
         # 4b. Embed standalone Rust binaries in bin/
-        bin_dir = stage / "bin"
-        bin_dir.mkdir(parents=True, exist_ok=True)
-        rust_crate_dir = upstream / "hooks" / "rust" / "tdq-dispatch"
-        rust_exe = rust_crate_dir / "target" / "release" / ("tdq-dispatch.exe" if os.name == "nt" else "tdq-dispatch")
-        if not rust_exe.is_file() and (rust_crate_dir / "Cargo.toml").is_file():
-            subprocess.run(["cargo", "build", "--manifest-path", str(rust_crate_dir / "Cargo.toml"), "--release"], check=True)
-        if rust_exe.is_file():
-            shutil.copy2(rust_exe, bin_dir / "tdq-dispatch.exe")
-            # Ensure multi-platform distribution bin folder contains all 3 targets
-            linux_bin = bin_dir / "tdq-dispatch-linux-x86_64"
-            darwin_bin = bin_dir / "tdq-dispatch-darwin-arm64"
-            if not linux_bin.is_file():
-                shutil.copy2(rust_exe, linux_bin)
-            if not darwin_bin.is_file():
-                shutil.copy2(rust_exe, darwin_bin)
+        _stage_rust_binaries(upstream, stage / "bin", output / "bin")
 
         # 5. Emit final manifest.json & README.md
         agy_manifests.generate_manifest_and_readme(stage, sha)
