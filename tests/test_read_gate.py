@@ -26,7 +26,9 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import tdq_state  # noqa: E402
 
 sys.path.insert(0, os.path.join(ROOT, 'hooks', 'scripts'))
+import _common  # noqa: E402
 import read_gate  # noqa: E402 — lấy hằng số từ chính cổng, khỏi chép tay
+import subagent_stop  # noqa: E402
 read_gate_SO_SACH = read_gate.SO_SACH
 read_gate_TRAN_DONG = read_gate.TRAN_DONG
 
@@ -308,7 +310,6 @@ class TestScopedWriteSecurityAndInvestigateHooks(unittest.TestCase):
         self._tmp.cleanup()
 
     def test_normalize_tool_aliases_maps_target_file_and_line_ranges(self):
-        import _common
         norm = _common._normalize_tool_aliases("read_file", {
             "TargetFile": "docs/tdq/artifacts/2026-11-21-inv/t1.md",
             "StartLine": 10,
@@ -319,7 +320,6 @@ class TestScopedWriteSecurityAndInvestigateHooks(unittest.TestCase):
         self.assertEqual(norm["limit"], 16)
 
     def test_5_layer_scoped_write_security_matrix(self):
-        import _common
         slug = "2026-11-21-inv"
         allowed_roles = ("tdq-explorer", "explorer", "tdq-debugger", "debugger", "tdq-reviewer", "reviewer")
         for role in allowed_roles:
@@ -393,7 +393,6 @@ class TestScopedWriteSecurityAndInvestigateHooks(unittest.TestCase):
         self.assertIn("READONLY", out2)
 
     def test_subagent_stop_posttooluse_registers_only_without_telemetry(self):
-        import subagent_stop
         payload = {
             "hook_event_name": "PostToolUse",
             "tool_name": "invoke_subagent",
@@ -411,8 +410,6 @@ class TestScopedWriteSecurityAndInvestigateHooks(unittest.TestCase):
 
     def test_session_start_and_prompt_context_investigate_gon_and_static_anchor(self):
         import re as _re
-        import _common
-        import prompt_context
         plan_path = os.path.join(self.cwd, "docs", "tdq", "plan", "2026-11-21-inv.md")
         os.makedirs(os.path.dirname(plan_path), exist_ok=True)
         with io.open(plan_path, "w", encoding="utf-8") as fh:

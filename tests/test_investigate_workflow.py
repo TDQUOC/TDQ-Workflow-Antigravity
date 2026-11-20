@@ -1,6 +1,7 @@
 """Integration & adversarial parity tests for TDQ work_kind=investigate V2."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -23,14 +24,32 @@ LINT_CLI = REPO_ROOT / "scripts" / "doc_lint.py"
 TIMING_CLI = REPO_ROOT / "scripts" / "tdq_timing.py"
 GUIDANCE_JSON = REPO_ROOT / "tools" / "patches" / "gate_guidance.json"
 
-for _p in (str(REPO_ROOT / "scripts"), str(PLUGIN_DIR / "hooks" / "scripts")):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
 
-import _common  # noqa: E402
+_scripts_dir = str(REPO_ROOT / "scripts")
+if _scripts_dir not in sys.path:
+    sys.path.insert(0, _scripts_dir)
+
 import doc_lint  # noqa: E402
 import tdq_bench  # noqa: E402
 import tdq_state  # noqa: E402
+
+
+def _load_plugin_common():
+    """Load packaged _common cleanly without leaving PLUGIN_DIR paths on sys.path."""
+    saved_path = list(sys.path)
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "_inv_plugin_common", PLUGIN_DIR / "hooks" / "scripts" / "_common.py"
+        )
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    finally:
+        sys.path[:] = saved_path
+
+
+_common = _load_plugin_common()
 
 ISO_RE = re.compile(r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
 SLUG_PARITY = "2026-11-21-0400-inv-parity"
