@@ -661,11 +661,19 @@ def _is_new_file_in_task(task_lines: Sequence[Tuple[int, str, str]], rel_path: s
     base = os.path.basename(norm)
     write_kw = re.compile(r"(`Write`|\bWrite\b|tạo mới|new file|\[NEW\]|sinh mới)", re.I)  # i18n-allow
     edit_kw = re.compile(r"(`Edit`|\bEdit\b)", re.I)
-    for _ln, line, _sec in task_lines:
-        if any((norm in c or base in c) and write_kw.search(c) for c in line.split(";")):
+    has_unscoped_write = False
+    for _ln, line, sec in task_lines:
+        if sec == "sinh_ra" and any(_norm(p) == norm for p in tdq_team._extract_paths(line, allow_bare=True)):
             return True
+        for clause in line.split(";"):
+            if not write_kw.search(clause):
+                continue
+            if norm in clause or base in clause:
+                return True
+            if not tdq_team._extract_paths(clause, allow_bare=True):
+                has_unscoped_write = True
     joined = "\n".join(line for _ln, line, _sec in task_lines)
-    return bool(write_kw.search(joined) and not edit_kw.search(joined))
+    return bool(has_unscoped_write and not edit_kw.search(joined))
 
 
 def _known_symbols_for_file(rel_path: str, root: str, spec_syms: Dict[str, Set[str]]) -> Optional[Set[str]]:
@@ -915,8 +923,9 @@ def _verify_single_task(
     root: str, spec_syms: Dict[str, Set[str]], errs: List[str]
 ) -> None:
     head_ln = t_lines[0][0]
+    created_paths = set(upstream_created) | {_norm(f) for f in task.sinh_ra}
     for rel in task.vung_file:
-        is_created = _is_new_file_in_task(t_lines, rel) or _norm(rel) in upstream_created
+        is_created = _norm(rel) in created_paths or _is_new_file_in_task(t_lines, rel)
         if not is_created and not os.path.isfile(_resolve_path(rel, root)):
             errs.append(f"L{head_ln} [{task.ma}]: Chạm file not found on disk: {rel}")  # i18n-allow
     _verify_task_refs(task, head_ln, upstream_created, root, spec_syms, errs)

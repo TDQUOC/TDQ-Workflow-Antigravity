@@ -394,6 +394,27 @@ class R10Test(LintBase):
     def test_r10_ngoai_thu_muc_spec_khong_soi(self):
         self.assert_clean(self.write("ngoai.md", SPEC_LANE_FULL_THIEU_2B))
 
+    def test_r10_investigate_spec_exempts_2b_while_build_still_fails(self):
+        build_path = self.write(
+            os.path.join("docs", "tdq", "spec", "2026-11-21-0100-build.md"),
+            SPEC_LANE_FULL_THIEU_2B.replace("Lane: full", "Lane: full · Work kind: build"),
+        )
+        inv_path = self.write(
+            os.path.join("docs", "tdq", "spec", "2026-11-21-0100-inv.md"),
+            SPEC_LANE_FULL_THIEU_2B.replace("Lane: full", "Lane: full · Work kind: investigate"),
+        )
+        build_err = doc_lint.lint_file(build_path)
+        inv_err = doc_lint.lint_file(inv_path)
+        self.assertTrue(any("[R10]" in e for e in build_err), build_err)
+        self.assertFalse(any("[R10]" in e for e in inv_err), inv_err)
+
+    def test_is_investigate_doc_header_edges(self):
+        self.assertTrue(doc_lint._is_investigate_doc(["# SPEC", "Ngày: 2026-11-21 · work kind: INVESTIGATE"]))
+        self.assertFalse(doc_lint._is_investigate_doc(["# SPEC", "```", "Work kind: investigate", "```"]))
+        self.assertFalse(doc_lint._is_investigate_doc(["# SPEC"] + ["line"] * 16 + ["Work kind: investigate"]))
+        self.assertFalse(doc_lint._is_investigate_doc(["# SPEC", "Work kind: build | investigate"]))
+        self.assertFalse(doc_lint._is_investigate_doc(["# SPEC", "Work kind: build"]))
+
 
 class PairCumSongSongTest(LintBase):
     """Plan phải luôn có mục `## Cụm song song` — modular là thuộc tính của tài liệu."""
@@ -677,3 +698,40 @@ class R15ModelEffortAndAgentCallersTest(LintBase):
         self.assertIn("tdq-refactor-cleaner", team_md)
         self.assertIn("tdq-refactor-cleaner", lean_md)
         self.assertIn("ultra_max_subagents", qc_md)
+
+
+class R14InvestigateTest(LintBase):
+    """R14 — specs with `Work kind: investigate` in first 15 lines are exempt from benchmark thresholds."""
+
+    @staticmethod
+    def _spec_text(header_extra: str, table: str) -> str:
+        return (
+            "# SPEC — Điều tra\n\n"
+            f"Ngày: 2026-11-21 · Bản: 1.0 · {header_extra}\n\n"
+            "## 3b. Năng lực & công cụ\n\n"
+            "| Skill | Nguồn | Phán quyết | Dùng ở đâu / Lý do loại |\n"
+            "|---|---|---|---|\n"
+            "| `tdq-intake` | plugin:tdq-workflow | NỀN | workflow |\n\n"
+            "## 6. QC & Definition of Done\n\n"
+            f"{table}\n"
+        )
+
+    def test_r14_loi_exempts_investigate_spec_thresholds_and_non_numeric_baseline(self):
+        table_3col = "| # | Hạng mục kiểm | Điều kiện PASS |\n|---|---|---|\n| Q1 | Thời gian | <= 120 s |\n"
+        table_5col = (
+            "| # | Hạng mục kiểm | Điều kiện PASS | Đo trước | Dự phòng nếu trượt |\n"
+            "|---|---|---|---|---|\n"
+            "| Q1 | Báo cáo | <= 3000 token | sẽ đo trong implement | chia shard |\n"
+        )
+        inv_3 = self._spec_text("Lane: full · Work kind: investigate", table_3col)
+        inv_5 = self._spec_text("Lane: full · Work kind: investigate", table_5col)
+        build_5 = self._spec_text("Lane: full · Work kind: build", table_5col)
+        fenced_inv = self._spec_text("Lane: full\n```\nWork kind: investigate\n```", table_3col)
+
+        self.assertEqual(doc_lint.r14_loi(inv_3, "2026-11-21-0100-inv.md"), [])
+        self.assertEqual(doc_lint.r14_loi(inv_5, "docs/tdq/spec/2026-11-21-0100-inv.md"), [])
+        self.assertTrue(doc_lint.r14_loi(build_5, "2026-11-21-0100-build.md"))
+        self.assertTrue(doc_lint.r14_loi(fenced_inv, "2026-11-21-0100-fenced.md"))
+
+        inv_file = self.write(os.path.join("docs", "tdq", "spec", "2026-11-21-0100-inv.md"), inv_3)
+        self.assertEqual(doc_lint.lint_file(inv_file), [])
