@@ -4,13 +4,12 @@
   "plan_sha": "b11a199f3218a0a0dbd8dea77949f3687b60007faff4f8746c609e37cc111c17",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "d5a9d344ccf24066ffafc9ef0b4925503dc1beeaf8924011d5b9c2d3b4020cf9",
+  "plan_assignment_sha": "c373acd680ee833c0fd06f0e2f73465d62c120957a691748e998c2268f7cc276",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
       "ly_do": "",
       "vung_file": [
-        "tdq-config.json",
         "scripts/tdq_config.py",
         "tests/test_agent_upgrade_mvp.py"
       ],
