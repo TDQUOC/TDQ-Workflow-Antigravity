@@ -89,7 +89,7 @@
     "enabled": true,
     "PostToolUse": [
       {
-        "matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool",
+        "matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool|invoke_subagent|swarm|define_subagent",
         "hooks": [
           {
             "type": "command",

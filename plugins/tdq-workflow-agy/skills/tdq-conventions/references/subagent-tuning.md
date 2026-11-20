@@ -16,17 +16,30 @@ So: `effort` is a FIXED property of the role; `model` is the knob you turn per t
 
 | Agent | model | effort | Why |
 |---|---|---|---|
-| `tdq-implementer` | inherit | high | writes real code, red→green, a mistake breaks the plan |
-| `tdq-qc-tester` | inherit | high | must be suspicious and dig at the edges, not just rerun a command |
-| `tdq-reviewer` | inherit | high | finding gaps/contradictions in a spec-plan is pure reasoning |
-| `tdq-security-reviewer` | inherit | high | independent security audit for secrets, injections, and least-privilege compliance |
+| `tdq-implementer` | inherit | high | writes real code, red→green, commits worktree before handoff |
+| `tdq-qc-tester` | inherit | high | suspicious DoD verification, scoped writes under `docs/tdq/qc/` |
+| `tdq-reviewer` | inherit | high | finding semantic gaps/contradictions and plan resource parity |
+| `tdq-security-reviewer` | inherit | high | diff-first security audit (OWASP, secrets, SCA, least privilege) |
 | `tdq-build-resolver` | inherit | high | minimal surgical diffs for compiler, syntax, and type check breaks |
-| `tdq-refactor-cleaner` | inherit | high | safe dead code removal, deduplication, and clean code invariants enforcement |
+| `tdq-refactor-cleaner` | inherit | high | safe dead code removal, deduplication, and clean code invariants |
+| `tdq-explorer` | inherit | high | read-only 3-tier LSP/Graphify/Grep reconnaissance with `path:line` map |
+| `tdq-debugger` | inherit | high | read-only root-cause reproduction and trace isolation for escalations |
 | `general-purpose` (research) | sonnet | medium | runs Tavily broadly, synthesises shallowly; no frontier needed |
 
-`inherit` = follow the model the user has on in the main session. Use `inherit` for agents doing
-quality work; use a concrete model for mechanical agents so their cost does not depend on which
-model the user happens to have enabled.
+`inherit` = follow the model the user has on in the main session. On Google Antigravity 2.0, `agents/*.md` keep `model: inherit` as the safe baseline so the orchestrator can allocate `model` dynamically per task without hardcoded downgrades.
+
+## Google Antigravity 2.0 Model & Effort Ladder (`tdq-config.json`)
+
+The canonical ladder lives in `tdq-config.json` (`scripts/tdq_config.py`): `gemini-3.8-flash` (Tier 1) → `gemini-4-hydrogen` (Tier 2) → `gemini-4-neon` (Tier 3) → `gemini-4-carbon` (Tier 4).
+
+| Tier & Family | `invoke_subagent` `Model` | `swarm` Model + Effort IDs | Recommended Roles / Triggers |
+|---|---|---|---|
+| Tier 1 (`gemini-3.8-flash`) | `flash` / `flash_lite` | `gemini-3.8-flash-{low,medium,high}` | Fast read-only scans (`tdq-explorer`), trivial mechanical fixes |
+| Tier 2 (`gemini-4-hydrogen`) | `inherit` | `gemini-4-hydrogen-{low,medium,high,xhigh}` | Standard implementation (`tdq-implementer`), `tdq-refactor-cleaner`, `tdq-build-resolver` |
+| Tier 3 (`gemini-4-neon`) | `inherit` / `pro` | `gemini-4-neon-{low,medium,high,xhigh}` | Deep reasoning: Rust/hooks, `tdq-reviewer`, `tdq-debugger`, `tdq-qc-tester` (`ultra` shards) |
+| Tier 4 (`gemini-4-carbon`) | `pro` | `gemini-4-carbon-{low,medium,high}` | Security audits (`tdq-security-reviewer`) and auto-escalation after 2 failed retries |
+
+Note: `invoke_subagent` exposes `Model` (`inherit | flash_lite | flash | pro`) only and inherits session effort via `inherit`. Use `swarm` model IDs when targeting explicit `-low`/`-medium`/`-high`/`-xhigh` effort pairs, and follow user overrides recorded in the approved plan's `## Phân bổ Model & Effort` table.
 
 ## Rule for overriding `model` at call time (Agent tool parameter)
 

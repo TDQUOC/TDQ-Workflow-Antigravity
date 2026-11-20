@@ -174,7 +174,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
 
 Log: BẮT BUỘC — `scripts/tdq_config.py`, `hooks/scripts/subagent_stop.py`, các hàm mới trong `scripts/tdq_team.py`, `scripts/tdq_timing.py` và Rust `tdq-dispatch` đều mặc định ghi log kèm ISO timestamp ra `stderr` và tắt sạch bằng `TDQ_LOG=0`.
 
-- [>] **T5.1** (e12m) Cập nhật trình biên dịch `tools/patches/*` & `tools/build_agy_plugin.py` (`8` agent `inherit` + LSP/Grep, `tdq-config.json`, `PostToolUse` matcher, `1` schema) và rebuild `plugins/tdq-workflow-agy/` — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
+- [x] **T5.1** (e12m) Cập nhật trình biên dịch `tools/patches/*` & `tools/build_agy_plugin.py` (`8` agent `inherit` + LSP/Grep, `tdq-config.json`, `PostToolUse` matcher, `1` schema) và rebuild `plugins/tdq-workflow-agy/` — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
   - Req: `§2#5`, `§2b(M5-agy-plugin-compiler)` · Ngoài phạm vi: `GIỮ NGUYÊN` plugin ngoài repo `~/.gemini/config/plugins/` không bị ghi đè.
   - Chạm: `tools/patches/skills_and_agents.py`, `tools/patches/agy_manifests.py`, `tools/patches/agy_dispatch.py`, `tools/patches/agy_hooks.py`, `tools/build_agy_plugin.py`, `docs/tdq/token-budget.json`
   - Cần: T1.4, T3.1, T3.2, T4.1
@@ -193,7 +193,7 @@ Log: BẮT BUỘC — `scripts/tdq_config.py`, `hooks/scripts/subagent_stop.py`,
 
 - [ ] **T5.2** (e14m) Mở rộng `tests/test_agent_frontmatter.py` (parity đủ `8` agent + schema) và hoàn thiện `tests/test_agent_upgrade_mvp.py` (config, shell bypass, QC allowlist, `subagent_stop`, telemetry, Plan `Model & Effort`, smoke/runtime) — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agent_upgrade_mvp.py tests/test_team_packet_v2.py tests/test_codex_hooks_json.py`
   - Req: `§2#6`, `§2b(M6-tests-and-verification)` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ các test hiện hữu không bị xóa hay làm yếu.
-  - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agent_upgrade_mvp.py`, `tests/test_build_portable.py`
+  - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agent_upgrade_mvp.py`, `tests/test_build_portable.py`, `tests/test_agy_plugin_validate.py`
   - Cần: T5.1
   - Tham chiếu: `tdq-config.json`, `plugins/tdq-workflow-agy/plugin.json`, `plugins/tdq-workflow-agy/hooks.json`
   - Giao tiếp: Consumes: `AgyBundleParityContract` | Produces: Bộ kiểm thử tự động đầy đủ + smoke/runtime kiểm `tdq-dispatch.exe`

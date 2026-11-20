@@ -1,15 +1,16 @@
 {
   "slug": "2026-11-20-1230-trien-khai-4-de-xuat-agent",
   "plan_file": "docs\\tdq\\plan\\2026-11-20-1230-trien-khai-4-de-xuat-agent.md",
-  "plan_sha": "b11a199f3218a0a0dbd8dea77949f3687b60007faff4f8746c609e37cc111c17",
+  "plan_sha": "dd581aed216d55af25008af025a3acd04ada115fefa37fe2adea81a0e13af45d",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "c373acd680ee833c0fd06f0e2f73465d62c120957a691748e998c2268f7cc276",
+  "plan_assignment_sha": "4296d5ba19ab60de1e8deb72ac6854746644f0f86591abfe49825c8beb4264bf",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
       "ly_do": "",
       "vung_file": [
+        "tdq-config.json",
         "scripts/tdq_config.py",
         "tests/test_agent_upgrade_mvp.py"
       ],
@@ -114,7 +115,8 @@
       "vung_file": [
         "tests/test_agent_frontmatter.py",
         "tests/test_agent_upgrade_mvp.py",
-        "tests/test_build_portable.py"
+        "tests/test_build_portable.py",
+        "tests/test_agy_plugin_validate.py"
       ],
       "dot": 6
     }

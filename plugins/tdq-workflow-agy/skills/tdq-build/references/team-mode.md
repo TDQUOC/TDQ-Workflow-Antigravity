@@ -145,6 +145,7 @@ Include spec and plan paths in prompt body. Subagent cannot read this conversati
 2. Rhythm: RIGHT: dispatch 4 tasks of the same wave concurrently · WRONG: call 1 agent, wait for it, then next.
 3. Merging: RIGHT: check clean -> merge -> tick [x] right away · WRONG: merge straight through with no check.
 4. Shared contracts: RIGHT: finish constant first, then dispatch · WRONG: dispatch in parallel before contract is merged.
+5. Specialist triggers: 2+ fails → `tdq-build-resolver` / `tdq-debugger`; wide trace → `tdq-explorer`; auth/hooks → `tdq-security-reviewer`; dead code → `tdq-refactor-cleaner`.
 
 Full cases, `tdq_team.py packet` (Symbol-Span + `CONTRACT-DELTA:`), & tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
 

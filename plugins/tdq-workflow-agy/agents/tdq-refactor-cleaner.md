@@ -1,7 +1,7 @@
 ---
 name: tdq-refactor-cleaner
 description: Code cleaner eliminating dead code, removing duplicates, and enforcing clean code invariants with zero functional regression and deletion audit logs.
-tools: [read_file, edit_file, write_file, run_command, send_message]
+tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
 model: inherit
 ---
 

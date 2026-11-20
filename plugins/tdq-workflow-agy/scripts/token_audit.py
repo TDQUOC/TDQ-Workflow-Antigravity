@@ -40,6 +40,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import skill_tokens  # noqa: E402 — share ONE token counter with the skill table
+import tdq_timing  # noqa: E402 — reuse role telemetry aggregation without duplicating parsing
 import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
 from tdq_transcript import (  # noqa: E402
     claude_transcript_dir,
@@ -735,19 +736,58 @@ def _audit_session_pairs(pairs, host="all", limit=5, top=10, cache_ttl=DEFAULT_C
         "top_items": top_rows,
         "repeated_reads": _aggregate_repeated_reads(session_reads, read_carry, top),
         "subagent_calls": _aggregate_subagents(raw_subagents, top),
+        "role_telemetry": [],
     }
+
+
+def _resolve_audit_project(project_dir=None):
+    if project_dir is not None:
+        return os.fspath(project_dir)
+    return os.environ.get("TDQ_PROJECT_DIR") or os.getcwd()
+
+
+def _telemetry_file_exists(project_dir=None):
+    base = _resolve_audit_project(project_dir)
+    return os.path.isfile(os.path.join(base, tdq_timing.TELEMETRY_REL))
+
+
+def role_telemetry_summary(project_dir=None, slug=None):
+    """Aggregate per-agent_role telemetry from docs/tdq/.tdq-agent-telemetry.jsonl."""
+    return tdq_timing.role_summary(_resolve_audit_project(project_dir), slug=slug, log_fn=_log)
 
 
 def audit_multi_host(host="all", project_dir=None, limit=5, top=10, home=None, cache_ttl=DEFAULT_CACHE_TTL):
     """Audit up to `limit` newest sessions per host (`all`, `agy`, `codex`, `claude`)."""
     pairs = discover_host_sessions(host=host, project_dir=project_dir, limit=limit, home=home)
-    return _audit_session_pairs(pairs, host=host, limit=limit, top=top, cache_ttl=cache_ttl)
+    report = _audit_session_pairs(pairs, host=host, limit=limit, top=top, cache_ttl=cache_ttl)
+    report["role_telemetry"] = role_telemetry_summary(project_dir)
+    return report
 
 
 # ----------------------------------------------------------------- CLI
 
 def _fmt(n):
     return f"{n:,}"
+
+
+def _print_role_telemetry(roles, always_show=False):
+    if not roles and not always_show:
+        return
+    print()
+    print("# Agent role telemetry")
+    if not roles:
+        print("  No agent role telemetry recorded yet.")
+        return
+    print(f"{'role':<24}{'runs':>6}{'1st_pass':>10}{'rate':>7}{'retries':>9}{'avg_s':>8}  models")
+    print("-" * 74)
+    for row in roles:
+        rate_str = f"{row['first_pass_rate'] * 100:.0f}%"
+        avg_str = f"{row['avg_elapsed_s']:.1f}s" if row["avg_elapsed_s"] is not None else "—"
+        models_str = ", ".join(row["models"]) if row["models"] else "—"
+        print(
+            f"{row['role']:<24}{row['runs']:>6}{row['first_pass_count']:>10}"
+            f"{rate_str:>7}{row['retries']:>9}{avg_str:>8}  {models_str}"
+        )
 
 
 def _print_multi_host_report(report, top):
@@ -783,6 +823,7 @@ def _print_multi_host_report(report, top):
         for sub in report["subagent_calls"]:
             print(f"  [{sub['host']}|{sub['basis']}] calls={sub['count']} | "
                   f"{_fmt(sub['tokens']):>10} tok | {sub['label'][:70]}")
+    _print_role_telemetry(report.get("role_telemetry") or [], always_show=True)
 
 
 def _run_multi_host_cli(args, sessions, top_n):
@@ -791,11 +832,13 @@ def _run_multi_host_cli(args, sessions, top_n):
         if not paths:
             _log(f"no session found in {args.transcript_dir} — nothing to measure")
             print("No session to measure.")
+            _print_role_telemetry(role_telemetry_summary(args.project), always_show=True)
             return 0
         host_name = "claude" if args.host == "claude" else args.host
         pairs = [(host_name if host_name != "all" else detect_host_from_events(list(iter_events(p))), p)
                  for p in paths]
         report = _audit_session_pairs(pairs, host=args.host, limit=sessions, top=top_n, cache_ttl=args.cache_ttl)
+        report["role_telemetry"] = role_telemetry_summary(args.project)
     else:
         report = audit_multi_host(
             host=args.host, project_dir=args.project, limit=sessions, top=top_n, cache_ttl=args.cache_ttl
@@ -803,6 +846,7 @@ def _run_multi_host_cli(args, sessions, top_n):
     if not report["sessions_scanned"]:
         _log(f"no session found for host={args.host} — nothing to measure")
         print("No session to measure.")
+        _print_role_telemetry(report.get("role_telemetry") or [], always_show=True)
         return 0
     _print_multi_host_report(report, top_n)
     total_carry = sum(row["carry_cost"] for row in report["hosts"])
@@ -810,20 +854,8 @@ def _run_multi_host_cli(args, sessions, top_n):
     return 0
 
 
-def _run_legacy_cli(args, sessions, top_n):
-    tdir = args.transcript_dir or default_transcript_dir(args.project)
-    _log(f"reading transcripts from {tdir}")
-    paths = find_sessions(tdir, sessions)
-    if not paths:
-        _log(f"no session found in {tdir} — nothing to measure")
-        print("No session to measure.")
-        return 0
-    _log(f"measuring {len(paths)} session(s)")
-
-    totals = usage_totals(paths)
-    rows = carry_cost(paths)
+def _print_legacy_report(args, tdir, paths, totals, rows, top_n):
     total_carry = sum(r.tokens for r in rows)
-
     print(f"# Token audit — {len(paths)} session · {tdir}")
     print()
     print(f"API call: {_fmt(totals.get('api_calls', 0))} · "
@@ -844,7 +876,6 @@ def _run_legacy_cli(args, sessions, top_n):
         print(f"{row.group:<28}{row.count:>7}{_fmt(row.tokens):>22}")
     print("-" * 57)
     print(f"{'TOTAL':<28}{sum(r.count for r in rows):>7}{_fmt(total_carry):>22}")
-
     print()
     print("# Output size breakdown (real tokens of each call)")
     print(f"{'group':<28}{'calls':>7}{'median':>10}{'p90':>10}{'p99':>10}{'largest':>11}")
@@ -859,14 +890,31 @@ def _run_legacy_cli(args, sessions, top_n):
               f"({hv.co_pham_vi / hv.tong * 100:.1f}%) · re-read an already-read file "
               f"{hv.doc_lai} ({hv.doc_lai / hv.tong * 100:.1f}%)")
         print("  (re-reading is the RIGHT behaviour in the 5 cases the rules demand — this only measures)")
-
     if top_n:
         print()
         print(f"# Top {top_n} priciest tool outputs")
         for item in top_items(paths, top_n):
             print(f"  {_fmt(item.tokens):>12} tok | {_fmt(item.chars):>8} chars | "
                   f"{item.group:<26} {item.label[:70]}")
+    roles = role_telemetry_summary(args.project)
+    _print_role_telemetry(roles, always_show=_telemetry_file_exists(args.project))
+    return total_carry
 
+
+def _run_legacy_cli(args, sessions, top_n):
+    tdir = args.transcript_dir or default_transcript_dir(args.project)
+    _log(f"reading transcripts from {tdir}")
+    paths = find_sessions(tdir, sessions)
+    if not paths:
+        _log(f"no session found in {tdir} — nothing to measure")
+        print("No session to measure.")
+        roles = role_telemetry_summary(args.project)
+        _print_role_telemetry(roles, always_show=_telemetry_file_exists(args.project))
+        return 0
+    _log(f"measuring {len(paths)} session(s)")
+    totals = usage_totals(paths)
+    rows = carry_cost(paths)
+    total_carry = _print_legacy_report(args, tdir, paths, totals, rows, top_n)
     _log(f"done — total carry-cost {_fmt(total_carry)} tokens")
     return 0
 

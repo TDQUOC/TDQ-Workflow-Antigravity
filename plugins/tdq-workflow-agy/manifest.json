@@ -2,7 +2,7 @@
   "name": "tdq-workflow-agy",
   "version": "0.102.0",
   "host": "antigravity",
-  "upstream_commit": "a1655931",
+  "upstream_commit": "a947ae84",
   "scripts": [
     "archify_artifacts.py",
     "archify_delivery.py",
@@ -35,6 +35,7 @@
     "tdq_checkstatus.py",
     "tdq_codex.py",
     "tdq_codex_mcp.py",
+    "tdq_config.py",
     "tdq_devtool_mcp.py",
     "tdq_eval.py",
     "tdq_eval_contract.py",
@@ -86,6 +87,8 @@
   ],
   "agents": [
     "tdq-build-resolver.md",
+    "tdq-debugger.md",
+    "tdq-explorer.md",
     "tdq-implementer.md",
     "tdq-qc-tester.md",
     "tdq-refactor-cleaner.md",

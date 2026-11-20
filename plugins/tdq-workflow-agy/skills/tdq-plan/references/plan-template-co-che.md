@@ -76,6 +76,7 @@ Luật nhãn `(mcp)` — BẮT BUỘC ghi ngay khi lập plan: skill nào cần 
 MCP, ví dụ tavily/notion) thì dòng `Dùng:` phải kết thúc bằng nhãn ` (mcp)` NGOÀI backtick, cuối
 dòng, đúng cú pháp spec §1. `split-plan` đọc nhãn này để biết task nào buộc phải do Claude tự làm,
 không giao cho sub-agent thiếu MCP.
+Quy tắc MCP-First: với task dùng MCP, phải có bước kiểm tra kết nối (pre-flight probe) trước khi gọi tool, và hướng dẫn user mở server nếu chưa kết nối (xem `skills/tdq-setup/references/mcp-first-guide.md`).
 
 ## Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó
 
