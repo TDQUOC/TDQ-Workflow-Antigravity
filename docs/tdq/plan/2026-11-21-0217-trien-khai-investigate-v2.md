@@ -66,7 +66,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
 
 ## P1 — Đợt 1: State, Telemetry, Linter/Scaffold/Bench & Quy chuẩn `skills/`
 
-- [>] **T1.1** (e14m) Triển khai `work_kind`, `INVESTIGATE_PHASE_ROWS`, `escalate-to-build`, vá `_cli_approve` (`ghi_moc_phase`) & `_archify_gate` trong `scripts/tdq_state.py` — Test: `py -3 -X utf8 -m pytest tests/test_state.py tests/test_phase_table.py -q`
+- [x] **T1.1** (e14m) Triển khai `work_kind`, `INVESTIGATE_PHASE_ROWS`, `escalate-to-build`, vá `_cli_approve` (`ghi_moc_phase`) & `_archify_gate` trong `scripts/tdq_state.py` — Test: `py -3 -X utf8 -m pytest tests/test_state.py tests/test_phase_table.py -q`
   - Req: `§2#1`, `§2b(M1)`, `Q1` · Ngoài phạm vi: `GIỮ NGUYÊN` `len(PHASE_TABLE) == 11`, object identity trong `PHASE_TABLE` cho `build`, và `schema_version = 6`.
   - Chạm: `scripts/tdq_state.py`, `tests/test_state.py`, `tests/test_phase_table.py`
   - Cần: Không
@@ -78,7 +78,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
   - Logic cốt lõi: Thêm `normalize_work_kind` fail-closed về `"build"`; rẽ `phase_row` sang `INVESTIGATE_PHASE_ROWS` khi `investigate`; thêm `ghi_moc_phase` sau `state["phase"] = "implement"` tại `_cli_approve`; thêm subcommand `escalate-to-build --by`.
   - Ca góc hiểm & Assert: Giá trị `work_kind` rác hoặc `None` rơi về `"build"` kèm `_warn`; `len(PHASE_TABLE) == 11` · `assert tdq_state.work_kind_hieu_luc({"work_kind": "invalid"}) == "build" and len(tdq_state.PHASE_TABLE) == 11`
 
-- [ ] **T1.2** (e12m) Cập nhật `scripts/doc_lint.py` (`rule_r10`/`r14_loi`/cô lập `bench/*.py`), `scripts/tdq_plan_scaffold.py` (`is_created`) & `scripts/tdq_bench.py` (`no_worktree`) — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py tests/test_plan_v2_linter.py -q`
+- [>] **T1.2** (e12m) Cập nhật `scripts/doc_lint.py` (`rule_r10`/`r14_loi`/cô lập `bench/*.py`), `scripts/tdq_plan_scaffold.py` (`is_created`) & `scripts/tdq_bench.py` (`no_worktree`) — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py tests/test_plan_v2_linter.py -q`
   - Req: `§2#1`, `§2b(M2)`, `Q1` · Ngoài phạm vi: `GIỮ NGUYÊN` `SKILL_LINE_LIMITS["tdq-plan"] == 132` và mọi fixture test `build` hiện hành.
   - Chạm: `scripts/doc_lint.py`, `scripts/tdq_plan_scaffold.py`, `scripts/tdq_bench.py`, `tests/test_doc_lint.py`, `tests/test_plan_v2_linter.py`
   - Cần: `T1.1`
@@ -109,7 +109,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
 
 - [ ] **T2.1** (e14m) Triển khai `evidence add|merge|render` (`--claim-file`, NTFS lock), bọc khóa `blackboard_record`, hỗ trợ `no_worktree` & mở rộng `handoff-schema.json` — Test: `py -3 -X utf8 -m unittest tests.test_team_packet_v2`
   - Req: `§2#2`, `§2b(M2)`, `Q2` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ lệnh `assign`, `wave`, `open`, `check`, `merge` cho task `build` có worktree.
-  - Chạm: `scripts/tdq_team.py`, `skills/tdq-conventions/references/handoff-schema.json`, `tests/test_team_packet_v2.py`
+  - Chạm: `scripts/tdq_team.py`, `scripts/tdq_ten_lenh.py`, `skills/tdq-conventions/references/handoff-schema.json`, `tests/test_team_packet_v2.py`
   - Cần: `T1.1`, `T1.2`
   - Tham chiếu: `hooks/scripts/_common.py`, `scripts/tdq_state.py`
   - Giao tiếp: Consumes: `WorkKindStateContract` | Produces: CLI `evidence add|merge|render`, `_ntfs_lock` nội bộ trong `tdq_team.py`, `is_artifact_only_paths()`, `worktree_required: false`, schema `handoff-schema.json` mở rộng
@@ -119,25 +119,25 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
   - Logic cốt lõi: Cài helper khóa tệp cục bộ `msvcrt.locking`/`fcntl.flock` ngay trong `tdq_team.py` (giữ luật không import từ `hooks/scripts/`); đọc `--claim-file`/`--excerpt-file` UTF-8; append nguyên tử vào `evidence.jsonl` và render tất định `evidence-log.md`; gắn `worktree_required: false` cho đích thuần `docs/tdq/{artifacts,research}/`.
   - Ca góc hiểm & Assert: Từ chối đường dẫn `..` trong `is_artifact_only_paths`; `validate_handoff_payload` vẫn bác payload thiếu trường hoặc vượt `1,500` chars · `assert tdq_team.is_artifact_only_paths(["docs/tdq/artifacts/s/../state.json"]) is False`
 
-- [ ] **T2.2** (e16m) Triển khai bảo mật `scoped-write` `5` tầng, vá `cmd /c` & `[IO.File]`, sửa `subagent_stop`, anchor tĩnh + `TDQ:GON` investigation trên Python hooks — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_read_gate.py tests/test_hooks_dual_protocol.py -q`
+- [x] **T2.2** (e16m) Triển khai bảo mật `scoped-write` `5` tầng, vá `cmd /c` & `[IO.File]`, sửa `subagent_stop`, anchor tĩnh + `TDQ:GON` investigation trên Python hooks — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_read_gate.py tests/test_hooks_dual_protocol.py -q`
   - Req: `§2#2`, `§2b(M3)`, `§2b(M4)`, `Q2`, `Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` `22` mã AGY trong `gate_guidance.json` và `.codex/hooks.json`.
   - Chạm: `hooks/scripts/_common.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/bash_gate.py`, `hooks/scripts/prompt_context.py`, `hooks/scripts/session_start.py`, `hooks/scripts/subagent_stop.py`, `hooks/scripts/read_gate.py`, `hooks/hooks.json`, `tests/test_bash_gate.py`, `tests/test_read_gate.py`
   - Cần: `T1.1`
   - Tham chiếu: `scripts/tdq_state.py`, `tools/patches/gate_guidance.json`
   - Giao tiếp: Consumes: `WorkKindStateContract` | Produces: `is_investigation_artifact_target()`, `_normalize_tool_aliases()`, bảo vệ `cmd /c` + `[IO.File]`, tách đăng ký `PostToolUse` ở `subagent_stop.py`, anchor tĩnh `<600c` + `TDQ:GON` gọn
-  - Neo & Công cụ: `Edit` `hooks/scripts/_common.py`, `edit_gate.py`, `bash_gate.py`, `prompt_context.py`, `session_start.py`, `subagent_stop.py`, `read_gate.py`, `hooks/hooks.json`; `Edit` `tests/test_bash_gate.py`, `tests/test_read_gate.py`
+  - Neo & Công cụ: `Edit` `hooks/scripts/_common.py`, `edit_gate.py`, `bash_gate.py`, `prompt_context.py`, `session_start.py`, `subagent_stop.py`, `read_gate.py`, `hooks/hooks.json`; `Edit` `tests/test_bash_gate.py`, `tests/test_read_gate.py` (step 1 done: `_common`/`edit_gate`/`bash_gate`/`subagent_stop`/`hooks.json`)
   - Trước → Sau: `"reviewer"` substring lọt `tdq-security-reviewer`; `bash_gate` sót `cmd /c` & `[IO.File]`; `subagent_stop` chấm sớm tại `PostToolUse`; `prompt_context` bỏ qua subagent; `TDQ:GON` bơm `7KB` vào điều tra → Vá kín cả 5 lỗ hổng trên Python.
   - Tiêu chí chấp nhận (EARS): KHI `tdq-security-reviewer` hoặc `tdq-explorer` ghi vào `evidence.jsonl`, `trial_1.json`, symlink thoát gốc, hay chạy `cmd /c` / `[IO.File]::WriteAllText`, HỆ THỐNG PHẢI chặn `[TDQ:READONLY]`; KHI `tdq-explorer` ghi đúng `<active_slug>/t1.md`, PHẢI cho phép và ghi `observe("edit")`.
   - Logic cốt lõi: Deny-first + exact allowlist `_SCOPED_ARTIFACT_ROLES`; leo `ancestors()` + `os.path.realpath` chống junction/8.3; denylist `evidence*`/`trial_*.json`/`rec_*.json`; thêm `cmd(?:\.exe)?\b\s+/c` & `\[(?:System\.)?IO\.File\]::`; chỉ đăng ký metadata ở `PostToolUse(invoke_subagent)`; bơm pointer tĩnh không timestamp giây cho cả main & subagent; thêm matcher `search_web` ở `hooks/hooks.json`.
   - Ca góc hiểm & Assert: `tdq-security-reviewer` luôn bị chặn kể cả trong `docs/tdq/artifacts/<slug>/` · `assert is_investigation_artifact_target("docs/tdq/artifacts/s/evidence.jsonl", cwd, "s") is False`
 
-- [ ] **T2.3** (e18m) Đồng bộ Rust `tdq-dispatch`: `scoped-write` `5` tầng + Allow trực tiếp, vá `cmd /c` & `[IO.File]`, Weighted Burden `sid` giữ `<0.5ms` `has_range` & `resume`/`mode` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+- [x] **T2.3** (e18m) Đồng bộ Rust `tdq-dispatch`: `scoped-write` `5` tầng + Allow trực tiếp, vá `cmd /c` & `[IO.File]`, Weighted Burden `sid` giữ `<0.5ms` `has_range` & `resume`/`mode` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
   - Req: `§2#2`, `§2b(M3)`, `§2b(M4)`, `Q2`, `Q3`, `Q4` · Ngoài phạm vi: `GIỮ NGUYÊN` fast-path `<0.5ms` `has_range` tại `pre_tool_use.rs:444` và đúng `22` mã AGY (tái dùng `"DOC"`).
-  - Chạm: `hooks/rust/tdq-dispatch/src/storage.rs`, `hooks/rust/tdq-dispatch/src/protocol.rs`, `hooks/rust/tdq-dispatch/src/command_parser.rs`, `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs`
+  - Chạm: `hooks/rust/tdq-dispatch/src/storage.rs`, `hooks/rust/tdq-dispatch/src/protocol.rs`, `hooks/rust/tdq-dispatch/src/command_parser.rs`, `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs`, `hooks/rust/tdq-dispatch/src/events/session_start.rs`, `hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs`, `hooks/rust/tdq-dispatch/src/events/stop_streak.rs`, `tests/test_rust_lock_safety.py`
   - Cần: `T1.1`
   - Tham chiếu: `hooks/scripts/_common.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/bash_gate.py`
   - Giao tiếp: Consumes: `HookPayload` & `docs/tdq/state.json` | Produces: `target/release/tdq-dispatch.exe` xanh `cargo test` & `cargo clippy -- -D warnings`
-  - Neo & Công cụ: `Edit` `hooks/rust/tdq-dispatch/src/storage.rs` (`L19-55`), `hooks/rust/tdq-dispatch/src/protocol.rs` (`L280-296`), `hooks/rust/tdq-dispatch/src/command_parser.rs` (`L161-221`), `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs` (`L58-178`, `L290-335`, `L444-463`), `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs` (`L70-95`), `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs` (`L135-170`); chạy `cargo test`, `cargo clippy -- -D warnings`, `cargo build --release`
+  - Neo & Công cụ: `Edit` `hooks/rust/tdq-dispatch/src/storage.rs` (`L19-55`), `hooks/rust/tdq-dispatch/src/protocol.rs` (`L280-296`), `hooks/rust/tdq-dispatch/src/command_parser.rs` (`L161-221`), `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs` (`L58-178`, `L290-335`, `L444-463`), `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs` (`L70-95`), `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs` (`L135-170`); chạy `cargo test`, `cargo clippy -- -D warnings`, `cargo build --release` (Batch 2 events in progress)
   - Trước → Sau: `storage.rs` thiếu `work_kind`/`"mode"`; `pre_invocation.rs` sót `"resume"` & subagent; `pre_tool_use.rs` lọt `security-reviewer`, resolve 1 cấp, rơi `DelegatePython` (`L333`) & mù MCP/range; `post_tool_use.rs:76` ghi schema chết → Đồng bộ 100% Python, Allow trực tiếp tại Rust, Weighted Burden `sid` phát `[TDQ:DOC]` ở `>=40` điểm mà không làm chậm `has_range`.
   - Tiêu chí chấp nhận (EARS): KHI chạy `cargo test` và `cargo clippy -- -D warnings`, HỆ THỐNG PHẢI pass `100%` test Rust với `0` warning, chặn mọi vector bypass `scoped-write`/`cmd /c`/`[IO.File]`, và phát nhắc `[TDQ:DOC]` ở `score >= 40` theo đúng từng `sid`.
   - Logic cốt lõi: Leo vòng lặp `Path::ancestors()` tới gốc tồn tại để `fs::canonicalize` trước prefix; trả `RouteOutcome::Decided(HookDecision::allow())` trực tiếp kèm `observe("edit")` cho `scoped-write` hợp lệ; cập nhật gọn `docs/tdq/.tdq-runtime/checkpoint-<sid>.json` (`+3/+2/+1`, ngưỡng `40`, reset theo `sid`) trong Rust; dọn `{ts, khoa, path}` ở `post_tool_use.rs:76`.

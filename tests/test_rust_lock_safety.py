@@ -28,8 +28,8 @@ def test_concurrent_sidecar_locks():
         processes = []
         payload = {
             "sessionId": "lock-session-42",
-            "toolName": "read_file",
-            "arguments": {"Path": str(temp_dir / "sample.txt")},
+            "toolName": "mcp__lsp__find_symbol",
+            "arguments": {"query": "concurrent_lock_check"},
         }
         input_data = json.dumps(payload, ensure_ascii=False)
 
@@ -63,14 +63,15 @@ def test_concurrent_sidecar_locks():
 
         # Verify canonical Q2 output ledger integrity without creating root .tdq-runtime
         assert not (temp_dir / ".tdq-runtime").exists(), "Legacy root .tdq-runtime must not be created"
-        read_ledger = docs_dir / ".tdq-read.jsonl"
-        assert read_ledger.is_file(), "Read ledger docs/tdq/.tdq-read.jsonl was not created"
+        assert not (docs_dir / ".tdq-read.jsonl").exists(), "PostToolUse(read_file) must not pollute .tdq-read.jsonl"
+        search_ledger = docs_dir / ".tdq-search.jsonl"
+        assert search_ledger.is_file(), "Search ledger docs/tdq/.tdq-search.jsonl was not created"
 
-        lines = [line.strip() for line in read_ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
-        assert len(lines) == num_processes, f"Expected {num_processes} lines in .tdq-read.jsonl, got {len(lines)}"
+        lines = [line.strip() for line in search_ledger.read_text(encoding="utf-8").splitlines() if line.strip()]
+        assert len(lines) == num_processes, f"Expected {num_processes} lines in .tdq-search.jsonl, got {len(lines)}"
         for line in lines:
             parsed = json.loads(line)
-            assert "sample.txt" in str(parsed.get("path") or "")
+            assert parsed.get("cong_cu") == "lsp:find_symbol"
             assert parsed.get("khoa") == "yc:lock-test"
 
     finally:

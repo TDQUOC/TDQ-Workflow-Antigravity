@@ -451,6 +451,36 @@ class TestEvalHelpers(unittest.TestCase):
             self.assertEqual(decision(out)[0], "deny", f"Expected deny for qc-tester: {cmd} -> {out}")
             self.assertIn("READONLY", out, cmd)
 
+    def test_v2_cmd_c_and_io_file_blocked_for_investigate_and_security_roles(self):
+        write_state(self.cwd, active_request="inv-sec", lane="full", phase="implement")
+        blocked_cmds = (
+            ("tdq-explorer", 'cmd /c "echo pwn > src/evil.py"'),
+            ("tdq-debugger", "cmd /c del /f README.md"),
+            ("tdq-reviewer", "pwsh -Command \"[IO.File]::WriteAllText('src/evil.py', 'x')\""),
+            ("tdq-security-reviewer", "pwsh -Command \"[System.IO.File]::WriteAllText('docs/tdq/artifacts/inv-sec/t1.md', 'x')\""),
+            ("tdq-security-reviewer", "echo secret > docs/tdq/artifacts/inv-sec/t1.md"),
+        )
+        for role, cmd in blocked_cmds:
+            with self.subTest(role=role, cmd=cmd):
+                payload = load_fixture("bash_cmd.json", cwd=self.cwd, session_id=f"sec-{role}-{abs(hash(cmd)) % 10000}")
+                payload["agent_id"] = f"ag-{role}"
+                payload["agent_type"] = role
+                payload["tool_input"] = {"command": cmd}
+                rc, out, _ = run_hook("bash_gate.py", payload)
+                self.assertEqual(rc, 0)
+                self.assertEqual(decision(out)[0], "deny", f"Expected deny for {role}: {cmd} -> {out}")
+                self.assertIn("READONLY", out, f"{role}: {cmd}")
+
+    def test_v2_explorer_evidence_add_cli_allowed(self):
+        write_state(self.cwd, active_request="inv-sec", lane="full", phase="implement")
+        payload = load_fixture("bash_cmd.json", cwd=self.cwd, session_id="exp-ev-cli")
+        payload["agent_id"] = "ag-exp"
+        payload["agent_type"] = "tdq-explorer"
+        payload["tool_input"] = {"command": "py -3 scripts/tdq_team.py evidence add --shard T1 --claim-file docs/tdq/artifacts/inv-sec/t1.txt"}
+        rc, out, _ = run_hook("bash_gate.py", payload)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("deny", out)
+
 
 if __name__ == "__main__":
     unittest.main()

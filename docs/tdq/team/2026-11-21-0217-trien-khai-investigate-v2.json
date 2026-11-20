@@ -1,10 +1,10 @@
 {
   "slug": "2026-11-21-0217-trien-khai-investigate-v2",
   "plan_file": "docs\\tdq\\plan\\2026-11-21-0217-trien-khai-investigate-v2.md",
-  "plan_sha": "7add0efc14a54f74f8ddd5440f54c07516ab0ad3dfcdd86af01aa6c6e042b661",
+  "plan_sha": "89d623b649d7a74ba16587d251ca5f0ce8c0c18f65db94e9c28f4319107efc2d",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "bae538b4ecba203825a42f296b3564fb8978ab79a80767ea26b5f6e81ae6c457",
+  "plan_assignment_sha": "4912be3c4d69bdbd288c96a3bc35d96cdf21adcee0a3a8b59e0ca2cd177db629",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
@@ -50,6 +50,7 @@
       "ly_do": "file-luat",
       "vung_file": [
         "scripts/tdq_team.py",
+        "scripts/tdq_ten_lenh.py",
         "skills/tdq-conventions/references/handoff-schema.json",
         "tests/test_team_packet_v2.py"
       ],
@@ -81,7 +82,11 @@
         "hooks/rust/tdq-dispatch/src/command_parser.rs",
         "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
         "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs",
-        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs"
+        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs",
+        "hooks/rust/tdq-dispatch/src/events/session_start.rs",
+        "hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs",
+        "hooks/rust/tdq-dispatch/src/events/stop_streak.rs",
+        "tests/test_rust_lock_safety.py"
       ],
       "dot": 2
     },

@@ -3,16 +3,18 @@
 //! handles `start_lsp` overwrite and concept ledger writes, and delegates Cold-path edge cases.
 
 use crate::command_parser::{
-    has_banned_ai_branch, inspect_command_safety, is_shell_mutator, mutates_outside_docs,
-    mutates_outside_docs_any, mutates_tdq_state, needs_python_command_gate, CommandSafetyViolation,
+    has_banned_ai_branch, inspect_command_safety, is_graphify_shell_query, is_shell_mutator,
+    mutates_outside_docs, mutates_outside_docs_any, mutates_tdq_state, needs_python_command_gate,
+    CommandSafetyViolation,
 };
 use crate::events::post_tool_use::extract_concept_label;
 use crate::protocol::{GuidanceRepo, HookDecision, HookPayload, NormalizedToolCall};
 use crate::storage::{
     already_reminded, append_jsonl_record, append_turn_row, cong_dang_cho,
-    count_code_edits_for_sha, effective_phase, khoa_hien_tai, now_iso_utc, queue_pending_reminder,
-    read_plan_tick_state, read_sessions_role, read_tdq_state, search_ledger_path,
-    today_log_rel_for_state, unix_timestamp_f64, TdqState,
+    count_code_edits_for_sha, effective_phase, khoa_hien_tai, maybe_bump_burden, now_iso_utc,
+    queue_pending_reminder, read_plan_tick_state, read_sessions_role, read_tdq_state,
+    reset_burden_checkpoint, search_ledger_path, today_log_rel_for_state, unix_timestamp_f64,
+    TdqState,
 };
 use crate::RouteOutcome;
 use std::fs::{self, File};
@@ -107,18 +109,26 @@ fn queue_remind_once(workspace_root: &Path, sid: &str, code: &str, detail: &str)
     }
 }
 
-fn canonical_or_ancestor(path: &Path) -> String {
-    let resolved = if let Ok(c) = fs::canonicalize(path) {
-        c
-    } else if let (Some(parent), Some(name)) = (path.parent(), path.file_name()) {
-        fs::canonicalize(parent)
-            .map(|p| p.join(name))
-            .unwrap_or_else(|_| path.to_path_buf())
-    } else {
-        path.to_path_buf()
-    };
-    let s = resolved.to_string_lossy().into_owned();
-    s.strip_prefix(r"\\?\").unwrap_or(&s).replace('\\', "/")
+fn canonical_or_ancestor(path: &Path) -> Option<String> {
+    let mut tail: Vec<std::ffi::OsString> = Vec::new();
+    for anc in path.ancestors() {
+        if anc.exists() {
+            if let Ok(canon) = fs::canonicalize(anc) {
+                let mut full = canon;
+                for seg in tail.into_iter().rev() {
+                    full.push(seg);
+                }
+                let s = full.to_string_lossy().into_owned();
+                return Some(s.strip_prefix(r"\\?\").unwrap_or(&s).replace('\\', "/"));
+            }
+        }
+        let name = anc.file_name()?;
+        if name == ".." {
+            return None;
+        }
+        tail.push(name.to_os_string());
+    }
+    None
 }
 
 fn resolve_rel_in_project(raw_target: &str, workspace_root: &Path) -> Option<String> {
@@ -127,9 +137,9 @@ fn resolve_rel_in_project(raw_target: &str, workspace_root: &Path) -> Option<Str
     } else {
         workspace_root.join(raw_target)
     };
-    let norm_root = canonical_or_ancestor(workspace_root);
+    let norm_root = canonical_or_ancestor(workspace_root)?;
     let trim_root = norm_root.trim_end_matches('/');
-    let norm_abs = canonical_or_ancestor(&abs);
+    let norm_abs = canonical_or_ancestor(&abs)?;
     if cfg!(windows) {
         let low_a = norm_abs.to_ascii_lowercase();
         let low_r = format!("{}/", trim_root.to_ascii_lowercase());
@@ -140,6 +150,78 @@ fn resolve_rel_in_project(raw_target: &str, workspace_root: &Path) -> Option<Str
         return Some(rest.to_string());
     }
     None
+}
+
+fn is_scoped_artifact_role(role: &str) -> bool {
+    let low = role.trim().to_ascii_lowercase();
+    if low.contains("security-reviewer")
+        || low.contains("browser")
+        || low.contains("qc-tester")
+        || low.is_empty()
+        || low == "subagent"
+    {
+        return false;
+    }
+    matches!(
+        low.as_str(),
+        "tdq-explorer" | "explorer" | "tdq-debugger" | "debugger" | "tdq-reviewer" | "reviewer"
+    )
+}
+
+fn is_investigation_artifact_target(raw_target: &str, workspace_root: &Path, role: &str) -> bool {
+    if !is_scoped_artifact_role(role) || raw_target.trim().is_empty() || raw_target.contains('\0') {
+        return false;
+    }
+    let bytes = raw_target.as_bytes();
+    let after_drive = if bytes.len() >= 2 && bytes[1] == b':' {
+        &raw_target[2..]
+    } else {
+        raw_target
+    };
+    if after_drive.contains(':')
+        || Path::new(raw_target)
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return false;
+    }
+    let Some(state) = read_tdq_state(workspace_root) else {
+        return false;
+    };
+    let slug = state.active_request.as_deref().unwrap_or("").trim();
+    if slug.is_empty()
+        || slug.contains("..")
+        || !slug
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+    {
+        return false;
+    }
+    let Some(rel) = resolve_rel_in_project(raw_target, workspace_root) else {
+        return false;
+    };
+    let fname = rel.rsplit('/').next().unwrap_or(&rel).to_ascii_lowercase();
+    let ext_ok = fname.ends_with(".md") || fname.ends_with(".json") || fname.ends_with(".jsonl");
+    if !ext_ok
+        || fname.starts_with("evidence")
+        || ((fname.starts_with("trial_") || fname.starts_with("rec_")) && fname.ends_with(".json"))
+    {
+        return false;
+    }
+    let rel_cmp = if cfg!(windows) { rel.to_ascii_lowercase() } else { rel };
+    let slug_cmp = if cfg!(windows) { slug.to_ascii_lowercase() } else { slug.to_string() };
+    let art_prefix = format!("docs/tdq/artifacts/{}/", slug_cmp);
+    if rel_cmp.starts_with(&art_prefix) && rel_cmp.len() > art_prefix.len() {
+        return true;
+    }
+    if let Some(tail) = rel_cmp.strip_prefix("docs/tdq/research/") {
+        return !tail.contains('/')
+            && (tail == format!("{}.md", slug_cmp)
+                || (tail.starts_with(&format!("{}-", slug_cmp))
+                    && tail.ends_with(".md")
+                    && tail.len() > slug_cmp.len() + 4));
+    }
+    false
 }
 
 fn normalize_lexical(path: &Path) -> PathBuf {
@@ -287,18 +369,36 @@ fn handle_edit_tool(
     let Some(raw_target) = norm.target_path() else {
         return RouteOutcome::Decided(HookDecision::allow());
     };
-    if let Some(role) = role_opt.filter(|r| is_readonly_role(r)) {
-        if role.to_ascii_lowercase().contains("qc-tester")
-            && is_qc_report_target(raw_target, workspace_root)
-        {
+    if let Some(role) = role_opt {
+        let qc_ok = role.to_ascii_lowercase().contains("qc-tester")
+            && is_qc_report_target(raw_target, workspace_root);
+        let scoped_ok = !qc_ok && is_investigation_artifact_target(raw_target, workspace_root, role);
+        if qc_ok || scoped_ok {
+            let obs_rel = resolve_rel_in_project(raw_target, workspace_root)
+                .unwrap_or_else(|| raw_target.replace('\\', "/"));
+            append_turn_row(
+                workspace_root,
+                sid,
+                &serde_json::json!({
+                    "ts": now_iso_utc(), "kind": "observe", "event": "edit", "session": sid, "path": obs_rel,
+                }),
+            );
+            if scoped_ok {
+                reset_burden_checkpoint(workspace_root, sid);
+            }
             return RouteOutcome::Decided(HookDecision::allow());
         }
-        return deny_with_block(
-            workspace_root,
-            sid,
-            "READONLY",
-            &format!("Read-only role `{}` cannot edit (qc-tester may write only docs/tdq/qc/*.md).", role),
-        );
+        if is_readonly_role(role) {
+            return deny_with_block(
+                workspace_root,
+                sid,
+                "READONLY",
+                &format!(
+                    "Read-only role `{}` cannot edit (artifacts/<slug>/ for explorer|debugger|reviewer; docs/tdq/qc/*.md for qc-tester).",
+                    role
+                ),
+            );
+        }
     }
     if is_state_target(raw_target) {
         return deny_with_block(
@@ -435,13 +535,21 @@ fn handle_command_tool(
             }
         }
     }
+    if cmd.contains("tdq_team") && cmd.contains("evidence") && (cmd.contains(" add") || cmd.contains(" merge")) {
+        reset_burden_checkpoint(workspace_root, sid);
+    } else if is_graphify_shell_query(&cmd).is_some() {
+        maybe_bump_burden(workspace_root, sid, 2);
+    } else if !is_shell_mutator(&cmd) {
+        maybe_bump_burden(workspace_root, sid, 1);
+    }
     if needs_python_command_gate(&cmd) {
         return RouteOutcome::DelegatePython;
     }
     RouteOutcome::Decided(HookDecision::allow())
 }
 
-fn handle_read_tool(norm: &NormalizedToolCall, workspace_root: &Path) -> RouteOutcome {
+fn handle_read_tool(norm: &NormalizedToolCall, workspace_root: &Path, sid: &str) -> RouteOutcome {
+    maybe_bump_burden(workspace_root, sid, 3);
     let has_range = ["StartLine", "EndLine", "offset", "limit", "ByteOffset"]
         .iter()
         .any(|k| norm.args.get(*k).is_some_and(|v| !v.is_null()));
@@ -532,7 +640,17 @@ fn handle_mcp_tool(workspace_root: &Path, norm: &NormalizedToolCall, sid: &str) 
         }
         return RouteOutcome::Decided(HookDecision::allow());
     }
+    if matches!(
+        op,
+        "tavily_extract" | "tavily_crawl" | "tavily_map" | "navigate_page" | "take_snapshot" | "click" | "fill" | "evaluate_script"
+    ) || norm.server_name.as_deref().unwrap_or("").contains("chrome-devtools")
+    {
+        maybe_bump_burden(workspace_root, sid, 3);
+    } else if matches!(op, "tavily_search" | "tavily_research") {
+        maybe_bump_burden(workspace_root, sid, 2);
+    }
     if let Some(label) = extract_concept_label(norm, None) {
+        maybe_bump_burden(workspace_root, sid, 2);
         let state = read_tdq_state(workspace_root);
         let khoa = khoa_hien_tai(state.as_ref(), sid);
         let _ = append_jsonl_record(
@@ -589,10 +707,19 @@ pub fn handle_pre_tool_use(payload: &HookPayload, workspace_root: &Path) -> Rout
         return handle_command_tool(payload, workspace_root, &sid, role_opt.as_deref());
     }
     if matches!(tname, "read_file" | "view_file" | "Read") {
-        return handle_read_tool(&norm, workspace_root);
+        return handle_read_tool(&norm, workspace_root, &sid);
     }
-    if matches!(tname, "grep_search" | "search_directory" | "Grep") {
+    if matches!(tname, "grep_search" | "search_directory" | "Grep" | "find_by_name") {
+        maybe_bump_burden(workspace_root, &sid, 2);
         return RouteOutcome::DelegatePython;
+    }
+    if tname == "search_web" {
+        maybe_bump_burden(workspace_root, &sid, 2);
+        return RouteOutcome::Decided(HookDecision::allow());
+    }
+    if matches!(tname, "read_url_content" | "view_content_chunk") || tname.starts_with("browser_") {
+        maybe_bump_burden(workspace_root, &sid, 3);
+        return RouteOutcome::Decided(HookDecision::allow());
     }
     if matches!(
         tname,
@@ -708,6 +835,94 @@ mod tests {
             }
             RouteOutcome::DelegatePython => panic!("expected rust overwrite"),
         }
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_scoped_write_5_layer_and_weighted_burden_sid_isolation() {
+        let tmp = std::env::temp_dir().join(format!("tdq_v2_rust_test_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::create_dir_all(tmp.join("docs").join("tdq").join("artifacts").join("inv1"));
+        let _ = fs::create_dir_all(tmp.join("docs").join("tdq").join("research"));
+        fs::write(
+            tmp.join("docs").join("tdq").join("state.json"),
+            r#"{"active_request":"inv1","phase":"implement","lane":"full","spec_approved":true,"plan_approved":true,"work_kind":"investigate"}"#,
+        )
+        .unwrap();
+
+        // 1. Valid scoped-write by tdq-explorer must Allow directly & log observe("edit")
+        let allow_shard = HookPayload {
+            conversation_id: Some("worker-a".to_string()),
+            agent_type: Some("tdq-explorer".to_string()),
+            tool_name: Some("write_to_file".to_string()),
+            tool_input: Some(json!({ "TargetFile": "docs/tdq/artifacts/inv1/nested/deep/shard.md" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&allow_shard, &tmp),
+            RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow
+        ));
+        assert!(crate::storage::read_turn_rows(&tmp, "worker-a").iter().any(|r| r.get("event").and_then(|v| v.as_str()) == Some("edit")));
+
+        // 2. Security-reviewer, browser, empty/subagent, denylist, wrong slug, traversal MUST Deny [TDQ:READONLY]
+        let deny_cases = [
+            ("tdq-security-reviewer", "docs/tdq/artifacts/inv1/shard.md"),
+            ("tdq-browser", "docs/tdq/artifacts/inv1/shard.md"),
+            ("tdq-explorer", "docs/tdq/artifacts/inv1/evidence.jsonl"),
+            ("tdq-explorer", "docs/tdq/artifacts/inv1/trial_1.json"),
+            ("tdq-explorer", "docs/tdq/artifacts/inv1/rec_01.json"),
+            ("tdq-explorer", "docs/tdq/artifacts/inv1/bad.py"),
+            ("tdq-explorer", "docs/tdq/artifacts/other/shard.md"),
+            ("tdq-explorer", "docs/tdq/artifacts/inv1/sub/../../outside.md"),
+            ("tdq-explorer", "docs/tdq/research/inv1/nested.md"),
+        ];
+        for (role, path) in deny_cases {
+            let p = HookPayload {
+                conversation_id: Some("sec-check".to_string()),
+                agent_type: Some(role.to_string()),
+                tool_name: Some("write_to_file".to_string()),
+                tool_input: Some(json!({ "TargetFile": path })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&p, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")),
+                "Expected READONLY deny for role={} path={}",
+                role,
+                path
+            );
+        }
+
+        // 3. Weighted Burden Counter per sid: 14 ranged reads -> >=40pts -> [TDQ:DOC] queued, worker-b isolated
+        for i in 0..14 {
+            let rp = HookPayload {
+                conversation_id: Some("worker-a".to_string()),
+                tool_name: Some("view_file".to_string()),
+                tool_input: Some(json!({ "AbsolutePath": tmp.join(format!("f{}.py", i)).to_string_lossy(), "StartLine": 1, "EndLine": 10 })),
+                ..Default::default()
+            };
+            assert!(matches!(handle_pre_tool_use(&rp, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
+        }
+        let rem_a = crate::storage::pending_reminders_path(&tmp, "worker-a");
+        assert!(rem_a.is_file(), "Expected [TDQ:DOC] queued after 42 burden points");
+        assert!(fs::read_to_string(&rem_a).unwrap_or_default().contains("DOC"));
+
+        // worker-b shard write must NOT reset worker-a
+        let wb = HookPayload {
+            conversation_id: Some("worker-b".to_string()),
+            agent_type: Some("tdq-debugger".to_string()),
+            tool_name: Some("write_to_file".to_string()),
+            tool_input: Some(json!({ "TargetFile": "docs/tdq/artifacts/inv1/wb.md" })),
+            ..Default::default()
+        };
+        assert!(matches!(handle_pre_tool_use(&wb, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
+        let cp_a = fs::read_to_string(crate::storage::get_runtime_dir(&tmp).join("checkpoint-worker-a.json")).unwrap_or_default();
+        assert!(cp_a.contains("42"));
+
+        // worker-a shard write resets worker-a checkpoint
+        assert!(matches!(handle_pre_tool_use(&allow_shard, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
+        let cp_a_after = fs::read_to_string(crate::storage::get_runtime_dir(&tmp).join("checkpoint-worker-a.json")).unwrap_or_default();
+        assert!(cp_a_after.contains(":0"));
 
         let _ = fs::remove_dir_all(&tmp);
     }

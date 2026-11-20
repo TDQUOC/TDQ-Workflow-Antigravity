@@ -30,6 +30,7 @@ pub struct TdqState {
     pub implement_mode: Option<String>,
     pub implement_pause: Option<Value>,
     pub doc_lang: Option<String>,
+    pub work_kind: Option<String>,
     pub updated_at: Option<String>,
 }
 
@@ -143,6 +144,99 @@ pub struct TurnMeta {
     pub prompt_sha: String,
     #[serde(default)]
     pub phase_anchor: String,
+    #[serde(default)]
+    pub mode: String,
+}
+
+/// Per-session weighted burden checkpoint (`checkpoint-<sid>.json`).
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct BurdenCheckpoint {
+    #[serde(default)]
+    pub score: u32,
+    #[serde(default)]
+    pub reminded_at_score: u32,
+}
+
+pub fn burden_checkpoint_path(workspace_root: &Path, sid: &str) -> PathBuf {
+    get_runtime_dir(workspace_root).join(format!("checkpoint-{}.json", sid))
+}
+
+fn is_investigate_implement_active(workspace_root: &Path) -> bool {
+    let spath = workspace_root.join("docs").join("tdq").join("state.json");
+    let Ok(raw) = fs::read_to_string(&spath) else {
+        return false;
+    };
+    if !raw.contains("investigate") {
+        return false;
+    }
+    let Some(state) = read_tdq_state(workspace_root) else {
+        return false;
+    };
+    state.work_kind.as_deref() == Some("investigate") && effective_phase(&state) == "implement"
+}
+
+/// Reset weighted burden score for `sid` (on artifact shard write or `evidence add/merge`).
+pub fn reset_burden_checkpoint(workspace_root: &Path, sid: &str) {
+    if sid.trim().is_empty() {
+        return;
+    }
+    let cpath = burden_checkpoint_path(workspace_root, sid);
+    if !cpath.exists() {
+        return;
+    }
+    let _guard = acquire_sidecar_lock(&cpath, Duration::from_millis(200));
+    let zero = BurdenCheckpoint::default();
+    if let Ok(bytes) = serde_json::to_vec(&zero) {
+        let _ = atomic_write_file(&cpath, &bytes);
+    }
+}
+
+/// Increment weighted burden points for `sid`; queue `[TDQ:DOC]` once when `score >= 40`.
+pub fn maybe_bump_burden(workspace_root: &Path, sid: &str, points: u32) {
+    if points == 0 || sid.trim().is_empty() || !is_investigate_implement_active(workspace_root) {
+        return;
+    }
+    let cpath = burden_checkpoint_path(workspace_root, sid);
+    let Ok(_guard) = acquire_sidecar_lock(&cpath, Duration::from_millis(200)) else {
+        return;
+    };
+    let mut cp: BurdenCheckpoint = fs::read_to_string(&cpath)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    cp.score = cp.score.saturating_add(points);
+    if cp.score >= 40 && cp.reminded_at_score < 40 {
+        cp.reminded_at_score = cp.score;
+        let detail = format!(
+            "Investigate burden={}pts >= 40 — write checkpoint into shard or evidence add.",
+            cp.score
+        );
+        if queue_pending_reminder(workspace_root, sid, "DOC", &detail) {
+            append_turn_row(
+                workspace_root,
+                sid,
+                &serde_json::json!({
+                    "ts": now_iso_utc(),
+                    "kind": "remind",
+                    "event": "remind",
+                    "session": sid,
+                    "code": "DOC",
+                    "source_event": "PreToolUse",
+                }),
+            );
+        }
+    }
+    if let Ok(bytes) = serde_json::to_vec(&cp) {
+        let _ = atomic_write_file(&cpath, &bytes);
+    }
+    if std::env::var("TDQ_LOG").as_deref() != Ok("0") {
+        eprintln!(
+            "[{}] tdq-dispatch: burden sid={} score={}",
+            now_iso_utc(),
+            sid,
+            cp.score
+        );
+    }
 }
 
 /// Return path to canonical `turn-meta-<sid>.json` inside `docs/tdq/.tdq-runtime/`.

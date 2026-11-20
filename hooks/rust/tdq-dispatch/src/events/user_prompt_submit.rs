@@ -25,10 +25,12 @@ pub fn handle_user_prompt_submit(payload: &HookPayload, workspace_root: &Path) -
     // 3. Inject concise guidance if in implement phase
     if let Some(state) = read_tdq_state(workspace_root) {
         if state.phase.as_deref() == Some("implement") && state.muc_gat.as_deref() != Some("off") {
-            return HookDecision::inject(
-                "[TDQ:GON] Phase implement: follow plan, TDD red-green, no out-of-scope edits.",
-                None,
-            );
+            let gon = if state.work_kind.as_deref() == Some("investigate") {
+                "[TDQ:GON] investigate mode: cite file:line or URL+ts per claim; write ONLY inside assigned artifact shard."
+            } else {
+                "[TDQ:GON] Phase implement: follow plan, TDD red-green, no out-of-scope edits."
+            };
+            return HookDecision::inject(gon, None);
         }
     }
 

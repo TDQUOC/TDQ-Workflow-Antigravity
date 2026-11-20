@@ -373,6 +373,48 @@ pub struct HookPayload {
     pub extra: HashMap<String, Value>,
 }
 
+fn normalize_tool_args(raw_name: &str, args: &mut Map<String, Value>) {
+    if !args.contains_key("file_path") {
+        for alias in ["TargetFile", "Path", "AbsolutePath", "path", "target_file"] {
+            if let Some(s) = args.get(alias).and_then(|v| v.as_str()).filter(|v| !v.trim().is_empty()) {
+                args.insert("file_path".to_string(), Value::String(s.to_string()));
+                break;
+            }
+        }
+    }
+    if !args.contains_key("command") {
+        for alias in ["CommandLine", "cmd"] {
+            if let Some(s) = args.get(alias).and_then(|v| v.as_str()).filter(|v| !v.trim().is_empty()) {
+                args.insert("command".to_string(), Value::String(s.to_string()));
+                break;
+            }
+        }
+    }
+    let is_read = matches!(raw_name, "read_file" | "view_file" | "Read")
+        || args.contains_key("StartLine")
+        || args.contains_key("EndLine")
+        || args.contains_key("ByteOffset");
+    if is_read {
+        if !args.contains_key("offset") {
+            if let Some(v) = args.get("StartLine").cloned() {
+                args.insert("offset".to_string(), v);
+            }
+        }
+        if !args.contains_key("limit") {
+            if let (Some(sl), Some(el)) = (
+                args.get("StartLine").and_then(|v| v.as_i64()),
+                args.get("EndLine").and_then(|v| v.as_i64()),
+            ) {
+                if el >= sl {
+                    args.insert("limit".to_string(), Value::Number(((el - sl) + 1).into()));
+                }
+            } else if args.contains_key("ByteOffset") && !args.contains_key("EndLine") {
+                args.insert("limit".to_string(), Value::Number(150.into()));
+            }
+        }
+    }
+}
+
 fn unwrap_mcp_tool_call(raw_name: String, outer: Map<String, Value>) -> NormalizedToolCall {
     let server_name = outer
         .get("ServerName")
@@ -388,17 +430,19 @@ fn unwrap_mcp_tool_call(raw_name: String, outer: Map<String, Value>) -> Normaliz
         .unwrap_or("call_mcp_tool")
         .to_string();
     let raw_args_val = outer.get("Arguments").or_else(|| outer.get("arguments"));
-    let (inner_args, is_str) = raw_args_val
+    let (mut inner_args, is_str) = raw_args_val
         .and_then(decode_json_object_val)
         .unwrap_or_default();
+    let raw_arguments = inner_args.clone();
+    normalize_tool_args(&inner_name, &mut inner_args);
     NormalizedToolCall {
         raw_tool_name: raw_name,
         tool_name: inner_name,
         server_name,
-        args: inner_args.clone(),
+        args: inner_args,
         is_mcp_wrapper: true,
         raw_args_is_str: is_str,
-        raw_arguments: inner_args,
+        raw_arguments,
     }
 }
 
@@ -461,11 +505,12 @@ impl HookPayload {
             .or_else(|| tc.and_then(|c| c.args.as_ref()))
             .or_else(|| tc.and_then(|c| c.arguments.as_ref()))
             .or(self.arguments.as_ref());
-        let outer = container
+        let mut outer = container
             .and_then(decode_json_object_val)
             .map(|(m, _)| m)
             .unwrap_or_default();
         if raw_name != "call_mcp_tool" {
+            normalize_tool_args(&raw_name, &mut outer);
             return NormalizedToolCall {
                 raw_tool_name: raw_name.clone(),
                 tool_name: raw_name,
