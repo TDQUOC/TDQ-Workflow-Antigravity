@@ -191,7 +191,7 @@ Log: BẮT BUỘC — `scripts/tdq_config.py`, `hooks/scripts/subagent_stop.py`,
   - Logic cốt lõi: Xóa khối ghi đè `handoff_schema` lệch trong `transform_skills`; thêm `tdq-explorer` và `tdq-debugger` vào `AGENT_FRONTMATTERS` (`model: inherit` + LSP/Grep); gọi `register_subagent_role` trong `SUBAGENT_DISPATCH_GATE_PY`; chép `tdq-config.json` vào stage.
   - Ca góc hiểm & Assert: Giữ nguyên magic-byte hợp lệ cho `linux`/`darwin` prebuilt · `assert json.loads(out)["status"] == "OK"`
 
-- [>] **T5.2** (e14m) Mở rộng `tests/test_agent_frontmatter.py` (parity đủ `8` agent + schema) và hoàn thiện `tests/test_agent_upgrade_mvp.py` (config, shell bypass, QC allowlist, `subagent_stop`, telemetry, Plan `Model & Effort`, smoke/runtime) — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agent_upgrade_mvp.py tests/test_team_packet_v2.py tests/test_codex_hooks_json.py`
+- [x] **T5.2** (e14m) Mở rộng `tests/test_agent_frontmatter.py` (parity đủ `8` agent + schema) và hoàn thiện `tests/test_agent_upgrade_mvp.py` (config, shell bypass, QC allowlist, `subagent_stop`, telemetry, Plan `Model & Effort`, smoke/runtime) — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agent_upgrade_mvp.py tests/test_team_packet_v2.py tests/test_codex_hooks_json.py`
   - Req: `§2#6`, `§2b(M6-tests-and-verification)` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ các test hiện hữu không bị xóa hay làm yếu.
   - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agent_upgrade_mvp.py`, `tests/test_build_portable.py`, `tests/test_agy_plugin_validate.py`
   - Cần: T5.1
