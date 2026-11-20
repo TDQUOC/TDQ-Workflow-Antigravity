@@ -120,13 +120,13 @@ def _read_stdin_json() -> dict:
         return {}
 
 
-def _run_module(mod_name: str) -> None:
+def _run_module(mod_name: str, argv: list[str] | None = None) -> None:
     """Import mod_name lazily and execute main(), catching SystemExit fail-open."""
     try:
         mod = importlib.import_module(mod_name)
         entry = getattr(mod, "main", None)
         if callable(entry):
-            entry()
+            entry(argv) if argv is not None else entry()
     except SystemExit:
         pass
     except Exception as exc:  # noqa: BLE001
@@ -179,6 +179,14 @@ def _route_pre_invocation(norm: dict) -> None:
         _run_module("search_observe")
 
 
+def _route_post_tool_use(norm: dict) -> None:
+    """Route PostToolUse subagent completions to subagent_stop and others to search_observe."""
+    if str(norm.get("tool_name") or "") in _SUBAGENT_TOOLS:
+        _run_module("subagent_stop", argv=["--event", "PostToolUse"])
+        return
+    _run_module("search_observe")
+
+
 def _route_stop(norm: dict) -> None:
     """Dispatch Stop gate while preserving continuationActive telemetry state."""
     if norm.get("continuationActive") or norm.get("continuation_active"):
@@ -200,11 +208,13 @@ def route_event(event: str, payload: dict) -> dict:
         elif ev == "PreToolUse":
             _route_pre_tool_use(norm)
         elif ev == "PostToolUse":
-            _run_module("search_observe")
+            _route_post_tool_use(norm)
         elif ev == "PostInvocation":
             _run_module("post_invocation")
         elif ev == "Stop":
             _route_stop(norm)
+        elif ev == "SubagentStop":
+            _run_module("subagent_stop", argv=["--event", "SubagentStop"])
     finally:
         _common._RUNTIME_STATE["collapsed_payload"] = None
 

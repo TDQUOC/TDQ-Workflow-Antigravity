@@ -1224,7 +1224,47 @@ def plan_mode(cwd, state):
     return match.group(1).lower() if match else None
 
 
-def register_subagent_role(cwd, conv_id, role, target_task=""):
+def is_qc_report_target(target_path, cwd):
+    """Allow tdq-qc-tester writes ONLY to markdown files strictly inside docs/tdq/qc/."""
+    if not isinstance(target_path, str) or not target_path.strip():
+        return False
+    base = cwd or "."
+    qc_root = os.path.realpath(os.path.join(base, "docs", "tdq", "qc"))
+    abs_target = os.path.realpath(target_path if os.path.isabs(target_path) else os.path.join(base, target_path))
+    try:
+        common = os.path.commonpath([abs_target, qc_root])
+    except ValueError:
+        return False
+    if common != qc_root or abs_target == qc_root:
+        return False
+    return abs_target.lower().endswith(".md")
+
+
+def append_agent_telemetry(cwd, record):
+    """Append one per-role execution telemetry record to docs/tdq/.tdq-agent-telemetry.jsonl."""
+    base = cwd or "."
+    path = os.path.join(base, "docs", "tdq", ".tdq-agent-telemetry.jsonl")
+    row = {
+        "ts": record.get("ts") or tdq_state.now_iso(),
+        "session": str(record.get("session") or ""),
+        "role": str(record.get("role") or "unknown"),
+        "task_id": str(record.get("task_id") or ""),
+        "status": str(record.get("status") or "done"),
+        "model": str(record.get("model") or ""),
+        "effort": str(record.get("effort") or ""),
+        "elapsed_s": record.get("elapsed_s"),
+        "attempt": int(record.get("attempt") or 1),
+        "files_count": int(record.get("files_count") or 0),
+        "first_pass": bool(record.get("first_pass", True)),
+        "outcome": str(record.get("outcome") or record.get("status") or "done"),
+        "handoff_valid": bool(record.get("handoff_valid", False)),
+    }
+    _lock_and_append_jsonl(path, row)
+    tdq_state._info(f"telemetry: role={row['role']} task={row['task_id']} status={row['status']}")
+    return path
+
+
+def register_subagent_role(cwd, conv_id, role, target_task="", model="", effort=""):
     """Persist dispatched subagent role under .tdq-runtime/sessions.json."""
     path = os.path.join(_runtime_dir(cwd), "sessions.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -1238,7 +1278,12 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
                 data = {}
         if not isinstance(data, dict):
             data = {}
-        data[str(conv_id)] = {"role": role, "task": target_task, "at": time.time()}
+        entry = {"role": role, "task": target_task, "at": time.time()}
+        if model:
+            entry["model"] = str(model)
+        if effort:
+            entry["effort"] = str(effort)
+        data[str(conv_id)] = entry
         try:
             with open(path, "w", encoding="utf-8") as fh:
                 json.dump(data, fh, indent=2, ensure_ascii=False)
@@ -1247,7 +1292,7 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
 
 
 def detect_subagent(payload, cwd):
-    """Detect subagent invocation via sessions.json, agent_type, or step-0 transcriptPath."""
+    """Detect subagent invocation via sessions.json, agent_type/agentType, or step-0 transcriptPath."""
     sid = session_id(payload)
     spath = os.path.join(_runtime_dir(cwd), "sessions.json")
     if os.path.isfile(spath):
@@ -1256,11 +1301,19 @@ def detect_subagent(payload, cwd):
                 reg = json.load(fh)
             if isinstance(reg, dict) and sid in reg:
                 rec = reg[sid]
-                return {"is_subagent": True, "role": rec.get("role"), "task": rec.get("task")}
+                return {
+                    "is_subagent": True,
+                    "role": rec.get("role"),
+                    "task": rec.get("task", ""),
+                    "model": rec.get("model", ""),
+                    "effort": rec.get("effort", ""),
+                }
         except (OSError, ValueError):
             pass
-    if isinstance(payload, dict) and payload.get("agent_type"):
-        return {"is_subagent": True, "role": str(payload.get("agent_type")), "task": ""}
+    if isinstance(payload, dict):
+        explicit_role = payload.get("agent_type") or payload.get("agentType")
+        if explicit_role:
+            return {"is_subagent": True, "role": str(explicit_role), "task": ""}
     tpath = (payload or {}).get("transcriptPath") if isinstance(payload, dict) else None
     if isinstance(tpath, str) and os.path.isfile(tpath):
         try:
@@ -1276,6 +1329,8 @@ def detect_subagent(payload, cwd):
                     "tdq-implementer",
                     "tdq-build-resolver",
                     "tdq-refactor-cleaner",
+                    "tdq-explorer",
+                    "tdq-debugger",
                 ):
                     if role_name in txt:
                         register_subagent_role(cwd, sid, role_name)
@@ -1324,12 +1379,48 @@ if __name__ == "__main__":
 
 SUBAGENT_DISPATCH_GATE_PY = r'''#!/usr/bin/env python3
 """PreToolUse gate for invoke_subagent / swarm / define_subagent (AGY 2.0)."""
+import re
 import sys
-from _common import block, is_agy, payload_cwd, read_payload, remind, set_overwrite
+from _common import (
+    _log,
+    block,
+    is_agy,
+    observe,
+    payload_cwd,
+    read_payload,
+    register_subagent_role,
+    remind,
+    set_overwrite,
+)
 from tdq_state import effective_phase, load
 
 
 REQUIRED_IMPL_FIELDS = ("TASK:", "WORKTREE:", "VÙNG FILE:", "TEST:", "TRẢ VỀ:")  # i18n-allow
+_TASK_CODE_RE = re.compile(r"\b(T\d+[A-Za-z]*\.\d+[a-z]?|Q\d+)\b")
+
+
+def _extract_task(text):
+    match = _TASK_CODE_RE.search(text or "")
+    return match.group(1) if match else ""
+
+
+def _record_spawn_metadata(cwd, payload, tinput, prompt, role):
+    """Extract spawn metadata and register role when an explicit child session ID exists."""
+    task = _extract_task(prompt or role)
+    model = str(tinput.get("Model") or tinput.get("model") or "").strip()
+    effort = str(tinput.get("effort") or "").strip()
+    target_sid = str(
+        tinput.get("conversationId")
+        or tinput.get("conversation_id")
+        or tinput.get("agentId")
+        or tinput.get("agent_id")
+        or payload.get("agent_id")
+        or ""
+    ).strip()
+    if role and target_sid:
+        register_subagent_role(cwd, target_sid, role, target_task=task, model=model, effort=effort)
+    observe(cwd, payload, "subagent_dispatch", role=role, task=task, model=model, effort=effort)
+    _log(f"subagent_dispatch: role={role or '-'} task={task or '-'} sid={target_sid or '-'}")
 
 
 def main():
@@ -1343,7 +1434,15 @@ def main():
     phase = effective_phase(state, warn=False)
     mode = state.get("implement_mode") or ""
     prompt = str(tinput.get("Prompt") or tinput.get("prompt") or tinput.get("brief") or "")
-    role = str(tinput.get("Role") or tinput.get("subagent_type") or "")
+    role = str(
+        tinput.get("TypeName")
+        or tinput.get("subagent_type")
+        or tinput.get("name")
+        or tinput.get("Role")
+        or tinput.get("role")
+        or ""
+    ).strip()
+    _record_spawn_metadata(cwd, payload, tinput, prompt, role)
 
     if tname == "swarm" and tinput.get("action") == "add" and phase == "implement" and mode != "subagent":
         block(cwd, payload, "SUBAGENT", [
@@ -1736,7 +1835,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         '    _mutates_src_shell = any(\n'
         '        (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\\s\'\\"=])docs[\\\\/]", part, re.IGNORECASE))\n'
         '        or any(not re.search(r"^(?:\\./)?docs[\\\\/]", t.lstrip("\'\\"").replace("\\\\", "/"), re.IGNORECASE)\n'
-        '               and t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part))\n'
+        '               and t.lower() not in ("/dev/null", "$null", "nul") for t in STDOUT_WRITE.findall(part))\n'
         '        for part in parts)\n'
         '    if is_agy() and state.get("active_request") and _mutates_src_shell:\n'
         '        from tdq_state import cong_dang_cho\n'
@@ -2604,6 +2703,55 @@ def _patch_session_start(hooks_scripts_dir: Path) -> None:
     )
 
 
+def _patch_subagent_stop(hooks_scripts_dir: Path) -> None:
+    """Place utf8_io after __future__ import and propagate child conversationId on PostToolUse."""
+    sub_path = hooks_scripts_dir / "subagent_stop.py"
+    if not sub_path.is_file():
+        return
+    replace_exact(
+        sub_path,
+        "from __future__ import annotations\n",
+        "from __future__ import annotations\n\n"
+        "import os as _tdq_os, sys as _tdq_sys\n"
+        "_tdq_here = _tdq_os.path.dirname(_tdq_os.path.abspath(__file__))\n"
+        "_tdq_scripts = _tdq_os.path.normpath(_tdq_os.path.join(_tdq_here, '..', '..', 'scripts'))\n"
+        "for _p in (_tdq_scripts, _tdq_here):\n"
+        "    if _tdq_os.path.isdir(_p) and _p not in _tdq_sys.path:\n"
+        "        _tdq_sys.path.insert(0, _p)\n"
+        "import utf8_io  # noqa: E402,F401\n",
+        label="subagent_stop_utf8_io",
+        sentinel="import utf8_io",
+    )
+    replace_exact(
+        sub_path,
+        '    if event_name == "PostToolUse" and meta["role"]:\n'
+        '        handle_subagent_stop(\n'
+        '            {\n'
+        '                **payload,\n'
+        '                "agent_type": meta["role"],\n'
+        '                "session_id": meta["conv_id"] or session_id(payload),\n'
+        '            },\n'
+        '            cwd,\n'
+        '            allow_stop_block=False,\n'
+        '        )',
+        '    if event_name == "PostToolUse" and meta["role"]:\n'
+        '        sub_sid = meta["conv_id"] or session_id(payload)\n'
+        '        handle_subagent_stop(\n'
+        '            {\n'
+        '                **payload,\n'
+        '                "agent_type": meta["role"],\n'
+        '                "conversationId": sub_sid,\n'
+        '                "conversation_id": sub_sid,\n'
+        '                "session_id": sub_sid,\n'
+        '            },\n'
+        '            cwd,\n'
+        '            allow_stop_block=False,\n'
+        '        )',
+        label="subagent_stop_child_conversation_id",
+        sentinel='"conversationId": sub_sid',
+    )
+
+
 def apply_all(hooks_scripts_dir: Path) -> None:
     """Write dual-protocol _common.py, new AGY hooks, and upgrade all hook gates."""
     write_utf8(hooks_scripts_dir / "_common.py", COMMON_PY)
@@ -2615,6 +2763,7 @@ def apply_all(hooks_scripts_dir: Path) -> None:
             "_common.py",
             "post_invocation.py",
             "subagent_dispatch_gate.py",
+            "subagent_stop.py",
             "codex_edit_gate.py",
             "dispatch.py",
             "gate_guidance.py",
@@ -2632,3 +2781,4 @@ def apply_all(hooks_scripts_dir: Path) -> None:
     _patch_prompt_context(hooks_scripts_dir)
     _patch_stop_gate(hooks_scripts_dir)
     _patch_session_start(hooks_scripts_dir)
+    _patch_subagent_stop(hooks_scripts_dir)
