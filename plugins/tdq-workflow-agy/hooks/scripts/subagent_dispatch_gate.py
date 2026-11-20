@@ -42,6 +42,7 @@ def main():
         if missing:
             remind(cwd, payload, "SUBAGENT", [
                 f"Implementer assignment missing fields: {', '.join(missing)}. Check team-mode.md.",
+                "Pre-build grounded prompt via: python3 scripts/tdq_team.py packet <task_id>.",
             ])
 
 

@@ -47,9 +47,27 @@ _TASK = re.compile(r"^(\s*)-\s*\[( |~|x|>)\]\s*\*\*([A-Za-z][A-Za-z0-9.]*)\*\*\s
 _PHASE = re.compile(r"^##\s*(P\d+)\b")
 # A path declared in backticks: needs a `/` and an extension — `true` or `T1.1` do not count.
 _PATH = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`")
-# Same task-code rule as `_TASK` above: `T2A.1`, `T2.4b` are both valid declarations
+_SECTION_PATH = re.compile(
+    r"`[^`]*`"
+    r"|(?<![:/@A-Za-z0-9_.\-`])([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)(?![A-Za-z0-9_./\-`])"
+)
+ROOT_FILES = {
+    "CLAUDE.md", "AGENTS.md", "Cargo.toml",
+    "pyproject.toml", "package.json", "pyrightconfig.json",
+}
+_FENCE = re.compile(r"^\s*(```|~~~)")
+_REF_WITH_SYMS = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`\s*\(([^)]+)\)")
+_SWEEP_LABEL = re.compile(
+    r"(?:[\(\[]\s*sweep\s*[\)\]]|(?:loại|type|nhãn|nhan_loai)\s*:\s*[^.\n]*\bsweep\b)"  # i18n-allow
+)
+_IGNORED_PROJ_PREFIXES = (
+    "tiến độ:", "tiến độ inline:", "tiến độ hoàn tất:",  # i18n-allow
+    "progress:", "progress inline:", "status:",
+    "vị trí neo:", "neo & công cụ:", "tham chiếu:", "contract-delta:",  # i18n-allow
+)
+# Same task-code rule as `_TASK` above: `T1`, `T2A.1`, `T2.4b`, `QC1.1` are valid declarations
 # in a `- Cần:` line; missing them makes the dependency graph falsely sparse.  # i18n-allow
-_TASK_REF = re.compile(r"\b(T\d+[A-Za-z]*\.\d+[a-z]?)\b")
+_TASK_REF = re.compile(r"\b(?:T\d+[A-Za-z]*\.\d+[a-z]?|T\d+[A-Za-z]*|QC\d+(?:\.\d+)?)\b")
 # Dependency label in the plan: `- Cần: T1.1, T2.3`.  # i18n-allow
 NHAN_CAN = "Cần:"  # i18n-allow
 # Time-estimate label in the plan: `(n3 e20m)` → 20 minutes.
@@ -127,7 +145,13 @@ class Task:
         self.phase = phase
         self.text = []                    # the task line + its child lines
         self.vung_file = []
+        self.tham_chieu = []
+        self.sinh_ra = []
+        self.nhan_loai = ""
         self.can_mcp = False
+        self._sections = []               # parallel section key for each self.text entry
+        self._has_cham = False
+        self._tham_chieu_syms = {}
 
     @property
     def xong(self):
@@ -138,6 +162,153 @@ class Task:
         return self.trang_thai == ">"
 
 
+def _line_indent(line):
+    prefix = line[:len(line) - len(line.lstrip(" \t"))]
+    return len(prefix.expandtabs(4))
+
+
+def _classify_section(body):
+    low = body.strip().lstrip("*").lower()
+    if low.startswith(("chạm:", "cham:")):  # i18n-allow
+        return "cham"
+    if low.startswith(("tham chiếu:", "tham chieu:")):  # i18n-allow
+        return "tham_chieu"
+    if low.startswith("sinh ra:"):  # i18n-allow
+        return "sinh_ra"
+    if low.startswith(("vị trí neo:", "neo & công cụ:")):  # i18n-allow
+        return "neo"
+    if low.startswith("contract-delta:"):
+        return "contract_delta"
+    if low.startswith(("tiến độ:", "tiến độ inline:", "tiến độ hoàn tất:",  # i18n-allow
+                       "progress:", "progress inline:", "status:")):
+        return "progress"
+    return "other"
+
+
+def _extract_paths(text, allow_bare=False):
+    out = []
+    if allow_bare:
+        candidates = []
+        for match in _SECTION_PATH.finditer(text):
+            tok = match.group(0)
+            if tok.startswith("`"):
+                bt = _PATH.fullmatch(tok)
+                if bt:
+                    candidates.append(bt.group(1))
+            elif match.group(1):
+                candidates.append(match.group(1))
+    else:
+        candidates = _PATH.findall(text)
+    for duong in candidates:
+        if ("/" in duong or duong in ROOT_FILES) and duong not in out:
+            out.append(duong)
+    return out
+
+
+def _record_tham_chieu_syms(task, line_text):
+    for duong, raw_syms in _REF_WITH_SYMS.findall(line_text):
+        if "/" not in duong and duong not in ROOT_FILES:
+            continue
+        bucket = task._tham_chieu_syms.setdefault(duong, [])
+        for raw in raw_syms.split(","):
+            sym = raw.strip().strip("`").rstrip("()")
+            if sym and sym not in bucket:
+                bucket.append(sym)
+
+
+def _record_section_items(task, section, line_text):
+    if section == "cham":
+        for duong in _extract_paths(line_text, allow_bare=True):
+            if duong not in task.vung_file:
+                task.vung_file.append(duong)
+        return
+    if section == "tham_chieu":
+        for duong in _extract_paths(line_text, allow_bare=True):
+            if duong not in task.tham_chieu:
+                task.tham_chieu.append(duong)
+        _record_tham_chieu_syms(task, line_text)
+        return
+    if section == "sinh_ra":
+        for duong in _extract_paths(line_text, allow_bare=True):
+            if duong not in task.sinh_ra:
+                task.sinh_ra.append(duong)
+
+
+def _detect_nhan_loai(task):
+    sources = []
+    if task.text:
+        sources.append(task.text[0].lower())
+    for dong in task.text[1:]:
+        low = dong.strip().lower()
+        if low.startswith(("loại:", "nhãn:", "nhan:", "nhan_loai:", "type:", "label:")):  # i18n-allow
+            sources.append(low)
+    joined = " ".join(sources)
+    if "dong-bo-chu-ky" in joined:
+        return "dong-bo-chu-ky"
+    if "uniform mechanical sweep" in joined or _SWEEP_LABEL.search(joined):
+        return "sweep"
+    return ""
+
+
+def _update_fence(fence_marker, line):
+    m_fence = _FENCE.match(line)
+    if not m_fence:
+        return fence_marker, False
+    marker = m_fence.group(1)
+    if fence_marker is None:
+        return marker, True
+    if marker == fence_marker:
+        return None, True
+    return fence_marker, True
+
+
+def _feed_bullet_line(hien_tai, body, indent, sec_state):
+    if sec_state["indent"] is None or indent <= sec_state["indent"]:
+        sec_state["indent"] = indent
+        sec_state["sec"] = _classify_section(body)
+        if sec_state["sec"] == "cham":
+            hien_tai._has_cham = True
+    sec = sec_state["sec"] or "other"
+    hien_tai.text.append(body)
+    hien_tai._sections.append(sec)
+    _record_section_items(hien_tai, sec, body)
+
+
+def _feed_continuation_line(hien_tai, stripped, indent, sec_state):
+    has_sub = sec_state["indent"] is not None and indent >= sec_state["indent"]
+    sec = sec_state["sec"] if has_sub else "header"
+    truoc = hien_tai.text[-1].rstrip()
+    hien_tai.text[-1] = (truoc + " " + stripped) if truoc else stripped
+    if sec in ("cham", "tham_chieu", "sinh_ra"):
+        _record_section_items(hien_tai, sec, stripped)
+
+
+def _feed_task_line(hien_tai, line, sec_state, task_indent):
+    stripped = line.strip()
+    if not stripped:
+        return True
+    indent = _line_indent(line)
+    if indent <= task_indent:
+        return False
+    if stripped.startswith("- "):
+        _feed_bullet_line(hien_tai, stripped[2:], indent, sec_state)
+    else:
+        _feed_continuation_line(hien_tai, stripped, indent, sec_state)
+    return True
+
+
+def _finalize_tasks(tasks):
+    for t in tasks:
+        if not t._has_cham and t.text:
+            for duong in _extract_paths(t.text[0]):
+                if duong not in t.vung_file:
+                    t.vung_file.append(duong)
+        for dong in t.text:
+            if dong.startswith("Dùng:") and dong.rstrip().endswith("(mcp)"):  # i18n-allow
+                t.can_mcp = True
+        t.nhan_loai = _detect_nhan_loai(t)
+
+
 def doc_plan(duong_dan):
     """Return the list of Tasks in the exact order they appear in the plan."""
     with open(duong_dan, encoding="utf-8") as f:
@@ -145,7 +316,13 @@ def doc_plan(duong_dan):
     tasks = []
     phase = "P0"
     hien_tai = None
+    sec_state = {"sec": None, "indent": None}
+    task_indent = 0
+    fence_marker = None
     for line in lines:
+        fence_marker, toggled = _update_fence(fence_marker, line)
+        if toggled or fence_marker is not None:
+            continue
         m_phase = _PHASE.match(line)
         if m_phase:
             phase = m_phase.group(1)
@@ -153,32 +330,16 @@ def doc_plan(duong_dan):
             continue
         m_task = _TASK.match(line)
         if m_task:
+            task_indent = _line_indent(line)
             hien_tai = Task(m_task.group(3), m_task.group(2), phase)
             hien_tai.text.append(m_task.group(4))
+            hien_tai._sections.append("header")
+            sec_state = {"sec": None, "indent": None}
             tasks.append(hien_tai)
             continue
-        if hien_tai is None:
-            continue
-        if line.strip().startswith("- ") and line.startswith((" ", "\t")):
-            hien_tai.text.append(line.strip()[2:])
-        elif not line.strip():
-            continue
-        elif line.startswith((" ", "\t")):
-            # A continuation line of the description: indented but opening no new bullet. Append
-            # it to the last element instead of making its own — that keeps the prefix visible
-            # on a declaration line that got wrapped (`- Chạm: …` broken across lines).  # i18n-allow
-            duoi = line.strip()
-            truoc = hien_tai.text[-1].rstrip()
-            hien_tai.text[-1] = (truoc + " " + duoi) if truoc else duoi
-        else:
+        if hien_tai is not None and not _feed_task_line(hien_tai, line, sec_state, task_indent):
             hien_tai = None
-    for t in tasks:
-        for dong in t.text:
-            for duong in _PATH.findall(dong):
-                if "/" in duong and duong not in t.vung_file:
-                    t.vung_file.append(duong)
-            if dong.startswith("Dùng:") and dong.rstrip().endswith("(mcp)"):  # i18n-allow
-                t.can_mcp = True
+    _finalize_tasks(tasks)
     return tasks
 
 
@@ -252,13 +413,13 @@ def chieu_phan_cong(tasks):
     chieu = []
     for t in tasks:
         cac_dong = []
-        for dong in t.text[1:]:
+        sections = getattr(t, "_sections", [])
+        for idx, dong in enumerate(t.text[1:], start=1):
             d_strip = dong.strip()
-            # Ignore progress-only lines in projection
-            if d_strip.lower().startswith((
-                "tiến độ:", "tiến độ inline:", "tiến độ hoàn tất:", "progress:",
-                "progress inline:", "status:"
-            )):
+            sec = sections[idx] if idx < len(sections) else ""
+            if sec in ("progress", "neo", "tham_chieu", "contract_delta"):
+                continue
+            if d_strip.lower().startswith(_IGNORED_PROJ_PREFIXES):
                 continue
             cac_dong.append(d_strip)
 
@@ -1614,7 +1775,8 @@ def canh_bao_lach_luat(cwd, rel_target):
             return {"kieu": "ban-do-hong", "ma": None, "nhanh": None}
         if not isinstance(ban_do, dict) or not isinstance(ban_do.get("tasks"), dict):
             return {"kieu": "ban-do-hong", "ma": None, "nhanh": None}
-        if ban_do.get("plan_sha") != sha_file(plan):
+        stale, _ly_do = kiem_tra_stale(plan, ban_do)
+        if stale:
             return {"kieu": "chua-phan-cong", "ma": None, "nhanh": None}
         muc_tieu = rel_target.replace(os.sep, "/")
         tasks = {t.ma: t for t in doc_plan(plan)}
@@ -1717,6 +1879,410 @@ def lenh_go(project, args):
     return 1
 
 
+# ------------------------------------------------------------------ packet
+MAX_PACKET_INLINE_FILES = 2
+MAX_PACKET_SPAN_LINES = 120
+PACKET_BOUNDARY_LINES = 3
+_LINE_HINT_RE = re.compile(r"(?:\bL|:)(\d+)(?:-L?(\d+))?\b")
+_BACKTICK_IDENT = re.compile(r"`([A-Za-z_][A-Za-z0-9_.]*(?:\(\))?)`")
+_NON_PY_DECL = re.compile(
+    r"^\s*(?:pub\s+)?(?:async\s+)?(?:fn|function|class|struct|enum|trait|interface|type|"
+    r"export\s+(?:async\s+)?(?:function|class|const))\s+([A-Za-z_][A-Za-z0-9_]*)"
+)
+
+
+def _slug_from_plan(project, plan, state):
+    plan_slug = os.path.splitext(os.path.basename(plan))[0]
+    rel_state = state.get("plan_file") or ""
+    if not rel_state or not state.get("active_request"):
+        return plan_slug
+    abs_state = rel_state if os.path.isabs(rel_state) else os.path.join(project, rel_state)
+    if os.path.realpath(abs_state) == os.path.realpath(plan):
+        return state["active_request"]
+    return plan_slug
+
+
+def _load_ban_do_optional(project, slug):
+    duong_map = duong_ban_do(project, slug)
+    if not os.path.isfile(duong_map):
+        return None
+    try:
+        with open(duong_map, encoding="utf-8") as fh:
+            loaded = json.load(fh)
+        if isinstance(loaded, dict) and isinstance(loaded.get("tasks"), dict):
+            return loaded
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
+    return None
+
+
+def _resolve_packet_plan(project, args):
+    plan_arg = getattr(args, "plan", None)
+    state = tdq_state.load(project, heal=False) or {}
+    if plan_arg:
+        plan = plan_arg if os.path.isabs(plan_arg) else os.path.join(project, plan_arg)
+        if not os.path.isfile(plan):
+            raise LoiLuat(f"Plan not found: {plan}")
+        slug = _slug_from_plan(project, plan, state)
+    else:
+        slug, plan, _ = _boi_canh(project, can_ban_do=False)
+    return slug, plan, _load_ban_do_optional(project, slug)
+
+
+def _find_packet_task(tasks, task_id, plan_path):
+    target = str(task_id)
+    for t in tasks:
+        if t.ma == target:
+            return t
+    for t in tasks:
+        if t.ma.lower() == target.lower():
+            return t
+    raise LoiLuat(f"Task {task_id} not found in plan: {plan_path}")
+
+
+def _wave_from_map(task, tasks_map):
+    my_dot = tasks_map[task.ma].get("dot", 1)
+    max_dot = max((r.get("dot", 1) for r in tasks_map.values()), default=1)
+    peers = []
+    for ma, rec in tasks_map.items():
+        if rec.get("dot") == my_dot and ma != task.ma and rec.get("quyet_dinh") == "giao":
+            peers.append(ma)
+    return my_dot, max_dot, peers
+
+
+def _wave_from_plan(task, tasks):
+    quyet = {t.ma: ("giao", "") for t in tasks}
+    dots = chia_dot(tasks, quyet)
+    my_dot = dots.get(task.ma, 1)
+    max_dot = max(dots.values(), default=1)
+    peers = [t.ma for t in tasks if dots.get(t.ma) == my_dot and t.ma != task.ma]
+    return my_dot, max_dot, peers
+
+
+def _packet_wave_info(task, tasks, ban_do):
+    tasks_map = ban_do.get("tasks", {}) if ban_do else {}
+    if task.ma in tasks_map:
+        my_dot, max_dot, peers = _wave_from_map(task, tasks_map)
+    else:
+        my_dot, max_dot, peers = _wave_from_plan(task, tasks)
+    peer_text = f"parallel with {', '.join(peers[:4])}" if peers else "sequential"
+    return f"wave {my_dot}/{max_dot} · {peer_text}"
+
+
+def _add_ident_candidates(line, candidates):
+    for ident in _BACKTICK_IDENT.findall(line):
+        clean = ident[:-2] if ident.endswith("()") else ident
+        if clean and clean not in candidates:
+            candidates.append(clean)
+        if "." in clean:
+            tail = clean.split(".")[-1]
+            if tail and tail not in candidates:
+                candidates.append(tail)
+
+
+def _extract_symbol_candidates(task):
+    candidates = []
+    line_hints = []
+    for line in task.text:
+        _add_ident_candidates(line, candidates)
+        for m in _LINE_HINT_RE.finditer(line):
+            start = int(m.group(1))
+            end = int(m.group(2)) if m.group(2) else start
+            line_hints.append((start, end))
+    return candidates, line_hints
+
+
+def _extract_py_signature(lines, node):
+    start = node.lineno
+    body = getattr(node, "body", None) or []
+    body_first = body[0].lineno if body else start + 1
+    if body_first <= start:
+        raw = lines[start - 1].split(":", 1)[0].strip() + ":"
+        return " ".join(raw.split())
+    header = " ".join(lines[idx].strip() for idx in range(start - 1, min(body_first - 1, len(lines))))
+    header = " ".join(header.split()).replace("( ", "(").replace(" )", ")")
+    return header
+
+
+def _walk_ast_scope(stmts, prefix, lines, out):
+    for node in stmts:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        qual = f"{prefix}.{node.name}" if prefix else node.name
+        decs = getattr(node, "decorator_list", ())
+        start = min([node.lineno] + [d.lineno for d in decs])
+        end = getattr(node, "end_lineno", node.lineno) or node.lineno
+        is_cls = isinstance(node, ast.ClassDef)
+        out.append({
+            "name": node.name,
+            "qual": qual,
+            "start": start,
+            "end": end,
+            "sig": _extract_py_signature(lines, node),
+            "top": not prefix,
+            "is_cls": is_cls,
+        })
+        if is_cls:
+            _walk_ast_scope(node.body, qual, lines, out)
+
+
+def _parse_py_nodes(file_path, lines):
+    try:
+        tree = ast.parse("\n".join(lines), filename=file_path)
+    except SyntaxError:
+        return []
+    nodes = []
+    _walk_ast_scope(tree.body, "", lines, nodes)
+    return nodes
+
+
+def _match_py_by_hints(nodes, line_hints):
+    hits = []
+    for n in nodes:
+        if any(not (n["end"] < hs or n["start"] > he) for hs, he in line_hints):
+            hits.append(n)
+    non_cls = [n for n in hits if not n["is_cls"]]
+    return non_cls or hits
+
+
+def _dedup_spans(matched):
+    spans, seen = [], set()
+    for n in matched:
+        key = (n["start"], n["end"])
+        if key not in seen:
+            seen.add(key)
+            spans.append((n["qual"], n["start"], n["end"]))
+    return spans
+
+
+def _select_spans_for_py(nodes, total_lines, candidates, line_hints):
+    matched = [n for n in nodes if n["name"] in candidates or n["qual"] in candidates]
+    if not matched and line_hints:
+        matched = _match_py_by_hints(nodes, line_hints)
+    if not matched:
+        matched = [n for n in nodes if n["top"]][:3]
+    return _dedup_spans(matched) or [(None, 1, max(1, total_lines))]
+
+
+def _build_span_entry(rel_norm, lines, total, sym_name, start, end, force_read_exact):
+    span_len = end - start + 1
+    if force_read_exact or span_len > MAX_PACKET_SPAN_LINES:
+        return {
+            "path": rel_norm,
+            "symbol": sym_name,
+            "start_line": start,
+            "end_line": end,
+            "mode": "read-exact",
+            "directive": f"READ-EXACT: {rel_norm}:{start}-{end}",
+        }
+    ctx_start = max(1, start - PACKET_BOUNDARY_LINES)
+    ctx_end = min(total, end + PACKET_BOUNDARY_LINES)
+    snippet = "\n".join(f"{ln:4d}: {lines[ln - 1]}" for ln in range(ctx_start, ctx_end + 1))
+    return {
+        "path": rel_norm,
+        "symbol": sym_name,
+        "start_line": start,
+        "end_line": end,
+        "ctx_start": ctx_start,
+        "ctx_end": ctx_end,
+        "mode": "inline",
+        "content": snippet,
+    }
+
+
+def _render_target_spans(project, task):
+    candidates, line_hints = _extract_symbol_candidates(task)
+    entries = []
+    for idx, rel_path in enumerate(task.vung_file):
+        rel_norm = rel_path.replace("\\", "/")
+        abs_path = rel_path if os.path.isabs(rel_path) else os.path.join(project, rel_path)
+        if not os.path.isfile(abs_path):
+            entries.append({"path": rel_norm, "symbol": None, "start_line": 0,
+                            "end_line": 0, "mode": "new-file", "content": ""})
+            continue
+        with open(abs_path, encoding="utf-8", errors="replace") as fh:
+            lines = fh.read().splitlines()
+        total = max(1, len(lines))
+        if abs_path.endswith(".py"):
+            spans = _select_spans_for_py(_parse_py_nodes(abs_path, lines), total, candidates, line_hints)
+        else:
+            spans = [(None, 1, total)]
+        force_rx = idx >= MAX_PACKET_INLINE_FILES
+        for sym_name, start, end in spans:
+            entries.append(_build_span_entry(rel_norm, lines, total, sym_name, start, end, force_rx))
+    return entries
+
+
+def _match_ref_signatures(nodes, wanted):
+    if wanted:
+        sigs = [n["sig"] for n in nodes
+                if n["name"] in wanted or n["qual"] in wanted
+                or any(n["qual"].endswith("." + w) for w in wanted)]
+        if sigs:
+            return sigs
+    return [n["sig"] for n in nodes if n["top"]][:5]
+
+
+def _non_py_signatures(lines, wanted):
+    sigs = []
+    for raw in lines:
+        m = _NON_PY_DECL.match(raw)
+        if m and (not wanted or m.group(1) in wanted):
+            sigs.append(" ".join(raw.strip().split()))
+        if len(sigs) >= 5:
+            break
+    return sigs
+
+
+def _extract_ref_signatures(project, task):
+    results = []
+    for rel_path in task.tham_chieu:
+        rel_norm = rel_path.replace("\\", "/")
+        abs_path = rel_path if os.path.isabs(rel_path) else os.path.join(project, rel_path)
+        wanted = set(task._tham_chieu_syms.get(rel_path, []))
+        if not os.path.isfile(abs_path):
+            results.append({"path": rel_norm, "signatures": ["(file not found)"]})
+            continue
+        with open(abs_path, encoding="utf-8", errors="replace") as fh:
+            lines = fh.read().splitlines()
+        if abs_path.endswith(".py"):
+            sigs = _match_ref_signatures(_parse_py_nodes(abs_path, lines), wanted)
+        else:
+            sigs = _non_py_signatures(lines, wanted)
+        results.append({"path": rel_norm, "signatures": sigs or ["(no signature found)"]})
+    return results
+
+
+def _merge_bullet_cont(all_bullets, section_bullets, in_section, current, stripped):
+    merged = current + " " + stripped
+    all_bullets[-1] = merged
+    if in_section and section_bullets:
+        section_bullets[-1] = merged
+    return merged
+
+
+def _parse_kien_truc_bullets(lines):
+    in_section = False
+    section_bullets, all_bullets = [], []
+    current = None
+    for raw in lines:
+        stripped = raw.strip()
+        if stripped.startswith("## "):
+            in_section = stripped.lower().startswith(("## luật gọi", "## invariants"))  # i18n-allow
+            current = None
+        elif stripped.startswith("- "):
+            current = stripped[2:].strip()
+            all_bullets.append(current)
+            if in_section:
+                section_bullets.append(current)
+        elif current is not None and stripped and raw.startswith((" ", "\t")):
+            current = _merge_bullet_cont(all_bullets, section_bullets, in_section, current, stripped)
+        else:
+            current = None
+    return section_bullets or all_bullets
+
+
+def _read_kien_truc_invariants(project, task, limit=3):
+    path = os.path.join(project, "docs", "kien-truc.md")
+    if not os.path.isfile(path):
+        return []
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        bullets = _parse_kien_truc_bullets(fh.read().splitlines())
+    tokens = set()
+    for rel in task.vung_file + task.sinh_ra + task.tham_chieu:
+        norm = rel.replace("\\", "/")
+        parts = norm.split("/")
+        if len(parts) > 1:
+            tokens.add(parts[0] + "/")
+        tokens.add(parts[-1])
+    scored = []
+    for idx, text in enumerate(bullets):
+        score = sum(1 for tok in tokens if tok and tok in text)
+        scored.append((-score, idx, text))
+    scored.sort()
+    return [item[2] for item in scored[:limit]]
+
+
+def _build_packet_payload(project, slug, task, tasks, ban_do):
+    goc = os.environ.get("TDQ_WORKTREE_DIR") or os.path.join(project, ".tdq-worktrees")
+    wt_dir = os.path.join(goc, slug, task.ma.lower())
+    base_branch = _nhanh_tich_hop(project, slug)
+    files_str = ", ".join(task.vung_file) if task.vung_file else "(none declared)"
+    task_head = task.text[0] if task.text else ""
+    prompt_fields = {
+        "TASK": f"{task.ma} — {task_head}",
+        "CỤM": _packet_wave_info(task, tasks, ban_do),  # i18n-allow
+        "BASE": base_branch,
+        "WORKTREE": wt_dir,
+        "VÙNG FILE": f"{files_str} — DO NOT edit files outside this list",  # i18n-allow
+        "TEST": lay_lenh_test(task) or "(none declared)",
+        "TRẢ VỀ": "exact 7-line format (TASK/STATUS/FILES/TEST/BRANCH/TICK-READY/NOTES, <= 1,500 chars)",  # i18n-allow
+    }
+    return {
+        "task_id": task.ma,
+        "prompt_fields": prompt_fields,
+        "vung_file": list(task.vung_file),
+        "tham_chieu": list(task.tham_chieu),
+        "sinh_ra": list(task.sinh_ra),
+        "symbol_spans": _render_target_spans(project, task),
+        "reference_signatures": _extract_ref_signatures(project, task),
+        "invariants": _read_kien_truc_invariants(project, task, limit=3),
+    }
+
+
+def _format_packet_md(payload):
+    pf = payload["prompt_fields"]
+    lines = [
+        f"TASK: {pf['TASK']}",
+        f"CỤM: {pf['CỤM']}",  # i18n-allow
+        f"BASE: {pf['BASE']}",
+        f"WORKTREE: {pf['WORKTREE']}",
+        f"VÙNG FILE: {pf['VÙNG FILE']}",  # i18n-allow
+        f"TEST: {pf['TEST']}",
+        f"TRẢ VỀ: {pf['TRẢ VỀ']}",  # i18n-allow
+        "",
+        "## Symbol-Spans",
+    ]
+    for sp in payload["symbol_spans"]:
+        if sp["mode"] == "read-exact":
+            lines.append(f"- {sp['directive']}")
+        elif sp["mode"] == "new-file":
+            lines.append(f"- [NEW FILE] `{sp['path']}`")
+        else:
+            label = f"`{sp['path']}` :: `{sp['symbol']}`" if sp["symbol"] else f"`{sp['path']}`"
+            lines.append(f"### {label} (L{sp['start_line']}-L{sp['end_line']}, ctx L{sp['ctx_start']}-L{sp['ctx_end']})")
+            lines.append("```")
+            lines.append(sp["content"])
+            lines.append("```")
+    if payload["reference_signatures"]:
+        lines.extend(["", "## Reference Signatures"])
+        for ref in payload["reference_signatures"]:
+            for sig in ref["signatures"]:
+                lines.append(f"- `{ref['path']}`: `{sig}`")
+    if payload["invariants"]:
+        lines.extend(["", "## Architecture Invariants (docs/kien-truc.md)"])
+        for inv in payload["invariants"]:
+            lines.append(f"- {inv}")
+    return "\n".join(lines)
+
+
+def lenh_packet(project, args):
+    """Build and print a self-contained task dispatch packet (`md` or `json`)."""
+    slug, plan_path, ban_do = _resolve_packet_plan(project, args)
+    tasks = doc_plan(plan_path)
+    if not tasks:
+        raise LoiLuat(f"The plan holds no readable task: {plan_path}")
+    task = _find_packet_task(tasks, args.task, plan_path)
+    payload = _build_packet_payload(project, slug, task, tasks, ban_do)
+    fmt = getattr(args, "format", "md") or "md"
+    _log(f"packet {task.ma} → files={len(task.vung_file)} refs={len(task.tham_chieu)} format={fmt}")
+    if fmt == "json":
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(_format_packet_md(payload))
+    return 0
+
+
 # ------------------------------------------------------------------ CLI
 LENH = {
     "assign": (lenh_phan_cong, "read the whole plan, write the assignment map"),
@@ -1728,6 +2294,7 @@ LENH = {
     "sweep": (lenh_soat, "sweep every worktree of every request: age, size, clean, merged"),
     "clean": (lenh_don, "remove the request's worktrees and prune"),
     "resolve": (lenh_go, "show every stuck file with both sides, changing nothing"),
+    "packet": (lenh_packet, "build a self-contained task dispatch packet"),
 }
 BANG_TEN = tdq_ten_lenh.BANG_DOI_TEN["tdq_team.py"]
 
@@ -1741,6 +2308,11 @@ def build_parser():
         con = sub.add_parser(ten, help=mo_ta)
         if ten in ("open", "check", "merge", "resolve"):
             con.add_argument("task", help="task code (T1.1) or the full branch name")
+        if ten == "packet":
+            con.add_argument("task", help="task code (T1.1)")
+            con.add_argument("--plan", default=None, help="path to the plan markdown file")
+            con.add_argument("--format", choices=("md", "json"), default="md",
+                             help="output format (md or json)")
         if ten == "clean":
             con.add_argument("task", nargs="?", default=None,
                              help="optional task code (T1.1) or branch name to clean")

@@ -146,7 +146,7 @@ Include spec and plan paths in prompt body. Subagent cannot read this conversati
 3. Merging: RIGHT: check clean -> merge -> tick [x] right away · WRONG: merge straight through with no check.
 4. Shared contracts: RIGHT: finish constant first, then dispatch · WRONG: dispatch in parallel before contract is merged.
 
-Full cases & model tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
+Full cases, `tdq_team.py packet` (Symbol-Span + `CONTRACT-DELTA:`), & tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
 
 ## Explicit Anti-Patterns
 

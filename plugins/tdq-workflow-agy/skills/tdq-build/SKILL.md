@@ -6,7 +6,7 @@ description: Run an approved TDQ plan end to end in one turn, QC it against the 
 # TDQ Build — Implement → QC → Report
 <!-- muc-luc-dong:
   Hard rules (all three phases)=15-73 · Part A — Implement (phase `implement`)=74-141 ·
-  Part B — QC (phase `qc`)=142-158 · Part C — Report (phase `report`)=159
+  Part B — QC (phase `qc`)=142-159 · Part C — Report (phase `report`)=160
 -->
 
 Load [tdq-conventions](../tdq-conventions/SKILL.md). Requires `plan_approved = true`.
@@ -148,6 +148,7 @@ needs the user's yes, never your own call.
 
 The three execution steps — from counting DoD items to the fix loop on a FAIL — live in
 [references/qc.md](references/qc.md) under `## The three execution steps` — read THAT section
+and [references/qc-vong-fix.md](references/qc-vong-fix.md) when `QC FAIL` triggers `QCn.x` repairs.
 before running the first item, through the line index at the top of the file; working from memory
 is banned. The same file also carries the qc file template and the 3-fix-round cap, each its own
 section in that index, so nothing here needs the whole file in context at once.

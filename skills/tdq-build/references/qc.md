@@ -185,11 +185,8 @@ approve or reject it, which happens in the report.
 
 ## When it FAILs
 
-1. Add fix tasks to the **approved plan**, under `## QC vòng N — fix`: <!-- i18n-allow: canonical section name of the plan -->
-   `- [ ] **QCn.1** <the work> — Test: <check>`. No user re-approval needed.
-2. Work them under the implement rules: red → green, tick `[x]` immediately.
-3. Rerun the failed item, plus any item the fix could have broken, plus `tdq_test.py vung-cham`.
-   Do not rerun unrelated items. After the LAST round only: `tdq_test.py tron-bo` once.
+Add `R15-Compact` `- [ ] **QCn.1**` tasks under `## QC vòng N — fix` per [qc-vong-fix.md](qc-vong-fix.md), fix red → green, re-run failed items + `tdq_test.py vung-cham` (`tron-bo` after last round): <!-- i18n-allow -->
+
 4. Repeat until every item PASSes. **Cap of 3 rounds** — over the cap, STOP and tell the user.
 
 Never ask mid-run. A spec threshold the fix cannot reach → `lech add`, mark the item "PASS (lệch, chờ duyệt)", and the report asks the user.

@@ -32,6 +32,7 @@ PHASE1_RUNTIME_MODULES = {
 APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
     "rtk_integration", "tdq_mcp_shrink", "tdq_ccr", "caveman_config",
+    "tdq_plan_scaffold",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -39,6 +40,10 @@ APPROVED_RELEASE_DOCS = {
     "skills/tdq-conventions/references/ultracode.md",
     # Approved 2026-11-17-0325-tich-hop-rtk-antigravity collapsed PreToolUse gate.
     "hooks/scripts/command_gate.py",
+    # Approved 2026-11-20-0015-trien-khai-plan-v2-planner-spec Plan V2+ tier-1 references.
+    "skills/tdq-plan/references/planner-rules.md",
+    "skills/tdq-plan/references/plan-examples.md",
+    "skills/tdq-build/references/qc-vong-fix.md",
 }
 
 

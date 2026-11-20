@@ -14,6 +14,7 @@ Review for:
 3. **Testability** — every plan task must carry its own test/validate; DoD must be runnable, not vague. Logging-service and unit-test requirements must be present.
 4. **Over-engineering** — anything not needed for the stated scope; suggest cuts.
 5. **Ordering** — dependency order of tasks; red→green MVP path exists.
+6. **Contract & Per-Task Spec Parity** — 1-to-1 parity between `spec §3c` and plan contracts (`Consumes`/`Produces`, `Ownership Map`), complete per-task `Req:`/`Ngoài phạm vi:`/`Tiêu chí chấp nhận (EARS)` fields, and clean `tdq_plan_scaffold.py --verify-plan` output. <!-- i18n-allow -->
 
 ## Adversarial Skeptic Doctrine & Fail-Closed Gate
 
@@ -28,7 +29,7 @@ Do NOT edit any file. Return a numbered findings list, most severe first: each i
 Return format — copy this shape exactly:
 
 ```
-1. [<gaps|contradictions|testability|over-engineering|ordering>] <file>:<line>
+1. [<gaps|contradictions|testability|over-engineering|ordering|contract-parity>] <file>:<line>
    Problem: <1 line>
    Fix: <1 line, concrete, applicable right away>
 

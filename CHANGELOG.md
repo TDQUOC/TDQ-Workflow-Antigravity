@@ -2,6 +2,15 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.102.0 — 2026-11-20
+
+Nâng cấp trọn vẹn kiến trúc lập kế hoạch Plan V2+ với Per-Task Mini-Spec, công cụ scaffold/verify 2 lượt và gói ngữ cảnh subagent (`2026-11-20-0015-trien-khai-plan-v2-planner-spec`). Báo cáo: `docs/tdq/reports/2026-11-20-0015-trien-khai-plan-v2-planner-spec.md`.
+
+- **Scaffold & Kiểm chéo 2 lượt (`scripts/tdq_plan_scaffold.py`)**: Công cụ thuần stdlib (`TDQ_LOG` mặc định) trích symbol bằng Python AST, fallback Regex và mục §3c spec (`--files`/`--refs`/`--from-spec`). Hỗ trợ sinh khung thẻ Mini-Spec (`--emit-cards`), kiểm symbol thật + `assert` (`--verify-plan`) và chữ ký `CONTRACT-DELTA` (`--check-wave`).
+- **Cô lập Chạm/Tham chiếu & Packet (`scripts/tdq_team.py`, `scripts/tdq_ten_lenh.py`)**: Tách rạch ròi `Chạm:`/`Tham chiếu:`/`Sinh ra:` (hỗ trợ cả bare path lẫn backtick, bỏ qua code fence) và giữ ổn định `plan_assignment_sha`. Bổ sung `tdq_team.py packet` (7 trường, `Symbol-Span`, tối đa 3 bất biến).
+- **Cổng R15 V2+ & Luật Planner (`scripts/doc_lint.py`, `scripts/tdq_state.py`, `scripts/tdq_eval.py`, `skills/tdq-plan/**`)**: Áp `R15-Full`/`R15-Compact`, `Ownership Map`, chặn placeholder cấm & `ANTI-2` từ `R15_MOC = "2026-11-20"`. Tách `planner-rules.md` & `plan-examples.md` (`1.281` tok), nén `tdq-plan/SKILL.md` (`120` dòng) & `agents/tdq-implementer.md` (`31` dòng), thêm `agents/tdq-reviewer.md`.
+- **Kiểm chứng toàn repo & AGY (`tools/patches/agy_hooks.py`, `plugins/tdq-workflow-agy/`)**: Đồng bộ `plugins/tdq-workflow-agy/` (`kept=180 dropped=6757`, `agy plugin validate --strict` 0 findings). Trọn bộ `tdq_test.py tron-bo` PASS `4.525` cases (`35` skipped, `0` failed, `bo_sot=0`) và `67/67` unit+E2E mới PASS.
+
 ## 0.101.0 — 2026-11-19
 
 Đóng gói standalone native Rust binary (`tdq-dispatch`) thay thế tầng dispatch Python cho hook Antigravity, tăng tốc 9.6x và đóng gói sẵn binary 3 nền tảng (`2026-11-19-0046-dong-rust-binary-hook`). Báo cáo: `docs/tdq/reports/2026-11-19-0046-dong-rust-binary-hook.md`.

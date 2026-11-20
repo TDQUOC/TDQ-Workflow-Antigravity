@@ -1,0 +1,109 @@
+{
+  "slug": "2026-11-20-0015-trien-khai-plan-v2-planner-spec",
+  "plan_file": "docs\\tdq\\plan\\2026-11-20-0015-trien-khai-plan-v2-planner-spec.md",
+  "plan_sha": "0a5a8657ccdfe5e2659daf2c154531b65032234d015652fc17d924913c39b5f0",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "581f3d2e02634cec532ad2317ccfc9240955c9daa5878ba451f83b8f26d1eaef",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_team.py",
+        "scripts/tdq_ten_lenh.py",
+        "tests/test_team_packet_v2.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_plan_scaffold.py",
+        "tests/test_plan_scaffold.py"
+      ],
+      "dot": 2
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/doc_lint.py",
+        "tests/test_plan_v2_linter.py"
+      ],
+      "dot": 2
+    },
+    "T1.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py",
+        "scripts/tdq_eval.py",
+        "tests/test_state_plan_v2_gate.py"
+      ],
+      "dot": 3
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-plan/SKILL.md",
+        "skills/tdq-plan/references/plan-template.md",
+        "skills/tdq-plan/references/plan-template-huong-dan.md",
+        "skills/tdq-plan/references/planner-rules.md",
+        "skills/tdq-plan/references/plan-examples.md"
+      ],
+      "dot": 3
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-spec/references/spec-template-huong-dan.md",
+        "skills/tdq-intake/references/quick-lane-mini.md",
+        "skills/tdq-build/SKILL.md",
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/references/qc-vong-fix.md",
+        "skills/tdq-build/references/team-mode.md",
+        "skills/tdq-build/references/team-mode-tra-cuu.md"
+      ],
+      "dot": 3
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "agents/tdq-implementer.md",
+        "agents/tdq-reviewer.md"
+      ],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_hooks.py",
+        "docs/tdq/token-budget.json",
+        "tests/test_build_portable.py"
+      ],
+      "dot": 4
+    },
+    "T3.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_plan_v2_e2e.py"
+      ],
+      "dot": 5
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_plan_v2_e2e.py"
+      ],
+      "dot": 6
+    }
+  }
+}

@@ -194,7 +194,7 @@ TEN_GHI_FILE = {
 
 TEN_DOC_FILE = {"Read", "read_file", "open_document"}
 
-RE_TICK = re.compile(r"\[([ ~x])\]\s*\*\*(T[\d.]+)\*\*")
+RE_TICK = re.compile(r"\[([ ~x>])\]\s*\*\*((?:T\d+(?:\.\d+[a-z]?)?|QC\d+(?:\.\d+)?))\*\*")
 RE_TEST = re.compile(r"\bpytest\b|\bunittest\b")
 # `pytest --version` asks for a version, it is not a test run.
 RE_KHONG_CHAY = re.compile(r"--version|--help|\s-V\b|--collect-only")

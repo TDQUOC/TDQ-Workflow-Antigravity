@@ -1,11 +1,12 @@
 # The plan shape
 <!-- muc-luc-dong:
-  The minute estimate `(eNm)`=111
+  The minute estimate `(eNm)`=114
 -->
 
 Copy the whole block into `docs/tdq/plan/<slug>.md` and fill it in. File em:
-[plan-template-co-che.md](plan-template-co-che.md) (cơ chế ba mục có điều kiện) và
-[plan-template-huong-dan.md](plan-template-huong-dan.md) (`eNm`, `Mode thực thi`, tự soát).
+Read [planner-rules.md](planner-rules.md) (`<= 30` invariants) and [plan-examples.md](plan-examples.md) before drafting.
+Read [plan-template-co-che.md](plan-template-co-che.md) (conditional sections) and
+[plan-template-huong-dan.md](plan-template-huong-dan.md) (`eNm`, Adaptive 3-Tier, `Mode thực thi`). <!-- i18n-allow -->
 
 <!-- i18n-allow: plan template written in the default document language -->
 ```markdown
@@ -46,24 +47,26 @@ Trạng thái plan: CHỜ DUYỆT
 
 *Đối chiếu sơ đồ kiến trúc:* Khi spec có Archify preview, tham chiếu lại HTML và manifest đã duyệt. WBS ánh xạ task tới node, boundary, quy tắc và tiêu chí nghiệm thu; không sinh bản thiết kế khác trong plan. Kiểm binding trước code; thay đổi thiết kế thì dùng lại cổng duyệt spec hiện có.
 
+## Ràng buộc toàn cục & Bản đồ Sở hữu Hợp đồng (Ownership Map)
+
+- Ngôn ngữ: English comments/CLI · `utf8_io` · `TDQ_LOG=0` tắt log · hàm `<= 50` dòng (`cyc <= 10`, `cog <= 15`) · `GIỮ NGUYÊN` chữ ký cũ trừ khi task nêu rõ.
+
+| Hợp đồng / Ký hiệu (§3c) | File & Task sở hữu | Task / File tiêu thụ |
+|---|---|---|
+| `<symbol_or_schema>` | `<owner_file>` (`T1.1`) | `<consumers>` |
+
 ## P1 — <tên phase>
-<!-- i18n-allow: mẫu Self-Contained Task Block 8 trường cho task can thiệp mã nguồn -->
-- [ ] **T1.1** (e6m) <việc cụ thể> — Test: <lệnh hoặc tiêu chí pass>
-  - Chạm: `<đường/dẫn/file.py>`
-  - Cần: <mã task phụ thuộc nếu có>
-  - Mục tiêu: <1 câu nêu rõ mục đích kỹ thuật và vị trí trong luồng hệ thống>
-  - Vị trí neo: <hàm hoặc dòng neo cụ thể trong file, vd: sau hàm foo() và trước bar()>
-  - Công cụ: <Dùng Edit. CẤM dùng Write trên file có sẵn để chống mất mã nguồn>
-  - Ràng buộc: <thuần stdlib, không thêm dependency mới, hàm dưới 40 dòng, complexity <= 10>
-  - Đặc tả kỹ thuật:
-    `<chữ ký hàm, kiểu dữ liệu đối số đầu vào, kiểu dữ liệu trả về>`
-  - Logic cốt lõi:
-    1. Bước 1: <khởi tạo, kiểm tra điều kiện đầu vào>
-    2. Bước 2: <vòng lặp, biến đổi dữ liệu, gọi phụ thuộc>
-    3. Bước 3: <xử lý kết quả và trả về>
-  - Ca góc hiểm & TDD:
-    - Ca hiểm: <giá trị rỗng, số âm, ngoại lệ biên, timeout>
-    - Tiêu chí: <đoạn mã assert cụ thể cho kiểm thử unit test>
+<!-- i18n-allow: mẫu Per-Task Mini-Spec (tối đa 30 dòng/task, cứng 35) -->
+- [ ] **T1.1** (e6m) <việc cụ thể> — Test: `<lệnh test đích>`
+  - Req: `<§mục spec>` · Ngoài phạm vi: `GIỮ NGUYÊN` `<bất biến>`
+  - Chạm: `<src/file.py>`
+  - Cần: `<mã task hoặc Không>`
+  - Giao tiếp: Consumes: `<input/hợp đồng>` | Produces: `<hàm/schema>`
+  - Neo & Công cụ: `edit_file` trên `<file>` tại `<hàm neo()>` (hoặc `write_file` cho file mới)
+  - Trước → Sau: `<trạng thái cũ> → <trạng thái mới>`
+  - Tiêu chí chấp nhận (EARS): KHI `<điều kiện>`, HỆ THỐNG PHẢI `<kết quả>`
+  - Logic cốt lõi: <1–3 gạch đầu dòng ngắn hoặc pseudo-code>
+  - Ca góc hiểm & Assert: `<biên null/rỗng/lỗi>` · `assert <thực_tế> == <kỳ_vọng>` (cấm `ANTI-2`)
 - [ ] **T1.2** (e12m) <việc cụ thể> — Test: <...>
 
 **Xong P1 khi**: <điều kiện đo được>
