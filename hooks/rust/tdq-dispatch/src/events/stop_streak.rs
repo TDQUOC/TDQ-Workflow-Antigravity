@@ -58,12 +58,17 @@ pub fn evaluate_open_plan_stop(workspace_root: &Path) -> HookDecision {
     HookDecision::continue_run(card)
 }
 
-/// Hybrid Stop entrypoint: Hot-path allow on terminal/idle/no-request, else Cold-path Python.
+/// Hybrid Stop entrypoint: routes subagents to Python SubagentStop; allows terminal/idle leader.
 pub fn handle_stop_streak(payload: &HookPayload, workspace_root: &Path) -> RouteOutcome {
     let sid = payload.canonical_session_id();
     if is_terminal_stop(payload) {
         mark_turn_closed(workspace_root, &sid);
         return RouteOutcome::Decided(HookDecision::allow());
+    }
+    if crate::events::pre_tool_use::detect_subagent_role(payload, workspace_root, &sid).is_some()
+        || workspace_root.to_string_lossy().contains(".tdq-worktrees")
+    {
+        return RouteOutcome::DelegatePython;
     }
     let state = read_tdq_state(workspace_root);
     let active_req = state
@@ -146,6 +151,16 @@ mod tests {
             DecisionKind::Continue
         );
         assert_eq!(evaluate_open_plan_stop(&tmp).decision, DecisionKind::Allow);
+
+        let sub_stop = HookPayload {
+            conversation_id: Some("sub-001".to_string()),
+            agent_type: Some("tdq-implementer".to_string()),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_stop_streak(&sub_stop, &tmp),
+            RouteOutcome::DelegatePython
+        ));
 
         let _ = fs::remove_dir_all(&tmp);
     }

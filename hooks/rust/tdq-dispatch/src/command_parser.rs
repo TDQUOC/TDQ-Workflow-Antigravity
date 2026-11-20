@@ -96,24 +96,40 @@ fn part_has_shell_mutator(part: &str) -> bool {
     );
     let sh = compiled_regex(
         &RE_SH,
-        r#"(?i)^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b|python3?\b.*\bopen\([^)]*['"](?:w|a|x))"#,
+        r#"(?i)(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b)|\b(?:python3?|py)\b.*\b(?:open\([^)]*['"](?:w|a|x)['"]|write_text\b|write_bytes\b|os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|fs\.promises\.(?:writeFile|unlink|rm))|\bgit\b(?:\s+-C\s+\S+)?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)"#,
     );
     ps.is_match(part) || sh.is_match(part)
 }
 
 fn part_stdout_targets(part: &str) -> Vec<String> {
     static RE_RED: OnceLock<Regex> = OnceLock::new();
-    let red = compiled_regex(&RE_RED, r"(?:^|[^0-9])>{1,2}\s*([^\s;&|]+)");
+    let red = compiled_regex(&RE_RED, r"(>>|>)\s*([^\s;&|]+)");
+    let bytes = part.as_bytes();
     red.captures_iter(part)
         .filter_map(|c| {
-            c.get(1).map(|m| {
-                m.as_str()
-                    .trim_matches(|ch| ch == '\'' || ch == '"')
-                    .to_string()
-            })
+            let op = c.get(1)?;
+            let tgt = c.get(2)?;
+            let prev = op.start().checked_sub(1).and_then(|i| bytes.get(i).copied());
+            let next_raw = bytes.get(op.end()).copied();
+            if op.as_str() == ">"
+                && (matches!(prev, Some(b'0'..=b'9' | b'=' | b'-' | b'<' | b'>'))
+                    || matches!(next_raw, Some(b'=' | b'&')))
+            {
+                return None;
+            }
+            let cleaned = tgt
+                .as_str()
+                .trim_matches(|ch| ch == '\'' || ch == '"')
+                .to_string();
+            Some(cleaned)
         })
         .filter(|t| {
-            !t.starts_with('&') && !matches!(t.to_ascii_lowercase().as_str(), "/dev/null" | "$null")
+            !t.starts_with('&')
+                && !t.starts_with('=')
+                && !matches!(
+                    t.to_ascii_lowercase().as_str(),
+                    "/dev/null" | "$null" | "nul"
+                )
         })
         .collect()
 }
@@ -122,7 +138,7 @@ fn part_stdout_targets(part: &str) -> Vec<String> {
 pub fn is_shell_mutator(raw_cmd: &str) -> bool {
     let cleaned = strip_powershell_herestrings(raw_cmd);
     for part in cleaned
-        .split([';', '&'])
+        .split([';', '&', '|', '\n'])
         .map(str::trim)
         .filter(|p| !p.is_empty())
     {
@@ -339,5 +355,13 @@ mod tests {
             is_graphify_shell_query("py -3 scripts/tdq_graphify.py query foo").as_deref(),
             Some("graphify:query")
         );
+
+        assert!(!is_shell_mutator(r#"py -3 -c "assert x >= 1""#));
+        assert!(!is_shell_mutator("cargo test 2>&1"));
+        assert!(!is_shell_mutator("const fn = (a) => a + 1"));
+        assert!(!is_shell_mutator("fn foo() -> i32 { 1 }"));
+        assert!(is_shell_mutator(r#"py -3 -c "Path('a').write_text('x')""#));
+        assert!(is_shell_mutator(r#"node -e "fs.writeFileSync('a', 'b')""#));
+        assert!(is_shell_mutator("git -C .tdq-worktrees/t1 commit -m done"));
     }
 }

@@ -265,5 +265,204 @@ class TestTdqConfig(unittest.TestCase):
             self.assertIn("gemini-4-carbon", show_text.stdout)
 
 
+class TestPythonHooksSecurity(unittest.TestCase):
+    """T3.1: QC scoped allowlist, shell bypasses, >= non-false-positive, SubagentStop & telemetry."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = Path(self.tmp.name)
+        (self.cwd / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
+        self.addCleanup(self.tmp.cleanup)
+
+    def _run_hook(self, script_name: str, payload: dict, extra_env: dict | None = None) -> tuple[int, str, str]:
+        env = _clean_env(TDQ_LOG="0", TDQ_PROJECT_DIR=str(self.cwd))
+        if extra_env:
+            env.update(extra_env)
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "hooks" / "scripts" / script_name)],
+            input=json.dumps(payload),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+        )
+        return proc.returncode, proc.stdout, proc.stderr
+
+    def test_qc_allowlist_helper_and_edit_gate_scoping(self):
+        sys.path.insert(0, str(ROOT / "hooks" / "scripts"))
+        try:
+            import _common
+        finally:
+            if sys.path and sys.path[0] == str(ROOT / "hooks" / "scripts"):
+                sys.path.pop(0)
+
+        self.assertTrue(_common.is_qc_report_target("docs/tdq/qc/2026-11-20-q1.md", str(self.cwd)))
+        self.assertTrue(_common.is_qc_report_target("docs/tdq/qc/shards/shard1.md", str(self.cwd)))
+        self.assertFalse(_common.is_qc_report_target("docs/tdq/qc/../../a.py", str(self.cwd)))
+        self.assertFalse(_common.is_qc_report_target("docs/tdq/qc/evil.py", str(self.cwd)))
+        self.assertFalse(_common.is_qc_report_target("scripts/tdq_config.py", str(self.cwd)))
+
+        # Register subagent roles and run edit_gate CLI
+        _common.register_subagent_role(str(self.cwd), "qc-1", "tdq-qc-tester")
+        rc_ok, out_ok, err_ok = self._run_hook(
+            "edit_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-1",
+                "tool_name": "write_to_file",
+                "tool_input": {"file_path": "docs/tdq/qc/2026-11-20-q1.md"},
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_ok, 0, err_ok)
+        if out_ok.strip():
+            self.assertEqual(json.loads(out_ok).get("decision"), "allow", out_ok)
+
+        rc_bad, out_bad, err_bad = self._run_hook(
+            "edit_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-1",
+                "tool_name": "write_to_file",
+                "tool_input": {"file_path": "docs/tdq/qc/../../a.py"},
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_bad, 0, err_bad)
+        self.assertIn("READONLY", out_bad)
+
+        _common.register_subagent_role(str(self.cwd), "exp-1", "tdq-explorer")
+        rc_exp, out_exp, _ = self._run_hook(
+            "edit_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "exp-1",
+                "tool_name": "write_to_file",
+                "tool_input": {"file_path": "docs/tdq/qc/2026-11-20-q1.md"},
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_exp, 0)
+        self.assertIn("READONLY", out_exp)
+
+    def test_bash_gate_shell_bypasses_and_ge_not_false_positive(self):
+        sys.path.insert(0, str(ROOT / "hooks" / "scripts"))
+        try:
+            import bash_gate
+            import _common
+        finally:
+            if sys.path and sys.path[0] == str(ROOT / "hooks" / "scripts"):
+                sys.path.pop(0)
+
+        self.assertFalse(bash_gate._is_shell_write('py -3 -c "assert x >= 1"'))
+        self.assertFalse(bash_gate._is_shell_write('python3 -c "print(2 >= 1 and 1 <= 2)"'))
+        self.assertTrue(bash_gate._is_shell_write("py -3 -c \"Path('a').write_text('x')\""))
+        self.assertTrue(bash_gate._is_shell_write('node -e "fs.writeFileSync(\'a\', \'b\')"'))
+        self.assertTrue(bash_gate._is_shell_write("git -C .tdq-worktrees/t1 commit -m done"))
+
+        _common.register_subagent_role(str(self.cwd), "qc-bash", "tdq-qc-tester")
+        rc_ge, out_ge, err_ge = self._run_hook(
+            "bash_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-bash",
+                "tool_name": "run_command",
+                "tool_input": {"command": 'py -3 -c "assert 5 >= 1"'},
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_ge, 0, err_ge)
+        self.assertNotIn("READONLY", out_ge)
+
+        rc_wr, out_wr, err_wr = self._run_hook(
+            "bash_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-bash",
+                "tool_name": "run_command",
+                "tool_input": {"command": "py -3 -c \"Path('x.py').write_text('bad')\""},
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_wr, 0, err_wr)
+        self.assertIn("READONLY", out_wr)
+
+    def test_subagent_stop_telemetry_blackboard_and_hooks_json(self):
+        hooks_cfg = json.loads((ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+        self.assertIn("SubagentStop", hooks_cfg["hooks"])
+        post_matchers = [e.get("matcher", "") for e in hooks_cfg["hooks"]["PostToolUse"]]
+        self.assertTrue(any("invoke_subagent" in m and "Task" in m for m in post_matchers), post_matchers)
+
+        # Init open request state so stop_gate is armed for leader, then verify subagentStop writes telemetry & blackboard
+        state_file = self.cwd / "docs" / "tdq" / "state.json"
+        state_file.write_text(
+            json.dumps({
+                "active_request": "2026-11-20-t31",
+                "lane": "full",
+                "phase": "implement",
+                "spec_approved": True,
+                "plan_approved": True,
+                "plan_file": "docs/tdq/plan/2026-11-20-t31.md",
+            }),
+            encoding="utf-8",
+        )
+        (self.cwd / "docs" / "tdq" / "plan").mkdir(parents=True, exist_ok=True)
+        (self.cwd / "docs" / "tdq" / "plan" / "2026-11-20-t31.md").write_text(
+            "- [>] **T3.1** Demo — Test: `pytest`\n", encoding="utf-8"
+        )
+
+        failed_handoff = json.dumps({
+            "task_id": "T3.1",
+            "status": "failed",
+            "files": ["scripts/demo.py"],
+            "test_result": "pytest -> 1 failed",
+            "branch": "team/t3.1",
+            "merge_ready": False,
+            "tick_ready": False,
+            "notes": "scripts/demo.py:10 — fn — AssertionError",
+            "role": "tdq-implementer",
+            "model": "gemini-4-hydrogen-high",
+            "effort": "high",
+            "elapsed_s": 12.5,
+        })
+        rc, out, err = self._run_hook(
+            "subagent_stop.py",
+            {
+                "cwd": str(self.cwd),
+                "session_id": "sub-t31",
+                "agent_type": "tdq-implementer",
+                "last_assistant_message": failed_handoff,
+            },
+        )
+        self.assertEqual(rc, 0, err + out)
+        tel_path = self.cwd / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl"
+        self.assertTrue(tel_path.is_file(), "telemetry jsonl not created")
+        rows = [json.loads(line) for line in tel_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertEqual(rows[-1]["role"], "tdq-implementer")
+        self.assertEqual(rows[-1]["task_id"], "T3.1")
+        self.assertEqual(rows[-1]["status"], "failed")
+
+        bb_path = self.cwd / ".tdq-runtime" / "blackboard" / "2026-11-20-t31.json"
+        self.assertTrue(bb_path.is_file(), "blackboard json not updated on failed handoff")
+        bb = json.loads(bb_path.read_text(encoding="utf-8"))
+        self.assertEqual(bb["entries"][-1]["task_id"], "T3.1")
+
+        # stop_gate must NOT block a subagent with leader TDQ:UNFINISHED / TDQ:TICK
+        rc_sg, out_sg, err_sg = self._run_hook(
+            "stop_gate.py",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "sub-t31-agy",
+                "agent_type": "tdq-implementer",
+                "hookEventName": "Stop",
+            },
+            extra_env={"ANTIGRAVITY_PROJECT_DIR": str(self.cwd)},
+        )
+        self.assertEqual(rc_sg, 0, err_sg + out_sg)
+        self.assertNotIn("TDQ:UNFINISHED", out_sg)
+        self.assertNotIn("TDQ:TICK", out_sg)
+
+
 if __name__ == "__main__":
     unittest.main()

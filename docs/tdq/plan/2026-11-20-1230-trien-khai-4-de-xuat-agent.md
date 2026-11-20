@@ -66,7 +66,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
 
 ## P1 — Cấu hình Plugin, Thang Gemini 4 & Đội hình 6+2 Agent
 
-- [>] **T1.1** (e10m) Tạo `tdq-config.json` và `scripts/tdq_config.py` đọc cấu hình ưu tiên `env > project > plugin` — Test: `py -3 -X utf8 -m unittest tests.test_agent_upgrade_mvp.TestTdqConfig`
+- [x] **T1.1** (e10m) Tạo `tdq-config.json` và `scripts/tdq_config.py` đọc cấu hình ưu tiên `env > project > plugin` — Test: `py -3 -X utf8 -m unittest tests.test_agent_upgrade_mvp.TestTdqConfig`
   - Req: `§2#1`, `§2b(M1-config-agents-skills)`, `§3c(TdqConfigContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` `plugin.json` không nhét `userConfig`.
   - Chạm: `tdq-config.json`, `scripts/tdq_config.py`, `tests/test_agent_upgrade_mvp.py`
   - Cần: Không
@@ -90,7 +90,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
   - Logic cốt lõi: Xóa rule tự tick sub-box, ép `git commit` worktree, thêm `git diff`/SCA cho security, thêm hướng dẫn shard song song cho QC.
   - Ca góc hiểm & Assert: Giữ nguyên cụm ngưỡng `1,500` ký tự để không phá `AgentDigestLimitTest` · `assert "git commit" in impl_text and "Tick Own Sub-Boxes" not in impl_text`
 
-- [ ] **T1.3** (e8m) Tạo `tdq-explorer.md`, `tdq-debugger.md` và cập nhật thang Gemini 3.8/4 + mục `Model & Effort` của Plan — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-conventions/references/subagent-tuning.md skills/tdq-plan/references/plan-template.md skills/tdq-plan/SKILL.md`
+- [x] **T1.3** (e8m) Tạo `tdq-explorer.md`, `tdq-debugger.md` và cập nhật thang Gemini 3.8/4 + mục `Model & Effort` của Plan — Test: `py -3 -X utf8 scripts/doc_lint.py skills/tdq-conventions/references/subagent-tuning.md skills/tdq-plan/references/plan-template.md skills/tdq-plan/SKILL.md`
   - Req: `§2#1`, `§3c(PlanModelEffortContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` cấu trúc cổng duyệt 1 bước của `tdq-plan/SKILL.md` và ngân sách `< 24KB`.
   - Chạm: `agents/tdq-explorer.md`, `agents/tdq-debugger.md`, `skills/tdq-conventions/references/subagent-tuning.md`, `skills/tdq-plan/references/plan-template.md`, `skills/tdq-plan/SKILL.md`
   - Cần: T1.1
@@ -100,9 +100,9 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
   - Trước → Sau: Thiếu `Explorer`/`Debugger`; `subagent-tuning` chỉ nêu Claude; Plan chưa báo model/effort → Có đủ `8` agent, thang Gemini 3.8/4 và quyền user đổi model ở Plan.
   - Tiêu chí chấp nhận (EARS): KHI trình duyệt Plan mới, HỆ THỐNG PHẢI hiển thị bảng `## Phân bổ Model & Effort` và ghi rõ quyền user đổi `type model`.
   - Logic cốt lõi: Thêm `tdq-explorer` (read-only) và `tdq-debugger` (read-only); cập nhật bảng 4 bậc `3.8 Flash → 4 Hydrogen → 4 Neon → 4 Carbon` + hậu tố `swarm`.
-  - Ca góc hiểm & Assert: Giữ `skills/tdq-plan/SKILL.md` dưới `24,000` bytes · `assert len(Path("skills/tdq-plan/SKILL.md").read_bytes()) < 24000`
+  - Ca góc hiểm & Assert: Giữ `skills/tdq-plan/SKILL.md` dưới `24,000` bytes · `assert len(Path("skills/tdq-plan/SKILL.md").read_bytes()) < 24000` (đang tách phần chi tiết sang `plan-template-co-che.md` để giữ trần 3,500 token)
 
-- [ ] **T1.4** (e10m) Nối caller cho `3` agent mồ côi, cập nhật `qc.md` (`full` nhẹ + `ultra` tối đa `5` QC song song) và thêm kiểm `Model & Effort` trong `doc_lint.py` — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py`
+- [x] **T1.4** (e10m) Nối caller cho `3` agent mồ côi, cập nhật `qc.md` (`full` nhẹ + `ultra` tối đa `5` QC song song) và thêm kiểm `Model & Effort` trong `doc_lint.py` — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py`
   - Req: `§2#1`, `§3c(PlanModelEffortContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` các test `doc_lint` cho plan cũ trước `2026-11-20` không bị gãy ngược.
   - Chạm: `skills/tdq-build/SKILL.md`, `skills/tdq-build/references/qc.md`, `skills/tdq-build/references/team-mode.md`, `skills/tdq-build/references/vision-test-loop.md`, `skills/tdq-lean/SKILL.md`, `scripts/doc_lint.py`
   - Cần: T1.1, T1.2, T1.3
@@ -116,7 +116,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
 
 ## P2 — Handoff JSON duy nhất, Packet V2+ đa ngôn ngữ & Shared Blackboard
 
-- [ ] **T2.1** (e14m) Hợp nhất `1` `handoff-schema.json`, nâng `tdq_team.py packet` (Mini-Spec + đa ngôn ngữ) và thêm `validate-handoff` + `blackboard` — Test: `py -3 -X utf8 -m unittest tests.test_team_packet_v2`
+- [x] **T2.1** (e14m) Hợp nhất `1` `handoff-schema.json`, nâng `tdq_team.py packet` (Mini-Spec + đa ngôn ngữ) và thêm `validate-handoff` + `blackboard` — Test: `py -3 -X utf8 -m unittest tests.test_team_packet_v2`
   - Req: `§2#2`, `§2b(M2-handoff-packet-blackboard)`, `§3c(HandoffContract, PacketV2Contract, BlackboardContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` các lệnh `assign`, `wave`, `open`, `check`, `merge` tương thích ngược.
   - Chạm: `skills/tdq-conventions/references/handoff-schema.json`, `scripts/tdq_team.py`, `tests/test_team_packet_v2.py`
   - Cần: T1.1
@@ -130,7 +130,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
 
 ## P3 — Bảo mật Hook Python, SubagentStop & Telemetry theo Role
 
-- [ ] **T3.1** (e14m) Vá `bash_gate.py`, mở allowlist hẹp `docs/tdq/qc/*.md` trong `edit_gate.py`, tạo `subagent_stop.py` và nối `hooks/hooks.json` — Test: `py -3 -X utf8 -m unittest tests.test_agent_upgrade_mvp.TestPythonHooksSecurity`
+- [x] **T3.1** (e14m) Vá `bash_gate.py`, mở allowlist hẹp `docs/tdq/qc/*.md` trong `edit_gate.py`, tạo `subagent_stop.py` và nối `hooks/hooks.json` — Test: `py -3 -X utf8 -m unittest tests.test_agent_upgrade_mvp.TestPythonHooksSecurity`
   - Req: `§2#3`, `§2b(M3-python-hooks-telemetry)`, `§3c(SecurityAndLifecycleContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` `.codex/hooks.json` chỉ có `PreToolUse`.
   - Chạm: `hooks/scripts/_common.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/bash_gate.py`, `hooks/scripts/subagent_stop.py`, `hooks/hooks.json`
   - Cần: T2.1
@@ -141,6 +141,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
   - Tiêu chí chấp nhận (EARS): KHI `tdq-qc-tester` ghi `docs/tdq/qc/a.md` thì cho phép; KHI ghi `docs/tdq/qc/../../a.py` hoặc chạy `python -c "...write_text..."` thì HỆ THỐNG PHẢI chặn `READONLY`.
   - Logic cốt lõi: Chuẩn hóa `realpath` chống path traversal cho `docs/tdq/qc/*.md`; lọc bỏ `>=`/`<=` trước kiểm `>`; `subagent_stop.py` kiểm worktree dirty, validate handoff, ghi telemetry + Blackboard.
   - Ca góc hiểm & Assert: Lệnh chứa `>=` không bị chặn nhầm · `assert _is_shell_write("py -3 -c \"assert x >= 1\"") is False and _is_shell_write("py -3 -c \"Path('a').write_text('x')\"") is True`
+  - Tiến độ inline: đã cập nhật `_common`/`bash_gate`/`edit_gate`/`subagent_stop`/`stop_gate`/`hooks.json`, đang vá 2 kiểm thử hồi quy `edit_gate` anchor và `ProtocolTest`.
 
 - [ ] **T3.2** (e10m) Bổ sung tổng hợp telemetry theo `agent_role` vào `scripts/tdq_timing.py` và `scripts/token_audit.py` — Test: `py -3 -X utf8 -m pytest tests/test_timing.py tests/test_agent_upgrade_mvp.py -k "timing or RoleTelemetry"`
   - Req: `§2#3`, `§2b(M3-python-hooks-telemetry)` · Ngoài phạm vi: `GIỮ NGUYÊN` bảng Timing V2 (`model_giay=null`) và ngữ nghĩa carry-cost của `token_audit.py`.
@@ -156,7 +157,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
 
 ## P4 — Vá & Biên dịch Rust Dispatcher tdq-dispatch
 
-- [ ] **T4.1** (e16m) Vá `command_parser.rs`, mở quyền ghi hẹp QC & `8` role trong `pre_tool_use.rs`, bắt `PostToolUse` role và `Stop`/`SubagentStop` rồi chạy `cargo test` + `cargo build --release` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+- [x] **T4.1** (e16m) Vá `command_parser.rs`, mở quyền ghi hẹp QC & `8` role trong `pre_tool_use.rs`, bắt `PostToolUse` role và `Stop`/`SubagentStop` rồi chạy `cargo test` + `cargo build --release` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
   - Req: `§2#4`, `§2b(M4-rust-dispatcher)`, `§3c(SecurityAndLifecycleContract)` · Ngoài phạm vi: `GIỮ NGUYÊN` định dạng JSON quyết định và tốc độ hot-path Rust `< 5 ms`.
   - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`, `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/post_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/stop_streak.rs`, `hooks/rust/tdq-dispatch/src/main.rs`
   - Cần: T2.1
@@ -167,6 +168,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
   - Tiêu chí chấp nhận (EARS): KHI chạy `cargo test` và `cargo build --release`, HỆ THỐNG PHẢI pass `100%` unit test Rust (gồm ca `>=`, `python -c`, `docs/tdq/qc/*.md`, traversal, `SubagentStop`).
   - Logic cốt lõi: Sửa `part_stdout_targets` bỏ qua `>=`/`<=`/`=>`/`->`; thêm pattern shell mutator cho `python -c`/`node -e`/`git -C`; lưu `sessions.json` tại `Pre/PostToolUse` (`invoke_subagent|swarm`); ủy quyền `SubagentStop` và `Stop` của subagent sang `subagent_stop.py`.
   - Ca góc hiểm & Assert: `is_shell_mutator("py -3 -c 'assert x >= 10'") == false` và `is_shell_mutator("node -e \"fs.writeFileSync('a','b')\"") == true`
+  - Tiến độ inline: đã cập nhật `command_parser.rs`, `storage.rs`, `pre_tool_use.rs`, đang nối `post_tool_use.rs`/`stop_streak.rs`/`main.rs`.
 
 ## P5 — Biên dịch Plugin Antigravity, Log & Kiểm định Parity
 

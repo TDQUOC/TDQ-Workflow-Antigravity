@@ -866,6 +866,42 @@ def _has_ownership_map(doc):
     return False
 
 
+def _plan_yeu_cau_model_effort(path):
+    """Enforce Model & Effort table starting from request 2026-11-20-1230 or date >= 2026-11-21."""
+    name = os.path.basename(path)
+    if re.match(r"^\d{4}-\d{2}-\d{2}-\d{4}\b", name):
+        return name[:15] >= "2026-11-20-1230"
+    if re.match(r"^\d{4}-\d{2}-\d{2}\b", name):
+        return name[:10] >= "2026-11-21"
+    return False
+
+
+def _check_model_effort_section(doc, out):
+    heading_idx = None
+    section_lines = []
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m:
+            title = m.group(2).strip().lower()
+            if heading_idx is not None:
+                break
+            if "phân bổ model" in title or "model & effort" in title:  # i18n-allow
+                heading_idx = i
+            continue
+        if heading_idx is not None:
+            section_lines.append(line.lower())
+    if heading_idx is None:
+        _report(out, doc, 0, "R15", "plan missing required '## Phân bổ Model & Effort' section")
+        return
+    body = "\n".join(section_lines)
+    missing = [phase for phase in ("implement", "qc") if phase not in body]
+    if missing:
+        _report(out, doc, heading_idx, "R15",
+                f"'## Phân bổ Model & Effort' missing phase allocation(s): {', '.join(missing)}")
+
+
 def r15_loi(doc: Doc, check_dir: bool = True) -> list[str]:
     """Validate plan task blocks for R15 (legacy before R15_MOC, full V2+ from R15_MOC onward)."""
     if check_dir and os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "plan":
@@ -882,6 +918,8 @@ def r15_loi(doc: Doc, check_dir: bool = True) -> list[str]:
     if contract_tasks >= 2 and not _has_ownership_map(doc):
         _report(out, doc, 0, "R15",
                 "plan has >= 2 contract code tasks without an Ownership Map section")
+    if not is_quick and _plan_yeu_cau_model_effort(doc.path):
+        _check_model_effort_section(doc, out)
     return out
 
 

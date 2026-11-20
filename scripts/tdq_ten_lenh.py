@@ -35,6 +35,8 @@ BANG_DOI_TEN = {
         # `resolve` is new in this request and never had a Vietnamese name.
         "resolve": "resolve",
         "packet": "packet",
+        "validate-handoff": "validate-handoff",
+        "blackboard": "blackboard",
     },
     "tdq_bench.py": {
         "dung-plan": "gen-plan", "gen-plan": "gen-plan",

@@ -54,6 +54,7 @@ _SECTION_PATH = re.compile(
 ROOT_FILES = {
     "CLAUDE.md", "AGENTS.md", "Cargo.toml",
     "pyproject.toml", "package.json", "pyrightconfig.json",
+    "tdq-config.json",
 }
 _FENCE = re.compile(r"^\s*(```|~~~)")
 _REF_WITH_SYMS = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`\s*\(([^)]+)\)")
@@ -98,6 +99,7 @@ TRAN_SONG_SONG = 4
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPTS_DIR)
+import tdq_config  # noqa: E402
 import tdq_state  # noqa: E402
 import tdq_ten_lenh  # noqa: E402
 import tdq_worktree_registry as so_wt  # noqa: E402
@@ -1885,10 +1887,24 @@ MAX_PACKET_SPAN_LINES = 120
 PACKET_BOUNDARY_LINES = 3
 _LINE_HINT_RE = re.compile(r"(?:\bL|:)(\d+)(?:-L?(\d+))?\b")
 _BACKTICK_IDENT = re.compile(r"`([A-Za-z_][A-Za-z0-9_.]*(?:\(\))?)`")
+_NON_PY_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".rs", ".ps1")
 _NON_PY_DECL = re.compile(
-    r"^\s*(?:pub\s+)?(?:async\s+)?(?:fn|function|class|struct|enum|trait|interface|type|"
-    r"export\s+(?:async\s+)?(?:function|class|const))\s+([A-Za-z_][A-Za-z0-9_]*)"
+    r"^\s*(?:"
+    r"(?:export\s+(?:default\s+)?)?(?:async\s+)?(?:function\*?|class|interface|type|const)\s+([A-Za-z_][A-Za-z0-9_-]*)"
+    r"|(?:pub(?:\([^)]*\))?\s+)?(?:async\s+|unsafe\s+)?(?:fn|struct|enum|trait|mod|impl(?:\s*<[^>]*>)?)\s+([A-Za-z_][A-Za-z0-9_]*)"
+    r")"
 )
+_HANDOFF_SCHEMA_PATH = os.path.join(
+    os.path.dirname(SCRIPTS_DIR), "skills", "tdq-conventions", "references", "handoff-schema.json"
+)
+_HANDOFF_MAX_NOTES = 1500
+_HANDOFF_ALLOWED_STATUS = {"done", "completed", "failed", "blocked"}
+_DEFAULT_HANDOFF_REQUIRED = (
+    "task_id", "status", "files", "test_result", "branch", "merge_ready", "tick_ready", "notes",
+)
+_DEFAULT_HANDOFF_PROPS = set(_DEFAULT_HANDOFF_REQUIRED) | {
+    "test_verdict", "blocker", "role", "model", "effort", "elapsed_s",
+}
 
 
 def _slug_from_plan(project, plan, state):
@@ -2090,6 +2106,52 @@ def _build_span_entry(rel_norm, lines, total, sym_name, start, end, force_read_e
     }
 
 
+def _match_non_py_decl(raw):
+    m = _NON_PY_DECL.match(raw)
+    if not m:
+        return None
+    return m.group(1) or m.group(2)
+
+
+def _find_brace_block_end(lines, start_idx):
+    depth = 0
+    seen_brace = False
+    limit = min(len(lines), start_idx + MAX_PACKET_SPAN_LINES + 5)
+    for idx in range(start_idx, limit):
+        text = lines[idx]
+        opens = text.count("{")
+        closes = text.count("}")
+        if opens:
+            seen_brace = True
+        depth += opens - closes
+        if seen_brace and depth <= 0:
+            return idx + 1
+        if not seen_brace and (idx > start_idx or ";" in text) and idx - start_idx >= 3:
+            return idx + 1
+    return min(len(lines), start_idx + 1)
+
+
+def _parse_non_py_nodes(lines):
+    nodes = []
+    for idx, raw in enumerate(lines):
+        name = _match_non_py_decl(raw)
+        if not name:
+            continue
+        start = idx + 1
+        end = _find_brace_block_end(lines, idx)
+        sig = " ".join(raw.strip().split())
+        nodes.append({
+            "name": name,
+            "qual": name,
+            "start": start,
+            "end": max(start, end),
+            "sig": sig,
+            "top": not raw.startswith((" ", "\t")),
+            "is_cls": False,
+        })
+    return nodes
+
+
 def _render_target_spans(project, task):
     candidates, line_hints = _extract_symbol_candidates(task)
     entries = []
@@ -2105,6 +2167,8 @@ def _render_target_spans(project, task):
         total = max(1, len(lines))
         if abs_path.endswith(".py"):
             spans = _select_spans_for_py(_parse_py_nodes(abs_path, lines), total, candidates, line_hints)
+        elif abs_path.endswith(_NON_PY_EXTENSIONS):
+            spans = _select_spans_for_py(_parse_non_py_nodes(lines), total, candidates, line_hints)
         else:
             spans = [(None, 1, total)]
         force_rx = idx >= MAX_PACKET_INLINE_FILES
@@ -2126,8 +2190,8 @@ def _match_ref_signatures(nodes, wanted):
 def _non_py_signatures(lines, wanted):
     sigs = []
     for raw in lines:
-        m = _NON_PY_DECL.match(raw)
-        if m and (not wanted or m.group(1) in wanted):
+        name = _match_non_py_decl(raw)
+        if name and (not wanted or name in wanted):
             sigs.append(" ".join(raw.strip().split()))
         if len(sigs) >= 5:
             break
@@ -2203,12 +2267,342 @@ def _read_kien_truc_invariants(project, task, limit=3):
     return [item[2] for item in scored[:limit]]
 
 
+def _load_handoff_schema(project=None):
+    candidates = []
+    if project:
+        candidates.append(
+            os.path.join(project, "skills", "tdq-conventions", "references", "handoff-schema.json")
+        )
+    candidates.append(_HANDOFF_SCHEMA_PATH)
+    for path in candidates:
+        if os.path.isfile(path):
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    loaded = json.load(fh)
+                if isinstance(loaded, dict):
+                    return loaded
+            except (OSError, ValueError, UnicodeDecodeError) as exc:
+                _log(f"WARN cannot read handoff-schema.json ({path}): {exc}")
+    return {
+        "required": list(_DEFAULT_HANDOFF_REQUIRED),
+        "properties": {k: {} for k in _DEFAULT_HANDOFF_PROPS},
+        "additionalProperties": False,
+    }
+
+
+def _check_handoff_field_types(payload, props, errs):
+    checks = {
+        "task_id": (str, True),
+        "status": (str, True),
+        "test_result": (str, True),
+        "branch": (str, False),
+        "notes": (str, False),
+        "blocker": (str, False),
+        "role": (str, False),
+        "model": (str, False),
+        "effort": (str, False),
+    }
+    for key, (typ, non_empty) in checks.items():
+        if key not in payload:
+            continue
+        val = payload[key]
+        if not isinstance(val, typ) or (non_empty and not val.strip()):
+            errs.append(f"field {key!r} must be a non-empty string" if non_empty else f"field {key!r} must be a string")
+    if "files" in payload:
+        files = payload["files"]
+        if not isinstance(files, list) or not all(isinstance(x, str) for x in files):
+            errs.append("field 'files' must be a list of strings")
+    for bkey in ("merge_ready", "tick_ready"):
+        if bkey in payload and not isinstance(payload[bkey], bool):
+            errs.append(f"field {bkey!r} must be a boolean")
+    if "elapsed_s" in payload:
+        ev = payload["elapsed_s"]
+        if isinstance(ev, bool) or not isinstance(ev, (int, float)) or ev < 0:
+            errs.append("field 'elapsed_s' must be a non-negative number")
+    allowed = props.get("status", {}).get("enum") or sorted(_HANDOFF_ALLOWED_STATUS)
+    if isinstance(payload.get("status"), str) and payload["status"] not in allowed:
+        errs.append(f"invalid status {payload['status']!r}; allowed: {', '.join(allowed)}")
+
+
+def validate_handoff_payload(payload, project=None):
+    """Validate a handoff payload against the unified handoff-schema.json."""
+    if not isinstance(payload, dict):
+        return False, ["payload must be a JSON object"]
+    schema = _load_handoff_schema(project)
+    required = schema.get("required") or list(_DEFAULT_HANDOFF_REQUIRED)
+    props = schema.get("properties") or {}
+    errs = [f"missing required field: {field}" for field in required if field not in payload]
+    if schema.get("additionalProperties") is False and props:
+        for key in sorted(payload):
+            if key not in props:
+                errs.append(f"unknown field: {key}")
+    _check_handoff_field_types(payload, props, errs)
+    max_notes = props.get("notes", {}).get("maxLength", _HANDOFF_MAX_NOTES)
+    if isinstance(payload.get("notes"), str) and len(payload["notes"]) > max_notes:
+        errs.append(f"notes length {len(payload['notes'])} exceeds maxLength {max_notes}")
+    if isinstance(payload.get("blocker"), str) and len(payload["blocker"]) > 500:
+        errs.append(f"blocker length {len(payload['blocker'])} exceeds maxLength 500")
+    return (len(errs) == 0), errs
+
+
+def _to_bool_flag(raw):
+    text = str(raw).strip().lower()
+    if text in ("yes", "true", "1", "co", "ready"):
+        return True
+    if text in ("no", "false", "0", "khong", "none"):
+        return False
+    return None
+
+
+def _normalize_handoff_dict(raw):
+    data = dict(raw)
+    if "files" not in data and "modified_files" in data:
+        data["files"] = data.pop("modified_files")
+    if "notes" not in data and "summary" in data:
+        data["notes"] = data.pop("summary")
+    if "test_result" not in data:
+        cmd = str(data.pop("test_command", "") or "").strip()
+        verdict = str(data.get("test_verdict", "") or "").strip()
+        if cmd or verdict:
+            data["test_result"] = f"{cmd} -> {verdict}".strip(" ->")
+    if isinstance(data.get("status"), str):
+        data["status"] = data["status"].strip().lower()
+    return data
+
+
+def _extract_json_handoff(raw_text):
+    stripped = raw_text.strip()
+    candidates = [stripped]
+    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", raw_text, re.DOTALL)
+    if m:
+        candidates.insert(0, m.group(1))
+    for blob in candidates:
+        if not blob.startswith("{"):
+            continue
+        try:
+            obj = json.loads(blob)
+            if isinstance(obj, dict):
+                return _normalize_handoff_dict(obj)
+        except ValueError:
+            continue
+    return None
+
+
+def _apply_handoff_kv(out, key, val):
+    k = key.strip().upper().replace("_", "-")
+    v = val.strip()
+    if k in ("TASK", "TASK-ID"):
+        out["task_id"] = v
+    elif k == "STATUS":
+        out["status"] = v.lower()
+    elif k == "FILES":
+        items = [p.strip() for p in v.split(",") if p.strip()]
+        out["files"] = [] if items == ["(none)"] else items
+    elif k in ("TEST", "TEST-RESULT"):
+        out["test_result"] = v
+    elif k == "BRANCH":
+        parts = [seg.strip() for seg in v.split("|")]
+        out["branch"] = parts[0]
+        for seg in parts[1:]:
+            if ":" in seg:
+                sk, sv = seg.split(":", 1)
+                _apply_handoff_kv(out, sk, sv)
+    elif k == "MERGE-READY":
+        b = _to_bool_flag(v)
+        out["merge_ready"] = v if b is None else b
+    elif k == "TICK-READY":
+        b = _to_bool_flag(v)
+        out["tick_ready"] = v if b is None else b
+    elif k == "NOTES":
+        out["notes"] = v
+    elif k == "BLOCKER":
+        out["blocker"] = v
+    elif k in ("ROLE", "MODEL", "EFFORT"):
+        out[k.lower()] = v
+
+
+def parse_handoff_from_text(raw_text):
+    """Parse either a JSON block or a 7-line digest handoff message into a normalized dict."""
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        return {}
+    as_json = _extract_json_handoff(raw_text)
+    if as_json is not None:
+        return as_json
+    out = {}
+    last_key = None
+    for line in raw_text.splitlines():
+        m = re.match(r"^\s*([A-Za-z_-]+)\s*:\s*(.*)$", line)
+        if m and m.group(1).upper().replace("_", "-") in {
+            "TASK", "TASK-ID", "STATUS", "FILES", "TEST", "TEST-RESULT",
+            "BRANCH", "MERGE-READY", "TICK-READY", "NOTES", "BLOCKER",
+            "ROLE", "MODEL", "EFFORT",
+        }:
+            last_key = m.group(1).upper().replace("_", "-")
+            _apply_handoff_kv(out, last_key, m.group(2))
+        elif last_key == "NOTES" and line.strip():
+            out["notes"] = (out.get("notes", "") + "\n" + line.strip()).strip()
+    return out
+
+
+def _active_slug_or_default(project, slug=None):
+    if slug:
+        return slug
+    state = tdq_state.load(project, heal=False) or {}
+    return state.get("active_request") or "default"
+
+
+def blackboard_path(project, slug):
+    return os.path.join(project, ".tdq-runtime", "blackboard", f"{slug}.json")
+
+
+def blackboard_read(project, slug=None):
+    """Read shared blackboard JSON for the request, returning an empty structure if absent."""
+    resolved = _active_slug_or_default(project, slug)
+    path = blackboard_path(project, resolved)
+    if not os.path.isfile(path):
+        return {"slug": resolved, "entries": [], "updated_at": ""}
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, dict) and isinstance(data.get("entries"), list):
+            return data
+        _log(f"WARN invalid blackboard format in {path}")
+    except (OSError, ValueError, UnicodeDecodeError) as exc:
+        _log(f"WARN failed to read blackboard {path}: {exc}")
+    return {"slug": resolved, "entries": [], "updated_at": "", "corrupt": True}
+
+
+def blackboard_record(
+    project,
+    task_id,
+    status,
+    summary,
+    *,
+    slug=None,
+    role="unknown",
+    model="",
+    files=None,
+    error="",
+    test_command="",
+    root_cause="",
+):
+    """Append a structured handoff/diagnostic entry to .tdq-runtime/blackboard/<slug>.json."""
+    resolved = _active_slug_or_default(project, slug)
+    board = blackboard_read(project, resolved)
+    board.pop("corrupt", None)
+    entry = {
+        "task_id": str(task_id),
+        "role": str(role or "unknown"),
+        "status": str(status),
+        "summary": str(summary)[:500],
+        "error": str(error)[:500],
+        "root_cause": str(root_cause)[:300],
+        "files": list(files or []),
+        "model": str(model or ""),
+        "test_command": str(test_command or ""),
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+    }
+    board.setdefault("entries", []).append(entry)
+    board["updated_at"] = entry["timestamp"]
+    path = blackboard_path(project, resolved)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".bb_", suffix=".tmp", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(board, fh, ensure_ascii=False, indent=2)
+            fh.write("\n")
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+    _log(f"blackboard record slug={resolved} task={task_id} status={status}")
+    return entry
+
+
+def suggest_escalation(project, slug, task_id, max_retries=None):
+    """Return auto-escalation hint when failed/blocked attempts meet auto_escalate_retries."""
+    cfg = tdq_config.load_config(cwd=project)
+    agents_cfg = cfg.get("agents") if isinstance(cfg.get("agents"), dict) else {}
+    threshold = max_retries if isinstance(max_retries, int) and max_retries > 0 else int(
+        agents_cfg.get("auto_escalate_retries", tdq_config.DEFAULT_AUTO_ESCALATE_RETRIES) or 2
+    )
+    board = blackboard_read(project, slug)
+    failures = [
+        e for e in board.get("entries", [])
+        if str(e.get("task_id", "")).upper() == str(task_id).upper()
+        and str(e.get("status", "")).lower() in ("failed", "blocked")
+    ]
+    if len(failures) < threshold:
+        return None
+    tier_info = tdq_config.resolve_model_for_role(
+        "tdq-build-resolver", attempt=len(failures) + 1, cwd=project
+    )
+    return {
+        "task_id": task_id,
+        "failures": len(failures),
+        "threshold": threshold,
+        "recommended_agent": "tdq-build-resolver",
+        "recommended_tier": tier_info.get("tier"),
+        "recommended_model": tier_info.get("recommended_swarm_model") or tier_info.get("invoke_model"),
+        "last_error": failures[-1].get("error") or failures[-1].get("summary", ""),
+    }
+
+
+def _extract_mini_spec_fields(task):
+    fields = {"req": "", "giu_nguyen": "", "ears": "", "logic": "", "ca_goc": ""}
+    logic_lines = []
+    in_logic = False
+    for line in task.text[1:]:
+        stripped = line.strip()
+        if stripped.startswith("- "):
+            in_logic = False
+            body = stripped[2:].strip()
+            low = body.lower()
+            if low.startswith("req:"):
+                req_part = body[4:].strip()
+                if "ngoài phạm vi:" in req_part.lower():
+                    idx = req_part.lower().index("ngoài phạm vi:")
+                    fields["req"] = req_part[:idx].rstrip(" ·").strip()
+                    fields["giu_nguyen"] = req_part[idx + len("ngoài phạm vi:"):].strip()
+                else:
+                    fields["req"] = req_part
+            elif low.startswith("ngoài phạm vi:"):
+                fields["giu_nguyen"] = body.split(":", 1)[1].strip()
+            elif low.startswith("giữ nguyên:"):
+                fields["giu_nguyen"] = body.split(":", 1)[1].strip()
+            elif low.startswith("tiêu chí chấp nhận") or low.startswith("ears:"):
+                fields["ears"] = body.split(":", 1)[1].strip()
+            elif low.startswith("logic cốt lõi:"):
+                val = body.split(":", 1)[1].strip()
+                if val:
+                    logic_lines.append(val)
+                in_logic = True
+            elif low.startswith("ca góc hiểm"):
+                fields["ca_goc"] = body.split(":", 1)[1].strip()
+        elif in_logic and stripped:
+            logic_lines.append(stripped)
+    fields["logic"] = " ".join(logic_lines).strip()
+    vung = ", ".join(task.vung_file) if task.vung_file else "(none declared)"
+    fields["ranh_gioi"] = "; ".join(p for p in (fields["giu_nguyen"], f"Chỉ sửa {vung}") if p)
+    cmd = lay_lenh_test(task) or "(none declared)"
+    fields["tu_kiem"] = "; ".join(p for p in (fields["ca_goc"], f"Test: {cmd}") if p)
+    return fields
+
+
 def _build_packet_payload(project, slug, task, tasks, ban_do):
     goc = os.environ.get("TDQ_WORKTREE_DIR") or os.path.join(project, ".tdq-worktrees")
     wt_dir = os.path.join(goc, slug, task.ma.lower())
     base_branch = _nhanh_tich_hop(project, slug)
     files_str = ", ".join(task.vung_file) if task.vung_file else "(none declared)"
     task_head = task.text[0] if task.text else ""
+    mini_spec = _extract_mini_spec_fields(task)
+    board = blackboard_read(project, slug)
+    failures = [
+        e for e in board.get("entries", [])
+        if str(e.get("task_id", "")).upper() == task.ma.upper()
+        and str(e.get("status", "")).lower() in ("failed", "blocked")
+    ][-3:]
+    escalation = suggest_escalation(project, slug, task.ma)
     prompt_fields = {
         "TASK": f"{task.ma} — {task_head}",
         "CỤM": _packet_wave_info(task, tasks, ban_do),  # i18n-allow
@@ -2221,6 +2615,9 @@ def _build_packet_payload(project, slug, task, tasks, ban_do):
     return {
         "task_id": task.ma,
         "prompt_fields": prompt_fields,
+        "mini_spec": mini_spec,
+        "blackboard_failures": failures,
+        "escalation_hint": escalation,
         "vung_file": list(task.vung_file),
         "tham_chieu": list(task.tham_chieu),
         "sinh_ra": list(task.sinh_ra),
@@ -2232,6 +2629,7 @@ def _build_packet_payload(project, slug, task, tasks, ban_do):
 
 def _format_packet_md(payload):
     pf = payload["prompt_fields"]
+    ms = payload.get("mini_spec") or {}
     lines = [
         f"TASK: {pf['TASK']}",
         f"CỤM: {pf['CỤM']}",  # i18n-allow
@@ -2240,6 +2638,14 @@ def _format_packet_md(payload):
         f"VÙNG FILE: {pf['VÙNG FILE']}",  # i18n-allow
         f"TEST: {pf['TEST']}",
         f"TRẢ VỀ: {pf['TRẢ VỀ']}",  # i18n-allow
+        "",
+        "## Mini-Spec",
+        f"- Req: {ms.get('req') or '(none)'}",
+        f"- GIỮ NGUYÊN: {ms.get('giu_nguyen') or '(none)'}",  # i18n-allow
+        f"- EARS: {ms.get('ears') or '(none)'}",
+        f"- Logic cốt lõi: {ms.get('logic') or '(none)'}",  # i18n-allow
+        f"- RANH GIỚI: {ms.get('ranh_gioi') or '(none)'}",  # i18n-allow
+        f"- TỰ KIỂM: {ms.get('tu_kiem') or '(none)'}",  # i18n-allow
         "",
         "## Symbol-Spans",
     ]
@@ -2263,6 +2669,16 @@ def _format_packet_md(payload):
         lines.extend(["", "## Architecture Invariants (docs/kien-truc.md)"])
         for inv in payload["invariants"]:
             lines.append(f"- {inv}")
+    failures = payload.get("blackboard_failures") or []
+    esc = payload.get("escalation_hint")
+    if failures or esc:
+        lines.extend(["", "## Blackboard"])
+        for item in failures:
+            lines.append(f"- [{item.get('timestamp', '')}] {item.get('role')}: {item.get('error') or item.get('summary')}")
+        if esc:
+            lines.append(
+                f"- ESCALATE: {esc['failures']}/{esc['threshold']} fails -> use {esc['recommended_agent']} ({esc['recommended_model']})"
+            )
     return "\n".join(lines)
 
 
@@ -2283,6 +2699,67 @@ def lenh_packet(project, args):
     return 0
 
 
+def lenh_validate_handoff(project, args):
+    """Validate a subagent handoff JSON or 7-line digest against handoff-schema.json."""
+    if getattr(args, "file", None):
+        with open(args.file, encoding="utf-8", errors="replace") as fh:
+            raw = fh.read()
+    elif getattr(args, "text", None) is not None:
+        raw = args.text
+    else:
+        raw = sys.stdin.read()
+    payload = parse_handoff_from_text(raw)
+    ok, errs = validate_handoff_payload(payload, project=project)
+    if getattr(args, "json", False):
+        print(json.dumps({"ok": ok, "errors": errs, "payload": payload}, ensure_ascii=False, indent=2))
+    elif ok:
+        print(f"VALID handoff for {payload.get('task_id')} ({payload.get('status')})")
+    else:
+        for err in errs:
+            _loi(f"INVALID handoff: {err}")
+    return 0 if ok else 1
+
+
+def lenh_blackboard(project, args):
+    """Read, append, or clear .tdq-runtime/blackboard/<slug>.json."""
+    slug = _active_slug_or_default(project, getattr(args, "slug", None))
+    action = getattr(args, "action", "read") or "read"
+    if action == "record":
+        if not args.task or not args.status:
+            raise LoiLuat("blackboard record requires --task and --status")
+        entry = blackboard_record(
+            project,
+            args.task,
+            args.status,
+            args.summary or "",
+            slug=slug,
+            role=args.role or "unknown",
+            model=args.model or "",
+            error=args.error or "",
+        )
+        print(json.dumps(entry, ensure_ascii=False, indent=2))
+        return 0
+    if action == "clear":
+        path = blackboard_path(project, slug)
+        if os.path.isfile(path):
+            os.remove(path)
+        print(f"Cleared blackboard: {path}")
+        return 0
+    board = blackboard_read(project, slug)
+    if args.task:
+        board["entries"] = [
+            e for e in board.get("entries", [])
+            if str(e.get("task_id", "")).upper() == str(args.task).upper()
+        ]
+    if getattr(args, "json", False):
+        print(json.dumps(board, ensure_ascii=False, indent=2))
+    else:
+        print(f"Blackboard {slug}: {len(board.get('entries', []))} entry(ies)")
+        for e in board.get("entries", []):
+            print(f"- {e.get('task_id')} [{e.get('status')}] ({e.get('role')}): {e.get('error') or e.get('summary')}")
+    return 0
+
+
 # ------------------------------------------------------------------ CLI
 LENH = {
     "assign": (lenh_phan_cong, "read the whole plan, write the assignment map"),
@@ -2295,6 +2772,8 @@ LENH = {
     "clean": (lenh_don, "remove the request's worktrees and prune"),
     "resolve": (lenh_go, "show every stuck file with both sides, changing nothing"),
     "packet": (lenh_packet, "build a self-contained task dispatch packet"),
+    "validate-handoff": (lenh_validate_handoff, "validate a handoff JSON or 7-line digest against handoff-schema.json"),
+    "blackboard": (lenh_blackboard, "read or record shared runtime diagnostics in .tdq-runtime/blackboard"),
 }
 BANG_TEN = tdq_ten_lenh.BANG_DOI_TEN["tdq_team.py"]
 
@@ -2313,6 +2792,20 @@ def build_parser():
             con.add_argument("--plan", default=None, help="path to the plan markdown file")
             con.add_argument("--format", choices=("md", "json"), default="md",
                              help="output format (md or json)")
+        if ten == "validate-handoff":
+            con.add_argument("--file", default=None, help="path to JSON or text handoff file")
+            con.add_argument("--text", default=None, help="raw handoff JSON or 7-line digest string")
+            con.add_argument("--json", action="store_true", help="emit JSON verdict output")
+        if ten == "blackboard":
+            con.add_argument("action", nargs="?", choices=("read", "record", "clear"), default="read")
+            con.add_argument("--slug", default=None, help="request slug (default: active_request)")
+            con.add_argument("--task", default=None, help="task ID filter or target")
+            con.add_argument("--status", default=None, help="entry status (done|failed|blocked)")
+            con.add_argument("--summary", default="", help="short status summary")
+            con.add_argument("--role", default="unknown", help="agent role name")
+            con.add_argument("--model", default="", help="model ID used")
+            con.add_argument("--error", default="", help="error diagnostic snippet")
+            con.add_argument("--json", action="store_true", help="emit JSON output")
         if ten == "clean":
             con.add_argument("task", nargs="?", default=None,
                              help="optional task code (T1.1) or branch name to clean")

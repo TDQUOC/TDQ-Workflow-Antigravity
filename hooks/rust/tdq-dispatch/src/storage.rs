@@ -280,6 +280,30 @@ pub fn read_sessions_role(workspace_root: &Path, sid: &str) -> Option<SessionRol
     map.get(sid).cloned()
 }
 
+/// Persist subagent role into `docs/tdq/.tdq-runtime/sessions.json`.
+pub fn register_sessions_role(workspace_root: &Path, sid: &str, role: &str, task: &str) {
+    if sid.trim().is_empty() || role.trim().is_empty() {
+        return;
+    }
+    let path = get_runtime_dir(workspace_root).join("sessions.json");
+    let _guard = acquire_sidecar_lock(&path, Duration::from_millis(200));
+    let mut map: serde_json::Map<String, Value> = fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default();
+    map.insert(
+        sid.to_string(),
+        serde_json::json!({
+            "role": role,
+            "task": task,
+            "at": unix_timestamp_f64(),
+        }),
+    );
+    if let Ok(data) = serde_json::to_vec_pretty(&map) {
+        let _ = atomic_write_file(&path, &data);
+    }
+}
+
 /// Task checkbox state mirroring `tdq_state.plan_tick_state()`.
 #[derive(Debug, Clone, Default)]
 pub struct PlanTickState {

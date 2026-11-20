@@ -1,10 +1,10 @@
 {
   "slug": "2026-11-20-1230-trien-khai-4-de-xuat-agent",
   "plan_file": "docs\\tdq\\plan\\2026-11-20-1230-trien-khai-4-de-xuat-agent.md",
-  "plan_sha": "e304ca7b0956b8f94315f0da00fdbd9444269dbec598e8113b42092eec12592d",
+  "plan_sha": "9c6731f5357e095bcc42b019f09989146822d8340b461adab61f50c97218bd1b",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "bab2166ca3741271438d20043c22962e5468baecc696a6f199d9a0cd8cfe1d86",
+  "plan_assignment_sha": "14e2df06a040d74abaee2709cf5f50d18e53fb91c9daaaefe9a675a057c31abd",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "giao",
