@@ -1,9 +1,10 @@
 """P1/P3 — PHASE_TABLE là nguồn sự thật duy nhất; doc phải khớp hằng trong code."""
 import os
 import re
+import tempfile
 import unittest
 
-from helper import ROOT, tdq_state
+from helper import ROOT, tdq_state, write_state
 
 REQUIRED_KEYS = {"entry", "action", "cmd", "checklist", "done_when", "forbidden"}
 DOC_FILES = [
@@ -189,3 +190,136 @@ class ModeRowsTest(unittest.TestCase):
         hang_gia = dict(tdq_state.PHASE_TABLE["implement"])
         bang = dict(tdq_state.MODE_ROWS, mode_gia=hang_gia)
         tdq_state.kiem_bang_mode(("main", "subagent", "codex", "mode_gia"), bang)
+
+
+class InvestigatePhaseRowsTest(unittest.TestCase):
+    """M1 — INVESTIGATE_PHASE_ROWS routes investigation phases without mutating PHASE_TABLE."""
+
+    EXPECTED_KEYS = {"analyze", "spec", "plan", "implement", "qc", "quick_analyze", "quick"}
+
+    def test_phase_table_unchanged_for_build(self):
+        self.assertEqual(len(tdq_state.PHASE_TABLE), 11)
+        for phase in ("analyze", "spec", "plan", "qc"):
+            row = tdq_state.phase_row(
+                {"active_request": "r", "lane": "full", "phase": phase, "work_kind": "build"}
+            )
+            self.assertIs(row, tdq_state.PHASE_TABLE[phase])
+
+    def test_investigate_phase_rows_complete_and_single_line(self):
+        self.assertEqual(set(tdq_state.INVESTIGATE_PHASE_ROWS), self.EXPECTED_KEYS)
+        for name, row in tdq_state.INVESTIGATE_PHASE_ROWS.items():
+            with self.subTest(phase=name):
+                self.assertEqual(REQUIRED_KEYS, set(row))
+                self.assertTrue(row["checklist"])
+                self.assertTrue(all(isinstance(i, str) and i.strip() for i in row["checklist"]))
+                for field in ("entry", "action", "cmd", "done_when", "forbidden"):
+                    val = str(row[field]).strip()
+                    self.assertTrue(val, f"{name}.{field} empty")
+                    self.assertNotIn("\n", val, f"{name}.{field} must stay single-line")
+
+    def test_phase_row_routes_investigate_and_ignores_build_subagent_row(self):
+        for key in ("analyze", "spec", "plan", "implement", "qc"):
+            with self.subTest(phase=key):
+                row = tdq_state.phase_row(
+                    {"active_request": "r", "lane": "full", "phase": key, "work_kind": "investigate"}
+                )
+                self.assertIs(row, tdq_state.INVESTIGATE_PHASE_ROWS[key])
+
+        sub_row = tdq_state.phase_row(
+            {
+                "active_request": "r",
+                "lane": "full",
+                "phase": "implement",
+                "implement_mode": "subagent",
+                "work_kind": "investigate",
+            }
+        )
+        self.assertIs(sub_row, tdq_state.INVESTIGATE_PHASE_ROWS["implement"])
+
+        qa_row = tdq_state.phase_row(
+            {"active_request": "r", "lane": "quick", "phase": "analyze", "work_kind": "investigate"}
+        )
+        self.assertIs(qa_row, tdq_state.INVESTIGATE_PHASE_ROWS["quick_analyze"])
+
+        q_row = tdq_state.phase_row(
+            {
+                "active_request": "r",
+                "lane": "quick",
+                "phase": "implement",
+                "quick_approved": True,
+                "work_kind": "investigate",
+            }
+        )
+        self.assertIs(q_row, tdq_state.INVESTIGATE_PHASE_ROWS["quick"])
+
+        rep_row = tdq_state.phase_row(
+            {"active_request": "r", "lane": "full", "phase": "report", "work_kind": "investigate"}
+        )
+        self.assertIs(rep_row, tdq_state.PHASE_TABLE["report"])
+
+    def test_investigate_guidance_references_expected_mechanisms(self):
+        analyze_txt = (
+            tdq_state.INVESTIGATE_PHASE_ROWS["analyze"]["action"]
+            + " ".join(tdq_state.INVESTIGATE_PHASE_ROWS["analyze"]["checklist"])
+        ).lower()
+        self.assertIn("hypothes", analyze_txt)
+
+        impl_txt = (
+            tdq_state.INVESTIGATE_PHASE_ROWS["implement"]["action"]
+            + " ".join(tdq_state.INVESTIGATE_PHASE_ROWS["implement"]["checklist"])
+        )
+        self.assertIn("evidence merge", impl_txt)
+        self.assertIn("Weighted Burden", impl_txt)
+
+        qc_txt = (
+            tdq_state.INVESTIGATE_PHASE_ROWS["qc"]["action"]
+            + " ".join(tdq_state.INVESTIGATE_PHASE_ROWS["qc"]["checklist"])
+        )
+        self.assertIn("QC-I1..I4", qc_txt)
+        self.assertIn("docs/tdq/", qc_txt)
+
+    def test_investigate_compact_head_and_state_md_budgets(self):
+        rule_line = (
+            "[TDQ] Rule: a [TDQ:<CODE>] line means do exactly that job FIRST, "
+            "then print ✓ [TDQ:<CODE>]. Write state only via scripts/tdq_state.py."
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            long_cwd = tmp
+            while len(long_cwd) < 180:
+                long_cwd = os.path.join(long_cwd, "long-folder-segment-name")
+            os.makedirs(long_cwd, exist_ok=True)
+            slug = "2026-11-21-0217-very-long-investigate-slug"
+            for lane, phase, approved in (
+                ("full", "analyze", False),
+                ("full", "spec", False),
+                ("full", "plan", True),
+                ("full", "implement", True),
+                ("full", "qc", True),
+                ("quick", "analyze", False),
+                ("quick", "implement", True),
+            ):
+                state = write_state(
+                    long_cwd,
+                    active_request=slug,
+                    lane=lane,
+                    phase=phase,
+                    work_kind="investigate",
+                    spec_approved=approved,
+                    plan_approved=approved,
+                    quick_approved=approved,
+                    implement_mode="subagent" if approved else None,
+                )
+                with self.subTest(lane=lane, phase=phase):
+                    compact = tdq_state.render_next(long_cwd, state, compact=True)
+                    head_block = rule_line + "\n" + compact
+                    self.assertLessEqual(len(head_block), 600)
+                    self.assertLessEqual(len(head_block.splitlines()), 12)
+                    self.assertIn("· kind:inv", compact.splitlines()[0])
+                    self.assertIn("Done when:", compact)
+
+                    full_next = tdq_state.render_next(long_cwd, state)
+                    self.assertLessEqual(len(full_next.splitlines()), 20)
+
+                    md = tdq_state.render_state_md(long_cwd, state)
+                    self.assertLessEqual(len(md.splitlines()), 30)
+                    self.assertIn("| Work kind | investigate |", md)
