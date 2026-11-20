@@ -32,7 +32,7 @@ PHASE1_RUNTIME_MODULES = {
 APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
     "rtk_integration", "tdq_mcp_shrink", "tdq_ccr", "caveman_config",
-    "tdq_plan_scaffold",
+    "tdq_plan_scaffold", "tdq_config",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -44,6 +44,11 @@ APPROVED_RELEASE_DOCS = {
     "skills/tdq-plan/references/planner-rules.md",
     "skills/tdq-plan/references/plan-examples.md",
     "skills/tdq-build/references/qc-vong-fix.md",
+    # Approved 2026-11-20-1230-trien-khai-4-de-xuat-agent
+    "tdq-config.json",
+    "agents/tdq-explorer.md",
+    "agents/tdq-debugger.md",
+    "hooks/scripts/subagent_stop.py",
 }
 
 
