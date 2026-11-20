@@ -176,7 +176,7 @@ Log: BẮT BUỘC — `scripts/tdq_config.py`, `hooks/scripts/subagent_stop.py`,
 
 - [ ] **T5.1** (e12m) Cập nhật trình biên dịch `tools/patches/*` & `tools/build_agy_plugin.py` (`8` agent `inherit` + LSP/Grep, `tdq-config.json`, `PostToolUse` matcher, `1` schema) và rebuild `plugins/tdq-workflow-agy/` — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
   - Req: `§2#5`, `§2b(M5-agy-plugin-compiler)` · Ngoài phạm vi: `GIỮ NGUYÊN` plugin ngoài repo `~/.gemini/config/plugins/` không bị ghi đè.
-  - Chạm: `tools/patches/skills_and_agents.py`, `tools/patches/agy_manifests.py`, `tools/patches/agy_hooks.py`, `tools/build_agy_plugin.py`, `docs/tdq/token-budget.json`
+  - Chạm: `tools/patches/skills_and_agents.py`, `tools/patches/agy_manifests.py`, `tools/patches/agy_dispatch.py`, `tools/patches/agy_hooks.py`, `tools/build_agy_plugin.py`, `docs/tdq/token-budget.json`
   - Cần: T1.4, T3.1, T3.2, T4.1
   - Dùng: `agy-customizations / antigravity-guide`
     - Để: Đối chiếu `6` sự kiện lifecycle hợp lệ của Antigravity 2.0 trước khi sinh `plugins/tdq-workflow-agy/hooks.json`.
