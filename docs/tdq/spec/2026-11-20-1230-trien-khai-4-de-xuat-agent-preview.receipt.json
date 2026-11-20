@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\truoc-sau.archify.md",
+    "sha256": "1b3207eff087db3398e33c6150363e4de32ed9870a81836220efc9502bf4f21a",
+    "bytes": 2797
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent-preview.d9e3a434040a429ea96874d4c1fbdcdc.html",
+    "sha256": "f14e7549b250cdd275de5081ec9ffb59d993a4d475a70897e4ce694fd7bf4757",
+    "bytes": 1596884
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent-preview.d9e3a434040a429ea96874d4c1fbdcdc.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent-preview.d9e3a434040a429ea96874d4c1fbdcdc.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2473,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

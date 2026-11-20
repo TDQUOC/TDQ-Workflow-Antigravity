@@ -2,8 +2,11 @@
   "schema_version": 1,
   "status": "stale",
   "reasons": [
+    "Source file modified: agents/tdq-build-resolver.md",
     "Source file modified: agents/tdq-implementer.md",
+    "Source file modified: agents/tdq-qc-tester.md",
     "Source file modified: agents/tdq-reviewer.md",
+    "Source file modified: agents/tdq-security-reviewer.md",
     "Source file modified: hooks/scripts/bash_gate.py",
     "Source file modified: scripts/build_portable.py",
     "Source file modified: scripts/doc_lint.py",
@@ -3178,5 +3181,5 @@
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-20T05:17:45Z"
+  "checked_at": "2026-11-20T06:45:02Z"
 }
