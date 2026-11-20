@@ -82,12 +82,21 @@ def _current_host_os() -> str:
     return sys.platform
 
 
+def _rust_binary_stale(rust_crate_dir: Path, rust_exe: Path) -> bool:
+    """Return True when rust_exe is missing or older than Cargo.toml / src/*.rs."""
+    if not rust_exe.is_file():
+        return True
+    exe_mtime = rust_exe.stat().st_mtime
+    sources = [rust_crate_dir / "Cargo.toml", *list((rust_crate_dir / "src").rglob("*.rs"))]
+    return any(src.is_file() and src.stat().st_mtime > exe_mtime for src in sources)
+
+
 def _build_host_rust_binary(rust_crate_dir: Path, host_os: str) -> Path:
-    """Build release Rust dispatcher for current host OS when missing."""
+    """Build release Rust dispatcher for current host OS when missing or stale."""
     exe_name = "tdq-dispatch.exe" if host_os == "windows" else "tdq-dispatch"
     rust_exe = rust_crate_dir / "target" / "release" / exe_name
     manifest = rust_crate_dir / "Cargo.toml"
-    if not rust_exe.is_file() and manifest.is_file():
+    if manifest.is_file() and _rust_binary_stale(rust_crate_dir, rust_exe):
         _log(f"building native {host_os} binary via cargo build --release")
         kw: dict[str, object] = {}
         if os.name == "nt":
@@ -107,6 +116,7 @@ def _resolve_binary_source(
     rust_exe: Path,
     prebuilt_dir: Path,
     existing_output_bin: Path,
+    upstream_plugin_bin: Path | None = None,
 ) -> Path | None:
     """Resolve a magic-verified binary path for target_os without cross-OS copying."""
     candidates: list[Path] = []
@@ -114,6 +124,8 @@ def _resolve_binary_source(
         candidates.append(rust_exe)
     candidates.append(prebuilt_dir / bin_name)
     candidates.append(existing_output_bin / bin_name)
+    if upstream_plugin_bin is not None:
+        candidates.append(upstream_plugin_bin / bin_name)
     for cand in candidates:
         if not cand.is_file():
             continue
@@ -132,13 +144,20 @@ def _stage_rust_binaries(
     host_os = _current_host_os()
     rust_crate_dir = upstream / "hooks" / "rust" / "tdq-dispatch"
     prebuilt_dir = rust_crate_dir / "prebuilt"
+    upstream_plugin_bin = upstream / "plugins" / "tdq-workflow-agy" / "bin"
     rust_exe = _build_host_rust_binary(rust_crate_dir, host_os)
 
     staged: dict[str, Path] = {}
     failures: list[str] = []
     for target_os, bin_name in _BINARY_TARGETS:
         source = _resolve_binary_source(
-            target_os, bin_name, host_os, rust_exe, prebuilt_dir, existing_output_bin
+            target_os,
+            bin_name,
+            host_os,
+            rust_exe,
+            prebuilt_dir,
+            existing_output_bin,
+            upstream_plugin_bin=upstream_plugin_bin,
         )
         if source is None:
             failures.append(
@@ -203,6 +222,9 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         if cp_skill.is_dir():
             n_skills += common_utils.copy_clean_tree(cp_skill, stage / "skills" / "tdq-checkportable")
         n_agents = common_utils.copy_clean_tree(upstream / "agents", stage / "agents")
+        config_src = upstream / "tdq-config.json"
+        if config_src.is_file():
+            shutil.copy2(config_src, stage / "tdq-config.json")
 
         # 2. Apply CLI & host fixes (NEW-01..NEW-28 + hotfix + AGY parsers)
         cli_fixes_a.apply_all(stage / "scripts")
@@ -215,7 +237,7 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         agy_manifests.generate_mcp_config(stage)
         agy_manifests.generate_two_tier_rules(stage)
 
-        # 4. Translate 12 skills (M01-M20), 6 subagents, and relock token-budget.json
+        # 4. Translate 12 skills (M01-M20), 8 subagents, and relock token-budget.json
         skills_and_agents.transform_skills(stage)
         skills_and_agents.transform_agents(stage)
         agy_hooks.apply_all(stage / "hooks" / "scripts")

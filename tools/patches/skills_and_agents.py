@@ -1,7 +1,5 @@
-"""Translate all 12 skills (M01-M20), 6 subagents, handoff schema, and relock token budgets."""
-import json
+"""Translate all 12 skills (M01-M20), 8 subagents, and relock token budgets."""
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -27,55 +25,82 @@ M01_M20_REPLACEMENTS: Tuple[Tuple[str, str], ...] = (
     ("mcp__tavily-primary__", "mcp_tdq-workflow-agy_tavily-primary_"),
 )
 
-AUTO_CLARITY_RULE = (
-    "Compact Handoff: report as `path:line — symbol — note` (Auto-Clarity: terse "
-    "ASD-STE100 internally; full prose on security warnings and approval gates)."
-)
-
-
-def compact_handoff_hint(note_line: str) -> str:
-    """Format a terse Compact Handoff line bounded under 240 chars."""
-    cleaned = " ".join(str(note_line or "").split())
-    return cleaned[:237] + "..." if len(cleaned) > 240 else cleaned
-
+_READONLY_TOOLS: List[str] = [
+    "read_file",
+    "grep_search",
+    "find_by_name",
+    "list_dir",
+    "call_mcp_tool",
+    "run_command",
+    "send_message",
+]
+_WRITER_TOOLS: List[str] = [
+    "read_file",
+    "edit_file",
+    "write_file",
+    "grep_search",
+    "find_by_name",
+    "list_dir",
+    "call_mcp_tool",
+    "run_command",
+    "send_message",
+]
+_STRICT_READONLY_AGENTS = frozenset({
+    "tdq-reviewer.md",
+    "tdq-security-reviewer.md",
+    "tdq-explorer.md",
+    "tdq-debugger.md",
+})
 
 # Strictly verified Antigravity 2.0 subagent specs (model in {inherit, flash_lite, flash, pro},
-# tools as YAML array of real Antigravity tool names).
+# tools as YAML array of real Antigravity tool names). All 8 inherit session model dynamically.
 AGENT_FRONTMATTERS: Dict[str, Dict[str, object]] = {
     "tdq-implementer.md": {
         "name": "tdq-implementer",
         "description": "Implements one assigned task of an approved TDQ plan in an isolated git worktree, red-green, and reports structured handoff data.",
-        "tools": ["read_file", "edit_file", "write_file", "run_command", "send_message"],
-        "model": "flash",
+        "tools": _WRITER_TOOLS,
+        "model": "inherit",
     },
     "tdq-qc-tester.md": {
         "name": "tdq-qc-tester",
         "description": "Independently verifies an implemented TDQ plan against its Definition of Done - reruns tests, probes edge cases and logging, reports PASS/FAIL with evidence.",
-        "tools": ["read_file", "run_command", "send_message"],
+        "tools": _WRITER_TOOLS,
         "model": "inherit",
     },
     "tdq-reviewer.md": {
         "name": "tdq-reviewer",
         "description": "Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering. Read-only - reports findings, never edits.",
-        "tools": ["read_file", "run_command", "send_message"],
+        "tools": _READONLY_TOOLS,
         "model": "inherit",
     },
     "tdq-security-reviewer.md": {
         "name": "tdq-security-reviewer",
         "description": "Independent security auditor checking code changes for OWASP Top 10, hardcoded secrets, injection vulnerabilities, and least-privilege compliance. Read-only.",
-        "tools": ["read_file", "run_command", "send_message"],
-        "model": "pro",
+        "tools": _READONLY_TOOLS,
+        "model": "inherit",
     },
     "tdq-build-resolver.md": {
         "name": "tdq-build-resolver",
         "description": "Rapid-response subagent fixing compiler errors, build failures, syntax faults, and type check breaks with surgical, minimal diffs.",
-        "tools": ["read_file", "edit_file", "write_file", "run_command", "send_message"],
-        "model": "flash",
+        "tools": _WRITER_TOOLS,
+        "model": "inherit",
     },
     "tdq-refactor-cleaner.md": {
         "name": "tdq-refactor-cleaner",
         "description": "Code cleaner eliminating dead code, removing duplicates, and enforcing clean code invariants with zero functional regression and deletion audit logs.",
-        "tools": ["read_file", "edit_file", "write_file", "run_command", "send_message"],
+        "tools": _WRITER_TOOLS,
+        "model": "inherit",
+    },
+    "tdq-explorer.md": {
+        "name": "tdq-explorer",
+        "description": "Read-only 3-tier codebase explorer mapping callers, symbol definitions, and blast radius across LSP, Graphify, and Grep into compact path:line digests.",
+        "tools": _READONLY_TOOLS,
+        "model": "inherit",
+    },
+    "tdq-debugger.md": {
+        "name": "tdq-debugger",
+        "description": "Read-only root-cause debugger reproducing failures, isolating faulty state transitions across Python/Rust/hooks, and returning minimal verified fix plans.",
+        "tools": _READONLY_TOOLS,
         "model": "inherit",
     },
 }
@@ -102,7 +127,7 @@ def _rewrite_skill_text(text: str) -> str:
 
 
 def transform_skills(plugin_root: Path) -> int:
-    """Transform all markdown files across the 12 skills and add handoff-schema.json."""
+    """Transform all markdown files across the 12 skills cleanly (preserve handoff-schema.json)."""
     skills_dir = plugin_root / "skills"
     changed = 0
     for md in sorted(skills_dir.rglob("*.md")):
@@ -111,34 +136,11 @@ def transform_skills(plugin_root: Path) -> int:
         if updated != raw:
             write_utf8(md, updated)
             changed += 1
-
-    handoff_schema = {
-        "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "title": "TDQ_HANDOFF_PAYLOAD",
-        "type": "object",
-        "required": ["task_id", "status", "files", "test_result", "branch", "merge_ready", "tick_ready"],
-        "properties": {
-            "task_id": {"type": "string"},
-            "status": {"type": "string", "enum": ["done", "blocked", "completed", "failed"]},
-            "files": {"type": "array", "items": {"type": "string"}},
-            "test_result": {"type": "string"},
-            "branch": {"type": "string"},
-            "merge_ready": {"type": "boolean"},
-            "tick_ready": {"type": "boolean"},
-            "notes": {
-                "type": "string",
-                "maxLength": 1500,
-                "description": AUTO_CLARITY_RULE,
-            },
-        },
-    }
-    schema_path = skills_dir / "tdq-conventions" / "references" / "handoff-schema.json"
-    write_utf8(schema_path, json.dumps(handoff_schema, indent=2, ensure_ascii=False) + "\n")
     return changed
 
 
 def transform_agents(plugin_root: Path) -> int:
-    """Rewrite all 6 agents/tdq-*.md to valid Antigravity 2.0 frontmatter & tool names."""
+    """Rewrite all 8 agents/tdq-*.md to valid Antigravity 2.0 frontmatter & tool names."""
     agents_dir = plugin_root / "agents"
     converted = 0
     for md in sorted(agents_dir.glob("tdq-*.md")):
@@ -161,9 +163,18 @@ def transform_agents(plugin_root: Path) -> int:
             f"model: {meta['model']}\n"
             "---\n\n"
         )
-        # Note explicit read-only guard reminder for reviewers using run_command
-        if md.name in ("tdq-reviewer.md", "tdq-security-reviewer.md", "tdq-qc-tester.md"):
-            body += "\n> **Host Enforcement:** Write tools are omitted and shell mutations are blocked by TDQ `bash_gate.py` (`[TDQ:READONLY]`).\n"
+        # Explicit host enforcement notice matching bash_gate/edit_gate guards.
+        if md.name in _STRICT_READONLY_AGENTS:
+            body += (
+                "\n> **Host Enforcement:** Write tools are omitted and shell mutations "
+                "are blocked by TDQ `bash_gate.py` (`[TDQ:READONLY]`).\n"
+            )
+        elif md.name == "tdq-qc-tester.md":
+            body += (
+                "\n> **Host Enforcement:** Writes are strictly scoped to `docs/tdq/qc/*.md` "
+                "and source/test/plan/spec/state edits or shell mutations are blocked by TDQ "
+                "`edit_gate.py` / `bash_gate.py` (`[TDQ:QC-SCOPED]`).\n"
+            )
         write_utf8(md, fm + body.lstrip())
         converted += 1
     return converted
