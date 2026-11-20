@@ -459,6 +459,21 @@ class TestPacketCommand(unittest.TestCase):
         self.assertEqual(rc_off, 0, err_off)
         self.assertEqual(err_off.strip(), "")
 
+    def test_unbackticked_section_paths_extracted_without_leaking_backtick_cmd_or_urls(self):
+        plan = """# PLAN — legacy bare paths
+
+## P1 — work
+- [ ] **T1.1** (e5m) Add add(a, b) — Test: `pytest tests/test_calc.py`
+  - Chạm: src/calc.py, tests/test_calc.py, CLAUDE.md
+  - Tham chiếu: scripts/ref.py (`build_ref`), https://example.com/guide.html
+- [ ] **T1.2** (e5m) Missing cham line — Test: `pytest tests/test_calc.py`
+"""
+        p = _write(self.cwd, self.plan_rel, plan)
+        tasks = {t.ma: t for t in tdq_team.doc_plan(p)}
+        self.assertEqual(tasks["T1.1"].vung_file, ["src/calc.py", "tests/test_calc.py", "CLAUDE.md"])
+        self.assertEqual(tasks["T1.1"].tham_chieu, ["scripts/ref.py"])
+        self.assertEqual(tasks["T1.2"].vung_file, [])
+
 
 if __name__ == "__main__":
     unittest.main()

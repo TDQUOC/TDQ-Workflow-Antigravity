@@ -47,6 +47,10 @@ _TASK = re.compile(r"^(\s*)-\s*\[( |~|x|>)\]\s*\*\*([A-Za-z][A-Za-z0-9.]*)\*\*\s
 _PHASE = re.compile(r"^##\s*(P\d+)\b")
 # A path declared in backticks: needs a `/` and an extension — `true` or `T1.1` do not count.
 _PATH = re.compile(r"`([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)`")
+_SECTION_PATH = re.compile(
+    r"`[^`]*`"
+    r"|(?<![:/@A-Za-z0-9_.\-`])([A-Za-z0-9_./-]+\.[A-Za-z0-9]+)(?![A-Za-z0-9_./\-`])"
+)
 ROOT_FILES = {
     "CLAUDE.md", "AGENTS.md", "Cargo.toml",
     "pyproject.toml", "package.json", "pyrightconfig.json",
@@ -181,9 +185,21 @@ def _classify_section(body):
     return "other"
 
 
-def _extract_paths(text):
+def _extract_paths(text, allow_bare=False):
     out = []
-    for duong in _PATH.findall(text):
+    if allow_bare:
+        candidates = []
+        for match in _SECTION_PATH.finditer(text):
+            tok = match.group(0)
+            if tok.startswith("`"):
+                bt = _PATH.fullmatch(tok)
+                if bt:
+                    candidates.append(bt.group(1))
+            elif match.group(1):
+                candidates.append(match.group(1))
+    else:
+        candidates = _PATH.findall(text)
+    for duong in candidates:
         if ("/" in duong or duong in ROOT_FILES) and duong not in out:
             out.append(duong)
     return out
@@ -202,18 +218,18 @@ def _record_tham_chieu_syms(task, line_text):
 
 def _record_section_items(task, section, line_text):
     if section == "cham":
-        for duong in _extract_paths(line_text):
+        for duong in _extract_paths(line_text, allow_bare=True):
             if duong not in task.vung_file:
                 task.vung_file.append(duong)
         return
     if section == "tham_chieu":
-        for duong in _extract_paths(line_text):
+        for duong in _extract_paths(line_text, allow_bare=True):
             if duong not in task.tham_chieu:
                 task.tham_chieu.append(duong)
         _record_tham_chieu_syms(task, line_text)
         return
     if section == "sinh_ra":
-        for duong in _extract_paths(line_text):
+        for duong in _extract_paths(line_text, allow_bare=True):
             if duong not in task.sinh_ra:
                 task.sinh_ra.append(duong)
 

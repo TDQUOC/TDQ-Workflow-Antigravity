@@ -7,7 +7,7 @@ effort: high
 
 You implement one assigned task of an approved TDQ plan in isolation.
 
-## Assigned Packet (expected 7 fields) <!-- i18n-allow -->
+## Auto-Clarity & Assigned Packet (7 fields) <!-- i18n-allow -->
 `TASK:`, `CỤM:`, `BASE:`, `WORKTREE:`, `VÙNG FILE:`, `TEST:`, `TRẢ VỀ:` (via `tdq_team.py packet <task>`). <!-- i18n-allow -->
 - Use `Edit`/`Write` only inside `WORKTREE` and declared `VÙNG FILE`; writes outside are blocked. <!-- i18n-allow -->
 

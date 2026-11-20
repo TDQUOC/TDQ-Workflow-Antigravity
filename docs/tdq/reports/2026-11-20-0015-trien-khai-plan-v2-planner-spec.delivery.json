@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "58e84053-48a6-42b3-b093-9e1f85c03d7c",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-0015-trien-khai-plan-v2-planner-spec\\bao-cao-nghiem-thu.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-0015-trien-khai-plan-v2-planner-spec.4741779debc64134a9e1b11a40668f1e.html",
+  "specification": {
+    "sha256": "a168a94243f65acdcd6fc93496bfc040d399c0826508236c4f7a51b599007696",
+    "bytes": 4733
+  },
+  "artifact": {
+    "sha256": "2a770cc51877a8fb6da4c2598a2181c01baefd99f1da1ce46dac4832823d69f2",
+    "bytes": 1644804
+  },
+  "explainer": {
+    "preparedSha256": "abc9d27618e61bc8ffde4301a941ea6d68ca1782816895df794162f10afcedbf",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "report-planv2-truoc",
+        "inline": true,
+        "sha256": "1068fc81d8d20a3f3a9cd871213ef44b25a23ebede14783079315b43bd9ff338",
+        "bytes": 1215
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "report-planv2-sau",
+        "inline": true,
+        "sha256": "6f8ecab6e59cb97d03fe4889c13732d6a09013f0771a5e7ae0c89fe463af03b6",
+        "bytes": 1194
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "report-planv2-kiem-thu",
+        "inline": true,
+        "sha256": "1a5b438c0442f5a8c79e584bc4b9456c13109a55f7ed0e367a2c2ca059026d80",
+        "bytes": 1346
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "report-planv2-ket-qua",
+        "inline": true,
+        "sha256": "55a6fa56362911ebd0e13dfaf42275c036722664b113313ce278f9a783645b1a",
+        "bytes": 1115
+      }
+    ]
+  }
+}

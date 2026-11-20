@@ -185,6 +185,8 @@ approve or reject it, which happens in the report.
 
 ## When it FAILs
 
-Follow [qc-vong-fix.md](qc-vong-fix.md) (linked via `SKILL.md`): add `R15-Compact` `- [ ] **QCn.1**` tasks under `## QC vòng N — fix` (**Cap of 3 rounds**), fix red → green, re-run failed items + `tdq_test.py vung-cham` (then `tdq_test.py tron-bo` after last round). <!-- i18n-allow -->
+Add `R15-Compact` `- [ ] **QCn.1**` tasks under `## QC vòng N — fix` per [qc-vong-fix.md](qc-vong-fix.md), fix red → green, re-run failed items + `tdq_test.py vung-cham` (`tron-bo` after last round): <!-- i18n-allow -->
+
+4. Repeat until every item PASSes. **Cap of 3 rounds** — over the cap, STOP and tell the user.
 
 Never ask mid-run. A spec threshold the fix cannot reach → `lech add`, mark the item "PASS (lệch, chờ duyệt)", and the report asks the user.

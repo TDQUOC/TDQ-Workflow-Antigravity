@@ -3,7 +3,7 @@
 Ngày: 2026-11-20 · Spec: ../spec/2026-11-20-0015-trien-khai-plan-v2-planner-spec.md (bản 1.0, ĐÃ DUYỆT) · Lane: full
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: subagent — đo thực tế bằng tdq_bench.py simulate (--he-so-agent 1.5): đội thắng main 2.0 phút (18.4 vs 20.4 phút, 10 task chia 6 đợt, giao được 7 task và leader giữ 3 task file-luat) (ĐÃ CHỌN lúc duyệt)
-Trạng thái plan: ĐÃ DUYỆT
+Trạng thái plan: HOÀN THÀNH
 
 ## Mục lục
 
@@ -197,7 +197,7 @@ Trạng thái plan: ĐÃ DUYỆT
     - Ca hiểm: Môi trường thiếu `anthropic-tokenizer` ở venv mặc định (chạy bằng interpreter có cài hoặc kiểm `token_budget.py` đúng nguồn), test parity nhạy cảm với chuỗi `remind` mới khi đủ `5` trường.
     - Tiêu chí: `assert validate_rc == 0`, `assert parity_rc == 0`, `assert portable_rc == 0`
 
-- [>] **T3.2** (e16m) Xây dựng và chạy kiểm thử E2E `tests/test_plan_v2_e2e.py` trên `3` kịch bản (`Two-Pass + --emit-cards + packet + --verify-plan + R15 + state gate`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v`
+- [x] **T3.2** (e16m) Xây dựng và chạy kiểm thử E2E `tests/test_plan_v2_e2e.py` trên `3` kịch bản (`Two-Pass + --emit-cards + packet + --verify-plan + R15 + state gate`) — Test: `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v`
   - Req: `§2 #9, §4, §6 Q6` · Ngoài phạm vi: Không gọi API LLM ngoài; toàn bộ E2E chạy cô lập trên thư mục tạm (`tempfile.TemporaryDirectory` + `TDQ_PROJECT_DIR`)
   - Chạm: `tests/test_plan_v2_e2e.py`
   - Cần: `T1.4, T3.1`
@@ -218,12 +218,12 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P4 — Log & test bắt buộc
 
-- [ ] **T4.1** (e10m) Xác minh dịch vụ log `TDQ_LOG` mặc định và chạy bộ kiểm thử đơn vị hợp nhất cho mọi thành phần mới/sửa bằng một lệnh — Test: `py -3 -X utf8 -m unittest tests/test_team_packet_v2.py tests/test_plan_scaffold.py tests/test_plan_v2_linter.py tests/test_state_plan_v2_gate.py tests/test_plan_v2_e2e.py -v`
+- [x] **T4.1** (e10m) Xác minh dịch vụ log `TDQ_LOG` mặc định và chạy bộ kiểm thử đơn vị hợp nhất cho mọi thành phần mới/sửa bằng một lệnh — Test: `py -3 -X utf8 -m unittest tests/test_team_packet_v2.py tests/test_plan_scaffold.py tests/test_plan_v2_linter.py tests/test_state_plan_v2_gate.py tests/test_plan_v2_e2e.py -v`
   - Req: `§4, §6 Q1..Q6` · Ngoài phạm vi: Không thay đổi mã nguồn sản phẩm ở bước tổng kiểm này (nếu đỏ thì sửa ở task tương ứng)
   - Chạm: `tests/test_plan_v2_e2e.py`
   - Cần: `T3.2`
   - Giao tiếp: Consumes: toàn bộ `5` mô-đun test mới | Produces: kết quả `0 failed` của lệnh test hợp nhất + bằng chứng `TDQ_LOG` bật mặc định và tắt qua `TDQ_LOG=0`
-  - Neo & Công cụ: Chạy lệnh `unittest` và `tdq_test.py vung-cham`
+  - Neo & Công cụ: `TestPlanV2GreenfieldE2E`, `TestPlanV2RefactorAndStaleE2E`, `TestPlanV2QuickNegativeAndLoggingE2E` trong `tests/test_plan_v2_e2e.py` (chạy bằng python unittest & `tdq_test.py vung-cham`)
   - Trước → Sau: Kiểm chứng tập trung trước khi sang pha QC `full` (`tdq_test.py tron-bo`)
   - Tiêu chí chấp nhận (EARS): KHI chạy một lệnh `unittest` qua `5` mô-đun test mới và `tdq_test.py vung-cham`, HỆ THỐNG PHẢI trả exit `0` với `0` test lỗi
   - Logic cốt lõi:
@@ -251,9 +251,9 @@ Trạng thái plan: ĐÃ DUYỆT
 
 Trỏ về §6 của spec (`muc_qc=full`). Mỗi dòng một ô tick kiểm được bằng một lệnh:
 
-- [ ] Q1 Cô lập `Chạm:`/`Tham chiếu:`/`Sinh ra:`, ổn định `plan_assignment_sha` và `tdq_team.py packet` đạt chuẩn — `py -3 -X utf8 -m unittest tests/test_team_packet_v2.py tests/test_team_mode.py tests/test_team_chong_conflict.py -v`
-- [ ] Q2 `scripts/tdq_plan_scaffold.py` thuần stdlib có `TDQ_LOG` đạt đủ `--files`/`--refs`/`--from-spec`/`--emit-cards`/`--verify-plan`/`--check-wave` — `py -3 -X utf8 -m unittest tests/test_plan_scaffold.py -v`
-- [ ] Q3 `doc_lint.py` (`R15-Full`/`R15-Compact`, Per-Task Spec, Banned-Placeholder, `ANTI-2`, `R15_MOC`) & cổng `tdq_state.py`/`tdq_eval.py` xanh, không làm đỏ `236` plan cũ — `py -3 -X utf8 -m unittest tests/test_plan_v2_linter.py tests/test_state_plan_v2_gate.py tests/test_doc_lint.py tests/test_quick_qc.py -v && py -3 -X utf8 -m pytest tests/test_hooks_dual_protocol.py -q`
-- [ ] Q4 Toàn bộ `skills/` dưới trần `3,500` token (`anthropic-tokenizer`) & `<= 235` dòng/ref, `tdq-plan/SKILL.md <= 132` dòng, `plan-examples.md <= 1,300` tok, `tdq-implementer.md <= 42` dòng, `doc_lint`/`i18n_check`/`doc_index`/`test_reference_mot_tang` `0` lỗi — `py -3 -X utf8 scripts/doc_lint.py skills && py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 scripts/i18n_check.py skills agents scripts && py -3 -X utf8 -m unittest tests/test_token_budget.py tests/test_reference_mot_tang.py tests/test_agent_frontmatter.py -v`
-- [ ] Q5 Đóng gói `plugins/tdq-workflow-agy/` sạch `agy.EXE plugin validate --strict`, `build_portable.py --sinh-main --dry-run` xanh, 100% Parity Rust-Python và không sửa plugin ngoài repo — `py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_agy_plugin_validate.py tests/test_rust_dispatch_parity.py -q`
-- [ ] Q6 Nghiệm thu E2E `3` kịch bản và trọn bộ unit test toàn repo (`muc_qc=full`) đạt `0` thất bại, `0` bỏ sót — `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v && py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 1 --fresh --reuse off`
+- [x] Q1 Cô lập `Chạm:`/`Tham chiếu:`/`Sinh ra:`, ổn định `plan_assignment_sha` và `tdq_team.py packet` đạt chuẩn — `py -3 -X utf8 -m pytest tests/test_team_packet_v2.py tests/test_team_mode.py tests/test_team_chong_conflict.py -q`
+- [x] Q2 `scripts/tdq_plan_scaffold.py` thuần stdlib có `TDQ_LOG` đạt đủ `--files`/`--refs`/`--from-spec`/`--emit-cards`/`--verify-plan`/`--check-wave` — `py -3 -X utf8 -m unittest tests/test_plan_scaffold.py -v`
+- [x] Q3 `doc_lint.py` (`R15-Full`/`R15-Compact`, Per-Task Spec, Banned-Placeholder, `ANTI-2`, `R15_MOC`) & cổng `tdq_state.py`/`tdq_eval.py` xanh, không làm đỏ `236` plan cũ — `py -3 -X utf8 -m pytest tests/test_plan_v2_linter.py tests/test_state_plan_v2_gate.py tests/test_doc_lint.py tests/test_quick_qc.py tests/test_hooks_dual_protocol.py -q`
+- [x] Q4 Toàn bộ `skills/` dưới trần `3,500` token (`anthropic-tokenizer`) & `<= 235` dòng/ref, `tdq-plan/SKILL.md <= 132` dòng, `plan-examples.md <= 1,300` tok, `tdq-implementer.md <= 42` dòng, `doc_lint`/`i18n_check`/`doc_index`/`test_reference_mot_tang` `0` lỗi — `py -3 -X utf8 scripts/doc_lint.py skills agents && py -3 -X utf8 scripts/token_budget.py --kiem && py -3 -X utf8 scripts/i18n_check.py agents/tdq-implementer.md agents/tdq-reviewer.md skills/tdq-plan/SKILL.md skills/tdq-plan/references/planner-rules.md skills/tdq-plan/references/plan-examples.md skills/tdq-plan/references/plan-template.md skills/tdq-build/references/qc-vong-fix.md skills/tdq-build/references/team-mode-tra-cuu.md scripts/tdq_plan_scaffold.py tools/patches/agy_hooks.py && py -3 -X utf8 scripts/doc_index.py --tat-ca --kiem && py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_reference_mot_tang.py tests/test_agent_frontmatter.py -q`
+- [x] Q5 Đóng gói `plugins/tdq-workflow-agy/` sạch `agy.EXE plugin validate --strict`, `build_portable.py --sinh-main --dry-run` xanh, 100% Parity Rust-Python và không sửa plugin ngoài repo — `py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run && py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_agy_plugin_validate.py tests/test_rust_dispatch_parity.py -q`
+- [x] Q6 Nghiệm thu E2E `3` kịch bản và trọn bộ unit test toàn repo (`muc_qc=full`) đạt `0` thất bại, `0` bỏ sót — `py -3 -X utf8 -m unittest tests/test_plan_v2_e2e.py -v && py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 1 --fresh --reuse off`
