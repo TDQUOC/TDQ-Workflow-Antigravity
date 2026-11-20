@@ -11,6 +11,8 @@ import datetime
 import io
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,6 +22,7 @@ import helper  # noqa: F401  — nạp sys.path cho scripts/
 from helper import read_state, run_state_cli
 import tdq_state
 import tdq_timing
+import token_audit
 
 
 def duyet_spec(cwd):
@@ -716,6 +719,215 @@ class TimingV2(TempRepo):
         self.assertRegex(stderr.getvalue(), r"\[\d{4}-\d{2}-\d{2}T")
         self.assertIn("invalid_phase_mark", stderr.getvalue())
         self.assertEqual(self.number(data, "tool_call_seconds"), 5)
+
+
+class RoleTelemetry(TempRepo):
+    """Per-agent_role telemetry aggregation in tdq_timing and token_audit."""
+
+    def _write_telemetry(self, lines):
+        path = Path(self.cwd) / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        body = "".join(
+            (item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)) + "\n"
+            for item in lines
+        )
+        path.write_text(body, encoding="utf-8")
+        return path
+
+    def test_empty_telemetry_returns_empty_list(self):
+        self.assertEqual(tdq_timing.role_summary(self.cwd), [])
+        self.assertEqual(token_audit.role_telemetry_summary(self.cwd), [])
+        self._write_telemetry(["", "   "])
+        self.assertEqual(tdq_timing.role_summary(self.cwd), [])
+        self.assertEqual(token_audit.role_telemetry_summary(self.cwd), [])
+
+        helper.write_state(
+            self.cwd,
+            active_request="2026-11-20-1230-empty-role",
+            lane="full",
+            phase="implement",
+            started_at=at_second(0),
+            phase_history=[{"phase": "implement", "at": at_second(0)}],
+        )
+        rc, out, _err = helper.run_timing_cli(
+            self.cwd, "show", "--now", at_second(20), "--transcript-dir", str(Path(self.cwd) / "missing")
+        )
+        self.assertEqual(rc, 0)
+        self.assertIn("## Agent Role Telemetry", out)
+        self.assertIn("No agent role telemetry recorded yet.", out)
+
+    def test_role_summary_groups_by_agent_role_and_skips_corrupt_lines(self):
+        self._write_telemetry([
+            {
+                "role": "tdq-implementer",
+                "task_id": "T1.1",
+                "status": "failed",
+                "first_pass": False,
+                "attempt": 1,
+                "elapsed_s": 10.0,
+                "model": "gemini-4-hydrogen-high",
+            },
+            "{corrupt json payload with secret-raw-token",
+            "[1, 2, 3]",
+            {
+                "agent_role": "tdq-implementer",
+                "task_id": "T1.1",
+                "status": "done",
+                "attempt": 2,
+                "elapsed_s": 20.0,
+                "model": "gemini-4-neon-xhigh",
+            },
+            {
+                "role": "tdq-implementer",
+                "task_id": "T1.2",
+                "status": "done",
+                "first_pass": True,
+                "attempt": 1,
+                "elapsed_s": 15.0,
+                "model": "gemini-4-hydrogen-high",
+            },
+            {
+                "role": "tdq-qc-tester",
+                "task_id": "Q1",
+                "status": "done",
+                "first_pass": True,
+                "attempt": 1,
+                "elapsed_s": None,
+                "model": "gemini-4-neon-high",
+            },
+        ])
+        stderr_on = io.StringIO()
+        with patch.dict(os.environ, {"TDQ_LOG": "1"}), contextlib.redirect_stderr(stderr_on):
+            summary = tdq_timing.role_summary(self.cwd)
+        self.assertRegex(stderr_on.getvalue(), r"\[\d{4}-\d{2}-\d{2}T")
+        self.assertIn("skipped 2 corrupt", stderr_on.getvalue())
+        self.assertNotIn("secret-raw-token", stderr_on.getvalue())
+
+        stderr_off = io.StringIO()
+        with patch.dict(os.environ, {"TDQ_LOG": "0"}), contextlib.redirect_stderr(stderr_off):
+            summary_muted = tdq_timing.role_summary(self.cwd)
+        self.assertEqual(stderr_off.getvalue(), "")
+        self.assertEqual(summary, summary_muted)
+
+        by_role = {row["role"]: row for row in summary}
+        self.assertEqual(set(by_role), {"tdq-implementer", "tdq-qc-tester"})
+
+        impl = by_role["tdq-implementer"]
+        self.assertEqual(impl["runs"], 3)
+        self.assertEqual(impl["first_pass_count"], 1)
+        self.assertAlmostEqual(impl["first_pass_rate"], 1 / 3, places=3)
+        self.assertEqual(impl["retries"], 1)
+        self.assertAlmostEqual(impl["avg_elapsed_s"], 15.0, places=2)
+        self.assertEqual(impl["models"], ["gemini-4-hydrogen-high", "gemini-4-neon-xhigh"])
+
+        qc = by_role["tdq-qc-tester"]
+        self.assertEqual(qc["runs"], 1)
+        self.assertEqual(qc["first_pass_count"], 1)
+        self.assertEqual(qc["first_pass_rate"], 1.0)
+        self.assertEqual(qc["retries"], 0)
+        self.assertIsNone(qc["avg_elapsed_s"])
+        self.assertEqual(qc["models"], ["gemini-4-neon-high"])
+
+    def test_role_summary_filters_optional_slug(self):
+        self._write_telemetry([
+            {"slug": "req-a", "role": "tdq-implementer", "status": "done", "elapsed_s": 5.0},
+            {"slug": "req-b", "role": "tdq-reviewer", "status": "done", "elapsed_s": 8.0},
+        ])
+        only_a = tdq_timing.role_summary(self.cwd, slug="req-a")
+        self.assertEqual([row["role"] for row in only_a], ["tdq-implementer"])
+        self.assertEqual(tdq_timing.role_summary(self.cwd, slug="req-missing"), [])
+
+    def test_timing_show_and_roles_cli_render_agent_role_telemetry(self):
+        self._write_telemetry([
+            {"role": "tdq-implementer", "task_id": "T1", "status": "done", "elapsed_s": 12.5, "model": "gemini-4-hydrogen-high"},
+            {"role": "tdq-qc-tester", "task_id": "Q1", "status": "failed", "first_pass": False, "elapsed_s": 7.5},
+        ])
+        helper.write_state(
+            self.cwd,
+            active_request="2026-11-20-1230-role-cli",
+            lane="full",
+            phase="implement",
+            started_at=at_second(0),
+            phase_history=[{"phase": "implement", "at": at_second(0)}],
+        )
+        rc_md, out_md, err_md = helper.run_timing_cli(
+            self.cwd, "show", "--now", at_second(30), "--transcript-dir", str(Path(self.cwd) / "missing")
+        )
+        self.assertEqual(rc_md, 0, err_md)
+        self.assertIn("## Agent Role Telemetry", out_md)
+        self.assertIn("tdq-implementer", out_md)
+        self.assertIn("12.5s", out_md)
+        self.assertIn("tdq-qc-tester", out_md)
+        self.assertIn("100%", out_md)
+
+        rc_js, out_js, _ = helper.run_timing_cli(
+            self.cwd, "show", "--json", "--now", at_second(30), "--transcript-dir", str(Path(self.cwd) / "missing")
+        )
+        self.assertEqual(rc_js, 0)
+        payload = json.loads(out_js)
+        self.assertIsNone(payload["model_giay"])
+        self.assertEqual(len(payload["role_telemetry"]), 2)
+
+        rc_roles, out_roles, _ = helper.run_timing_cli(self.cwd, "roles", "--json")
+        self.assertEqual(rc_roles, 0)
+        self.assertEqual(len(json.loads(out_roles)["role_telemetry"]), 2)
+
+        rc_roles_md, out_roles_md, _ = helper.run_timing_cli(self.cwd, "roles")
+        self.assertEqual(rc_roles_md, 0)
+        self.assertIn("## Agent Role Telemetry", out_roles_md)
+        self.assertIn("tdq-implementer", out_roles_md)
+
+    def test_token_audit_role_telemetry_summary_and_cli_table(self):
+        self._write_telemetry([
+            {
+                "role": "tdq-implementer",
+                "task_id": "T3.1",
+                "status": "done",
+                "elapsed_s": 14.0,
+                "model": "gemini-4-neon-xhigh",
+            },
+            "{bad-json-line",
+        ])
+        stderr_audit_off = io.StringIO()
+        with patch.dict(os.environ, {"TDQ_AUDIT_LOG": "0", "TDQ_LOG": "1"}), contextlib.redirect_stderr(stderr_audit_off):
+            rows = token_audit.role_telemetry_summary(self.cwd)
+        self.assertEqual(stderr_audit_off.getvalue(), "")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["role"], "tdq-implementer")
+
+        empty_home = Path(self.cwd) / "home"
+        empty_home.mkdir()
+        env = dict(os.environ, HOME=str(empty_home), USERPROFILE=str(empty_home), TDQ_AUDIT_LOG="0", TDQ_LOG="0")
+        proc = subprocess.run(
+            [sys.executable, os.path.join(helper.ROOT, "scripts", "token_audit.py"), "--host", "all", "--project", self.cwd],
+            check=False, capture_output=True, encoding="utf-8", text=True, env=env, timeout=20,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("# Agent role telemetry", proc.stdout)
+        self.assertIn("tdq-implementer", proc.stdout)
+        self.assertIn("gemini-4-neon-xhigh", proc.stdout)
+        self.assertEqual(proc.stderr.strip(), "")
+
+        empty_tdir = Path(self.cwd) / "empty_tdir"
+        empty_tdir.mkdir()
+        proc_legacy = subprocess.run(
+            [sys.executable, os.path.join(helper.ROOT, "scripts", "token_audit.py"),
+             "--transcript-dir", str(empty_tdir), "--project", self.cwd],
+            check=False, capture_output=True, encoding="utf-8", text=True, env=env, timeout=20,
+        )
+        self.assertEqual(proc_legacy.returncode, 0, proc_legacy.stderr)
+        self.assertIn("# Agent role telemetry", proc_legacy.stdout)
+        self.assertIn("tdq-implementer", proc_legacy.stdout)
+
+        empty_proj = Path(self.cwd) / "empty_proj"
+        empty_proj.mkdir()
+        proc_empty = subprocess.run(
+            [sys.executable, os.path.join(helper.ROOT, "scripts", "token_audit.py"),
+             "--host", "agy", "--project", str(empty_proj)],
+            check=False, capture_output=True, encoding="utf-8", text=True, env=env, timeout=20,
+        )
+        self.assertEqual(proc_empty.returncode, 0, proc_empty.stderr)
+        self.assertIn("No agent role telemetry recorded yet.", proc_empty.stdout)
 
 
 if __name__ == "__main__":
