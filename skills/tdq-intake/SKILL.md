@@ -7,7 +7,7 @@ description: Open a new TDQ request - record the ask, pick the lane, init state,
 <!-- muc-luc-dong:
   Tier `nhỏ` — answer or fix on the spot, no request opened=17-32 ·
   Part A — Open the request (phase `no_state`)=33-102 ·
-  Part B — Analysis (phase `analyze`, deep pipeline only)=103-129 · Part C — Express pipeline=130
+  Part B — Analysis (phase `analyze`, deep pipeline only)=103-124 · Part C — Express pipeline=125
 -->
 
 Load [tdq-conventions](../tdq-conventions/SKILL.md) first. Every output for the user is written

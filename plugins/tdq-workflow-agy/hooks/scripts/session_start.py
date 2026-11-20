@@ -385,7 +385,8 @@ def main():
         resume_task = (doing_tasks[0] if doing_tasks else
                        f"wait:{pts['dispatched_ids'][0]}" if pts.get("dispatched_ids") else
                        first_open)
-        resume_hint = (f" resume={resume_task}" if pha == "implement" and resume_task else "")
+        resume_hint = (f" resume_task={resume_task}; check tool/receipt before retry"
+                       if pha == "implement" and resume_task else "")
         row = phase_row(state)
         next_hint = (row.get("cmd") or row.get("action") or "none")[:60]
 
@@ -399,14 +400,14 @@ def main():
             except ValueError:
                 wt_str = raw_cwd.replace(os.sep, "/")
             if os.path.isfile(os.path.join(raw_cwd, ".git")):
-                wt_str = f"wt:{wt_str}"
+                wt_str = f"worktree:{wt_str}"
 
-        label = "Compact:" if src == "compact" else f"{src.capitalize()}:"
+        label = "Compact recovery:" if src == "compact" else f"{src.capitalize()} recovery:"
         anchor_raw = (
             f"[TDQ:ANCHOR] {label} request={req} kind={wk} phase={pha} source={src} owner={owner} "
-            f"plan={plan_f} doing={doing_str} dispatched={dispatched_str}{resume_hint} next={next_hint} wt={wt_str}\n"
-            f"MCP-First & LSP-Autonomy (--bo-qua-lsp doc/research). "
-            f"Anti: ANTI-1..ANTI-6 (no fake red/blind assert/unclean git/unticked edit/log>15L/implicit Cham)."
+            f"plan={plan_f} doing={doing_str} dispatched={dispatched_str}{resume_hint} next={next_hint} worktree={wt_str}\n"
+            f"MCP-First: ưu tiên MCP & bộ skill MCP; LSP-Autonomy: toàn quyền tự quyết gate LSP (--bo-qua-lsp doc/research).\n"
+            f"Core anti-patterns: ANTI-1..ANTI-6 (no fake red/blind assert/clean git/tick before code/cap logs<=15L/explicit Cham)."
         )
         anchor_block = anchor_raw[:595] if len(anchor_raw) >= 600 else anchor_raw
 

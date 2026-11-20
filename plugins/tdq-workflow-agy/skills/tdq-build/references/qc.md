@@ -1,9 +1,10 @@
 # QC — quality control
 <!-- muc-luc-dong:
-  Table of contents=11-21 · The QC level — what each level runs=22-57 ·
-  The three execution steps=58-88 · What to run=89-126 ·
-  The 120-second cap on smoke and runtime checks=127-147 · Recording the result=148-178 ·
-  Explicit Anti-Patterns=179-185 · When it FAILs=186
+  Table of contents=12-23 · The QC level — what each level runs=24-59 ·
+  The three execution steps=60-90 · What to run=91-124 ·
+  The 120-second cap on smoke and runtime checks=125-142 ·
+  Investigation Evidence QC (`work_kind=investigate`)=143-145 · Recording the result=146-176 ·
+  Explicit Anti-Patterns=177-183 · When it FAILs=184
 -->
 
 QC means running things for real and pasting the evidence. There is no "probably fine".
@@ -14,6 +15,7 @@ QC means running things for real and pasting the evidence. There is no "probably
 - The three execution steps
 - What to run
 - The 120-second cap on smoke and runtime checks
+- Investigation Evidence QC (`work_kind=investigate`)
 - Recording the result
 - Evidence
 - Verdict

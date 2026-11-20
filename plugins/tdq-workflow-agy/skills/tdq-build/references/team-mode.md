@@ -1,13 +1,13 @@
 # Team mode — the leader assigns the whole plan, sub-agents run in parallel
 <!-- muc-luc-dong:
-  Table of contents=18-24 · When it applies=25-43 · What to do=44-45 ·
-  Step 0 — assign the WHOLE plan before typing the first line of code=46-63 ·
-  Decision table — default GIAO, keeping a task must match exactly one row=64-78 ·
-  Workflow implement ownership=79-83 · The wave loop=84-97 ·
-  What the machine checks for you, so you do not have to=98-122 ·
-  The delegation prompt template — all 9 fields, none left out=123-141 ·
-  RIGHT/WRONG examples=142-151 · Explicit Anti-Patterns=152-159 · Self-check=160-174 ·
-  Sổ worktree=175
+  Table of contents=18-25 · When it applies=26-44 · What to do=45-46 ·
+  Step 0 — assign the WHOLE plan before typing the first line of code=47-64 ·
+  Decision table — default GIAO, keeping a task must match exactly one row=65-79 ·
+  Workflow implement ownership=80-84 · The wave loop=85-98 ·
+  What the machine checks for you, so you do not have to=99-123 ·
+  The delegation prompt template — all 9 fields, none left out=124-142 ·
+  RIGHT/WRONG examples=143-152 · Explicit Anti-Patterns=153-160 · Self-check=161-175 ·
+  Investigation `no_worktree` & Shards=176
 -->
 
 Soul: chất lượng > runtime > context cost · luật gốc: ../../tdq-conventions/references/soul.md <!-- i18n-allow: canonical Soul line -->
@@ -21,6 +21,7 @@ yourself needs a reason from the lookup table below, and that reason is machine-
 - What to do
 - The worktree ledger
 - Self-check
+- Investigation `no_worktree` & Shards
 
 ## When it applies
 

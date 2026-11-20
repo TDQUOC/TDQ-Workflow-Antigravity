@@ -914,7 +914,7 @@ class TestSmokeAndRuntime(unittest.TestCase):
         self.assertNotEqual(vh_missing.returncode, 0)
         self.assertNotIn("Traceback", vh_missing.stderr)
 
-        # 2. Root subagent_stop --event PostToolUse propagates child conversationId into telemetry
+        # 2. Root subagent_stop: PostToolUse registers child role only (ND-6), SubagentStop records telemetry
         (self.cwd / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
         post_ev = json.dumps({
             "cwd": str(self.cwd),
@@ -925,7 +925,14 @@ class TestSmokeAndRuntime(unittest.TestCase):
         })
         ps = _run_py("hooks/scripts/subagent_stop.py", self.cwd, "--event", "PostToolUse", stdin_data=post_ev)
         self.assertEqual(ps.returncode, 0, ps.stderr)
-        tel = (self.cwd / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl").read_text(encoding="utf-8").splitlines()
+        sess = json.loads((self.cwd / "docs" / "tdq" / ".tdq-runtime" / "sessions.json").read_text(encoding="utf-8"))
+        self.assertEqual(sess["child-exp-99"]["role"], "tdq-explorer")
+        tel_path = self.cwd / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl"
+        self.assertFalse(tel_path.exists())
+        stop_ev = json.dumps({"cwd": str(self.cwd), "conversationId": "child-exp-99", "last_assistant_message": "done"})
+        ss = _run_py("hooks/scripts/subagent_stop.py", self.cwd, "--event", "SubagentStop", stdin_data=stop_ev)
+        self.assertEqual(ss.returncode, 0, ss.stderr)
+        tel = tel_path.read_text(encoding="utf-8").splitlines()
         self.assertEqual(json.loads(tel[-1])["session"], "child-exp-99")
 
         # 3. Quote-aware shell parser in BOTH Python and compiled Rust tdq-dispatch.exe

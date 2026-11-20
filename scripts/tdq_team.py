@@ -821,7 +821,7 @@ def lenh_phan_cong(project, _args):
                 "ly_do": quyet[t.ma][1],
                 "vung_file": t.vung_file,
                 "dot": dot[t.ma],
-                "worktree_required": bool(t.worktree_required),
+                **({} if t.worktree_required else {"worktree_required": False}),
             } for t in tasks
         },
     }
@@ -2517,21 +2517,35 @@ def blackboard_read(project, slug=None):
 
 @contextlib.contextmanager
 def _ntfs_lock(lock_path, timeout_s=5.0):
-    """Cross-platform non-blocking polling lock for NTFS JSONL/blackboard writes."""
+    """Cross-platform non-blocking polling lock for NTFS/POSIX JSONL writes."""
     os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
-    fh = open(lock_path, "a+b")
     deadline = time.monotonic() + timeout_s
+    if sys.platform != "win32":
+        fd = None
+        while fd is None:
+            try:
+                fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            except FileExistsError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Lock timeout on {lock_path}")
+                time.sleep(0.01)
+        try:
+            yield
+        finally:
+            os.close(fd)
+            try:
+                os.unlink(lock_path)
+            except OSError:
+                pass
+        return
+    import msvcrt
+    fh = open(lock_path, "a+b")
     acquired = False
     try:
         while not acquired:
             try:
-                if sys.platform == "win32":
-                    import msvcrt
-                    fh.seek(0)
-                    msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
-                else:
-                    import fcntl
-                    fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
                 acquired = True
             except OSError:
                 if time.monotonic() >= deadline:
@@ -2541,13 +2555,8 @@ def _ntfs_lock(lock_path, timeout_s=5.0):
     finally:
         if acquired:
             try:
-                if sys.platform == "win32":
-                    import msvcrt
-                    fh.seek(0)
-                    msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    import fcntl
-                    fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
             except OSError:
                 pass
         fh.close()
