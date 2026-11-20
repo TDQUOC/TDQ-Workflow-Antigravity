@@ -53,5 +53,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 **Rủi ro hồi quy:** Thấp. `.codex/hooks.json` giữ nguyên hoàn toàn; plugin ngoài repo `~/.gemini/` không bị chạm; `bash_gate.py`/`command_parser.rs` xử lý tách đoạn theo dấu nháy và mặt nạ `>` trong chuỗi nhưng giữ nguyên kiểm lồng cho `bash -c`/`sh -c`/`pwsh -Command` và toàn bộ `125` test hook parity (`236 passed` bộ bảo mật + packet + lint); nếu chưa chạy `install.py --update`, máy người dùng vẫn chạy bản plugin global cũ cho tới khi cập nhật.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-20-1230-trien-khai-4-de-xuat-agent.manifest.json -->
-<!-- manifest_digest: 133d939f1ddb6dd279e4869e07b509fa1bafbd518980f700b36082bc872b2d13 -->
+<!-- manifest_digest: a5ec1ccceb6821db9150307fdb84ac819d801092f8937300cb419b3154e28421 -->
 <!-- tdq-archify-binding:end -->

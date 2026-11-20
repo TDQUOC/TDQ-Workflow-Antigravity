@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "f5aa2aa3-6c87-4a78-becf-32aa34530f0e",
+  "receiptId": "92c63e3b-949c-4599-9643-bc0d94e17eb4",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
   "specification": {
     "sha256": "00cbbad79398b1d663d4692ed3a1756230528b01351e20f5a3dafa9ed4824b5a",
     "bytes": 2533
@@ -15,7 +15,7 @@
     "bytes": 1613165
   },
   "explainer": {
-    "preparedSha256": "8fd2eee299af289ccff9319189a086c4973cf540d16a7920e2afcf549a729173",
+    "preparedSha256": "5983929ab117534b91bf6223e8eb8f932a934c30e4a5f709d970d7d3193a09b8",
     "dependencies": [
       {
         "kind": "diagram-spec",

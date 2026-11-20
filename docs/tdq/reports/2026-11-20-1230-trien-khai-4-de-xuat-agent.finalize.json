@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-20T10:05:48.661Z",
+  "startedAt": "2026-11-20T16:41:25.514Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\bao-cao.archify.md",
     "sha256": "00cbbad79398b1d663d4692ed3a1756230528b01351e20f5a3dafa9ed4824b5a",
     "bytes": 2533
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
     "sha256": "3b09d5cf45e51a3b05805c73afb5bc080a7b7c01ac39bca9bd8809604135241e",
     "bytes": 1613165
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5828_1795169146982\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11956_1795192883706\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1277,
+      "durationMs": 1364,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5828_1795169146982\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11956_1795192883706\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "f5aa2aa3-6c87-4a78-becf-32aa34530f0e",
+        "receiptId": "92c63e3b-949c-4599-9643-bc0d94e17eb4",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1230-trien-khai-4-de-xuat-agent\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
         "explainer": {
-          "preparedSha256": "8fd2eee299af289ccff9319189a086c4973cf540d16a7920e2afcf549a729173",
+          "preparedSha256": "5983929ab117534b91bf6223e8eb8f932a934c30e4a5f709d970d7d3193a09b8",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -147,17 +147,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 664,
+      "durationMs": 737,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5828_1795169146982\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11956_1795192883706\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.html",
         "family": "explainer",
         "artifact": {
           "sha256": "3b09d5cf45e51a3b05805c73afb5bc080a7b7c01ac39bca9bd8809604135241e",
@@ -208,7 +208,7 @@
               "id": "wf-report-before",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Be42WQ\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-zY9owB\\child.html",
                 "artifact": {
                   "sha256": "e2d67e69ec68eecc257abdc5fc6227062488754af59e872fbdc2540d6cf66c5d",
                   "bytes": 811246
@@ -335,7 +335,7 @@
               "id": "wf-report-m1-m2",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-62kHTq\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-7JktWo\\child.html",
                 "artifact": {
                   "sha256": "cd1c1b99c925c17cbfe99ac1625d813085a553fb66514d23662e44a94b857a8c",
                   "bytes": 811268
@@ -462,7 +462,7 @@
               "id": "wf-report-m3-m5",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-tuh9Y9\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-U2f2xo\\child.html",
                 "artifact": {
                   "sha256": "34df4c72681e5dfa207c0cea567f1c406f855694beb23b0c81d062a1fb4cfec6",
                   "bytes": 811210
@@ -589,7 +589,7 @@
               "id": "wf-report-qc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Pid9cr\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-zTv3uN\\child.html",
                 "artifact": {
                   "sha256": "1ab5b7477bd26f9b5acb9d023a17d1cbb5ebaf132b58ea61618c9af3def8e97e",
                   "bytes": 811047
@@ -716,7 +716,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "f5aa2aa3-6c87-4a78-becf-32aa34530f0e"
+        "deliveryReceiptId": "92c63e3b-949c-4599-9643-bc0d94e17eb4"
       }
     }
   },
@@ -726,12 +726,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.a68eb6faa54b478e8f5c0ce36873edbb.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1230-trien-khai-4-de-xuat-agent.e938ca76544840c1806ccf0d5df2c010.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-20T10:05:51.067Z",
-  "durationMs": 2406,
+  "finishedAt": "2026-11-20T16:41:28.142Z",
+  "durationMs": 2627,
   "update": {
     "status": "unavailable",
     "installedVersion": null,
