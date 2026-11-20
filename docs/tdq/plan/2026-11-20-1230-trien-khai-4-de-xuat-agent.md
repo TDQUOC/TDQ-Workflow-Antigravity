@@ -143,7 +143,7 @@ Bản xem trước Trước/Sau đã khóa gắn với Spec v1.1 tại `docs/tdq
   - Ca góc hiểm & Assert: Lệnh chứa `>=` không bị chặn nhầm · `assert _is_shell_write("py -3 -c \"assert x >= 1\"") is False and _is_shell_write("py -3 -c \"Path('a').write_text('x')\"") is True`
   - Tiến độ inline: đã cập nhật `_common`/`bash_gate`/`edit_gate`/`subagent_stop`/`stop_gate`/`hooks.json`, đang vá 2 kiểm thử hồi quy `edit_gate` anchor và `ProtocolTest`.
 
-- [ ] **T3.2** (e10m) Bổ sung tổng hợp telemetry theo `agent_role` vào `scripts/tdq_timing.py` và `scripts/token_audit.py` — Test: `py -3 -X utf8 -m pytest tests/test_timing.py tests/test_agent_upgrade_mvp.py -k "timing or RoleTelemetry"`
+- [>] **T3.2** (e10m) Bổ sung tổng hợp telemetry theo `agent_role` vào `scripts/tdq_timing.py` và `scripts/token_audit.py` — Test: `py -3 -X utf8 -m pytest tests/test_timing.py tests/test_agent_upgrade_mvp.py -k "timing or RoleTelemetry"`
   - Req: `§2#3`, `§2b(M3-python-hooks-telemetry)` · Ngoài phạm vi: `GIỮ NGUYÊN` bảng Timing V2 (`model_giay=null`) và ngữ nghĩa carry-cost của `token_audit.py`.
   - Chạm: `scripts/tdq_timing.py`, `scripts/token_audit.py`
   - Cần: T3.1
