@@ -193,7 +193,7 @@ Log: BẮT BUỘC — `scripts/tdq_config.py`, `hooks/scripts/subagent_stop.py`,
 
 - [ ] **T5.2** (e14m) Mở rộng `tests/test_agent_frontmatter.py` (parity đủ `8` agent + schema) và hoàn thiện `tests/test_agent_upgrade_mvp.py` (config, shell bypass, QC allowlist, `subagent_stop`, telemetry, Plan `Model & Effort`, smoke/runtime) — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agent_upgrade_mvp.py tests/test_team_packet_v2.py tests/test_codex_hooks_json.py`
   - Req: `§2#6`, `§2b(M6-tests-and-verification)` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ các test hiện hữu không bị xóa hay làm yếu.
-  - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agent_upgrade_mvp.py`
+  - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agent_upgrade_mvp.py`, `tests/test_build_portable.py`
   - Cần: T5.1
   - Tham chiếu: `tdq-config.json`, `plugins/tdq-workflow-agy/plugin.json`, `plugins/tdq-workflow-agy/hooks.json`
   - Giao tiếp: Consumes: `AgyBundleParityContract` | Produces: Bộ kiểm thử tự động đầy đủ + smoke/runtime kiểm `tdq-dispatch.exe`
