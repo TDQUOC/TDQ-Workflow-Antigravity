@@ -17,6 +17,9 @@ if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
 import doc_lint  # noqa: E402
+import tdq_bench  # noqa: E402
+import tdq_plan_scaffold  # noqa: E402
+import tdq_team  # noqa: E402
 
 LINT_SCRIPT = os.path.join(SCRIPTS_DIR, "doc_lint.py")
 
@@ -369,6 +372,124 @@ class PlanV2LinterTest(unittest.TestCase):
         self.assertEqual(proc_real.returncode, 0, proc_real.stdout + proc_real.stderr)
         proc_real_pair = subprocess.run([sys.executable, LINT_SCRIPT, "--pair", real_spec, real_plan], capture_output=True, encoding="utf-8", text=True)
         self.assertEqual(proc_real_pair.returncode, 0, proc_real_pair.stdout + proc_real_pair.stderr)
+
+
+class InvestigateLintScaffoldBenchTest(unittest.TestCase):
+    """Tests for T1.2: bench/artifacts isolation, Sinh ra is_created, and tdq_bench no_worktree t_hop=0."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def _write(self, rel_path, content):
+        path = os.path.join(self.tmp.name, rel_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(content)
+        return path
+
+    def test_is_product_source_path_excludes_artifacts_and_bench(self):
+        self.assertTrue(doc_lint.is_product_source_path("scripts/doc_lint.py"))
+        self.assertTrue(doc_lint.is_product_source_path("src/app.py"))
+        self.assertTrue(doc_lint.is_product_source_path("docs/tdq/bench/../outside.py"))
+        self.assertTrue(doc_lint.is_product_source_path("docs/tdq/bench_extra/probe.py"))
+        self.assertFalse(doc_lint.is_product_source_path("docs/tdq/bench/2026-11-21-demo/probe.py"))
+        self.assertFalse(doc_lint.is_product_source_path("docs/tdq/artifacts/2026-11-21-demo/helper.py"))
+        self.assertFalse(doc_lint.is_product_source_path(r".\docs\tdq\bench\2026-11-21-demo\probe.py"))
+        self.assertFalse(doc_lint.is_product_source_path("docs/readme.md"))
+
+    def test_r15_isolates_bench_and_artifacts_scripts_from_full_contract_rules(self):
+        bench_only = _wrap_plan(
+            "- [ ] **T1.1** (e5m) Run probe — Test: `py -3 docs/tdq/bench/2026-11-21-demo/probe.py`\n"
+            "  - Chạm: `docs/tdq/bench/2026-11-21-demo/probe.py`\n"
+            "- [ ] **T1.2** (e5m) Summarize — Test: `py -3 -m unittest tests/test_ok.py`\n"
+            "  - Chạm: `docs/tdq/artifacts/2026-11-21-demo/helper.py`\n"
+            "  - Giao tiếp: Consumes: `raw` | Produces: `summary`\n",
+            header="# PLAN — Investigate bench\n\nNgày: 2026-11-20 · Lane: full",
+            ownership=False,
+        )
+        p_bench = self._write("docs/tdq/plan/2026-11-20-bench-only.md", bench_only)
+        self.assertEqual(doc_lint.r15_loi(doc_lint.Doc(p_bench)), [])
+
+        outside_py = _wrap_plan(
+            "- [ ] **T1.1** (e5m) Edit product script — Test: `pytest -q`\n"
+            "  - Chạm: `scripts/probe.py`\n",
+            header="# PLAN — Product script\n\nNgày: 2026-11-20 · Lane: full",
+            ownership=False,
+        )
+        p_out = self._write("docs/tdq/plan/2026-11-20-prod-py.md", outside_py)
+        errs = doc_lint.r15_loi(doc_lint.Doc(p_out))
+        self.assertTrue(any("[R15]" in e and "R15-Full" in e for e in errs), errs)
+
+    def test_scaffold_verify_plan_marks_sinh_ra_is_created_while_checking_cham_disk(self):
+        self._write("src/real.py", "def run() -> int:\n    return 1\n")
+        ok_plan = self._write(
+            "docs/tdq/plan/2026-11-21-sinh-ra-ok.md",
+            "\n".join([
+                "# PLAN — Sinh ra ok",
+                "## P1 — Investigate",
+                "- [ ] **T1.1** (e5m) Edit existing and emit shard — Test: `py -3 -m unittest tests/test_ok.py`",
+                "  - Chạm: `src/real.py`, `docs/tdq/artifacts/demo/shard.md`, `docs/tdq/artifacts/demo/m1.md`",
+                "  - Sinh ra: `docs/tdq/artifacts/demo/shard.md`",
+                "  - Sinh ra:",
+                "    - `docs/tdq/artifacts/demo/m1.md`",
+                "  - Neo & Công cụ: `Edit` on `src/real.py` (`run()`)",
+                "- [ ] **T1.2** (e5m) Merge shard — Test: `py -3 -m unittest tests/test_ok.py`",
+                "  - Chạm: `docs/tdq/artifacts/demo/shard.md`",
+                "  - Tham chiếu: `docs/tdq/artifacts/demo/m1.md`",
+                "  - Cần: T1.1",
+                "",
+            ]),
+        )
+        rc, errs = tdq_plan_scaffold.verify_plan(ok_plan, root_dir=self.tmp.name)
+        self.assertEqual(rc, 0, errs)
+        self.assertEqual(errs, [])
+
+        bad_plan = self._write(
+            "docs/tdq/plan/2026-11-21-sinh-ra-bad.md",
+            "\n".join([
+                "# PLAN — Sinh ra bad",
+                "## P1 — Investigate",
+                "- [ ] **T1.1** (e5m) Missing Cham — Test: `py -3 -m unittest tests/test_ok.py`",
+                "  - Chạm: `src/real.py`, `src/missing_existing.py`",
+                "  - Sinh ra: `docs/tdq/artifacts/demo/shard.md`",
+                "  - Neo & Công cụ: `Write` `docs/tdq/artifacts/demo/shard.md`",
+                "",
+            ]),
+        )
+        rc_bad, errs_bad = tdq_plan_scaffold.verify_plan(bad_plan, root_dir=self.tmp.name)
+        self.assertEqual(rc_bad, 1, errs_bad)
+        self.assertTrue(any("src/missing_existing.py" in e for e in errs_bad), errs_bad)
+
+    def test_bench_mo_phong_tasks_sets_t_hop_zero_when_worktree_required_false(self):
+        hs = {"t_task": 100.0, "t_tick": 10.0, "t_phat": 20.0, "t_kiem": 5.0, "t_hop": 99.0, "t_don": 15.0}
+
+        def _make_task(ma, path, wt_req, deps=()):
+            t = tdq_team.Task(ma, " ", "P1")
+            t.vung_file = [path]
+            t.text = [f"({ma}) Run"] + ([f"Cần: {', '.join(deps)}"] if deps else [])
+            t.worktree_required = wt_req
+            return t
+
+        no_wt = [_make_task("T1.1", "docs/tdq/artifacts/s/a.md", False),
+                 _make_task("T1.2", "docs/tdq/artifacts/s/b.md", False)]
+        kq_no_wt = tdq_bench.mo_phong_tasks(no_wt, hs)
+        self.assertEqual(kq_no_wt.so_dot, 1)
+        self.assertAlmostEqual(kq_no_wt.phi_dot, 25.0)
+        self.assertAlmostEqual(kq_no_wt.t_doi, 140.0)
+
+        with_wt = [_make_task("T1.1", "src/a.py", True), _make_task("T1.2", "src/b.py", True)]
+        kq_wt = tdq_bench.mo_phong_tasks(with_wt, hs)
+        self.assertAlmostEqual(kq_wt.phi_dot, 124.0)
+        self.assertAlmostEqual(kq_wt.t_doi, 239.0)
+
+        mixed_waves = [
+            _make_task("T1.1", "docs/tdq/artifacts/s/a.md", False),
+            _make_task("T1.2", "src/b.py", True, deps=("T1.1",)),
+        ]
+        kq_mix = tdq_bench.mo_phong_tasks(mixed_waves, hs)
+        self.assertEqual(kq_mix.so_dot, 2)
+        self.assertAlmostEqual(kq_mix.phi_dot, 25.0 + 124.0)
 
 
 if __name__ == "__main__":

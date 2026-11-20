@@ -254,6 +254,13 @@ class KetQua:
         self.__dict__.update(kw)
 
 
+def _wave_t_hop(wave_tasks, hs):
+    """Return 0.0 merge cost when all tasks in a wave skip worktrees (`worktree_required is False`)."""
+    if wave_tasks and all(getattr(t, "worktree_required", True) is False for t in wave_tasks):
+        return 0.0
+    return hs["t_hop"]
+
+
 def mo_phong_tasks(tasks, hs, he_so_agent=1.0, hs_codex=None):
     """Apply the §3 formula of the spec to the list of Tasks read off the plan.
 
@@ -280,7 +287,10 @@ def mo_phong_tasks(tasks, hs, he_so_agent=1.0, hs_codex=None):
     # Every wave pays a fixed fee, and in exchange waits only for its slowest task.
     t_task_agent = hs["t_task"] * he_so_agent
     tong_max = sum(t_task_agent for _ in dot)          # uniform tasks → max = t_task
-    phi_dot = len(dot) * (hs["t_phat"] + hs["t_kiem"] + hs["t_hop"])
+    phi_dot = sum(
+        hs["t_phat"] + hs["t_kiem"] + _wave_t_hop(wave_tasks, hs)
+        for wave_tasks in dot.values()
+    )
     # A task the leader keeps is done by the leader, so it still counts at leader speed.
     chen = max(0.0, len(tu_lam) * hs["t_task"] - tong_max)
     t_doi = phi_dot + tong_max + hs["t_don"] + chen
