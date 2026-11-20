@@ -2548,39 +2548,53 @@ def suggest_escalation(project, slug, task_id, max_retries=None):
     }
 
 
+_MINI_SPEC_OTHER_KEYS = (
+    "chạm:", "cần:", "dùng:", "tham chiếu:", "giao tiếp:",
+    "neo & công cụ:", "trước → sau:", "sinh ra:", "tiến độ inline:",
+)
+
+
+def _split_req_giu_nguyen(req_part):
+    low = req_part.lower()
+    for sep in ("ngoài phạm vi:", "giữ nguyên:"):
+        if sep in low:
+            idx = low.index(sep)
+            return req_part[:idx].rstrip(" ·").strip(), req_part[idx + len(sep):].strip()
+    return req_part, ""
+
+
 def _extract_mini_spec_fields(task):
     fields = {"req": "", "giu_nguyen": "", "ears": "", "logic": "", "ca_goc": ""}
     logic_lines = []
     in_logic = False
     for line in task.text[1:]:
-        stripped = line.strip()
-        if stripped.startswith("- "):
+        raw_stripped = line.strip()
+        body = raw_stripped[2:].strip() if raw_stripped.startswith("- ") else raw_stripped
+        low = body.lower()
+        if low.startswith("req:"):
             in_logic = False
-            body = stripped[2:].strip()
-            low = body.lower()
-            if low.startswith("req:"):
-                req_part = body[4:].strip()
-                if "ngoài phạm vi:" in req_part.lower():
-                    idx = req_part.lower().index("ngoài phạm vi:")
-                    fields["req"] = req_part[:idx].rstrip(" ·").strip()
-                    fields["giu_nguyen"] = req_part[idx + len("ngoài phạm vi:"):].strip()
-                else:
-                    fields["req"] = req_part
-            elif low.startswith("ngoài phạm vi:"):
-                fields["giu_nguyen"] = body.split(":", 1)[1].strip()
-            elif low.startswith("giữ nguyên:"):
-                fields["giu_nguyen"] = body.split(":", 1)[1].strip()
-            elif low.startswith("tiêu chí chấp nhận") or low.startswith("ears:"):
-                fields["ears"] = body.split(":", 1)[1].strip()
-            elif low.startswith("logic cốt lõi:"):
-                val = body.split(":", 1)[1].strip()
-                if val:
-                    logic_lines.append(val)
-                in_logic = True
-            elif low.startswith("ca góc hiểm"):
-                fields["ca_goc"] = body.split(":", 1)[1].strip()
-        elif in_logic and stripped:
-            logic_lines.append(stripped)
+            req, giu = _split_req_giu_nguyen(body[4:].strip())
+            fields["req"] = req
+            if giu:
+                fields["giu_nguyen"] = giu
+        elif low.startswith(("ngoài phạm vi:", "giữ nguyên:")):
+            in_logic = False
+            fields["giu_nguyen"] = body.split(":", 1)[1].strip()
+        elif low.startswith(("tiêu chí chấp nhận", "ears:")):
+            in_logic = False
+            fields["ears"] = body.split(":", 1)[1].strip()
+        elif low.startswith("logic cốt lõi:"):
+            in_logic = True
+            val = body.split(":", 1)[1].strip()
+            if val:
+                logic_lines.append(val)
+        elif low.startswith("ca góc hiểm"):
+            in_logic = False
+            fields["ca_goc"] = body.split(":", 1)[1].strip()
+        elif raw_stripped.startswith("- ") or low.startswith(_MINI_SPEC_OTHER_KEYS):
+            in_logic = False
+        elif in_logic and body:
+            logic_lines.append(body)
     fields["logic"] = " ".join(logic_lines).strip()
     vung = ", ".join(task.vung_file) if task.vung_file else "(none declared)"
     fields["ranh_gioi"] = "; ".join(p for p in (fields["giu_nguyen"], f"Chỉ sửa {vung}") if p)
