@@ -46,5 +46,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 **Rủi ro hồi quy:** Thấp. Thay đổi parsing `Chạm:`/`Tham chiếu:` của `tdq_team.py` hỗ trợ cả bare path và backticked path (đã khóa bởi `tests/test_e2e_workflow.py` và `tests/test_team_packet_v2.py`); luật `R15` mới áp dụng sau `R15_MOC=2026-11-20` nên không làm gãy các plan cũ từ `2026-11-11`..`2026-11-19` hay pre-cutoff.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-20-0015-trien-khai-plan-v2-planner-spec.manifest.json -->
-<!-- manifest_digest: 9eddf0c14b5ef1bd3027f400733119d15c36e0ce477b6b1a25bd75f5d3975b42 -->
+<!-- manifest_digest: 0c56519c71576d01eabc896de6c9e4ff6ac76be94c57f0592f5f39953c133bab -->
 <!-- tdq-archify-binding:end -->

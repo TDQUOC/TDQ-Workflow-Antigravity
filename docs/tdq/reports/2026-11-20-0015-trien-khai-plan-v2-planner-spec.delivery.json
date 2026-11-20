@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "58e84053-48a6-42b3-b093-9e1f85c03d7c",
+  "receiptId": "6fc28fe8-d4ca-41b9-b61a-b97c90187533",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-0015-trien-khai-plan-v2-planner-spec\\bao-cao-nghiem-thu.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-0015-trien-khai-plan-v2-planner-spec.4741779debc64134a9e1b11a40668f1e.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-0015-trien-khai-plan-v2-planner-spec.736f326da55645ecb653894c506a29f5.html",
   "specification": {
     "sha256": "a168a94243f65acdcd6fc93496bfc040d399c0826508236c4f7a51b599007696",
     "bytes": 4733
@@ -15,7 +15,7 @@
     "bytes": 1644804
   },
   "explainer": {
-    "preparedSha256": "abc9d27618e61bc8ffde4301a941ea6d68ca1782816895df794162f10afcedbf",
+    "preparedSha256": "ab9b1ba50fddd0bfd6f3037fe6e1ab598410ad951c28ae5ab9343b52f7adcbdb",
     "dependencies": [
       {
         "kind": "diagram-spec",
