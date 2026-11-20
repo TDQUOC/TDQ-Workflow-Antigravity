@@ -1,6 +1,6 @@
 # The plan shape
 <!-- muc-luc-dong:
-  The minute estimate `(eNm)`=114
+  The minute estimate `(eNm)`=122
 -->
 
 Copy the whole block into `docs/tdq/plan/<slug>.md` and fill it in. File em:
@@ -19,6 +19,7 @@ Trạng thái plan: CHỜ DUYỆT
 
 ## Mục lục
 
+- Phân bổ Model & Effort
 - Quy tắc thi hành (áp cho mọi task)
 - Thiết kế Trước vs Sau (khi bổ sung hoặc refactor)
 - P1 — <tên phase>
@@ -28,6 +29,14 @@ Trạng thái plan: CHỜ DUYỆT
 - Khuôn khối hợp đồng skill (đặt NGAY DƯỚI dòng task dùng skill đó, ≤6 dòng)
 - Px — Log & test bắt buộc
 - Definition of Done
+
+## Phân bổ Model & Effort
+<!-- i18n-allow: canonical model/effort plan allocation table -->
+> User được quyền đổi `type model` hoặc `effort` lúc duyệt plan. Thang model: [subagent-tuning.md](../../tdq-conventions/references/subagent-tuning.md).
+
+| Pha | Vai trò | Model | Effort | Ghi chú |
+|---|---|---|---|---|
+| `implement / qc / report` | `<vai trò>` | `<gemini-3.8-flash..4-carbon / inherit>` | `<low..xhigh>` | `<quyền đổi / leo thang>` |
 
 ## Quy tắc thi hành (áp cho mọi task)
 1. Thứ tự phase là thứ tự phụ thuộc — không đảo.
@@ -91,9 +100,8 @@ Mục này BẮT BUỘC có trong mọi plan (kể cả một cụm: ghi rõ lý
   - Không dùng cho: <việc kề bên mà skill này KHÔNG được lan sang>
 
 Skill cần MCP tool lúc chạy → dòng `Dùng:` phải kết thúc bằng nhãn ` (mcp)` NGOÀI backtick. Năm
-trường và luật nhãn đầy đủ: mục `Khuôn khối hợp đồng skill` của
+trường và luật nhãn đầy đủ (gồm MCP-First): mục `Khuôn khối hợp đồng skill` của
 [plan-template-co-che.md](plan-template-co-che.md).
-Quy tắc MCP-First: Với task dùng MCP, phải có bước kiểm tra kết nối (pre-flight probe) trước khi gọi tool, và hướng dẫn user mở server nếu chưa kết nối (xem `skills/tdq-setup/references/mcp-first-guide.md`).
 ## Px — Log & test bắt buộc
 Phase này bắt buộc **chỉ khi việc này có runtime** — tức có ít nhất một task tạo hoặc sửa
 file mã nguồn chạy được. Không có runtime (chỉ sửa tài liệu, khuôn mẫu, cấu hình) → bỏ

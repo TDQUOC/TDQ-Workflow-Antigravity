@@ -623,3 +623,57 @@ class R12Test(LintBase):
         dong = [d for d in out.splitlines() if "[R12]" in d]
         self.assertEqual(len(dong), 1, f"một đoạn chỉ báo một lần:\n{out}")
         self.assertIn(":5:", dong[0], dong[0])
+
+
+class R15ModelEffortAndAgentCallersTest(LintBase):
+    """Kiểm R15 cho bảng Phân bổ Model & Effort (plan từ 2026-11-20-1230 / 2026-11-21 trở đi)."""
+
+    def _plan_body(self, extra_section=""):
+        return (
+            "# PLAN — Kiểm thử model effort\n\n"
+            "Ngày: 2026-11-21 · Spec: ../spec/2026-11-21-0100-x.md · Lane: full\n\n"
+            f"{extra_section}"
+            "## P1 — Code\n"
+            "- [ ] **T1.1** (e5m) Sửa helper — Test: `pytest -q`\n"
+            "  - Req: `§2#1` · Ngoài phạm vi: `GIỮ NGUYÊN` API cũ\n"
+            "  - Chạm: `scripts/demo.py`\n"
+            "  - Cần: Không\n"
+            "  - Giao tiếp: Consumes: `cfg` | Produces: `fn()`\n"
+            "  - Neo & Công cụ: `Edit` trên `scripts/demo.py`\n"
+            "  - Trước → Sau: Cũ → Mới\n"
+            "  - Tiêu chí chấp nhận (EARS): KHI chạy, HỆ THỐNG PHẢI trả về 0.\n"
+            "  - Logic: cập nhật hàm xử lý chính.\n"
+            "  - Ca góc hiểm & Assert: Input rỗng → raise ValueError\n\n"
+            "## Definition of Done\n"
+            "- [ ] Q1 Test pass — `pytest -q`\n"
+        )
+
+    def test_r15_yeu_cau_bang_model_effort_tu_moc_moi(self):
+        p_missing = self.write("docs/tdq/plan/2026-11-21-0100-thieu-model.md", self._plan_body())
+        self.assert_hits(p_missing, "R15")
+
+        partial = "## Phân bổ Model & Effort\n\n| Pha | Vai trò | Model | Effort |\n|---|---|---|---|\n| `implement` | `tdq-implementer` | `inherit` | `high` |\n\n"
+        p_partial = self.write("docs/tdq/plan/2026-11-21-0100-thieu-qc.md", self._plan_body(partial))
+        self.assert_hits(p_partial, "R15")
+
+        valid = (
+            "## Phân bổ Model & Effort\n\n"
+            "| Pha | Vai trò | Model | Effort | Ghi chú |\n|---|---|---|---|---|\n"
+            "| `implement` | `tdq-implementer` | `gemini-4-hydrogen-high` | `high` | Có thể đổi |\n"
+            "| `qc` | `tdq-qc-tester` | `gemini-4-neon-high` | `high` | Tối đa 5 song song |\n"
+            "| `report` | Leader | `inherit` | `Theo phiên` | Tổng hợp |\n\n"
+        )
+        p_ok = self.write("docs/tdq/plan/2026-11-21-0100-du-model.md", self._plan_body(valid))
+        loi = [d for d in doc_lint.r15_loi(doc_lint.Doc(p_ok)) if "Model" in d]
+        self.assertEqual(loi, [], loi)
+
+    def test_agent_callers_duoc_noi_trong_skills(self):
+        build_md = open(os.path.join(ROOT, "skills", "tdq-build", "SKILL.md"), encoding="utf-8").read()
+        team_md = open(os.path.join(ROOT, "skills", "tdq-build", "references", "team-mode.md"), encoding="utf-8").read()
+        qc_md = open(os.path.join(ROOT, "skills", "tdq-build", "references", "qc.md"), encoding="utf-8").read()
+        lean_md = open(os.path.join(ROOT, "skills", "tdq-lean", "SKILL.md"), encoding="utf-8").read()
+        self.assertIn("tdq-security-reviewer", build_md)
+        self.assertIn("tdq-build-resolver", team_md)
+        self.assertIn("tdq-refactor-cleaner", team_md)
+        self.assertIn("tdq-refactor-cleaner", lean_md)
+        self.assertIn("ultra_max_subagents", qc_md)

@@ -475,5 +475,132 @@ class TestPacketCommand(unittest.TestCase):
         self.assertEqual(tasks["T1.2"].vung_file, [])
 
 
+class TestHandoffPacketV2AndBlackboard(unittest.TestCase):
+    """Unified handoff validation, Mini-Spec + multi-lang packet spans, and shared blackboard."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.cwd = self.tmp.name
+        self.slug = "2026-11-20-t21-test"
+        self.plan_rel = f"docs/tdq/plan/{self.slug}.md"
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_root_files_includes_tdq_config_json(self):
+        self.assertIn("tdq-config.json", tdq_team.ROOT_FILES)
+
+    def test_validate_handoff_payload_accepts_valid_and_rejects_bad(self):
+        good = {
+            "task_id": "T2.1",
+            "status": "done",
+            "files": ["scripts/tdq_team.py"],
+            "test_result": "pytest -> 10 passed",
+            "branch": "team/test/t2.1",
+            "merge_ready": True,
+            "tick_ready": True,
+            "notes": "scripts/tdq_team.py:2206 — _build_packet_payload — unified schema",
+        }
+        ok, errs = tdq_team.validate_handoff_payload(good)
+        self.assertTrue(ok, errs)
+        self.assertEqual(errs, [])
+
+        bad_missing = {"task_id": "T2.1", "status": "done"}
+        ok_m, errs_m = tdq_team.validate_handoff_payload(bad_missing)
+        self.assertFalse(ok_m)
+        self.assertTrue(errs_m)
+
+        bad_long = dict(good, notes="x" * 1501)
+        ok_l, errs_l = tdq_team.validate_handoff_payload(bad_long)
+        self.assertFalse(ok_l)
+        self.assertTrue(any("1500" in e for e in errs_l))
+
+    def test_parse_handoff_from_text_parses_7line_and_json_cli(self):
+        text_7line = "\n".join([
+            "TASK: T2.1",
+            "STATUS: done",
+            "FILES: scripts/tdq_team.py, tests/test_team_packet_v2.py",
+            "TEST: py -3 -X utf8 -m unittest tests.test_team_packet_v2 -> 12 passed",
+            "BRANCH: team/demo/t2.1 | COMMIT: abc1234 | MERGE-READY: yes",
+            "TICK-READY: yes",
+            "NOTES: scripts/tdq_team.py:2206 — _build_packet_payload — added Mini-Spec",
+        ])
+        parsed = tdq_team.parse_handoff_from_text(text_7line)
+        ok, errs = tdq_team.validate_handoff_payload(parsed)
+        self.assertTrue(ok, errs)
+        self.assertEqual(parsed["files"], ["scripts/tdq_team.py", "tests/test_team_packet_v2.py"])
+
+        rc_ok, out_ok, err_ok = _run_team(self.cwd, "validate-handoff", "--text", text_7line, "--json")
+        self.assertEqual(rc_ok, 0, out_ok + err_ok)
+        rc_bad, _out_bad, _err_bad = _run_team(self.cwd, "validate-handoff", "--text", '{"task_id":"T1"}')
+        self.assertEqual(rc_bad, 1)
+
+    def test_packet_extracts_minispec_and_ts_rust_ps1_spans(self):
+        _write(
+            self.cwd,
+            "src/widget.ts",
+            "\n".join([
+                "export function helperBefore() { return 1; }",
+                "export interface WidgetConfig { name: string; }",
+                "export async function computeWidget(cfg: WidgetConfig): Promise<number> {",
+                "  const base = cfg.name.length;",
+                "  return base * 2;",
+                "}",
+            ]),
+        )
+        _write(
+            self.cwd,
+            "src/lib.rs",
+            "\n".join([
+                "pub fn unused_helper() -> i32 { 0 }",
+                "pub fn handle_pre_tool(input: &str) -> bool {",
+                "    !input.is_empty()",
+                "}",
+            ]),
+        )
+        _write(
+            self.cwd,
+            "scripts/check.ps1",
+            "function Invoke-Check {\n    param($Name)\n    return $Name\n}\n",
+        )
+        plan = """# PLAN — multi lang packet
+
+## P1 — core
+- [ ] **T1.1** (e10m) Update `computeWidget` and `handle_pre_tool` — Test: `pytest -q`
+  - Req: `§2#2` · Ngoài phạm vi: `GIỮ NGUYÊN` chữ ký cũ của `unused_helper`
+  - Chạm: `src/widget.ts`, `src/lib.rs`, `scripts/check.ps1`
+  - Tiêu chí chấp nhận (EARS): KHI truyền config hợp lệ, HỆ THỐNG PHẢI trả về số > 0.
+  - Logic cốt lõi: tính độ dài tên nhân 2 và kiểm input không rỗng.
+  - Ca góc hiểm & Assert: Input rỗng trả false · `assert computeWidget({name: "a"}) == 2`
+"""
+        plan_path = _write(self.cwd, self.plan_rel, plan)
+        rc, out, err = _run_team(self.cwd, "packet", "T1.1", "--plan", plan_path)
+        self.assertEqual(rc, 0, out + err)
+        for token in ("Req:", "GIỮ NGUYÊN:", "EARS:", "RANH GIỚI:", "TỰ KIỂM:"):
+            self.assertIn(token, out)
+        self.assertIn("`src/widget.ts` :: `computeWidget`", out)
+        self.assertIn("`src/lib.rs` :: `handle_pre_tool`", out)
+        self.assertIn("READ-EXACT: scripts/check.ps1:1-4", out)
+
+    def test_blackboard_record_read_and_escalation(self):
+        tdq_team.blackboard_record(
+            self.cwd, "T2.1", "failed", "first syntax break",
+            slug=self.slug, role="tdq-implementer", error="SyntaxError at line 12",
+        )
+        tdq_team.blackboard_record(
+            self.cwd, "T2.1", "failed", "second compile break",
+            slug=self.slug, role="tdq-implementer", error="TypeError at line 18",
+        )
+        board = tdq_team.blackboard_read(self.cwd, self.slug)
+        self.assertEqual(len(board["entries"]), 2)
+        esc = tdq_team.suggest_escalation(self.cwd, self.slug, "T2.1")
+        self.assertIsNotNone(esc)
+        self.assertEqual(esc["recommended_agent"], "tdq-build-resolver")
+        self.assertEqual(esc["failures"], 2)
+
+        rc, out, err = _run_team(self.cwd, "blackboard", "read", "--slug", self.slug, "--json")
+        self.assertEqual(rc, 0, out + err)
+        cli_board = json.loads(out)
+        self.assertEqual(len(cli_board["entries"]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

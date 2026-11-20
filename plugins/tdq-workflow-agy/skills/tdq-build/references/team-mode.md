@@ -6,8 +6,8 @@
   Workflow implement ownership=79-83 · The wave loop=84-97 ·
   What the machine checks for you, so you do not have to=98-122 ·
   The delegation prompt template — all 9 fields, none left out=123-141 ·
-  RIGHT/WRONG examples=142-150 · Explicit Anti-Patterns=151-158 · Self-check=159-173 ·
-  Sổ worktree=174
+  RIGHT/WRONG examples=142-151 · Explicit Anti-Patterns=152-159 · Self-check=160-174 ·
+  Sổ worktree=175
 -->
 
 Soul: chất lượng > runtime > context cost · luật gốc: ../../tdq-conventions/references/soul.md <!-- i18n-allow: canonical Soul line -->
@@ -145,6 +145,7 @@ Include spec and plan paths in prompt body. Subagent cannot read this conversati
 2. Rhythm: RIGHT: dispatch 4 tasks of the same wave concurrently · WRONG: call 1 agent, wait for it, then next.
 3. Merging: RIGHT: check clean -> merge -> tick [x] right away · WRONG: merge straight through with no check.
 4. Shared contracts: RIGHT: finish constant first, then dispatch · WRONG: dispatch in parallel before contract is merged.
+5. Specialist triggers: 2+ fails → `tdq-build-resolver` / `tdq-debugger`; wide trace → `tdq-explorer`; auth/hooks → `tdq-security-reviewer`; dead code → `tdq-refactor-cleaner`.
 
 Full cases, `tdq_team.py packet` (Symbol-Span + `CONTRACT-DELTA:`), & tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
 

@@ -80,9 +80,22 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     if not info.get("is_subagent"):
         return False
     role = (info.get("role") or "").lower()
-    if any(r in role for r in ("reviewer", "qc-tester", "browser")):
+    tool_input = payload.get("tool_input") or {}
+    target = (
+        tool_input.get("file_path")
+        or tool_input.get("TargetFile")
+        or tool_input.get("path")
+        or tool_input.get("notebook_path")
+        or ""
+    )
+    if "qc-tester" in role:
+        import _common
+        qc_check = getattr(_common, "is_qc_report_target", None)
+        if callable(qc_check) and qc_check(target, cwd):
+            return False
+    if any(r in role for r in ("reviewer", "qc-tester", "browser", "explorer", "debugger")):
         block(cwd, payload, "READONLY", [
-            f"Subagent role `{role}` is strictly read-only and cannot modify files.",
+            f"Subagent role `{role}` is read-only (tdq-qc-tester may write only docs/tdq/qc/*.md).",
         ])
         return True
     return False

@@ -123,10 +123,12 @@ class TestKhaiTrongHooksJson(unittest.TestCase):
         2026-10-08 (0.59.0): 12 → 13 mục — `lsp_gate` trên `PreToolUse` `mcp__lsp__start_lsp`,
         CHẶN `start_lsp` thiếu `language_id` hoặc sai cặp (gốc, ngôn ngữ).
         2026-10-26: 13 → 14 mục, 6 → 7 sự kiện — `search_observe` thêm trên `PostToolUseFailure`
-        để ghi nhận telemetry lỗi/timeout cho các lệnh `mcp__lsp__.*`."""
-        self.assertEqual(len(self.cfg), 7, sorted(self.cfg))
+        để ghi nhận telemetry lỗi/timeout cho các lệnh `mcp__lsp__.*`.
+        2026-11-20: 14 → 17 mục, 7 → 8 sự kiện — thêm `SubagentStop` (`subagent_stop.py`) cùng
+        `PreToolUse`/`PostToolUse` `Task|Agent|invoke_subagent|swarm` cho role tracking."""
+        self.assertEqual(len(self.cfg), 8, sorted(self.cfg))
         muc = sum(len(nhom["hooks"]) for ds in self.cfg.values() for nhom in ds)
-        self.assertEqual(muc, 14, self.cfg)
+        self.assertEqual(muc, 17, self.cfg)
 
     def test_tro_dung_file(self):
         cmd = self.cfg["SubagentStart"][0]["hooks"][0]["command"]
@@ -135,13 +137,13 @@ class TestKhaiTrongHooksJson(unittest.TestCase):
 
 
 class TestAutoClarityAgents(unittest.TestCase):
-    """All 6 agents/tdq-*.md and plugin patches carry Auto-Clarity + Compact Handoff."""
+    """All 8 agents/tdq-*.md and plugin patches carry Auto-Clarity + Compact Handoff."""
 
     def test_six_agents_have_auto_clarity_and_compact_handoff(self):
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         agent_dir = os.path.join(root, "agents")
         files = sorted(f for f in os.listdir(agent_dir) if f.startswith("tdq-") and f.endswith(".md"))
-        self.assertEqual(len(files), 6, files)
+        self.assertEqual(len(files), 8, files)
         for name in files:
             with open(os.path.join(agent_dir, name), encoding="utf-8") as fh:
                 text = fh.read()

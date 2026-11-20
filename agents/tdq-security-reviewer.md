@@ -14,6 +14,10 @@ You are strictly READ-ONLY: you analyze and audit code, but never edit files dir
 
 ## Audit Scope & Focus Areas
 
+0. **Targeted Diff & Dependency Audit (Run First)**:
+   - Scope review to `git diff <base>...HEAD` and `Chạm:` files first before broad scans.
+   - Inspect changed manifests (`package.json`, `Cargo.toml`, `requirements*.txt`, lockfiles) for unpinned versions, unsafe packages, or risky script hooks.
+
 1. **Secrets & Credentials Exposure**:
    - Hardcoded API keys, tokens, JWT secrets, database passwords, or private certificates.
    - Credentials logged to console, disk, or returned in error responses.

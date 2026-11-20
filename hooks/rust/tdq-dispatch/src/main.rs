@@ -7,7 +7,7 @@ use std::process::{Command, Stdio};
 use std::time::Instant;
 use tdq_dispatch::events::notification::handle_notification;
 use tdq_dispatch::events::post_invocation::handle_post_invocation;
-use tdq_dispatch::events::post_tool_use::handle_post_tool_use;
+use tdq_dispatch::events::post_tool_use::route_post_tool_use;
 use tdq_dispatch::events::pre_invocation::handle_pre_invocation;
 use tdq_dispatch::events::pre_tool_use::handle_pre_tool_use;
 use tdq_dispatch::events::stop_streak::handle_stop_streak;
@@ -190,7 +190,8 @@ fn route_event(event_name: &str, payload: &HookPayload, workspace_root: &Path) -
         "PreInvocation" => handle_pre_invocation(payload, workspace_root),
         "PostInvocation" => RouteOutcome::Decided(handle_post_invocation(payload, workspace_root)),
         "PreToolUse" => handle_pre_tool_use(payload, workspace_root),
-        "PostToolUse" => RouteOutcome::Decided(handle_post_tool_use(payload, workspace_root)),
+        "PostToolUse" => route_post_tool_use(payload, workspace_root),
+        "SubagentStop" => RouteOutcome::DelegatePython,
         "StopStreak" | "Stop" => handle_stop_streak(payload, workspace_root),
         "UserPromptSubmit" => {
             RouteOutcome::Decided(handle_user_prompt_submit(payload, workspace_root))
@@ -349,6 +350,10 @@ mod tests {
         );
         assert_eq!(
             route_event("SessionStart", &payload, &ws),
+            RouteOutcome::DelegatePython
+        );
+        assert_eq!(
+            route_event("SubagentStop", &payload, &ws),
             RouteOutcome::DelegatePython
         );
         let _ = fs::remove_dir_all(&ws);

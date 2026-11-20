@@ -1,9 +1,9 @@
 # How the plan's three conditional sections work
 <!-- muc-luc-dong:
   Cụm song song — cách chia cho đúng=27-42 · Luật file nóng — nhận diện và hai cách xử=43-58 ·
-  Khuôn khối hợp đồng skill — năm trường và nhãn `(mcp)`=59-79 ·
-  Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó=80-89 ·
-  Dòng `Cần` — cách máy xếp đợt, và luật lùi=90
+  Khuôn khối hợp đồng skill — năm trường và nhãn `(mcp)`=59-80 ·
+  Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó=81-90 ·
+  Dòng `Cần` — cách máy xếp đợt, và luật lùi=91
 -->
 
 The body below stays in Vietnamese ON PURPOSE. It is recorded here so it is not read as a
@@ -76,6 +76,7 @@ Luật nhãn `(mcp)` — BẮT BUỘC ghi ngay khi lập plan: skill nào cần 
 MCP, ví dụ tavily/notion) thì dòng `Dùng:` phải kết thúc bằng nhãn ` (mcp)` NGOÀI backtick, cuối
 dòng, đúng cú pháp spec §1. `split-plan` đọc nhãn này để biết task nào buộc phải do Claude tự làm,
 không giao cho sub-agent thiếu MCP.
+Quy tắc MCP-First: với task dùng MCP, phải có bước kiểm tra kết nối (pre-flight probe) trước khi gọi tool, và hướng dẫn user mở server nếu chưa kết nối (xem `skills/tdq-setup/references/mcp-first-guide.md`).
 
 ## Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó
 

@@ -12,8 +12,8 @@
     "token": 536
   },
   "skills/tdq-build/references/qc.md": {
-    "sha256": "1deac4b6ae9b0c4ee306a8d0081c664ffd14e3ee4155f8bbfaa6801a249c2238",
-    "token": 3444
+    "sha256": "3ba2d369e33dbf5987baf0c61b7627e31d1c2cd84cecc072070eaa842b4cc185",
+    "token": 3479
   },
   "skills/tdq-build/references/report-template.md": {
     "sha256": "2096c02f40d43fd558a2afe45603b357a89706602a0c2f8c808b09191f74b149",
@@ -80,12 +80,12 @@
     "token": 1346
   },
   "skills/tdq-build/references/team-mode.md": {
-    "sha256": "8a69ea972512e3d95d4a15b112a620bd9a694a06de75db179fb855d507f8aaf0",
-    "token": 3412
+    "sha256": "9148fa83f38584a4afcafb52cab16e62c0d88148236ab89690386b1de2adaa0e",
+    "token": 3472
   },
   "skills/tdq-build/references/vision-test-loop.md": {
-    "sha256": "2d0d874af6e57ef4c91a48ab8775aa6464a81749874d78a7627882b45b643266",
-    "token": 3456
+    "sha256": "c6dd73cdf88f5b33b72000b0cb180eb639770379e5d6205b54a654ad00fcca9c",
+    "token": 3461
   },
   "skills/tdq-check-status/references/bang-lech.md": {
     "sha256": "b2380e933af0c59f555fc085fa30df023d60775ebd9999657cfcc6142f53c4ae",
@@ -132,8 +132,8 @@
     "token": 2310
   },
   "skills/tdq-conventions/references/subagent-tuning.md": {
-    "sha256": "0bf232d1b4074586fe85144639e9bda8b2f7d8abcf50616c5478f3831b1468fa",
-    "token": 1086
+    "sha256": "da29d79f21cb786e45c7bbe900d9359dade970248c88b8bb9c9cd4ae9a926399",
+    "token": 1654
   },
   "skills/tdq-conventions/references/tavily.md": {
     "sha256": "1f2e19794b95b79a241b59fd151c88051b189270059b3e14c981ac8bb330173d",
@@ -212,16 +212,16 @@
     "token": 1281
   },
   "skills/tdq-plan/references/plan-template-co-che.md": {
-    "sha256": "6e3580cfbe1d201aaa6b1245b3414ff246d99d8da89791cb3442b2b1077a2051",
-    "token": 3151
+    "sha256": "f380c73915b8fef136068656421f940ea73784d69a070f3f3de1930c011959e8",
+    "token": 3266
   },
   "skills/tdq-plan/references/plan-template-huong-dan.md": {
     "sha256": "8136b7106f0288a3d8f7595ae29954d6fcb63c5a5dfea9c41c1318d85ec68394",
     "token": 1222
   },
   "skills/tdq-plan/references/plan-template.md": {
-    "sha256": "a35df9b70af2bf4999b39534ec109b32c637807aac5b9766a6fcaadec6ba0b97",
-    "token": 3333
+    "sha256": "bd8a9ea825fdcf2046f28c9f9a5f49feaa5ac901cb0312382e1f3903d526efc3",
+    "token": 3420
   },
   "skills/tdq-plan/references/planner-rules.md": {
     "sha256": "95320ae11237f3c276dd7c2a67711328e7c0b8aa7e6a0c6deb9027d98b24d91d",

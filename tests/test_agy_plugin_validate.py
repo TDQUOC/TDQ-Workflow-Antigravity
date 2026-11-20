@@ -30,7 +30,7 @@ def test_v1_agy_plugin_validate_strict_json():
     assert data["name"] == "tdq-workflow-agy"
     assert data["findings"] == []
     assert data["components"] == {
-        "agents": 6,
+        "agents": 8,
         "hooks": 6,
         "mcpServers": 3,
         "rules": 10,

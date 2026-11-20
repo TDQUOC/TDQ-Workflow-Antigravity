@@ -26,9 +26,15 @@ const SUBAGENT_ROLES: &[&str] = &[
     "tdq-implementer",
     "tdq-build-resolver",
     "tdq-refactor-cleaner",
+    "tdq-explorer",
+    "tdq-debugger",
 ];
 
-fn detect_subagent_role(payload: &HookPayload, workspace_root: &Path, sid: &str) -> Option<String> {
+pub(crate) fn detect_subagent_role(
+    payload: &HookPayload,
+    workspace_root: &Path,
+    sid: &str,
+) -> Option<String> {
     if let Some(rec) = read_sessions_role(workspace_root, sid) {
         if !rec.role.trim().is_empty() {
             return Some(rec.role);
@@ -58,7 +64,11 @@ fn detect_subagent_role(payload: &HookPayload, workspace_root: &Path, sid: &str)
 
 fn is_readonly_role(role: &str) -> bool {
     let low = role.to_ascii_lowercase();
-    low.contains("reviewer") || low.contains("qc-tester") || low.contains("browser")
+    low.contains("reviewer")
+        || low.contains("qc-tester")
+        || low.contains("browser")
+        || low.contains("explorer")
+        || low.contains("debugger")
 }
 
 fn deny_with_block(workspace_root: &Path, sid: &str, code: &str, detail: &str) -> RouteOutcome {
@@ -130,6 +140,41 @@ fn resolve_rel_in_project(raw_target: &str, workspace_root: &Path) -> Option<Str
         return Some(rest.to_string());
     }
     None
+}
+
+fn normalize_lexical(path: &Path) -> PathBuf {
+    use std::path::Component;
+    let mut out = PathBuf::new();
+    for comp in path.components() {
+        match comp {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                if !out.pop() {
+                    out.push(Component::ParentDir);
+                }
+            }
+            other => out.push(other),
+        }
+    }
+    out
+}
+
+fn is_qc_report_target(raw_target: &str, workspace_root: &Path) -> bool {
+    if raw_target.trim().is_empty() {
+        return false;
+    }
+    let abs_raw = if Path::new(raw_target).is_absolute() {
+        PathBuf::from(raw_target)
+    } else {
+        workspace_root.join(raw_target)
+    };
+    let lexical = normalize_lexical(&abs_raw);
+    let lexical_str = lexical.to_string_lossy();
+    let Some(rel) = resolve_rel_in_project(&lexical_str, workspace_root) else {
+        return false;
+    };
+    let low = rel.replace('\\', "/").to_ascii_lowercase();
+    low.starts_with("docs/tdq/qc/") && low.ends_with(".md")
 }
 
 fn is_state_target(raw_target: &str) -> bool {
@@ -243,11 +288,16 @@ fn handle_edit_tool(
         return RouteOutcome::Decided(HookDecision::allow());
     };
     if let Some(role) = role_opt.filter(|r| is_readonly_role(r)) {
+        if role.to_ascii_lowercase().contains("qc-tester")
+            && is_qc_report_target(raw_target, workspace_root)
+        {
+            return RouteOutcome::Decided(HookDecision::allow());
+        }
         return deny_with_block(
             workspace_root,
             sid,
             "READONLY",
-            &format!("Read-only role `{}` cannot edit.", role),
+            &format!("Read-only role `{}` cannot edit (qc-tester may write only docs/tdq/qc/*.md).", role),
         );
     }
     if is_state_target(raw_target) {
@@ -587,6 +637,38 @@ mod tests {
         assert!(
             matches!(handle_pre_tool_use(&qc_write, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]"))
         );
+
+        let qc_allow_md = HookPayload {
+            agent_type: Some("tdq-qc-tester".to_string()),
+            tool_name: Some("write_to_file".to_string()),
+            tool_input: Some(json!({ "TargetFile": "docs/tdq/qc/2026-11-20-q1.md" })),
+            ..Default::default()
+        };
+        assert!(
+            matches!(handle_pre_tool_use(&qc_allow_md, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow)
+        );
+
+        let qc_block_trav = HookPayload {
+            agent_type: Some("tdq-qc-tester".to_string()),
+            tool_name: Some("write_to_file".to_string()),
+            tool_input: Some(json!({ "TargetFile": "docs/tdq/qc/../../a.py" })),
+            ..Default::default()
+        };
+        assert!(
+            matches!(handle_pre_tool_use(&qc_block_trav, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]"))
+        );
+
+        for ro_role in &["tdq-explorer", "tdq-debugger"] {
+            let deny_ro = HookPayload {
+                agent_type: Some((*ro_role).to_string()),
+                tool_name: Some("write_to_file".to_string()),
+                tool_input: Some(json!({ "TargetFile": "docs/tdq/qc/2026-11-20-q1.md" })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&deny_ro, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]"))
+            );
+        }
 
         let state_edit = HookPayload {
             tool_name: Some("write_to_file".to_string()),

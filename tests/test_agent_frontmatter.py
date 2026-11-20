@@ -5,6 +5,7 @@ nên bỏ trống = agent chạy theo mức của phiên, không kiểm soát đ
 lượng. `model` khai sẵn để agent cơ học không đắt theo model user đang bật.
 Bảng mặc định + lý do: skills/tdq-conventions/references/subagent-tuning.md.
 """
+import hashlib
 import os
 import re
 import unittest
@@ -12,6 +13,31 @@ import unittest
 from helper import ROOT
 
 AGENTS = os.path.join(ROOT, "agents")
+AGY_AGENTS = os.path.join(ROOT, "plugins", "tdq-workflow-agy", "agents")
+EXPECTED_AGENTS = (
+    "tdq-implementer.md",
+    "tdq-qc-tester.md",
+    "tdq-reviewer.md",
+    "tdq-security-reviewer.md",
+    "tdq-build-resolver.md",
+    "tdq-refactor-cleaner.md",
+    "tdq-explorer.md",
+    "tdq-debugger.md",
+)
+READONLY_AGENTS = (
+    "tdq-reviewer.md",
+    "tdq-security-reviewer.md",
+    "tdq-explorer.md",
+    "tdq-debugger.md",
+)
+AGY_DISCOVERY_TOOLS = {"read_file", "grep_search", "find_by_name", "list_dir"}
+AGY_WRITE_TOOLS = {
+    "edit_file",
+    "write_file",
+    "write_to_file",
+    "replace_file_content",
+    "multi_replace_file_content",
+}
 MODEL_ALIASES = {"sonnet", "opus", "haiku", "fable", "inherit"}
 MODEL_ID = re.compile(r"^claude-[\w.-]+$")
 EFFORTS = {"low", "medium", "high", "xhigh", "max"}
@@ -29,6 +55,14 @@ def frontmatter(path):
 def field(head, name):
     match = re.search(FIELD.format(name), head, re.MULTILINE)
     return match.group(1) if match else None
+
+
+def _parse_tools_list(head):
+    """Parse YAML inline bracket list `[a, b, c]` from frontmatter tools field."""
+    raw = (field(head, "tools") or "").strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        raw = raw[1:-1]
+    return {item.strip() for item in raw.split(",") if item.strip()}
 
 
 class AgentFrontmatterTest(unittest.TestCase):
@@ -66,6 +100,58 @@ class AgentFrontmatterTest(unittest.TestCase):
             text = f.read()
         for name in self.agent_files():
             self.assertIn(name[:-3], text, f"subagent-tuning.md thiếu dòng cho {name}")
+
+    def test_all_eight_agents_exist_in_both_trees_with_model_inherit(self):
+        """All 8 expected agents exist in root and AGY bundle with model: inherit."""
+        root_names = set(self.agent_files())
+        agy_names = sorted(n for n in os.listdir(AGY_AGENTS) if n.endswith(".md"))
+        self.assertLessEqual(set(EXPECTED_AGENTS), root_names)
+        self.assertEqual(agy_names, sorted(EXPECTED_AGENTS))
+        for name in EXPECTED_AGENTS:
+            for label, folder in (("root", AGENTS), ("agy", AGY_AGENTS)):
+                with self.subTest(tree=label, agent=name):
+                    path = os.path.join(folder, name)
+                    self.assertTrue(os.path.isfile(path), f"missing {label} agent: {name}")
+                    head = frontmatter(path)
+                    self.assertIsNotNone(head, f"{label}/{name}: missing frontmatter")
+                    self.assertEqual(field(head, "model"), "inherit")
+
+    def test_built_agy_agents_tools_and_readonly_notices(self):
+        """AGY agents declare discovery tools, strict READONLY notices, and scoped QC notice."""
+        for name in EXPECTED_AGENTS:
+            with self.subTest(agent=name):
+                path = os.path.join(AGY_AGENTS, name)
+                with open(path, encoding="utf-8") as fh:
+                    body = fh.read()
+                head = frontmatter(path)
+                tools = _parse_tools_list(head)
+                self.assertLessEqual(
+                    AGY_DISCOVERY_TOOLS, tools, f"{name}: missing AGY discovery tools"
+                )
+                if name in READONLY_AGENTS:
+                    self.assertEqual(
+                        tools & AGY_WRITE_TOOLS, set(), f"{name}: read-only has write tools"
+                    )
+                    self.assertIn("[TDQ:READONLY]", body, f"{name}: missing [TDQ:READONLY]")
+                elif name == "tdq-qc-tester.md":
+                    self.assertIn("docs/tdq/qc/*.md", body)
+                    self.assertIn("[TDQ:QC-SCOPED]", body)
+
+    def test_handoff_schema_sha256_parity(self):
+        """Root and AGY handoff-schema.json copies must share identical SHA-256 digests."""
+        root_path = os.path.join(
+            ROOT, "skills", "tdq-conventions", "references", "handoff-schema.json"
+        )
+        agy_path = os.path.join(
+            ROOT, "plugins", "tdq-workflow-agy",
+            "skills", "tdq-conventions", "references", "handoff-schema.json",
+        )
+        self.assertTrue(os.path.isfile(root_path), "missing root handoff-schema.json")
+        self.assertTrue(os.path.isfile(agy_path), "missing AGY handoff-schema.json")
+        with open(root_path, "rb") as rf, open(agy_path, "rb") as af:
+            root_sha = hashlib.sha256(rf.read()).hexdigest()
+            agy_sha = hashlib.sha256(af.read()).hexdigest()
+        self.assertEqual(root_sha, agy_sha)
 
 
 class AgentDigestLimitTest(unittest.TestCase):

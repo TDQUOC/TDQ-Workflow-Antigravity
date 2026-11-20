@@ -67,8 +67,8 @@ before running the first item; working from memory is banned.
    that is not in the DoD.
    Details: section `## What to run` in this file. Which of those items actually run comes from
    `muc_qc` — the table in `## The QC level` above. The `tdq-qc-tester` agent runs at `ultra`
-   and only there; it used to hang on "large or high-risk work", a threshold nobody could
-   measure, so in practice it never ran.
+   up to `qc.ultra_max_subagents` parallel shards per `tdq-config.json` (default `5`; `0`/`"unlimited"`
+   = unbounded); at `full`, call lightweight `tdq-security-reviewer` / `tdq-reviewer` on risky diffs.
 
 5. Write `docs/tdq/qc/<slug>.md`: each DoD item → PASS/FAIL with **evidence** (the command plus
    its real output). Assert nothing you have not run. (File template in section

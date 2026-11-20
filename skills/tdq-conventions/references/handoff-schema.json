@@ -1,50 +1,85 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "TDQ_HANDOFF_PAYLOAD",
-  "description": "Standardized lightweight subagent-to-leader handoff payload under 200 tokens",
+  "description": "Canonical unified subagent-to-leader handoff contract (digest <= 1,500 chars)",
   "type": "object",
   "properties": {
     "task_id": {
       "type": "string",
-      "description": "Canonical task identifier (e.g. T1.1, T2.3)"
+      "minLength": 1,
+      "description": "Canonical task identifier (e.g. T1.1, Q3)"
     },
     "status": {
       "type": "string",
-      "enum": ["completed", "failed", "blocked"],
+      "enum": ["done", "completed", "failed", "blocked"],
       "description": "Execution status outcome"
     },
-    "modified_files": {
+    "files": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "List of relative paths modified by the subagent"
+      "description": "List of relative paths modified or audited by the subagent"
     },
-    "test_command": {
+    "test_result": {
       "type": "string",
-      "description": "Command executed to verify changes"
+      "minLength": 1,
+      "description": "Verification command and measured outcome"
     },
     "test_verdict": {
       "type": "string",
       "enum": ["pass", "fail"],
-      "description": "Verification test outcome"
+      "description": "Optional normalized pass/fail verdict alias"
     },
-    "summary": {
+    "branch": {
       "type": "string",
-      "maxLength": 300,
-      "description": "Concise technical statement of modifications made"
+      "description": "Worktree branch name (or 'main' / 'read-only' when inapplicable)"
+    },
+    "merge_ready": {
+      "type": "boolean",
+      "description": "Whether worktree branch is committed and ready to merge"
+    },
+    "tick_ready": {
+      "type": "boolean",
+      "description": "Whether the leader can tick this task checkbox after merge"
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 1500,
+      "description": "Concise file:line — symbol — note digest (strictly <= 1,500 chars)"
     },
     "blocker": {
       "type": "string",
-      "description": "Explicit reason if execution was blocked or failed"
+      "maxLength": 500,
+      "description": "Explicit reason if execution failed or was blocked"
+    },
+    "role": {
+      "type": "string",
+      "description": "Subagent roster role name"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model ID used by the subagent"
+    },
+    "effort": {
+      "type": "string",
+      "description": "Reasoning effort tier used by the subagent"
+    },
+    "elapsed_s": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Optional elapsed execution time in seconds"
     }
   },
   "required": [
     "task_id",
     "status",
-    "modified_files",
-    "test_verdict",
-    "summary"
+    "files",
+    "test_result",
+    "branch",
+    "merge_ready",
+    "tick_ready",
+    "notes"
   ],
   "additionalProperties": false
 }

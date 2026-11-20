@@ -44,7 +44,7 @@ scope. Spec approved → plan NOW.
    Pass 1 writes `Ràng buộc toàn cục`, `Ownership Map`, and the task DAG (`Chạm:`/`Cần:`/`Test:`), then runs <!-- i18n-allow -->
    `tdq_plan_scaffold.py --files <spec>` / `--from-spec <spec>` + `--emit-cards` to emit grounded Per-Task Mini-Spec skeletons; Pass 2 fills exact symbols, `Req:`, `Ngoài phạm vi:`, `Giao tiếp:`, and `EARS` criteria (`<= 30` lines/task). <!-- i18n-allow -->
    Must be there: the status header + source spec · **a line of its own**
-   `Mode thực thi: <main|subagent|codex> — <reason>` · phases with checkbox tasks · <!-- i18n-allow: canonical name kept verbatim -->
+   `Mode thực thi: <main|subagent|codex> — <reason>` · **`## Phân bổ Model & Effort`** table covering `implement`, `qc`, and `report` (following `subagent-tuning.md` ladder) · phases with checkbox tasks · <!-- i18n-allow: canonical name kept verbatim -->
    the log service and for unit tests · a Definition of Done pointing back at §6 of the spec, **every
    DoD line checkable by one command** (QC counts its items off that exact number of lines).
    One task = one piece of work + one measurable check, carrying the minute estimate `(eNm)`:
@@ -84,6 +84,7 @@ scope. Spec approved → plan NOW.
 
    **Cách làm:** <1–2 câu>.
    **Khối lượng:** <số phase>, <số task>, ước tính <tổng phút>.
+   **Model & Effort (được phép đổi khi duyệt):** <implement / qc / report model & effort>.
    **Kiểm thế nào:** <số dòng DoD>, mỗi dòng một lệnh kiểm.
 
    Xem đầy đủ tại: `docs/tdq/plan/<slug>.md`
@@ -92,9 +93,9 @@ scope. Spec approved → plan NOW.
 
    **Bạn duyệt plan này chứ?**
 
-   ➤ Duyệt: nhắn "duyệt plan" (duyệt xong tôi hỏi bạn một câu về cách chạy) · Góp ý: nhắn trực tiếp
+   ➤ Duyệt: nhắn "duyệt plan" (duyệt xong tôi hỏi bạn một câu về cách chạy) · Góp ý hoặc đổi model/effort: nhắn trực tiếp
    ```
-   The body is ≤ 10 lines and a REAL summary; a bare status line ("written to the log, waiting for
+   The body is ≤ 14 lines and a REAL summary; a bare status line ("written to the log, waiting for
    approval") is banned. Quoting a template as an example → label it right before the excerpt, in the
    user's language: "(template — not this turn's question)". Then **end the turn** (chat only); comments → fix,
    present again, wait.

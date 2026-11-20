@@ -1219,7 +1219,47 @@ def plan_mode(cwd, state):
     return match.group(1).lower() if match else None
 
 
-def register_subagent_role(cwd, conv_id, role, target_task=""):
+def is_qc_report_target(target_path, cwd):
+    """Allow tdq-qc-tester writes ONLY to markdown files strictly inside docs/tdq/qc/."""
+    if not isinstance(target_path, str) or not target_path.strip():
+        return False
+    base = cwd or "."
+    qc_root = os.path.realpath(os.path.join(base, "docs", "tdq", "qc"))
+    abs_target = os.path.realpath(target_path if os.path.isabs(target_path) else os.path.join(base, target_path))
+    try:
+        common = os.path.commonpath([abs_target, qc_root])
+    except ValueError:
+        return False
+    if common != qc_root or abs_target == qc_root:
+        return False
+    return abs_target.lower().endswith(".md")
+
+
+def append_agent_telemetry(cwd, record):
+    """Append one per-role execution telemetry record to docs/tdq/.tdq-agent-telemetry.jsonl."""
+    base = cwd or "."
+    path = os.path.join(base, "docs", "tdq", ".tdq-agent-telemetry.jsonl")
+    row = {
+        "ts": record.get("ts") or tdq_state.now_iso(),
+        "session": str(record.get("session") or ""),
+        "role": str(record.get("role") or "unknown"),
+        "task_id": str(record.get("task_id") or ""),
+        "status": str(record.get("status") or "done"),
+        "model": str(record.get("model") or ""),
+        "effort": str(record.get("effort") or ""),
+        "elapsed_s": record.get("elapsed_s"),
+        "attempt": int(record.get("attempt") or 1),
+        "files_count": int(record.get("files_count") or 0),
+        "first_pass": bool(record.get("first_pass", True)),
+        "outcome": str(record.get("outcome") or record.get("status") or "done"),
+        "handoff_valid": bool(record.get("handoff_valid", False)),
+    }
+    _lock_and_append_jsonl(path, row)
+    tdq_state._info(f"telemetry: role={row['role']} task={row['task_id']} status={row['status']}")
+    return path
+
+
+def register_subagent_role(cwd, conv_id, role, target_task="", model="", effort=""):
     """Persist dispatched subagent role under .tdq-runtime/sessions.json."""
     path = os.path.join(_runtime_dir(cwd), "sessions.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -1233,7 +1273,12 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
                 data = {}
         if not isinstance(data, dict):
             data = {}
-        data[str(conv_id)] = {"role": role, "task": target_task, "at": time.time()}
+        entry = {"role": role, "task": target_task, "at": time.time()}
+        if model:
+            entry["model"] = str(model)
+        if effort:
+            entry["effort"] = str(effort)
+        data[str(conv_id)] = entry
         try:
             with open(path, "w", encoding="utf-8") as fh:
                 json.dump(data, fh, indent=2, ensure_ascii=False)
@@ -1242,7 +1287,7 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
 
 
 def detect_subagent(payload, cwd):
-    """Detect subagent invocation via sessions.json, agent_type, or step-0 transcriptPath."""
+    """Detect subagent invocation via sessions.json, agent_type/agentType, or step-0 transcriptPath."""
     sid = session_id(payload)
     spath = os.path.join(_runtime_dir(cwd), "sessions.json")
     if os.path.isfile(spath):
@@ -1251,11 +1296,19 @@ def detect_subagent(payload, cwd):
                 reg = json.load(fh)
             if isinstance(reg, dict) and sid in reg:
                 rec = reg[sid]
-                return {"is_subagent": True, "role": rec.get("role"), "task": rec.get("task")}
+                return {
+                    "is_subagent": True,
+                    "role": rec.get("role"),
+                    "task": rec.get("task", ""),
+                    "model": rec.get("model", ""),
+                    "effort": rec.get("effort", ""),
+                }
         except (OSError, ValueError):
             pass
-    if isinstance(payload, dict) and payload.get("agent_type"):
-        return {"is_subagent": True, "role": str(payload.get("agent_type")), "task": ""}
+    if isinstance(payload, dict):
+        explicit_role = payload.get("agent_type") or payload.get("agentType")
+        if explicit_role:
+            return {"is_subagent": True, "role": str(explicit_role), "task": ""}
     tpath = (payload or {}).get("transcriptPath") if isinstance(payload, dict) else None
     if isinstance(tpath, str) and os.path.isfile(tpath):
         try:
@@ -1271,6 +1324,8 @@ def detect_subagent(payload, cwd):
                     "tdq-implementer",
                     "tdq-build-resolver",
                     "tdq-refactor-cleaner",
+                    "tdq-explorer",
+                    "tdq-debugger",
                 ):
                     if role_name in txt:
                         register_subagent_role(cwd, sid, role_name)

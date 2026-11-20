@@ -53,7 +53,7 @@ def generate_plugin_json(plugin_root: Path) -> None:
         "description": (
             "Spec-driven engineering workflow for Google Antigravity: intake -> spec -> plan -> "
             "implement -> QC -> report. Includes 24 [TDQ:*] lifecycle gates, LSP-first 3-tier "
-            "search discipline, Chrome DevTools & Archify verification, and 6 domain subagents."
+            "search discipline, Chrome DevTools & Archify verification, and 8 domain subagents."
         ),
         "logo": "assets/logo.svg",
         "suggestedPrompts": [
@@ -131,7 +131,7 @@ def generate_hooks_json(plugin_root: Path) -> None:
             "enabled": True,
             "PostToolUse": [
                 {
-                    "matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool",
+                    "matcher": "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory|mcp_.*(lsp|graphify|txtai).*|call_mcp_tool|invoke_subagent|swarm|define_subagent",
                     "hooks": [_hook_cmd("dispatch.py", "PostToolUse")],
                 },
             ],

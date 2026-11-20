@@ -38,6 +38,7 @@ from tdq_transcript import (  # noqa: E402
 )
 
 TIMING_REL = os.path.join("docs", "tdq", "timing.jsonl")
+TELEMETRY_REL = os.path.join("docs", "tdq", ".tdq-agent-telemetry.jsonl")
 EXIT_SYNTAX = 2
 METRIC_NAMES = {"api": "api_request_seconds", "tool": "tool_call_seconds",
                 "job": "background_job_seconds", "observed": "observed_union_seconds"}
@@ -226,6 +227,167 @@ def _phase_totals(windows, intervals, qualities, diagnostics):
     return list(groups.values())
 
 
+def _telemetry_path(project_dir):
+    base = os.fspath(project_dir) if project_dir is not None else tdq_state.resolve_project_dir()
+    return os.path.join(base, TELEMETRY_REL)
+
+
+def _parse_telemetry_line(line):
+    try:
+        record = json.loads(line)
+    except (ValueError, TypeError):
+        return None
+    return record if isinstance(record, dict) else None
+
+
+def _matches_slug(record, slug):
+    if not slug:
+        return True
+    rec_slug = record.get("slug")
+    if isinstance(rec_slug, str) and rec_slug.strip():
+        return rec_slug.strip() == slug
+    return True
+
+
+def _read_telemetry_records(project_dir, slug=None, log_fn=None):
+    path = _telemetry_path(project_dir)
+    if not os.path.isfile(path):
+        return []
+    emit = log_fn or _log
+    records, bad = [], 0
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line:
+                    continue
+                rec = _parse_telemetry_line(line)
+                if rec is None:
+                    bad += 1
+                    continue
+                if _matches_slug(rec, slug):
+                    records.append(rec)
+    except OSError as exc:
+        emit(f"telemetry: failed to read {TELEMETRY_REL}: {exc}")
+        return []
+    if bad:
+        emit(f"telemetry: skipped {bad} corrupt line(s) in {TELEMETRY_REL}")
+    return records
+
+
+def _positive_int(value, default):
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 1:
+        return value
+    return default
+
+
+def _nonneg_number(value):
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+        return float(value)
+    return None
+
+
+def _extract_telemetry_entry(rec):
+    raw_role = rec.get("agent_role") or rec.get("role")
+    role = raw_role.strip() if isinstance(raw_role, str) and raw_role.strip() else "unknown"
+    raw_task = rec.get("task_id")
+    task_id = raw_task.strip() if isinstance(raw_task, str) and raw_task.strip() else ""
+    attempt = _positive_int(rec.get("attempt"), 1)
+    status = str(rec.get("status") or rec.get("outcome") or "").strip().lower()
+    raw_fp = rec.get("first_pass")
+    if attempt > 1:
+        is_first_pass = False
+    elif isinstance(raw_fp, bool):
+        is_first_pass = raw_fp
+    else:
+        is_first_pass = status in ("done", "completed", "pass", "ok")
+    raw_retries = rec.get("retries")
+    explicit_retries = (
+        raw_retries
+        if isinstance(raw_retries, int) and not isinstance(raw_retries, bool) and raw_retries >= 0
+        else None
+    )
+    raw_model = rec.get("model")
+    model = raw_model.strip() if isinstance(raw_model, str) and raw_model.strip() else ""
+    return {
+        "role": role,
+        "task_id": task_id,
+        "attempt": attempt,
+        "is_first_pass": is_first_pass,
+        "explicit_retries": explicit_retries,
+        "elapsed_s": _nonneg_number(rec.get("elapsed_s")),
+        "model": model,
+    }
+
+
+def _count_role_retries(entries):
+    retries, by_task, untagged = 0, {}, []
+    for item in entries:
+        if item["explicit_retries"] is not None:
+            retries += item["explicit_retries"]
+        elif item["task_id"]:
+            by_task.setdefault(item["task_id"], []).append(item)
+        else:
+            untagged.append(item)
+    for group in by_task.values():
+        max_att = max(e["attempt"] for e in group) - 1
+        dup_fail = (len(group) - 1) if any(not e["is_first_pass"] for e in group) else 0
+        retries += max(max_att, dup_fail)
+    if len(untagged) == 1 and untagged[0]["attempt"] > 1:
+        retries += untagged[0]["attempt"] - 1
+    else:
+        retries += sum(1 for e in untagged if e["attempt"] > 1)
+    return retries
+
+
+def role_summary(project_dir, slug=None, *, log_fn=None):
+    """Aggregate docs/tdq/.tdq-agent-telemetry.jsonl per agent role."""
+    records = _read_telemetry_records(project_dir, slug=slug, log_fn=log_fn)
+    if not records:
+        return []
+    grouped = {}
+    for rec in records:
+        entry = _extract_telemetry_entry(rec)
+        grouped.setdefault(entry["role"], []).append(entry)
+    rows = []
+    for role, entries in grouped.items():
+        runs = len(entries)
+        fp_count = sum(1 for e in entries if e["is_first_pass"])
+        elapsed_vals = [e["elapsed_s"] for e in entries if e["elapsed_s"] is not None]
+        avg_elapsed = round(sum(elapsed_vals) / len(elapsed_vals), 2) if elapsed_vals else None
+        rows.append({
+            "role": role,
+            "runs": runs,
+            "first_pass_count": fp_count,
+            "first_pass_rate": round(fp_count / runs, 4),
+            "retries": _count_role_retries(entries),
+            "avg_elapsed_s": avg_elapsed,
+            "models": sorted({e["model"] for e in entries if e["model"]}),
+        })
+    (log_fn or _log)(f"telemetry: summarized {len(records)} record(s) across {len(rows)} role(s)")
+    return sorted(rows, key=lambda item: (-item["runs"], item["role"]))
+
+
+def _role_telemetry_markdown(roles):
+    lines = ["", "## Agent Role Telemetry", ""]
+    if not roles:
+        lines.append("No agent role telemetry recorded yet.")
+        return lines
+    lines.extend([
+        "| Role | Runs | First pass | Rate | Retries | Avg elapsed | Models |",
+        "|---|---|---|---|---|---|---|",
+    ])
+    for row in roles:
+        rate = f"{row['first_pass_rate'] * 100:.0f}%"
+        avg = f"{row['avg_elapsed_s']:.1f}s" if row["avg_elapsed_s"] is not None else "—"
+        models = ", ".join(row["models"]) if row["models"] else "—"
+        lines.append(
+            f"| {row['role']} | {row['runs']} | {row['first_pass_count']} | "
+            f"{rate} | {row['retries']} | {avg} | {models} |"
+        )
+    return lines
+
+
 def tong_hop(state, ket_thuc, transcript_dir=None, *, project_dir=None, host="auto", session_ids=None,
              cache="off", cache_stats=None):
     """Return timing v2; retain the legacy positional caller and never write state."""
@@ -234,7 +396,8 @@ def tong_hop(state, ket_thuc, transcript_dir=None, *, project_dir=None, host="au
     start, end = _aware_time(state.get("started_at")), _aware_time(ket_thuc)
     diagnostics = []
     windows = cua_so_phase(state, ket_thuc, diagnostics)
-    source = read_transcripts(project_dir or tdq_state.resolve_project_dir(), transcript_dir,
+    resolved_dir = project_dir or tdq_state.resolve_project_dir()
+    source = read_transcripts(resolved_dir, transcript_dir,
                               host=host, session_ids=session_ids, cache=cache,
                               request_id=state["active_request"], cache_stats=cache_stats)
     intervals = _prepared_intervals(source["spans"])
@@ -243,6 +406,7 @@ def tong_hop(state, ket_thuc, transcript_dir=None, *, project_dir=None, host="au
         wall = (end - start).total_seconds()
         intervals = {kind: _clip_intervals(values, start, end) for kind, values in intervals.items()}
     phases = _phase_totals(windows, intervals, source["quality"], diagnostics)
+    roles = role_summary(resolved_dir, slug=state["active_request"])
     for reason in sorted(set(diagnostics)):
         _log(f"timing diagnostics: {reason}")
     return {"schema_version": 2, "slug": state["active_request"], "lane": state.get("lane"),
@@ -252,7 +416,8 @@ def tong_hop(state, ket_thuc, transcript_dir=None, *, project_dir=None, host="au
             "metrics": _metrics(intervals, wall, source["quality"]),
             "sources": source["sources"], "attribution": source["attribution"],
             "current_phase": windows[-1][0] if windows else None,
-            "diagnostics": sorted(set(diagnostics))}
+            "diagnostics": sorted(set(diagnostics)),
+            "role_telemetry": roles}
 
 
 def _legacy_markdown(data):
@@ -287,6 +452,7 @@ def bang_markdown(so_lieu):
     lines.extend(f"- {key}: {so_lieu['metrics'][key]['reason']}" for key in METRIC_KEYS)
     if so_lieu["diagnostics"]:
         lines.append("Phase diagnostics: " + ", ".join(so_lieu["diagnostics"]))
+    lines.extend(_role_telemetry_markdown(so_lieu.get("role_telemetry") or []))
     return "\n".join(lines)
 
 
@@ -360,30 +526,42 @@ def _cli_time(value):
     return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def main(argv=None):
+def _build_parser():
     parser = argparse.ArgumentParser(
         prog="tdq_timing.py",
         description="Time a TDQ request: wall clock, observed spans and data quality.")
-    parser.add_argument("cmd", choices=("show", "close", "status"),
+    parser.add_argument("cmd", choices=("show", "close", "status", "roles"),
                         help="show = print the table · close = close the books into timing.jsonl · "
-                             "status = a one-line clock")
+                             "status = a one-line clock · roles = summarize per-agent telemetry")
     parser.add_argument("--json", action="store_true", dest="want_json",
                         help="print the raw data as JSON")
     parser.add_argument("--now", help="the 'now' mark in ISO form (so tests are reproducible)")
     parser.add_argument("--transcript-dir", help="transcript folder, defaults to the project one")
     parser.add_argument("--project", help="project folder, defaults to TDQ_PROJECT_DIR/git root")
+    parser.add_argument("--slug", help="optional request slug filter for `roles`")
     parser.add_argument("--host", choices=("auto", "claude", "codex"), default="auto")
     parser.add_argument("--session-id", action="append", default=[], help="select a session; repeatable")
     parser.add_argument("--transcript-cache", choices=("off", "auto"), default="off",
                         help="request-local normalized parse cache (default: off)")
-    args = parser.parse_args(argv)
+    return parser
 
+
+def main(argv=None):
+    args = _build_parser().parse_args(argv)
     cwd = args.project or tdq_state.resolve_project_dir()
     try:
         ket_thuc = _cli_time(args.now)
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return EXIT_SYNTAX
+
+    if args.cmd == "roles":
+        roles = role_summary(cwd, slug=args.slug)
+        if args.want_json:
+            print(json.dumps({"role_telemetry": roles}, ensure_ascii=False))
+        else:
+            print("\n".join(_role_telemetry_markdown(roles)).lstrip())
+        return 0
 
     state = tdq_state.load(cwd)
     if not state or not state.get("active_request"):

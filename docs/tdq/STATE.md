@@ -1,18 +1,18 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-20T12:16:10+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-20T17:06:38+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-20-1056-phan-tich-nang-cap-agent |
+| Request | 2026-11-20-1230-trien-khai-4-de-xuat-agent |
 | Lane | full |
 | Phase | report |
-| Spec | docs/tdq/spec/2026-11-20-1056-phan-tich-nang-cap-agent.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-20-1056-phan-tich-nang-cap-agent.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-20-1230-trien-khai-4-de-xuat-agent.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-20-1230-trien-khai-4-de-xuat-agent.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | full |
-| Run mode | main |
+| QC level | ultra |
+| Run mode | subagent |
 
 ## Where we are
 QC has PASSed. Forbidden: Committing or pushing before the user asks for it.

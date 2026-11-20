@@ -86,7 +86,7 @@ For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md)
      Call `tdq-implementer` for EVERY task of the wave IN ONE response — several Task calls in
      one response means they run concurrently. Mark the tasks you just handed out `[>]`.
      On receiving a report, run `check` then `merge` (which cleans up the task's worktree), tick `[x]` IMMEDIATELY, then back to <!-- i18n-allow -->
-     `wave`. The default is DELEGATE. You may keep a task only when it matches exactly one group <!-- i18n-allow -->
+     `wave`. Retry fails >2x → `tdq-build-resolver`/`tdq-debugger`; risky diffs → `tdq-security-reviewer`; cleanup → `tdq-refactor-cleaner`. The default is DELEGATE. You may keep a task only when it matches exactly one group <!-- i18n-allow -->
      in the closed reason set (lookup table in `team-mode.md`); inventing a group outside that
      set makes `audit` exit non-zero. While a wave is running, the leader works the `tu_lam`
      tasks of that same wave.

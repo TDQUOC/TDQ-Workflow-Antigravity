@@ -82,10 +82,20 @@ NEXT_PHASE_TARGET = {"plan": "spec", "implement": "plan"}
 # is also the answer to the mode gate, so a matched `mode` signal opens it too.
 SIGNAL_TARGETS = {"nhanh": ("quick",), "express": ("quick",), "plan": ("plan", "mode")}  # i18n-allow
 SHELL_MUTATOR = re.compile(
-    r"^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee)\b|"
-    r"(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b|"
-    r"python3?\b.*\bopen\([^)]*['\"](?:w|a)['\"])", re.IGNORECASE)
-STDOUT_WRITE = re.compile(r"(?<!\d)>{1,2}\s*(?!&)(\S+)")
+    r"(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b|"
+    r"(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b)|"
+    r"\b(?:python3?|py)\b.*\b(?:open\([^)]*['\"](?:w|a|x)['\"]|write_text\b|write_bytes\b|"
+    r"os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|"
+    r"\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|"
+    r"fs\.promises\.(?:writeFile|unlink|rm))|"
+    r"\bgit\b(?:\s+-C\s+(?:\"[^\"]*\"|'[^']*'|\S+))?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)",
+    re.IGNORECASE | re.DOTALL,
+)
+_SHELL_WRAPPER_RE = re.compile(
+    r"(?:^|\s)(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)\s+",
+    re.IGNORECASE,
+)
+STDOUT_WRITE = re.compile(r"(?<![<=!-])(?<!\d)(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
 DOCS_ARTIFACT = re.compile(r"docs[\\/]tdq[\\/]artifacts[\\/]", re.IGNORECASE)
 
 
@@ -134,13 +144,110 @@ _PS_WRITE_PATTERN = re.compile(
 )
 
 
-def _is_shell_write(cmd):
-    if _PS_WRITE_PATTERN.search(cmd) or any(w in cmd for w in ("tee ", "sed -i", "rm ", "mv ")):
+def _split_shell_segments(cmd, seps=(";", "&", "|", "\n")):
+    """Split a shell command on separators only when outside single/double quotes."""
+    segments, buf = [], []
+    in_single = in_double = escaped = False
+    for ch in cmd:
+        if escaped:
+            buf.append(ch)
+            escaped = False
+            continue
+        if ch == "\\" and not in_single:
+            escaped = True
+            buf.append(ch)
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif not in_single and not in_double and ch in seps:
+            seg = "".join(buf).strip()
+            if seg:
+                segments.append(seg)
+            buf.clear()
+            continue
+        buf.append(ch)
+    tail = "".join(buf).strip()
+    if tail:
+        segments.append(tail)
+    return segments
+
+
+def _mask_quoted_shell_ops(part):
+    """Replace shell redirection/separator chars inside quotes so `>` in strings is not misread."""
+    out = []
+    in_single = in_double = escaped = False
+    for ch in part:
+        if escaped:
+            out.append("_" if (in_single or in_double) and ch in ";|&><\n" else ch)
+            escaped = False
+            continue
+        if ch == "\\" and not in_single:
+            escaped = True
+            out.append(ch)
+            continue
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif (in_single or in_double) and ch in ";|&><\n":
+            out.append("_")
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
+def _extract_shell_subcommands(part):
+    """Extract quoted payload passed to nested shells like `bash -c \"...\"` or `pwsh -Command '...'`."""
+    subs = []
+    for match in _SHELL_WRAPPER_RE.finditer(part):
+        idx = match.end()
+        while idx < len(part) and part[idx].isspace():
+            idx += 1
+        if idx >= len(part) or part[idx] not in ("'", '"'):
+            continue
+        quote = part[idx]
+        idx += 1
+        buf, escaped = [], False
+        while idx < len(part):
+            ch = part[idx]
+            if escaped:
+                buf.append(ch)
+                escaped = False
+            elif ch == "\\" and quote == '"':
+                escaped = True
+            elif ch == quote:
+                subs.append("".join(buf))
+                break
+            else:
+                buf.append(ch)
+            idx += 1
+    return subs
+
+
+def _part_stdout_targets(part, _depth=0):
+    """Find non-null stdout redirect targets outside quotes, recursing into nested shells."""
+    targets = [
+        t for t in STDOUT_WRITE.findall(_mask_quoted_shell_ops(part))
+        if t.lower() not in ("/dev/null", "$null", "nul")
+    ]
+    if _depth < 2:
+        for sub in _extract_shell_subcommands(part):
+            for sub_part in _split_shell_segments(sub):
+                targets.extend(_part_stdout_targets(sub_part, _depth + 1))
+    return targets
+
+
+def _is_shell_write(cmd, _depth=0):
+    if _depth > 2 or not cmd:
+        return False
+    if _PS_WRITE_PATTERN.search(cmd) or re.search(r"\b(?:tee|rm|mv)\b|\bsed\s+-i\b", cmd):
         return True
-    for part in (p.strip() for p in re.split(r"[;&]", cmd) if p.strip()):
-        if SHELL_MUTATOR.search(part):
+    for part in _split_shell_segments(cmd):
+        if SHELL_MUTATOR.search(part) or _part_stdout_targets(part, _depth):
             return True
-        if any(t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part)):
+        if any(_is_shell_write(sub, _depth + 1) for sub in _extract_shell_subcommands(part)):
             return True
     return False
 
@@ -188,7 +295,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         return False
     cmd = str((payload.get("tool_input") or {}).get("command") or "")
     role = (info.get("role") or "").lower()
-    if any(r in role for r in ("reviewer", "qc-tester", "browser")) and _is_shell_write(cmd):
+    if any(r in role for r in ("reviewer", "qc-tester", "browser", "explorer", "debugger")) and _is_shell_write(cmd):
         block(cwd, payload, "READONLY", [f"Read-only subagent `{role}` cannot mutate files via shell."])
         return True
     norm_cmd = cmd.replace("\\", "/")
@@ -276,11 +383,10 @@ def eval_bash(payload, suppress_output_remind=False):
         return False
     rows = turn_rows(cwd, payload)  # P0-3: read once, reused by every check below
     state = __import__("tdq_state").load(cwd) or {}
-    parts = [part.strip() for part in re.split(r"[;&]", cmd) if part.strip()]
+    parts = _split_shell_segments(cmd, seps=(";", "&"))
     mutates_outside_docs = any(
         (SHELL_MUTATOR.search(part) and not DOCS_ARTIFACT.search(part))
-        or any(not DOCS_ARTIFACT.search(target) and target.lower() not in ("/dev/null", "$null")
-               for target in STDOUT_WRITE.findall(part))
+        or any(not DOCS_ARTIFACT.search(target) for target in _part_stdout_targets(part))
         for part in parts)
     if (payload.get("agent_id") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \
             and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
@@ -293,7 +399,7 @@ def eval_bash(payload, suppress_output_remind=False):
     _mutates_src_shell = any(
         (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\s'\"=])docs[\\/]", part, re.IGNORECASE))
         or any(not re.search(r"^(?:\./)?docs[\\/]", t.lstrip("'\"").replace("\\", "/"), re.IGNORECASE)
-               and t.lower() not in ("/dev/null", "$null") for t in STDOUT_WRITE.findall(part))
+               for t in _part_stdout_targets(part))
         for part in parts)
     if is_agy() and state.get("active_request") and _mutates_src_shell:
         from tdq_state import cong_dang_cho
