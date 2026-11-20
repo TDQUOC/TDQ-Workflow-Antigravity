@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "5862ee52-6fda-44ca-b284-a2dd44b468f2",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1056-phan-tich-nang-cap-agent\\bao-cao-nghiem-thu.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1056-phan-tich-nang-cap-agent.acfefb5c2e814b33b514a83c5ae26433.html",
+  "specification": {
+    "sha256": "6324c7735dfdc8b78490a2420ea1a3d3afdd6c064766d6a56529a8985f62b075",
+    "bytes": 3042
+  },
+  "artifact": {
+    "sha256": "335ed2f64a4d2c253cc076b4fc3c1abccb36c2247fe1e46e25c0fb5e49a52d04",
+    "bytes": 1599032
+  },
+  "explainer": {
+    "preparedSha256": "4ce829733a61a36966193a4aeebb4a588e466c265147ccf2d6cdedab10147667",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-before",
+        "inline": true,
+        "sha256": "910487913927506f698a25ea0693fac76f966e441f4024848a8a8437311e1ed3",
+        "bytes": 974
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-after",
+        "inline": true,
+        "sha256": "6ea07a6db1c59bc9457ff728bb69252f804dbdf365b58fa4f8abd0139ef44b84",
+        "bytes": 986
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-verified",
+        "inline": true,
+        "sha256": "dbddda9e1445586a0060d31e1cdf5672dda121162d9de92d584a18a64693ea16",
+        "bytes": 988
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-roadmap",
+        "inline": true,
+        "sha256": "6689ae6e9fb8e72e15144d408f5ecaf8424295164458fb9801a385e866d7a1fe",
+        "bytes": 984
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1056-phan-tich-nang-cap-agent\\bao-cao-nghiem-thu.archify.md",
+    "sha256": "6324c7735dfdc8b78490a2420ea1a3d3afdd6c064766d6a56529a8985f62b075",
+    "bytes": 3042
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1056-phan-tich-nang-cap-agent.acfefb5c2e814b33b514a83c5ae26433.html",
+    "sha256": "335ed2f64a4d2c253cc076b4fc3c1abccb36c2247fe1e46e25c0fb5e49a52d04",
+    "bytes": 1599032
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1056-phan-tich-nang-cap-agent.acfefb5c2e814b33b514a83c5ae26433.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-20-1056-phan-tich-nang-cap-agent.acfefb5c2e814b33b514a83c5ae26433.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2498,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
