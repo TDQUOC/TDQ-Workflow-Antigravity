@@ -78,7 +78,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
   - Logic cốt lõi: Thêm `normalize_work_kind` fail-closed về `"build"`; rẽ `phase_row` sang `INVESTIGATE_PHASE_ROWS` khi `investigate`; thêm `ghi_moc_phase` sau `state["phase"] = "implement"` tại `_cli_approve`; thêm subcommand `escalate-to-build --by`.
   - Ca góc hiểm & Assert: Giá trị `work_kind` rác hoặc `None` rơi về `"build"` kèm `_warn`; `len(PHASE_TABLE) == 11` · `assert tdq_state.work_kind_hieu_luc({"work_kind": "invalid"}) == "build" and len(tdq_state.PHASE_TABLE) == 11`
 
-- [>] **T1.2** (e12m) Cập nhật `scripts/doc_lint.py` (`rule_r10`/`r14_loi`/cô lập `bench/*.py`), `scripts/tdq_plan_scaffold.py` (`is_created`) & `scripts/tdq_bench.py` (`no_worktree`) — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py tests/test_plan_v2_linter.py -q`
+- [x] **T1.2** (e12m) Cập nhật `scripts/doc_lint.py` (`rule_r10`/`r14_loi`/cô lập `bench/*.py`), `scripts/tdq_plan_scaffold.py` (`is_created`) & `scripts/tdq_bench.py` (`no_worktree`) — Test: `py -3 -X utf8 -m pytest tests/test_doc_lint.py tests/test_plan_v2_linter.py -q`
   - Req: `§2#1`, `§2b(M2)`, `Q1` · Ngoài phạm vi: `GIỮ NGUYÊN` `SKILL_LINE_LIMITS["tdq-plan"] == 132` và mọi fixture test `build` hiện hành.
   - Chạm: `scripts/doc_lint.py`, `scripts/tdq_plan_scaffold.py`, `scripts/tdq_bench.py`, `tests/test_doc_lint.py`, `tests/test_plan_v2_linter.py`
   - Cần: `T1.1`
@@ -107,13 +107,13 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
 
 ## P2 — Đợt 2: Evidence Shard-Merge, Bảo mật `scoped-write` Python & Rust Burden Checkpoint
 
-- [ ] **T2.1** (e14m) Triển khai `evidence add|merge|render` (`--claim-file`, NTFS lock), bọc khóa `blackboard_record`, hỗ trợ `no_worktree` & mở rộng `handoff-schema.json` — Test: `py -3 -X utf8 -m unittest tests.test_team_packet_v2`
+- [x] **T2.1** (e14m) Triển khai `evidence add|merge|render` (`--claim-file`, NTFS lock), bọc khóa `blackboard_record`, hỗ trợ `no_worktree` & mở rộng `handoff-schema.json` — Test: `py -3 -X utf8 -m unittest tests.test_team_packet_v2`
   - Req: `§2#2`, `§2b(M2)`, `Q2` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ lệnh `assign`, `wave`, `open`, `check`, `merge` cho task `build` có worktree.
   - Chạm: `scripts/tdq_team.py`, `scripts/tdq_ten_lenh.py`, `skills/tdq-conventions/references/handoff-schema.json`, `tests/test_team_packet_v2.py`
   - Cần: `T1.1`, `T1.2`
   - Tham chiếu: `hooks/scripts/_common.py`, `scripts/tdq_state.py`
   - Giao tiếp: Consumes: `WorkKindStateContract` | Produces: CLI `evidence add|merge|render`, `_ntfs_lock` nội bộ trong `tdq_team.py`, `is_artifact_only_paths()`, `worktree_required: false`, schema `handoff-schema.json` mở rộng
-  - Neo & Công cụ: `Edit` `scripts/tdq_team.py` (`_finalize_tasks`, `quyet_dinh_task`, `lenh_phan_cong`, `canh_bao_lach_luat`, `validate_handoff_payload`, `blackboard_record`, `_build_packet_payload`, `main`), `skills/tdq-conventions/references/handoff-schema.json`, `tests/test_team_packet_v2.py`
+  - Neo & Công cụ: `Edit` `scripts/tdq_team.py` (`_finalize_tasks`, `quyet_dinh_task`, `lenh_phan_cong`, `canh_bao_lach_luat`, `validate_handoff_payload`, `blackboard_record`, `_build_packet_payload`, `main`), `skills/tdq-conventions/references/handoff-schema.json`, `tests/test_team_packet_v2.py` (evidence engine written; finishing parser CLI)
   - Trước → Sau: Chưa có `evidence` CLI; `blackboard_record` không có khóa NTFS; `no_worktree` bị `canh_bao_lach_luat` và `handoff-schema.json` chặn → Có Shard + Leader-Merge khóa NTFS, `--claim-file` sạch shell, `no_worktree` thông suốt.
   - Tiêu chí chấp nhận (EARS): KHI chạy đồng thời nhiều worker ghi shard `.ev.jsonl` + gọi `blackboard_record` và `evidence merge`, HỆ THỐNG PHẢI bảo toàn `100%` bản ghi không mất dòng/hỏng JSON, chấp nhận handoff `no_worktree` và từ chối trường lạ.
   - Logic cốt lõi: Cài helper khóa tệp cục bộ `msvcrt.locking`/`fcntl.flock` ngay trong `tdq_team.py` (giữ luật không import từ `hooks/scripts/`); đọc `--claim-file`/`--excerpt-file` UTF-8; append nguyên tử vào `evidence.jsonl` và render tất định `evidence-log.md`; gắn `worktree_required: false` cho đích thuần `docs/tdq/{artifacts,research}/`.
@@ -147,7 +147,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
 
 ## P3 — Đợt 3: Agent Prompts, Compiler AGY & Rebuild Plugin
 
-- [ ] **T3.1** (e12m) Cập nhật `3` agent prompt, compiler `tools/patches/*`, tách test `READONLY_AGENTS`, biên dịch `plugins/tdq-workflow-agy/` & kiểm `agy plugin validate --strict` — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_gate_guidance.py tests/test_rust_dispatch_parity.py -q`
+- [x] **T3.1** (e12m) Cập nhật `3` agent prompt, compiler `tools/patches/*`, tách test `READONLY_AGENTS`, biên dịch `plugins/tdq-workflow-agy/` & kiểm `agy plugin validate --strict` — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_gate_guidance.py tests/test_rust_dispatch_parity.py -q`
   - Req: `§2#3`, `§2b(M6)`, `§3b`, `Q4`, `Q6` · Ngoài phạm vi: `GIỮ NGUYÊN` bản cài ngoài repo `~/.gemini/config/plugins/tdq-workflow-agy` (chỉ chạy `--dry-run`) và giữ prebuilt Linux/macOS hiện hữu (`1a`, `2a`).
   - Chạm: `agents/tdq-explorer.md`, `agents/tdq-debugger.md`, `agents/tdq-reviewer.md`, `tools/patches/skills_and_agents.py`, `tools/patches/agy_hooks.py`, `tests/test_agent_frontmatter.py`, `docs/tdq/token-budget.json`
   - Cần: `T1.3`, `T2.1`, `T2.2`, `T2.3`
@@ -158,7 +158,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
     - Không dùng cho: Không ghi đè `~/.gemini/config/plugins/` (chỉ `--dry-run`) và không cross-compile Linux/macOS.
   - Tham chiếu: `tools/patches/gate_guidance.json`, `tools/build_agy_plugin.py`, `tools/install_agy_plugin.py`
   - Giao tiếp: Consumes: `M1`–`M5` + `target/release/tdq-dispatch.exe` | Produces: `plugins/tdq-workflow-agy/` hoàn chỉnh + `install_agy_plugin.py --dry-run` `exit 0`
-  - Neo & Công cụ: `Edit` `agents/tdq-explorer.md`, `agents/tdq-debugger.md`, `agents/tdq-reviewer.md`, `tools/patches/skills_and_agents.py` (`L48-180`), `tools/patches/agy_hooks.py` (`L1455-1475`, `L1720-1755`, `L1870-1890`), `tests/test_agent_frontmatter.py` (`L25-145`); chạy `token_budget.py --khoa`, `tools/build_agy_plugin.py --upstream .`, `tools/install_agy_plugin.py --dry-run`
+  - Neo & Công cụ: `Edit` `agents/tdq-explorer.md`, `agents/tdq-debugger.md`, `agents/tdq-reviewer.md`, `tools/patches/skills_and_agents.py` (`L48-180`), `tools/patches/agy_hooks.py` (`L1455-1475`, `L1720-1755`, `L1870-1890`), `tests/test_agent_frontmatter.py` (`L25-145`); chạy `token_budget.py --khoa`, `tools/build_agy_plugin.py --upstream .`, `tools/install_agy_plugin.py --dry-run` (agents/skills_and_agents done; updating agy_hooks)
   - Trước → Sau: Compiler ép cả `4` role read-only, còn nhánh fallback legacy, `subagent_dispatch_gate` đòi `WORKTREE:` cho mọi `TASK:` → Tách `_STRICT_READONLY_AGENTS` (`tdq-security-reviewer`) vs `_SCOPED_INVESTIGATION_AGENTS`, `tdq-debugger` có `Point-of-Commitment` + Counterfactual Falsification Test, plugin AGY biên dịch sạch `findings: []`.
   - Tiêu chí chấp nhận (EARS): KHI chạy `tools/build_agy_plugin.py --upstream .` và `agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json`, HỆ THỐNG PHẢI trả `"status": "OK"`, `findings: []`, `0` lỗi parity 22 mã AGY và `install_agy_plugin.py --dry-run` thoát `0`.
   - Logic cốt lõi: Chỉ cấp `_WRITER_TOOLS` ở bản build AGY cho 3 role điều tra kèm `[TDQ:SCOPED-WRITE]` (giữ file gốc `agents/tdq-reviewer.md` tương thích `ReadOnlyAgentToolsTest`); bỏ đòi `WORKTREE:` khi prompt/packet có `WORKTREE: none` hoặc `worktree_required: false`; khóa `token-budget.json`.
@@ -170,7 +170,7 @@ Bản xem trước Trước/Sau đã khóa với Spec tại `docs/tdq/spec/2026-
 
 Log: BẮT BUỘC — mọi hàm CLI/hook mới và chỉnh sửa trong `scripts/tdq_state.py`, `scripts/tdq_team.py`, `scripts/doc_lint.py`, `hooks/scripts/*.py` và Rust `tdq-dispatch` đều mặc định ghi log kèm ISO timestamp ra `stderr`, tắt hoàn toàn khi đặt `TDQ_LOG=0`.
 
-- [ ] **T4.1** (e16m) Viết bộ kiểm thử tích hợp & đối kháng `tests/test_investigate_workflow.py` (parity Python ↔ `tdq-dispatch.exe`, Weighted Burden `sid`, `TDQ_LOG=0` & harness mô phỏng `4` ca `1056`/`1457`/`1346`/`1953` trong `tmp_path`) — Test: `py -3 -X utf8 -m pytest tests/test_investigate_workflow.py tests/test_rust_latency_benchmark.py -q`
+- [>] **T4.1** (e16m) Viết bộ kiểm thử tích hợp & đối kháng `tests/test_investigate_workflow.py` (parity Python ↔ `tdq-dispatch.exe`, Weighted Burden `sid`, `TDQ_LOG=0` & harness mô phỏng `4` ca `1056`/`1457`/`1346`/`1953` trong `tmp_path`) — Test: `py -3 -X utf8 -m pytest tests/test_investigate_workflow.py tests/test_rust_latency_benchmark.py -q`
   - Req: `§2#3`, `§4`, `Q2`, `Q3`, `Q5` · Ngoài phạm vi: `GIỮ NGUYÊN` mọi dữ liệu lịch sử dưới `docs/tdq/` (chỉ tạo fixture mô phỏng trong `tmp_path`).
   - Chạm: `tests/test_investigate_workflow.py` (tạo mới)
   - Sinh ra: `tests/test_investigate_workflow.py`

@@ -37,6 +37,7 @@ BANG_DOI_TEN = {
         "packet": "packet",
         "validate-handoff": "validate-handoff",
         "blackboard": "blackboard",
+        "evidence": "evidence",
     },
     "tdq_bench.py": {
         "dung-plan": "gen-plan", "gen-plan": "gen-plan",

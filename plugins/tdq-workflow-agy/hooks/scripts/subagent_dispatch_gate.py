@@ -82,7 +82,16 @@ def main():
             return
 
     if phase == "implement" and ("tdq-implementer" in role.lower() or "TASK:" in prompt):
-        missing = [f for f in REQUIRED_IMPL_FIELDS if f not in prompt]
+        is_no_wt = (
+            "WORKTREE: none" in prompt
+            or "WORKTREE: (no_worktree" in prompt
+            or "worktree_required: false" in prompt.lower()
+            or "no_worktree" in prompt
+        )
+        req_fields = tuple(
+            f for f in REQUIRED_IMPL_FIELDS if not (is_no_wt and f == "WORKTREE:")
+        )
+        missing = [f for f in req_fields if f not in prompt]
         if missing:
             remind(cwd, payload, "SUBAGENT", [
                 f"Implementer assignment missing fields: {', '.join(missing)}. Check team-mode.md.",

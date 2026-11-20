@@ -118,11 +118,7 @@ The things below run only when the DoD reaches them:
   `python3 "${PLUGIN_ROOT}/scripts/doc_lint.py" --pair <spec> <plan>` until it exits 0.
   Editing §3b edits the spec's CONTENT, so the sha still shifts and the hook still demands
   re-approval — by design: changing a capability verdict changes intent, so the user must be
-  asked. Present exactly the one-line diff and ask for re-approval (`approve spec`) inside the
-  QC turn itself. Conversely, editing the bookkeeping lines at the top of the file (Ngày, Bản, <!-- i18n-allow: canonical header field names -->
-  Trạng thái) has NOT shifted <!-- i18n-allow: canonical header field names --> the sha since 2026-08-19. And §6 no longer holds check commands
-  whose names could go stale. Both sources of "re-approval for a harmless reason" are cut at the
-  root.
+  asked. Present the one-line diff and ask `approve spec` inside QC. Header lines do not shift sha, and §6 holds conditions rather than commands.
 
 ## The 120-second cap on smoke and runtime checks
 
@@ -140,10 +136,10 @@ Hitting the cap:
    process waiting on input nobody sends, an infinite loop) or a check that genuinely needs
    longer than two minutes.
 
-**Never raise the cap on your own.** Only when step 3 shows the second case may you propose
-raising it. Then ask the user: one line naming the check, its measured duration, and the cap
-you propose. Raising it because the check is red is turning a red light green by
-unscrewing the bulb. A defect stays a defect: fix the hang, do not widen the window.
+**Never raise the cap on your own.** Only when step 3 shows the second case may you ask the user (naming check, measured duration, and proposed cap). Fix hangs; do not widen timeouts.
+
+## Investigation Evidence QC (`work_kind=investigate`)
+When `work_kind=investigate`, keep the `lite/full/ultra` table above unchanged for scope depth and run `QC-I1..I4` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md); any diff outside `docs/tdq/` re-enables `QC-F1` + `QC-F4`.
 
 ## Recording the result
 

@@ -12,8 +12,8 @@
     "token": 475
   },
   "skills/tdq-build/references/qc.md": {
-    "sha256": "9fe6fe3716e8f46d8dd081285158702dfad4843f0bf1298b024cf96633bc54cd",
-    "token": 3194
+    "sha256": "d527b3e7c448cb3a649700d2e3e6a0d0564854dfd799a74818b868df1616f2ac",
+    "token": 3144
   },
   "skills/tdq-build/references/report-template.md": {
     "sha256": "8942a0e0d4effdee9c2f6b7e0ff4a75e5a042246174d97c95d4b807b1f4e4e78",
@@ -80,8 +80,8 @@
     "token": 1262
   },
   "skills/tdq-build/references/team-mode.md": {
-    "sha256": "f93a798f6e708e217c6e62ef1a1802d0eeac7e279ba549c0501c92427d6449b5",
-    "token": 3114
+    "sha256": "4c7cce438609b2e6cb3fcb2f16556ae9e95d0a725f1227225f4228b5e1609ede",
+    "token": 3122
   },
   "skills/tdq-build/references/vision-test-loop.md": {
     "sha256": "8a508fb6cba3872d02d2a79d58015ac59973ff587e02f43583cbfd500fbbd1d3",
@@ -106,6 +106,10 @@
   "skills/tdq-conventions/references/context-budget.md": {
     "sha256": "b0b975ecce698a87d10da33ab56bcd281605ddade19a05957e59912e8473f350",
     "token": 1952
+  },
+  "skills/tdq-conventions/references/investigate-mode.md": {
+    "sha256": "103bdeec432b1cb5ed07f7abef0706172cf8d6a6b3d215f29c480cb96b5e8073",
+    "token": 1655
   },
   "skills/tdq-conventions/references/knowledge-template.md": {
     "sha256": "08239ab13e471b74b92466b4209884eeca2cd725601dad37926ea6bb9f680889",
@@ -168,8 +172,8 @@
     "token": 1494
   },
   "skills/tdq-intake/references/issue-triage.md": {
-    "sha256": "edec01e8bd7cc3f708a03a39fd96ec7bd85772237cd58dd4a1b437364a4b84e8",
-    "token": 448
+    "sha256": "e896a2b97ad420e0a2ed7adcbe761a00f4792366d4d8bb134982f176fe915edc",
+    "token": 548
   },
   "skills/tdq-intake/references/kiem-lsp-hieu-ung.md": {
     "sha256": "3198e32270af80144b4e0dcebd07903841ef161f44e8bd7748541f47a862b6cb",
@@ -184,8 +188,8 @@
     "token": 819
   },
   "skills/tdq-intake/references/quick-lane-mini.md": {
-    "sha256": "2636a71664ae4e1693ecd6413b9f9bd7a31ad5d0cd2c39e3b77ad1b39ed1207c",
-    "token": 760
+    "sha256": "32eaa87ec63556424a5964662a53fcc77a980585de1b11e902d89d19d35581aa",
+    "token": 822
   },
   "skills/tdq-intake/references/quick-lane-qc.md": {
     "sha256": "faca6d9c0780fe438d95fda18e2787608f9c92430bb1704674d25d26692c9016",
@@ -256,7 +260,7 @@
     "token": 2459
   },
   "skills/tdq-spec/references/spec-template.md": {
-    "sha256": "8ebccc8e1d391c49fd235af4b65d6567242d22ed599d9fe1eb89f6de41b9e9ac",
-    "token": 2679
+    "sha256": "929028694811ab4a30f9d8354fa40bbd22226b6964734c6d4a8c50a39229ec52",
+    "token": 2674
   }
 }

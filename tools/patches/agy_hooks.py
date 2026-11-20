@@ -1240,6 +1240,80 @@ def is_qc_report_target(target_path, cwd):
     return abs_target.lower().endswith(".md")
 
 
+_SCOPED_ARTIFACT_ROLES = frozenset({
+    "tdq-explorer", "explorer", "tdq-debugger", "debugger", "tdq-reviewer", "reviewer",
+})
+_SCOPED_ARTIFACT_EXTS = frozenset({".md", ".json", ".jsonl"})
+_SCOPED_SLUG_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+INVESTIGATE_GON_TEXT = (
+    "[{ma}] muc_gat={muc} · investigate mode: cite file:line or URL+ts per claim.\n"
+    "Write ONLY inside assigned artifact shard; never edit source files.\n"
+    "Synthesize via evidence shards."
+)
+
+
+def _canonicalize_with_tail(abs_path):
+    """Walk ancestors up to deepest existing dir, canonicalize, and re-append normalized tail."""
+    cur = os.path.normpath(abs_path)
+    tail = []
+    while cur and not os.path.exists(cur):
+        parent, seg = os.path.split(cur)
+        if parent == cur or not seg or seg == "..":
+            return None
+        tail.append(seg)
+        cur = parent
+    if not cur:
+        return None
+    real_base = os.path.realpath(cur)
+    return os.path.join(real_base, *reversed(tail)) if tail else real_base
+
+
+def is_investigation_artifact_target(target_path, cwd, role=None, state=None):
+    """5-layer scoped-write check for investigation artifact shards."""
+    if not isinstance(target_path, str) or not target_path.strip() or "\x00" in target_path:
+        return False
+    after_drive = target_path[2:] if len(target_path) >= 2 and target_path[1] == ":" else target_path
+    if ":" in after_drive or ".." in [seg for seg in re.split(r"[\\/]+", target_path) if seg]:
+        return False
+    r_low = str(role or "").strip().lower()
+    if any(b in r_low for b in ("security-reviewer", "browser", "qc-tester")) or r_low not in _SCOPED_ARTIFACT_ROLES:
+        return False
+    if state is None:
+        state = tdq_state.load(cwd, heal=False) or {}
+    slug = str(state.get("active_request") or "").strip() if isinstance(state, dict) else ""
+    if not slug or not _SCOPED_SLUG_RE.match(slug) or ".." in slug:
+        return False
+    base = cwd or "."
+    root_real = os.path.realpath(base)
+    raw_abs = target_path if os.path.isabs(target_path) else os.path.join(root_real, target_path)
+    resolved = _canonicalize_with_tail(raw_abs)
+    if not resolved:
+        return False
+    try:
+        if os.path.commonpath([resolved, root_real]) != root_real or resolved == root_real:
+            return False
+    except ValueError:
+        return False
+    rel_posix = os.path.relpath(resolved, root_real).replace("\\", "/")
+    fname = os.path.basename(rel_posix).lower()
+    ext = os.path.splitext(fname)[1]
+    if ext not in _SCOPED_ARTIFACT_EXTS:
+        return False
+    if fname.startswith("evidence") or ((fname.startswith("trial_") or fname.startswith("rec_")) and ext == ".json"):
+        return False
+    rel_cmp = rel_posix.lower() if sys.platform == "win32" else rel_posix
+    slug_cmp = slug.lower() if sys.platform == "win32" else slug
+    art_prefix = f"docs/tdq/artifacts/{slug_cmp}/"
+    if rel_cmp.startswith(art_prefix) and len(rel_cmp) > len(art_prefix):
+        return True
+    res_prefix = "docs/tdq/research/"
+    if rel_cmp.startswith(res_prefix):
+        tail = rel_cmp[len(res_prefix):]
+        if "/" not in tail and (tail == f"{slug_cmp}.md" or (tail.startswith(f"{slug_cmp}-") and ext == ".md" and len(tail) > len(slug_cmp) + 4)):
+            return True
+    return False
+
+
 def append_agent_telemetry(cwd, record):
     """Append one per-role execution telemetry record to docs/tdq/.tdq-agent-telemetry.jsonl."""
     base = cwd or "."
@@ -1461,7 +1535,16 @@ def main():
             return
 
     if phase == "implement" and ("tdq-implementer" in role.lower() or "TASK:" in prompt):
-        missing = [f for f in REQUIRED_IMPL_FIELDS if f not in prompt]
+        is_no_wt = (
+            "WORKTREE: none" in prompt
+            or "WORKTREE: (no_worktree" in prompt
+            or "worktree_required: false" in prompt.lower()
+            or "no_worktree" in prompt
+        )
+        req_fields = tuple(
+            f for f in REQUIRED_IMPL_FIELDS if not (is_no_wt and f == "WORKTREE:")
+        )
+        missing = [f for f in req_fields if f not in prompt]
         if missing:
             remind(cwd, payload, "SUBAGENT", [
                 f"Implementer assignment missing fields: {', '.join(missing)}. Check team-mode.md.",
@@ -2276,13 +2359,15 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
     )
     replace_exact(
         pc_path,
-        "from _common import (_shard_turn_path, already_reminded, approve_hint,\n"
+        "from _common import (INVESTIGATE_GON_TEXT, _shard_turn_path,\n"
+        "                     already_reminded, approve_hint,\n"
         "                     detect_subagent, emit_context, flush_pending_reminders,\n"
         "                     is_agy, payload_cwd, plan_mode, read_payload, session_id)",
-        "from _common import (_RUNTIME_STATE, _shard_turn_path, already_reminded, approve_hint,\n"
-        "                     detect_subagent, emit_context, emit_user_markdown,\n"
-        "                     flush_pending_channels, is_agy, payload_cwd, plan_mode,\n"
-        "                     read_payload, read_turn_meta, session_id, write_turn_meta)",
+        "from _common import (INVESTIGATE_GON_TEXT, _RUNTIME_STATE, _shard_turn_path,\n"
+        "                     already_reminded, approve_hint, detect_subagent, emit_context,\n"
+        "                     emit_user_markdown, flush_pending_channels, is_agy,\n"
+        "                     payload_cwd, plan_mode, read_payload, read_turn_meta,\n"
+        "                     session_id, write_turn_meta)",
         label="prompt_context_imports",
         sentinel="flush_pending_channels",
     )
@@ -2294,6 +2379,9 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "        emit_context(queued)\n"
         "    sub = detect_subagent(payload, cwd)\n"
         '    if sub.get("is_subagent"):\n'
+        "        anc = _subagent_anchor_line(cwd, payload, sub)\n"
+        "        if anc:\n"
+        "            emit_context([anc])\n"
         "        return True\n"
         "    shard = _shard_turn_path(cwd, sid)\n"
         "    if os.path.isfile(shard):\n"
@@ -2322,6 +2410,9 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "    sub = detect_subagent(payload, cwd)\n"
             '    if sub.get("is_subagent"):\n'
             '        _RUNTIME_STATE["new_user_turn"] = False\n'
+            "        anc = _subagent_anchor_line(cwd, payload, sub)\n"
+            "        if anc:\n"
+            "            emit_context([anc])\n"
             "        return True, False\n"
             "    is_new, sig = _detect_new_user_turn(cwd, payload, sid)\n"
             '    _RUNTIME_STATE["new_user_turn"] = is_new\n'
@@ -2333,7 +2424,8 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "                os.remove(shard)\n"
             "            except OSError:\n"
             "                pass\n"
-            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or "")})\n'
+            '        st_cur = load(cwd, heal=False) or {}\n'
+            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or "")})\n'
             "    return False, is_new\n\n\n"
             "def _agy_phase_anchor(cwd, state, payload, sid):\n"
             '    """Inject 1-line [TDQ:GON] or [TDQ:QC] once per phase entry or post-compaction."""\n'
@@ -2343,13 +2435,15 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "        return\n"
             "    meta = read_turn_meta(cwd, sid)\n"
             '    anchor = f"{req}:{pha}"\n'
-            '    is_compact = str(payload.get("source") or "").lower() == "compact"\n'
+            '    is_compact = str(payload.get("source") or "").lower() in ("compact", "resume")\n'
             '    if not is_compact and meta.get("phase_anchor") == anchor:\n'
             "        return\n"
             '    if pha == "implement":\n'
             '        muc = muc_gat_hieu_luc(state)\n'
             '        if muc != "off":\n'
-            "            dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), min(MAX_GON_CHARS, 160))\n"
+            '            tmpl = INVESTIGATE_GON_TEXT if work_kind_hieu_luc(state) == "investigate" else NHAC_GON\n'
+            '            cap_lim = MAX_GON_CHARS if work_kind_hieu_luc(state) == "investigate" else min(MAX_GON_CHARS, 160)\n'
+            "            dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), cap_lim)\n"
             "            emit_context([dong])\n"
             "    else:\n"
             '        emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])\n'
@@ -2361,6 +2455,12 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         pc_path,
         "    if is_agy() and _agy_pre_invocation_hook(payload, cwd):\n"
         "        return\n"
+        "    sub = detect_subagent(payload, cwd)\n"
+        '    if sub.get("is_subagent"):\n'
+        "        anc = _subagent_anchor_line(cwd, payload, sub)\n"
+        "        if anc:\n"
+        "            emit_context([anc])\n"
+        "            return\n"
         "    sid = session_id(payload)\n"
         "    turn_log_clear(cwd, sid)\n"
         "    # Start-of-turn disk snapshot — so stop_gate can tell at end of turn what REALLY changed,\n"
@@ -2375,6 +2475,13 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "        should_stop, is_new_turn = _agy_pre_invocation_hook(payload, cwd)\n"
         "        if should_stop:\n"
         "            return\n"
+        "    else:\n"
+        "        sub = detect_subagent(payload, cwd)\n"
+        '        if sub.get("is_subagent"):\n'
+        "            anc = _subagent_anchor_line(cwd, payload, sub)\n"
+        "            if anc:\n"
+        "                emit_context([anc])\n"
+        "                return\n"
         "    if not agy_mode or is_new_turn:\n"
         "        turn_log_clear(cwd, sid)\n"
         '        turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))\n'
@@ -2673,8 +2780,8 @@ def _patch_session_start(hooks_scripts_dir: Path) -> None:
         write_utf8(ss_path, ss_text)
     replace_exact(
         ss_path,
-        "from _common import (already_reminded, emit_context, is_agy, payload_cwd,",
-        "from _common import (already_reminded, cleanup_stale_runtime, emit_context, is_agy, payload_cwd,",
+        "from _common import (INVESTIGATE_GON_TEXT, already_reminded, emit_context, is_agy, payload_cwd,",
+        "from _common import (INVESTIGATE_GON_TEXT, already_reminded, cleanup_stale_runtime, emit_context, is_agy, payload_cwd,",
         label="session_start_import_cleanup",
         sentinel="cleanup_stale_runtime",
     )
@@ -2704,7 +2811,7 @@ def _patch_session_start(hooks_scripts_dir: Path) -> None:
 
 
 def _patch_subagent_stop(hooks_scripts_dir: Path) -> None:
-    """Place utf8_io after __future__ import and propagate child conversationId on PostToolUse."""
+    """Place utf8_io after __future__ import on subagent_stop.py (PostToolUse registers role only)."""
     sub_path = hooks_scripts_dir / "subagent_stop.py"
     if not sub_path.is_file():
         return
@@ -2721,34 +2828,6 @@ def _patch_subagent_stop(hooks_scripts_dir: Path) -> None:
         "import utf8_io  # noqa: E402,F401\n",
         label="subagent_stop_utf8_io",
         sentinel="import utf8_io",
-    )
-    replace_exact(
-        sub_path,
-        '    if event_name == "PostToolUse" and meta["role"]:\n'
-        '        handle_subagent_stop(\n'
-        '            {\n'
-        '                **payload,\n'
-        '                "agent_type": meta["role"],\n'
-        '                "session_id": meta["conv_id"] or session_id(payload),\n'
-        '            },\n'
-        '            cwd,\n'
-        '            allow_stop_block=False,\n'
-        '        )',
-        '    if event_name == "PostToolUse" and meta["role"]:\n'
-        '        sub_sid = meta["conv_id"] or session_id(payload)\n'
-        '        handle_subagent_stop(\n'
-        '            {\n'
-        '                **payload,\n'
-        '                "agent_type": meta["role"],\n'
-        '                "conversationId": sub_sid,\n'
-        '                "conversation_id": sub_sid,\n'
-        '                "session_id": sub_sid,\n'
-        '            },\n'
-        '            cwd,\n'
-        '            allow_stop_block=False,\n'
-        '        )',
-        label="subagent_stop_child_conversation_id",
-        sentinel='"conversationId": sub_sid',
     )
 
 

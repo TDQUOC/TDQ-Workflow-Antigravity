@@ -172,7 +172,5 @@ grep -c '^- \[x\]' docs/tdq/plan/<slug>.md   # equals the total task count
 
 Question to answer with a number: **how many delegated / how many in total?** That number must appear in the report. A low delegation ratio with no lookup table reason violates team mode.
 
-## Sổ worktree
-
-Phần tra cứu, tách sang [team-mode-tra-cuu.md](team-mode-tra-cuu.md): chỉ mở khi cần soi sổ, không
-cần lúc chia đợt hay lúc phát task.
+## Investigation `no_worktree` & Shards
+Workers with `worktree_required: false` write disjoint `<task>.md`/`.ev.jsonl` shards (`scoped-write`) without opening worktrees; merge via `evidence merge` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md).
