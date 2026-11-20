@@ -22,7 +22,11 @@ for _path in (str(TESTS_DIR), str(SCRIPTS_DIR)):
     if _path not in sys.path:
         sys.path.insert(0, _path)
 
+import doc_lint  # noqa: E402
 import tdq_config  # noqa: E402
+import tdq_team  # noqa: E402
+import tdq_timing  # noqa: E402
+import token_audit  # noqa: E402
 
 
 def _clean_env(**updates: str) -> dict[str, str]:
@@ -462,6 +466,438 @@ class TestPythonHooksSecurity(unittest.TestCase):
         self.assertEqual(rc_sg, 0, err_sg + out_sg)
         self.assertNotIn("TDQ:UNFINISHED", out_sg)
         self.assertNotIn("TDQ:TICK", out_sg)
+
+
+def _write_text(path: Path, content: str) -> Path:
+    """Write UTF-8 text to path creating parent directories."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def _run_py(script_rel: str, cwd: Path, *args: str, stdin_data: str | None = None,
+            extra_env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    """Run a repository Python script with isolated project env and timeout."""
+    env = _clean_env(TDQ_LOG="0", TDQ_PROJECT_DIR=str(cwd))
+    if extra_env:
+        env.update(extra_env)
+    return subprocess.run(
+        [sys.executable, str(ROOT / script_rel), *args],
+        cwd=str(cwd),
+        input=stdin_data,
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=20,
+    )
+
+
+def _register_role(cwd: Path, conv_id: str, role: str) -> None:
+    """Register a subagent conversation role inside temporary project sessions.json."""
+    hooks_scripts = str(ROOT / "hooks" / "scripts")
+    sys.path.insert(0, hooks_scripts)
+    try:
+        import _common
+        _common.register_subagent_role(str(cwd), conv_id, role)
+    finally:
+        if sys.path and sys.path[0] == hooks_scripts:
+            sys.path.pop(0)
+
+
+class TestHandoffAndBlackboard(unittest.TestCase):
+    """Unified handoff schema, multi-lang packet extraction, and blackboard escalation."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = Path(self._tmp.name)
+        self.slug = "2026-11-20-1230-handoff-mvp"
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_unified_handoff_schema_contract(self) -> None:
+        schema_path = ROOT / "skills" / "tdq-conventions" / "references" / "handoff-schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        self.assertEqual(schema["title"], "TDQ_HANDOFF_PAYLOAD")
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(
+            schema["required"],
+            ["task_id", "status", "files", "test_result", "branch", "merge_ready", "tick_ready", "notes"],
+        )
+        props = schema["properties"]
+        self.assertEqual(props["status"]["enum"], ["done", "completed", "failed", "blocked"])
+        self.assertEqual(props["test_verdict"]["enum"], ["pass", "fail"])
+        self.assertEqual(props["notes"]["maxLength"], 1500)
+
+    def test_packet_multilang_ts_rs_ps1_and_minispec(self) -> None:
+        _write_text(
+            self.cwd / "src" / "widget.ts",
+            "\n".join([
+                "export function beforeHelper() { return 0; }",
+                "export async function computeWidget(name: string): Promise<number> {",
+                "  return name.length * 2;",
+                "}",
+            ]),
+        )
+        _write_text(
+            self.cwd / "src" / "lib.rs",
+            "pub fn handle_pre_tool(raw: &str) -> bool {\n    !raw.is_empty()\n}\n",
+        )
+        _write_text(
+            self.cwd / "scripts" / "check.ps1",
+            "function Invoke-Check {\n    param($Target)\n    return $Target\n}\n",
+        )
+        plan_path = _write_text(
+            self.cwd / "docs" / "tdq" / "plan" / f"{self.slug}.md",
+            "\n".join([
+                "# PLAN — Multi-lang MVP",
+                "",
+                "## P1 — Core",
+                "- [ ] **T1.1** (e10m) Update `computeWidget` and `handle_pre_tool` — Test: `pytest -q`",
+                "  - Req: `§2#2` · Ngoài phạm vi: `GIỮ NGUYÊN` `beforeHelper`",
+                "  - Chạm: `src/widget.ts`, `src/lib.rs`, `scripts/check.ps1`",
+                "  - Tiêu chí chấp nhận (EARS): KHI truyền tên hợp lệ, HỆ THỐNG PHẢI trả về số > 0.",
+                "  - Logic cốt lõi: Nhân đôi độ dài tên và kiểm tra chuỗi không rỗng.",
+                "  - Ca góc hiểm & Assert: Chuỗi rỗng trả false · `assert computeWidget('ab') == 4`",
+            ]),
+        )
+        proc = _run_py("scripts/tdq_team.py", self.cwd, "packet", "T1.1", "--plan", str(plan_path), "--format", "json")
+        self.assertEqual(proc.returncode, 0, proc.stderr + proc.stdout)
+        payload = json.loads(proc.stdout)
+        mini = payload["mini_spec"]
+        self.assertIn("§2#2", mini["req"])
+        self.assertIn("beforeHelper", mini["giu_nguyen"])
+        self.assertIn("KHI truyền", mini["ears"])
+        self.assertIn("Nhân đôi", mini["logic"])
+        by_path = {entry["path"]: entry for entry in payload["symbol_spans"]}
+        self.assertEqual(by_path["src/widget.ts"]["symbol"], "computeWidget")
+        self.assertEqual(by_path["src/lib.rs"]["symbol"], "handle_pre_tool")
+        self.assertEqual(by_path["scripts/check.ps1"]["mode"], "read-exact")
+
+    def test_validate_handoff_pass_and_fail(self) -> None:
+        valid_payload = {
+            "task_id": "T5.2",
+            "status": "done",
+            "files": ["tests/test_agent_upgrade_mvp.py"],
+            "test_result": "pytest -> 10 passed",
+            "branch": "tdq/demo/t5.2",
+            "merge_ready": True,
+            "tick_ready": True,
+            "notes": "tests/test_agent_upgrade_mvp.py:1 — TestHandoffAndBlackboard — verified",
+        }
+        ok, errs = tdq_team.validate_handoff_payload(valid_payload, project=str(self.cwd))
+        self.assertTrue(ok, errs)
+        cli_ok = _run_py("scripts/tdq_team.py", self.cwd, "validate-handoff", "--text", json.dumps(valid_payload), "--json")
+        self.assertEqual(cli_ok.returncode, 0, cli_ok.stderr)
+        self.assertTrue(json.loads(cli_ok.stdout)["ok"])
+
+        for bad_case in (
+            {"task_id": "T5.2"},
+            dict(valid_payload, status="invalid_state"),
+            dict(valid_payload, unknown_prop="nope"),
+            dict(valid_payload, notes="n" * 1501),
+        ):
+            bad_ok, bad_errs = tdq_team.validate_handoff_payload(bad_case, project=str(self.cwd))
+            self.assertFalse(bad_ok)
+            self.assertTrue(bad_errs)
+        cli_bad = _run_py("scripts/tdq_team.py", self.cwd, "validate-handoff", "--text", '{"task_id":"T5.2"}')
+        self.assertEqual(cli_bad.returncode, 1)
+
+    def test_blackboard_record_and_escalation_at_two_retries(self) -> None:
+        tdq_team.blackboard_record(
+            str(self.cwd), "T5.2", "failed", "first syntax error",
+            slug=self.slug, role="tdq-implementer", error="SyntaxError L10",
+        )
+        self.assertIsNone(tdq_team.suggest_escalation(str(self.cwd), self.slug, "T5.2"))
+
+        tdq_team.blackboard_record(
+            str(self.cwd), "T5.2", "blocked", "second type error",
+            slug=self.slug, role="tdq-implementer", error="TypeError L22",
+        )
+        esc = tdq_team.suggest_escalation(str(self.cwd), self.slug, "T5.2")
+        self.assertIsNotNone(esc)
+        self.assertEqual(esc["failures"], 2)
+        self.assertEqual(esc["threshold"], 2)
+        self.assertEqual(esc["recommended_agent"], "tdq-build-resolver")
+        self.assertGreaterEqual(esc["recommended_tier"], 2)
+        self.assertTrue(esc["recommended_model"])
+
+        cli_read = _run_py(
+            "scripts/tdq_team.py", self.cwd, "blackboard", "read", "--slug", self.slug, "--task", "T5.2", "--json"
+        )
+        self.assertEqual(cli_read.returncode, 0, cli_read.stderr)
+        self.assertEqual(len(json.loads(cli_read.stdout)["entries"]), 2)
+
+
+class TestRoleTelemetry(unittest.TestCase):
+    """Role telemetry aggregation across tdq_timing/token_audit and tdq-config parity."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = Path(self._tmp.name)
+        (self.cwd / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_role_summary_and_token_audit_aggregate_telemetry_jsonl(self) -> None:
+        rows = [
+            {"role": "tdq-explorer", "model": "gemini-3.8-flash-high", "effort": "high",
+             "status": "done", "elapsed_s": 3.5, "task_id": "E1", "attempt": 1},
+            {"role": "tdq-implementer", "model": "gemini-4-hydrogen-high", "effort": "high",
+             "status": "failed", "first_pass": False, "elapsed_s": 10.0, "task_id": "T1.1", "attempt": 1},
+            "{corrupt line",
+            {"role": "tdq-implementer", "model": "gemini-4-neon-high", "effort": "high",
+             "status": "done", "elapsed_s": 14.0, "task_id": "T1.1", "attempt": 2},
+            {"role": "tdq-qc-tester", "model": "gemini-4-neon-high", "effort": "high",
+             "status": "done", "elapsed_s": 8.5, "task_id": "Q1", "attempt": 1},
+        ]
+        tel_path = self.cwd / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl"
+        tel_path.write_text(
+            "\n".join(item if isinstance(item, str) else json.dumps(item) for item in rows) + "\n",
+            encoding="utf-8",
+        )
+        with mock.patch.dict(os.environ, _clean_env(TDQ_LOG="0", TDQ_AUDIT_LOG="0"), clear=True):
+            timing_rows = tdq_timing.role_summary(self.cwd)
+            audit_rows = token_audit.role_telemetry_summary(self.cwd)
+        self.assertEqual(timing_rows, audit_rows)
+        by_role = {row["role"]: row for row in timing_rows}
+        self.assertEqual(set(by_role), {"tdq-explorer", "tdq-implementer", "tdq-qc-tester"})
+        impl = by_role["tdq-implementer"]
+        self.assertEqual(impl["runs"], 2)
+        self.assertEqual(impl["first_pass_count"], 0)
+        self.assertEqual(impl["retries"], 1)
+        self.assertAlmostEqual(impl["avg_elapsed_s"], 12.0, places=2)
+        self.assertEqual(impl["models"], ["gemini-4-hydrogen-high", "gemini-4-neon-high"])
+
+        cli_roles = _run_py("scripts/tdq_timing.py", self.cwd, "roles", "--json", "--project", str(self.cwd))
+        self.assertEqual(cli_roles.returncode, 0, cli_roles.stderr)
+        self.assertEqual(json.loads(cli_roles.stdout)["role_telemetry"], timing_rows)
+
+    def test_agy_tdq_config_byte_for_byte_parity_with_root(self) -> None:
+        root_cfg = (ROOT / "tdq-config.json").read_bytes()
+        agy_cfg = (ROOT / "plugins" / "tdq-workflow-agy" / "tdq-config.json").read_bytes()
+        self.assertEqual(root_cfg, agy_cfg)
+        self.assertEqual(json.loads(root_cfg.decode("utf-8")), tdq_config.DEFAULT_CONFIG)
+
+
+class TestAgyBundleParity(unittest.TestCase):
+    """AGY plugin manifest, valid hook events, and Plan Model & Effort linter checks."""
+
+    def test_plugin_json_mentions_eight_domain_subagents(self) -> None:
+        pjson = json.loads((ROOT / "plugins" / "tdq-workflow-agy" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertIn("8 domain subagents", pjson["description"])
+
+    def test_hooks_json_events_and_post_tool_observe_matcher(self) -> None:
+        hooks = json.loads((ROOT / "plugins" / "tdq-workflow-agy" / "hooks.json").read_text(encoding="utf-8"))
+        valid_events = {"SessionStart", "PreToolUse", "PostToolUse", "PreInvocation", "PostInvocation", "Stop"}
+        seen_events = set()
+        for group in hooks.values():
+            for key in group:
+                if key != "enabled":
+                    seen_events.add(key)
+        self.assertLessEqual(seen_events, valid_events)
+        self.assertEqual(seen_events, valid_events)
+        post_entries = hooks["tdq-post-tool-observe"]["PostToolUse"]
+        self.assertEqual(len(post_entries), 1)
+        self.assertIn("invoke_subagent|swarm|define_subagent", post_entries[0]["matcher"])
+
+    def test_plan_model_effort_section_lint(self) -> None:
+        self.assertTrue(doc_lint._plan_yeu_cau_model_effort("2026-11-20-1230-demo.md"))
+        self.assertFalse(doc_lint._plan_yeu_cau_model_effort("2026-11-20-0015-old.md"))
+        with tempfile.TemporaryDirectory() as tmp:
+            plan_dir = Path(tmp) / "docs" / "tdq" / "plan"
+            p_missing = _write_text(plan_dir / "2026-11-20-1230-missing.md", "# PLAN\n\n## P1\n")
+            out_missing: list[str] = []
+            doc_lint._check_model_effort_section(doc_lint.Doc(str(p_missing)), out_missing)
+            self.assertEqual(len(out_missing), 1)
+            self.assertIn("missing required '## Phân bổ Model & Effort'", out_missing[0])
+
+            p_partial = _write_text(
+                plan_dir / "2026-11-20-1230-partial.md",
+                "# PLAN\n\n## Phân bổ Model & Effort\n- implement: gemini-4-hydrogen-high\n",
+            )
+            out_partial: list[str] = []
+            doc_lint._check_model_effort_section(doc_lint.Doc(str(p_partial)), out_partial)
+            self.assertEqual(len(out_partial), 1)
+            self.assertIn("qc", out_partial[0])
+
+            p_ok = _write_text(
+                plan_dir / "2026-11-20-1230-ok.md",
+                "\n".join([
+                    "# PLAN",
+                    "",
+                    "## Phân bổ Model & Effort",
+                    "| Phase | Role | Model + Effort |",
+                    "|---|---|---|",
+                    "| implement | tdq-implementer | gemini-4-hydrogen-high |",
+                    "| qc | tdq-qc-tester | gemini-4-neon-high |",
+                    "| report | main | gemini-3.8-flash-medium |",
+                ]),
+            )
+            out_ok: list[str] = []
+            doc_lint._check_model_effort_section(doc_lint.Doc(str(p_ok)), out_ok)
+            self.assertEqual(out_ok, [])
+
+
+class TestSmokeAndRuntime(unittest.TestCase):
+    """Real subprocess smoke checks against tdq-dispatch.exe and TDQ_LOG toggles."""
+
+    DISPATCH_EXE = ROOT / "plugins" / "tdq-workflow-agy" / "bin" / "tdq-dispatch.exe"
+
+    def setUp(self) -> None:
+        if os.name == "nt":
+            self.assertTrue(self.DISPATCH_EXE.is_file(), f"Missing Rust binary: {self.DISPATCH_EXE}")
+        elif not self.DISPATCH_EXE.is_file():
+            self.skipTest("tdq-dispatch.exe missing on non-Windows OS")
+        if os.name != "nt":
+            self.skipTest("tdq-dispatch.exe Windows binary cannot run directly on non-Windows OS")
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = Path(self._tmp.name)
+        (self.cwd / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run_dispatch(self, event: str, payload: dict, extra_env: dict[str, str] | None = None
+                      ) -> subprocess.CompletedProcess[str]:
+        env = _clean_env(
+            TDQ_LOG="0",
+            TDQ_PROJECT_DIR=str(self.cwd),
+            ANTIGRAVITY_PROJECT_DIR=str(self.cwd),
+        )
+        if extra_env:
+            env.update(extra_env)
+        kwargs: dict[str, object] = {}
+        if os.name == "nt":
+            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+        return subprocess.run(
+            [str(self.DISPATCH_EXE), "--event", event],
+            cwd=str(self.cwd),
+            input=json.dumps(payload),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=20,
+            **kwargs,
+        )
+
+    def test_qc_tester_and_explorer_edit_gates_via_tdq_dispatch(self) -> None:
+        _register_role(self.cwd, "qc-smoke", "tdq-qc-tester")
+        _register_role(self.cwd, "exp-smoke", "tdq-explorer")
+
+        for tool_name in ("write_to_file", "write_file"):
+            res_ok = self._run_dispatch(
+                "PreToolUse",
+                {
+                    "cwd": str(self.cwd),
+                    "conversationId": "qc-smoke",
+                    "tool_name": tool_name,
+                    "tool_input": {"file_path": "docs/tdq/qc/q1.md"},
+                },
+            )
+            self.assertEqual(res_ok.returncode, 0, res_ok.stderr)
+            self.assertEqual(json.loads(res_ok.stdout)["decision"], "allow", res_ok.stdout)
+
+        res_trav = self._run_dispatch(
+            "PreToolUse",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-smoke",
+                "tool_name": "write_to_file",
+                "tool_input": {"file_path": "docs/tdq/qc/../../evil.py"},
+            },
+        )
+        self.assertEqual(res_trav.returncode, 0, res_trav.stderr)
+        trav_json = json.loads(res_trav.stdout)
+        self.assertEqual(trav_json["decision"], "deny")
+        self.assertIn("READONLY", trav_json["reason"])
+
+        res_exp = self._run_dispatch(
+            "PreToolUse",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "exp-smoke",
+                "tool_name": "write_file",
+                "tool_input": {"file_path": "docs/tdq/qc/q1.md"},
+            },
+        )
+        self.assertEqual(res_exp.returncode, 0, res_exp.stderr)
+        exp_json = json.loads(res_exp.stdout)
+        self.assertEqual(exp_json["decision"], "deny")
+        self.assertIn("READONLY", exp_json["reason"])
+
+    def test_qc_tester_run_command_ge_and_mutation_via_tdq_dispatch(self) -> None:
+        _register_role(self.cwd, "qc-cmd", "tdq-qc-tester")
+
+        res_ge = self._run_dispatch(
+            "PreToolUse",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-cmd",
+                "tool_name": "run_command",
+                "tool_input": {"command": 'py -3 -c "assert 5 >= 1"'},
+            },
+        )
+        self.assertEqual(res_ge.returncode, 0, res_ge.stderr)
+        self.assertNotIn("READONLY", res_ge.stdout)
+        self.assertEqual(json.loads(res_ge.stdout)["decision"], "allow")
+
+        res_wr = self._run_dispatch(
+            "PreToolUse",
+            {
+                "cwd": str(self.cwd),
+                "conversationId": "qc-cmd",
+                "tool_name": "run_command",
+                "tool_input": {"command": "py -3 -c \"Path('x.py').write_text('bad')\""},
+            },
+        )
+        self.assertEqual(res_wr.returncode, 0, res_wr.stderr)
+        self.assertIn("READONLY", res_wr.stdout)
+        self.assertEqual(json.loads(res_wr.stdout)["decision"], "deny")
+
+    def test_tdq_log_toggle_across_dispatch_config_and_subagent_stop(self) -> None:
+        _register_role(self.cwd, "qc-log", "tdq-qc-tester")
+        payload = {
+            "cwd": str(self.cwd),
+            "conversationId": "qc-log",
+            "tool_name": "write_to_file",
+            "tool_input": {"file_path": "docs/tdq/qc/q1.md"},
+        }
+        disp_on = self._run_dispatch("PreToolUse", payload, extra_env={"TDQ_LOG": "1"})
+        disp_off = self._run_dispatch("PreToolUse", payload, extra_env={"TDQ_LOG": "0"})
+        self.assertEqual(disp_on.returncode, 0)
+        self.assertIn("tdq-dispatch:", disp_on.stderr)
+        self.assertRegex(disp_on.stderr, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+        self.assertEqual(disp_off.returncode, 0)
+        self.assertEqual(disp_off.stderr.strip(), "")
+
+        cfg_on = _run_py("scripts/tdq_config.py", self.cwd, "show", "--json", "--cwd", str(self.cwd),
+                         extra_env={"TDQ_LOG": "1"})
+        cfg_off = _run_py("scripts/tdq_config.py", self.cwd, "show", "--json", "--cwd", str(self.cwd),
+                          extra_env={"TDQ_LOG": "0"})
+        self.assertRegex(cfg_on.stderr, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+        self.assertEqual(cfg_off.stderr.strip(), "")
+
+        stop_payload = json.dumps({
+            "cwd": str(self.cwd),
+            "session_id": "sub-log-1",
+            "agent_type": "tdq-implementer",
+            "last_assistant_message": json.dumps({
+                "task_id": "T5.2",
+                "status": "failed",
+                "files": ["scripts/tdq_config.py"],
+                "test_result": "pytest -> 1 failed",
+                "branch": "team/t5.2",
+                "merge_ready": False,
+                "tick_ready": False,
+                "notes": "scripts/tdq_config.py:1 — load_config — fail",
+            }),
+        })
+        stop_on = _run_py("hooks/scripts/subagent_stop.py", self.cwd, stdin_data=stop_payload,
+                          extra_env={"TDQ_LOG": "1"})
+        stop_off = _run_py("hooks/scripts/subagent_stop.py", self.cwd, stdin_data=stop_payload,
+                           extra_env={"TDQ_LOG": "0"})
+        self.assertEqual(stop_on.returncode, 0, stop_on.stderr)
+        self.assertRegex(stop_on.stderr, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+        self.assertEqual(stop_off.returncode, 0, stop_off.stderr)
+        self.assertEqual(stop_off.stderr.strip(), "")
 
 
 if __name__ == "__main__":
