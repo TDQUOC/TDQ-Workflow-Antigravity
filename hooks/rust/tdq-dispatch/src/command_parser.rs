@@ -87,7 +87,113 @@ pub fn inspect_command_safety(raw_cmd: &str) -> Option<CommandSafetyViolation> {
     None
 }
 
-fn part_has_shell_mutator(part: &str) -> bool {
+fn split_shell_segments(cmd: &str, split_pipe_nl: bool) -> Vec<String> {
+    let mut segments = Vec::new();
+    let mut buf = String::new();
+    let (mut in_single, mut in_double, mut escaped) = (false, false, false);
+    for ch in cmd.chars() {
+        if escaped {
+            buf.push(ch);
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' && !in_single {
+            escaped = true;
+            buf.push(ch);
+            continue;
+        }
+        if ch == '\'' && !in_double {
+            in_single = !in_single;
+            buf.push(ch);
+        } else if ch == '"' && !in_single {
+            in_double = !in_double;
+            buf.push(ch);
+        } else if !in_single
+            && !in_double
+            && (ch == ';' || ch == '&' || (split_pipe_nl && (ch == '|' || ch == '\n')))
+        {
+            let trimmed = buf.trim();
+            if !trimmed.is_empty() {
+                segments.push(trimmed.to_string());
+            }
+            buf.clear();
+        } else {
+            buf.push(ch);
+        }
+    }
+    let tail = buf.trim();
+    if !tail.is_empty() {
+        segments.push(tail.to_string());
+    }
+    segments
+}
+
+fn mask_quoted_shell_ops(part: &str) -> String {
+    let mut out = String::with_capacity(part.len());
+    let (mut in_single, mut in_double, mut escaped) = (false, false, false);
+    for ch in part.chars() {
+        if escaped {
+            let masked = (in_single || in_double) && matches!(ch, ';' | '|' | '&' | '>' | '<' | '\n');
+            out.push(if masked { '_' } else { ch });
+            escaped = false;
+            continue;
+        }
+        if ch == '\\' && !in_single {
+            escaped = true;
+            out.push(ch);
+            continue;
+        }
+        if ch == '\'' && !in_double {
+            in_single = !in_single;
+            out.push(ch);
+        } else if ch == '"' && !in_single {
+            in_double = !in_double;
+            out.push(ch);
+        } else if (in_single || in_double) && matches!(ch, ';' | '|' | '&' | '>' | '<' | '\n') {
+            out.push('_');
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}
+
+fn extract_shell_subcommands(part: &str) -> Vec<String> {
+    static RE_WRAPPER: OnceLock<Regex> = OnceLock::new();
+    let wrap = compiled_regex(
+        &RE_WRAPPER,
+        r"(?i)(?:^|\s)(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)\s+",
+    );
+    let mut subs = Vec::new();
+    for m in wrap.find_iter(part) {
+        let rest = part.get(m.end()..).unwrap_or("").trim_start();
+        let mut chars = rest.chars();
+        let Some(quote) = chars.next() else {
+            continue;
+        };
+        if quote != '\'' && quote != '"' {
+            continue;
+        }
+        let mut buf = String::new();
+        let mut escaped = false;
+        for ch in chars {
+            if escaped {
+                buf.push(ch);
+                escaped = false;
+            } else if ch == '\\' && quote == '"' {
+                escaped = true;
+            } else if ch == quote {
+                subs.push(buf);
+                break;
+            } else {
+                buf.push(ch);
+            }
+        }
+    }
+    subs
+}
+
+fn part_has_shell_mutator_depth(part: &str, depth: usize) -> bool {
     static RE_PS: OnceLock<Regex> = OnceLock::new();
     static RE_SH: OnceLock<Regex> = OnceLock::new();
     let ps = compiled_regex(
@@ -96,16 +202,31 @@ fn part_has_shell_mutator(part: &str) -> bool {
     );
     let sh = compiled_regex(
         &RE_SH,
-        r#"(?i)(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b)|\b(?:python3?|py)\b.*\b(?:open\([^)]*['"](?:w|a|x)['"]|write_text\b|write_bytes\b|os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|fs\.promises\.(?:writeFile|unlink|rm))|\bgit\b(?:\s+-C\s+\S+)?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)"#,
+        r#"(?is)(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b)|\b(?:python3?|py)\b.*\b(?:open\([^)]*['"](?:w|a|x)['"]|write_text\b|write_bytes\b|os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|fs\.promises\.(?:writeFile|unlink|rm))|\bgit\b(?:\s+-C\s+(?:"[^"]*"|'[^']*'|\S+))?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)"#,
     );
-    ps.is_match(part) || sh.is_match(part)
+    if ps.is_match(part) || sh.is_match(part) {
+        return true;
+    }
+    if depth < 2 {
+        for sub in extract_shell_subcommands(part) {
+            if split_shell_segments(&sub, true)
+                .iter()
+                .any(|seg| part_has_shell_mutator_depth(seg, depth + 1))
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
-fn part_stdout_targets(part: &str) -> Vec<String> {
+fn part_stdout_targets_depth(part: &str, depth: usize) -> Vec<String> {
     static RE_RED: OnceLock<Regex> = OnceLock::new();
     let red = compiled_regex(&RE_RED, r"(>>|>)\s*([^\s;&|]+)");
-    let bytes = part.as_bytes();
-    red.captures_iter(part)
+    let masked = mask_quoted_shell_ops(part);
+    let bytes = masked.as_bytes();
+    let mut targets: Vec<String> = red
+        .captures_iter(&masked)
         .filter_map(|c| {
             let op = c.get(1)?;
             let tgt = c.get(2)?;
@@ -117,11 +238,11 @@ fn part_stdout_targets(part: &str) -> Vec<String> {
             {
                 return None;
             }
-            let cleaned = tgt
-                .as_str()
-                .trim_matches(|ch| ch == '\'' || ch == '"')
-                .to_string();
-            Some(cleaned)
+            Some(
+                tgt.as_str()
+                    .trim_matches(|ch| ch == '\'' || ch == '"')
+                    .to_string(),
+            )
         })
         .filter(|t| {
             !t.starts_with('&')
@@ -131,18 +252,24 @@ fn part_stdout_targets(part: &str) -> Vec<String> {
                     "/dev/null" | "$null" | "nul"
                 )
         })
-        .collect()
+        .collect();
+    if depth < 2 {
+        for sub in extract_shell_subcommands(part) {
+            for seg in split_shell_segments(&sub, true) {
+                targets.extend(part_stdout_targets_depth(&seg, depth + 1));
+            }
+        }
+    }
+    targets
 }
 
 /// Detect shell/PowerShell/inline-Python commands that mutate files on disk.
 pub fn is_shell_mutator(raw_cmd: &str) -> bool {
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    for part in cleaned
-        .split([';', '&', '|', '\n'])
-        .map(str::trim)
-        .filter(|p| !p.is_empty())
-    {
-        if part_has_shell_mutator(part) || !part_stdout_targets(part).is_empty() {
+    for part in split_shell_segments(&cleaned, true) {
+        if part_has_shell_mutator_depth(&part, 0)
+            || !part_stdout_targets_depth(&part, 0).is_empty()
+        {
             return true;
         }
     }
@@ -154,14 +281,12 @@ pub fn mutates_outside_docs(raw_cmd: &str) -> bool {
     static RE_ART: OnceLock<Regex> = OnceLock::new();
     let art = compiled_regex(&RE_ART, r"(?i)docs[\\/]tdq[\\/]artifacts[\\/]");
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    cleaned
-        .split([';', '&'])
-        .map(str::trim)
-        .filter(|p| !p.is_empty())
-        .any(|part| {
-            (part_has_shell_mutator(part) && !art.is_match(part))
-                || part_stdout_targets(part).iter().any(|t| !art.is_match(t))
-        })
+    split_shell_segments(&cleaned, false).iter().any(|part| {
+        (part_has_shell_mutator_depth(part, 0) && !art.is_match(part))
+            || part_stdout_targets_depth(part, 0)
+                .iter()
+                .any(|t| !art.is_match(t))
+    })
 }
 
 /// Detect shell writes outside `docs/` completely (for `TDQ:APPROVE` guard).
@@ -169,18 +294,14 @@ pub fn mutates_outside_docs_any(raw_cmd: &str) -> bool {
     static RE_DOCS: OnceLock<Regex> = OnceLock::new();
     let docs = compiled_regex(&RE_DOCS, r#"(?i)(?:^|[\s'"=])docs[\\/]"#);
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    cleaned
-        .split([';', '&'])
-        .map(str::trim)
-        .filter(|p| !p.is_empty())
-        .any(|part| {
-            (part_has_shell_mutator(part) && !docs.is_match(part))
-                || part_stdout_targets(part).iter().any(|t| {
-                    let norm = t.replace('\\', "/");
-                    !norm.to_ascii_lowercase().starts_with("docs/")
-                        && !norm.to_ascii_lowercase().starts_with("./docs/")
-                })
-        })
+    split_shell_segments(&cleaned, false).iter().any(|part| {
+        (part_has_shell_mutator_depth(part, 0) && !docs.is_match(part))
+            || part_stdout_targets_depth(part, 0).iter().any(|t| {
+                let norm = t.replace('\\', "/");
+                !norm.to_ascii_lowercase().starts_with("docs/")
+                    && !norm.to_ascii_lowercase().starts_with("./docs/")
+            })
+    })
 }
 
 /// Detect direct shell writes targeting `docs/tdq/state.json` or `docs/tdq/STATE.md`.
@@ -363,5 +484,18 @@ mod tests {
         assert!(is_shell_mutator(r#"py -3 -c "Path('a').write_text('x')""#));
         assert!(is_shell_mutator(r#"node -e "fs.writeFileSync('a', 'b')""#));
         assert!(is_shell_mutator("git -C .tdq-worktrees/t1 commit -m done"));
+        assert!(!is_shell_mutator(r#"py -3 -c "assert 5 > 1""#));
+        assert!(!is_shell_mutator(r#"py -3 -c "print('a > b')""#));
+        assert!(!is_shell_mutator(r#"bash -c "python3 -c 'assert 5 > 1'""#));
+        assert!(is_shell_mutator(
+            r#"node -e "const fs = require('fs'); fs.writeFileSync('evil.py','x')""#
+        ));
+        assert!(is_shell_mutator(
+            r#"py -3 -c "from pathlib import Path; Path('evil.js').write_text('x')""#
+        ));
+        assert!(is_shell_mutator(
+            r#"python3 -c "import shutil; shutil.rmtree('src_dir')""#
+        ));
+        assert!(is_shell_mutator(r#"bash -c "echo hi > evil.py""#));
     }
 }

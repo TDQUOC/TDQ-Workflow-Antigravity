@@ -229,8 +229,8 @@ Hệ thống gồm 13 hooks lắng nghe trên 6 sự kiện vòng đời, kết 
 | Thư mục | Vai trò & Thành phần |
 |---|---|
 | `skills/` (11) | `tdq-intake`, `tdq-spec`, `tdq-plan`, `tdq-build`, `tdq-lean`, `tdq-status`, `tdq-check-status`, `tdq-conventions`, `tdq-setup`, `tdq-browser-research`, `tdq-browser-test` |
-| `agents/` (6) | `tdq-reviewer`, `tdq-implementer`, `tdq-qc-tester`, `tdq-refactor-cleaner`, `tdq-security-reviewer`, `tdq-build-resolver` |
-| `hooks/` (14 trên 7 sự kiện) | `session_start`, `subagent_start`, `prompt_context`, `search_observe` (3 sự kiện), `edit_gate`, `bash_gate`, `read_gate`, `search_gate`, `lsp_gate`, `ask_gate`, `stop_gate` |
+| `agents/` (8) | `tdq-reviewer`, `tdq-implementer`, `tdq-qc-tester`, `tdq-refactor-cleaner`, `tdq-security-reviewer`, `tdq-build-resolver`, `tdq-explorer`, `tdq-debugger` |
+| `hooks/` (17 trên 8 sự kiện) | `session_start`, `subagent_start`, `subagent_stop`, `prompt_context`, `search_observe` (3 sự kiện), `edit_gate`, `bash_gate`, `read_gate`, `search_gate`, `lsp_gate`, `ask_gate`, `stop_gate` |
 | `scripts/` (43) | Tầng CLI lõi: `tdq_state.py`, `tdq_finish.py`, `tdq_test.py`, `tdq_team.py`, `tdq_archify.py`, `archify_delivery.py`, `archify_model.py`, `archify_artifacts.py`, `tdq_lsp.py`, `tdq_setup.py`, `doc_lint.py`, `token_budget.py`, `build_portable.py`... |
 | `docs/architecture/` | Cổng thông tin **Master Map** (`index.html`, 4 bản đồ tương tác `.html` và `manifest.json`) |
 | `docs/tdq/` | Hồ sơ theo từng request (`brief/`, `spec/`, `plan/`, `qc/`, `reports/`, `state.json`, `token-budget.json`) |

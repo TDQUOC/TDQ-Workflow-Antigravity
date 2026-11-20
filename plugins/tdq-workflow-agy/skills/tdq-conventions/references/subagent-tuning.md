@@ -17,7 +17,7 @@ So: `effort` is a FIXED property of the role; `model` is the knob you turn per t
 | Agent | model | effort | Why |
 |---|---|---|---|
 | `tdq-implementer` | inherit | high | writes real code, red→green, commits worktree before handoff |
-| `tdq-qc-tester` | inherit | high | suspicious DoD verification, scoped writes under `docs/tdq/qc/` |
+| `tdq-qc-tester` | inherit | high | must be suspicious and dig at the edges, not just rerun a command; scoped writes under `docs/tdq/qc/` |
 | `tdq-reviewer` | inherit | high | finding semantic gaps/contradictions and plan resource parity |
 | `tdq-security-reviewer` | inherit | high | diff-first security audit (OWASP, secrets, SCA, least privilege) |
 | `tdq-build-resolver` | inherit | high | minimal surgical diffs for compiler, syntax, and type check breaks |

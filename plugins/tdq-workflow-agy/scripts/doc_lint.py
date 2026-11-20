@@ -896,7 +896,7 @@ def _check_model_effort_section(doc, out):
         _report(out, doc, 0, "R15", "plan missing required '## Phân bổ Model & Effort' section")
         return
     body = "\n".join(section_lines)
-    missing = [phase for phase in ("implement", "qc") if phase not in body]
+    missing = [phase for phase in ("implement", "qc", "report") if phase not in body]
     if missing:
         _report(out, doc, heading_idx, "R15",
                 f"'## Phân bổ Model & Effort' missing phase allocation(s): {', '.join(missing)}")

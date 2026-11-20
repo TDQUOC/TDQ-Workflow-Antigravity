@@ -899,6 +899,92 @@ class TestSmokeAndRuntime(unittest.TestCase):
         self.assertEqual(stop_off.returncode, 0, stop_off.stderr)
         self.assertEqual(stop_off.stderr.strip(), "")
 
+    def test_qc11_adversarial_fixes_verified_end_to_end(self) -> None:
+        # 1. validate-handoff rejects invalid test_verdict and missing --file cleanly (no Traceback)
+        bad_verdict = json.dumps({
+            "task_id": "T1.1", "status": "done", "files": ["a.py"], "test_result": "ok",
+            "test_verdict": "bogus", "branch": "b", "merge_ready": True, "tick_ready": True,
+            "notes": "tests/a.py:1 — fn — ok",
+        })
+        vh_bad = _run_py("scripts/tdq_team.py", self.cwd, "validate-handoff", "--text", bad_verdict)
+        self.assertEqual(vh_bad.returncode, 1)
+        self.assertIn("test_verdict", vh_bad.stderr + vh_bad.stdout)
+
+        vh_missing = _run_py("scripts/tdq_team.py", self.cwd, "validate-handoff", "--file", "no_such_handoff.json")
+        self.assertNotEqual(vh_missing.returncode, 0)
+        self.assertNotIn("Traceback", vh_missing.stderr)
+
+        # 2. Root subagent_stop --event PostToolUse propagates child conversationId into telemetry
+        (self.cwd / "docs" / "tdq").mkdir(parents=True, exist_ok=True)
+        post_ev = json.dumps({
+            "cwd": str(self.cwd),
+            "conversationId": "parent-99",
+            "tool_name": "invoke_subagent",
+            "tool_input": {"TypeName": "tdq-explorer", "Role": "tdq-explorer"},
+            "response": {"result": {"conversationId": "child-exp-99"}},
+        })
+        ps = _run_py("hooks/scripts/subagent_stop.py", self.cwd, "--event", "PostToolUse", stdin_data=post_ev)
+        self.assertEqual(ps.returncode, 0, ps.stderr)
+        tel = (self.cwd / "docs" / "tdq" / ".tdq-agent-telemetry.jsonl").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(json.loads(tel[-1])["session"], "child-exp-99")
+
+        # 3. Quote-aware shell parser in BOTH Python and compiled Rust tdq-dispatch.exe
+        sys.path.insert(0, str(ROOT / "hooks" / "scripts"))
+        try:
+            import bash_gate
+        finally:
+            if sys.path and sys.path[0] == str(ROOT / "hooks" / "scripts"):
+                sys.path.pop(0)
+        _register_role(self.cwd, "qc-adv", "tdq-qc-tester")
+
+        allow_cmds = (
+            'py -3 -c "assert 5 > 1"',
+            'py -3 -c "print(\'a > b\')"',
+            'bash -c "python3 -c \'assert 5 > 1\'"',
+        )
+        for cmd in allow_cmds:
+            with self.subTest(allow=cmd):
+                self.assertFalse(bash_gate._is_shell_write(cmd))
+                r = self._run_dispatch("PreToolUse", {
+                    "cwd": str(self.cwd), "conversationId": "qc-adv",
+                    "tool_name": "run_command", "tool_input": {"command": cmd},
+                })
+                self.assertEqual(r.returncode, 0, r.stderr)
+                self.assertNotIn("READONLY", r.stdout)
+
+        deny_cmds = (
+            "node -e \"const fs = require('fs'); fs.writeFileSync('evil.py','x')\"",
+            "py -3 -c \"from pathlib import Path; Path('evil.js').write_text('x')\"",
+            "python3 -c \"import shutil; shutil.rmtree('src_dir')\"",
+            'bash -c "echo hi > evil.py"',
+        )
+        for cmd in deny_cmds:
+            with self.subTest(deny=cmd):
+                self.assertTrue(bash_gate._is_shell_write(cmd))
+                r = self._run_dispatch("PreToolUse", {
+                    "cwd": str(self.cwd), "conversationId": "qc-adv",
+                    "tool_name": "run_command", "tool_input": {"command": cmd},
+                })
+                self.assertEqual(r.returncode, 0, r.stderr)
+                self.assertEqual(json.loads(r.stdout)["decision"], "deny")
+                self.assertIn("READONLY", r.stdout)
+
+        # 4. doc_lint checks all 3 phases (implement, qc, report) on post-cutoff full plans
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            import doc_lint
+        finally:
+            if sys.path and sys.path[0] == str(ROOT / "scripts"):
+                sys.path.pop(0)
+        p_no_rep = _write_text(
+            self.cwd / "docs" / "tdq" / "plan" / "2026-11-20-1230-norep.md",
+            "# PLAN\n\n## Phân bổ Model & Effort\n| implement | a | b |\n| qc | c | d |\n",
+        )
+        out_rep: list[str] = []
+        doc_lint._check_model_effort_section(doc_lint.Doc(str(p_no_rep)), out_rep)
+        self.assertEqual(len(out_rep), 1)
+        self.assertIn("report", out_rep[0])
+
 
 if __name__ == "__main__":
     unittest.main()

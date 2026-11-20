@@ -132,16 +132,46 @@ def _handle_spawn_event(payload: dict, cwd: str, event_name: str) -> int:
             f"subagent_stop({event_name}): registered {meta['conv_id']} -> {meta['role']}"
         )
     if event_name == "PostToolUse" and meta["role"]:
+        sub_sid = meta["conv_id"] or session_id(payload)
         handle_subagent_stop(
             {
                 **payload,
                 "agent_type": meta["role"],
-                "session_id": meta["conv_id"] or session_id(payload),
+                "conversationId": sub_sid,
+                "conversation_id": sub_sid,
+                "session_id": sub_sid,
             },
             cwd,
             allow_stop_block=False,
         )
     return 0
+
+
+def _record_stop_outcomes(
+    cwd: str, payload: dict, role: str, task_id: str, status: str,
+    model: str, effort: str, parsed: dict, msg: str, handoff_valid: bool,
+    allow_stop_block: bool,
+) -> None:
+    files = parsed.get("files") if isinstance(parsed.get("files"), list) else []
+    telemetry_dir = os.path.join(cwd, "docs", "tdq")
+    tel_fn = getattr(_common, "append_agent_telemetry", None)
+    if os.path.isdir(telemetry_dir) and callable(tel_fn):
+        tel_fn(cwd, {
+            "session": session_id(payload), "role": role, "task_id": task_id,
+            "status": status, "model": model, "effort": effort,
+            "elapsed_s": parsed.get("elapsed_s"), "attempt": parsed.get("attempt") or 1,
+            "files_count": len(files), "first_pass": status in ("done", "completed"),
+            "outcome": status, "handoff_valid": handoff_valid,
+        })
+    if status in ("failed", "blocked"):
+        notes = str(parsed.get("notes") or msg[:300] or "subagent failed")
+        blocker = str(parsed.get("blocker") or "")
+        tdq_team.blackboard_record(
+            cwd, task_id or "UNKNOWN", status, notes, role=role, model=model,
+            files=files, error=blocker or notes, test_command=str(parsed.get("test_result") or ""),
+        )
+        if allow_stop_block and not is_agy():
+            emit_context([f"[TDQ:BLACKBOARD] Recorded {status} diagnostic for {task_id or role}."])
 
 
 def handle_subagent_stop(payload: dict, cwd: str, allow_stop_block: bool = True) -> bool:
@@ -161,10 +191,6 @@ def handle_subagent_stop(payload: dict, cwd: str, allow_stop_block: bool = True)
             tdq_state._info(f"subagent_stop: invalid handoff for {role}: {'; '.join(errs[:2])}")
     task_id = str(parsed.get("task_id") or info.get("task") or _extract_task_code(msg) or "")
     status = str(parsed.get("status") or ("failed" if payload.get("error") else "done")).lower()
-    model = str(parsed.get("model") or info.get("model") or "")
-    effort = str(parsed.get("effort") or info.get("effort") or "")
-    files = parsed.get("files") if isinstance(parsed.get("files"), list) else []
-
     if allow_stop_block and not payload.get("stop_hook_active") and status not in ("failed", "blocked"):
         if any(w in role.lower() for w in _WRITER_ROLES):
             dirty = _dirty_worktree_lines(_resolve_worktree_dir(cwd, task_id))
@@ -175,41 +201,11 @@ def handle_subagent_stop(payload: dict, cwd: str, allow_stop_block: bool = True)
                 )
                 stop_block(cwd, payload, reason, code="TDQ:WORKTREE", stop_hook_active=False)
                 return True
-
-    telemetry_path = os.path.join(cwd, "docs", "tdq")
-    tel_fn = getattr(_common, "append_agent_telemetry", None)
-    if os.path.isdir(telemetry_path) and callable(tel_fn):
-        tel_fn(cwd, {
-            "session": session_id(payload),
-            "role": role,
-            "task_id": task_id,
-            "status": status,
-            "model": model,
-            "effort": effort,
-            "elapsed_s": parsed.get("elapsed_s"),
-            "attempt": parsed.get("attempt") or 1,
-            "files_count": len(files),
-            "first_pass": status in ("done", "completed"),
-            "outcome": status,
-            "handoff_valid": handoff_valid,
-        })
-
-    if status in ("failed", "blocked"):
-        notes = str(parsed.get("notes") or msg[:300] or "subagent failed")
-        blocker = str(parsed.get("blocker") or "")
-        tdq_team.blackboard_record(
-            cwd,
-            task_id or "UNKNOWN",
-            status,
-            notes,
-            role=role,
-            model=model,
-            files=files,
-            error=blocker or notes,
-            test_command=str(parsed.get("test_result") or ""),
-        )
-        if allow_stop_block and not is_agy():
-            emit_context([f"[TDQ:BLACKBOARD] Recorded {status} diagnostic for {task_id or role}."])
+    model = str(parsed.get("model") or info.get("model") or "")
+    effort = str(parsed.get("effort") or info.get("effort") or "")
+    _record_stop_outcomes(
+        cwd, payload, role, task_id, status, model, effort, parsed, msg, handoff_valid, allow_stop_block,
+    )
     return True
 
 

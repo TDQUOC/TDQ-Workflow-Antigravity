@@ -2322,6 +2322,11 @@ def _check_handoff_field_types(payload, props, errs):
     allowed = props.get("status", {}).get("enum") or sorted(_HANDOFF_ALLOWED_STATUS)
     if isinstance(payload.get("status"), str) and payload["status"] not in allowed:
         errs.append(f"invalid status {payload['status']!r}; allowed: {', '.join(allowed)}")
+    if "test_verdict" in payload:
+        verdicts = props.get("test_verdict", {}).get("enum") or ["pass", "fail"]
+        tv = payload["test_verdict"]
+        if not isinstance(tv, str) or tv not in verdicts:
+            errs.append(f"invalid test_verdict {tv!r}; allowed: {', '.join(verdicts)}")
 
 
 def validate_handoff_payload(payload, project=None):
@@ -2624,7 +2629,7 @@ def _build_packet_payload(project, slug, task, tasks, ban_do):
         "WORKTREE": wt_dir,
         "VÙNG FILE": f"{files_str} — DO NOT edit files outside this list",  # i18n-allow
         "TEST": lay_lenh_test(task) or "(none declared)",
-        "TRẢ VỀ": "exact 7-line format (TASK/STATUS/FILES/TEST/BRANCH/TICK-READY/NOTES, <= 1,500 chars)",  # i18n-allow
+        "TRẢ VỀ": "exact 7-line format (TASK/STATUS/FILES/TEST/BRANCH/MERGE-READY/TICK-READY/NOTES, <= 1,500 chars)",  # i18n-allow
     }
     return {
         "task_id": task.ma,
@@ -2639,6 +2644,35 @@ def _build_packet_payload(project, slug, task, tasks, ban_do):
         "reference_signatures": _extract_ref_signatures(project, task),
         "invariants": _read_kien_truc_invariants(project, task, limit=3),
     }
+
+
+def _append_packet_sections(lines, payload):
+    for sp in payload["symbol_spans"]:
+        if sp["mode"] == "read-exact":
+            lines.append(f"- {sp['directive']}")
+        elif sp["mode"] == "new-file":
+            lines.append(f"- [NEW FILE] `{sp['path']}`")
+        else:
+            label = f"`{sp['path']}` :: `{sp['symbol']}`" if sp["symbol"] else f"`{sp['path']}`"
+            lines.append(f"### {label} (L{sp['start_line']}-L{sp['end_line']}, ctx L{sp['ctx_start']}-L{sp['ctx_end']})")
+            lines.extend(["```", sp["content"], "```"])
+    if payload["reference_signatures"]:
+        lines.extend(["", "## Reference Signatures"])
+        for ref in payload["reference_signatures"]:
+            lines.extend(f"- `{ref['path']}`: `{sig}`" for sig in ref["signatures"])
+    if payload["invariants"]:
+        lines.extend(["", "## Architecture Invariants (docs/kien-truc.md)"])
+        lines.extend(f"- {inv}" for inv in payload["invariants"])
+    failures = payload.get("blackboard_failures") or []
+    esc = payload.get("escalation_hint")
+    if failures or esc:
+        lines.extend(["", "## Blackboard"])
+        for item in failures:
+            lines.append(f"- [{item.get('timestamp', '')}] {item.get('role')}: {item.get('error') or item.get('summary')}")
+        if esc:
+            lines.append(
+                f"- ESCALATE: {esc['failures']}/{esc['threshold']} fails -> use {esc['recommended_agent']} ({esc['recommended_model']})"
+            )
 
 
 def _format_packet_md(payload):
@@ -2663,36 +2697,7 @@ def _format_packet_md(payload):
         "",
         "## Symbol-Spans",
     ]
-    for sp in payload["symbol_spans"]:
-        if sp["mode"] == "read-exact":
-            lines.append(f"- {sp['directive']}")
-        elif sp["mode"] == "new-file":
-            lines.append(f"- [NEW FILE] `{sp['path']}`")
-        else:
-            label = f"`{sp['path']}` :: `{sp['symbol']}`" if sp["symbol"] else f"`{sp['path']}`"
-            lines.append(f"### {label} (L{sp['start_line']}-L{sp['end_line']}, ctx L{sp['ctx_start']}-L{sp['ctx_end']})")
-            lines.append("```")
-            lines.append(sp["content"])
-            lines.append("```")
-    if payload["reference_signatures"]:
-        lines.extend(["", "## Reference Signatures"])
-        for ref in payload["reference_signatures"]:
-            for sig in ref["signatures"]:
-                lines.append(f"- `{ref['path']}`: `{sig}`")
-    if payload["invariants"]:
-        lines.extend(["", "## Architecture Invariants (docs/kien-truc.md)"])
-        for inv in payload["invariants"]:
-            lines.append(f"- {inv}")
-    failures = payload.get("blackboard_failures") or []
-    esc = payload.get("escalation_hint")
-    if failures or esc:
-        lines.extend(["", "## Blackboard"])
-        for item in failures:
-            lines.append(f"- [{item.get('timestamp', '')}] {item.get('role')}: {item.get('error') or item.get('summary')}")
-        if esc:
-            lines.append(
-                f"- ESCALATE: {esc['failures']}/{esc['threshold']} fails -> use {esc['recommended_agent']} ({esc['recommended_model']})"
-            )
+    _append_packet_sections(lines, payload)
     return "\n".join(lines)
 
 
@@ -2716,8 +2721,13 @@ def lenh_packet(project, args):
 def lenh_validate_handoff(project, args):
     """Validate a subagent handoff JSON or 7-line digest against handoff-schema.json."""
     if getattr(args, "file", None):
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
-            raw = fh.read()
+        if not os.path.isfile(args.file):
+            raise LoiLuat(f"Handoff file not found: {args.file}")
+        try:
+            with open(args.file, encoding="utf-8", errors="replace") as fh:
+                raw = fh.read()
+        except OSError as exc:
+            raise LoiLuat(f"Cannot read handoff file {args.file}: {exc}") from exc
     elif getattr(args, "text", None) is not None:
         raw = args.text
     else:

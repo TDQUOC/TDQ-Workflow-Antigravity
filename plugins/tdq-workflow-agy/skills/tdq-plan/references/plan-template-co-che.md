@@ -1,9 +1,9 @@
 # How the plan's three conditional sections work
 <!-- muc-luc-dong:
   Cụm song song — cách chia cho đúng=27-42 · Luật file nóng — nhận diện và hai cách xử=43-58 ·
-  Khuôn khối hợp đồng skill — năm trường và nhãn `(mcp)`=59-79 ·
-  Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó=80-89 ·
-  Dòng `Cần` — cách máy xếp đợt, và luật lùi=90
+  Khuôn khối hợp đồng skill — năm trường và nhãn `(mcp)`=59-80 ·
+  Dòng `Chạm` — hai người đọc, và cái giá của việc thiếu nó=81-90 ·
+  Dòng `Cần` — cách máy xếp đợt, và luật lùi=91
 -->
 
 The body below stays in Vietnamese ON PURPOSE. It is recorded here so it is not read as a

@@ -27,7 +27,7 @@ You are a specialized subagent dedicated to resolving compiler errors, syntax br
 
 4. **Handoff Protocol (`TDQ_HANDOFF_PAYLOAD` Unified)**:
    - Report results matching `skills/tdq-conventions/references/handoff-schema.json` with `path:line — symbol — note` digests.
-   - **Digest threshold ≤ 1,500 characters** for the final message: pasting raw tool output is banned.
+   - **Digest threshold ≤ 1,500 characters** (Auto-Clarity & Compact Handoff) for the final message: pasting raw tool output is banned.
 
 ## Output Format
 

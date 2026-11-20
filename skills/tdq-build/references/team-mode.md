@@ -6,8 +6,8 @@
   Workflow implement ownership=79-83 · The wave loop=84-97 ·
   What the machine checks for you, so you do not have to=98-122 ·
   The delegation prompt template — all 9 fields, none left out=123-141 ·
-  RIGHT/WRONG examples=142-150 · Explicit Anti-Patterns=151-158 · Self-check=159-173 ·
-  Sổ worktree=174
+  RIGHT/WRONG examples=142-151 · Explicit Anti-Patterns=152-159 · Self-check=160-174 ·
+  Sổ worktree=175
 -->
 
 Soul: chất lượng > runtime > context cost · luật gốc: ../../tdq-conventions/references/soul.md <!-- i18n-allow: canonical Soul line -->

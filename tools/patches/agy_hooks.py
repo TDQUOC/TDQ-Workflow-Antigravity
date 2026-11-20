@@ -1835,7 +1835,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         '    _mutates_src_shell = any(\n'
         '        (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\\s\'\\"=])docs[\\\\/]", part, re.IGNORECASE))\n'
         '        or any(not re.search(r"^(?:\\./)?docs[\\\\/]", t.lstrip("\'\\"").replace("\\\\", "/"), re.IGNORECASE)\n'
-        '               and t.lower() not in ("/dev/null", "$null", "nul") for t in STDOUT_WRITE.findall(part))\n'
+        '               for t in _part_stdout_targets(part))\n'
         '        for part in parts)\n'
         '    if is_agy() and state.get("active_request") and _mutates_src_shell:\n'
         '        from tdq_state import cong_dang_cho\n'
