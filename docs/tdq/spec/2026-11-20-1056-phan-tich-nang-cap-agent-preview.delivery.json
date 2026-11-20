@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "ab8a9326-2528-4d95-a8f1-675a666db622",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-1056-phan-tich-nang-cap-agent\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-1056-phan-tich-nang-cap-agent-preview.ea212b30a66f434d942e18b04f1af3fc.html",
+  "specification": {
+    "sha256": "df6c546cbb7ede2d3c13e6977c062e33023411d9cd3cb9770dc47e767b43ddf1",
+    "bytes": 3204
+  },
+  "artifact": {
+    "sha256": "00afb7105af282e3210690fcb79b57a25c2fef1ca2debcd6bfe6aeb233d2a9d9",
+    "bytes": 1610204
+  },
+  "explainer": {
+    "preparedSha256": "d82fd747fdc13c73e37d83e7cf0e58f22a03462e28c2f26b0a96a3ee46742abc",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-before",
+        "inline": true,
+        "sha256": "4e5a9e24aff4f33b3d4b34a422edbdec948bc94b084796137c0def889754b532",
+        "bytes": 1005
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-after-roles",
+        "inline": true,
+        "sha256": "6dd282cd68413ae84b98ceb17ce2714eddc9ac46299408852da9f6fbdcc5d1b4",
+        "bytes": 1169
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-after-runtime",
+        "inline": true,
+        "sha256": "f1d0932cec3fd1c5205d3ab8e8af167797aeea9c18d5359d06f572962f05af52",
+        "bytes": 1227
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-after-data",
+        "inline": true,
+        "sha256": "6a9a6a46e75b9e4f84fbfffc4edd792b689b982d42e61d2d42128e35093d0ae1",
+        "bytes": 1123
+      }
+    ]
+  }
+}
