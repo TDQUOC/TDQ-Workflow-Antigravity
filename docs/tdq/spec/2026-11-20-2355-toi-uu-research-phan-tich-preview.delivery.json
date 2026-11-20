@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b8c627bc-234f-46fa-acfa-0e7c6f3d8bfd",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-20-2355-toi-uu-research-phan-tich\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-20-2355-toi-uu-research-phan-tich-preview.b33e034ac0734eb59f1b241ec7de18a3.html",
+  "specification": {
+    "sha256": "ff9cf90a64d6e786288457f121de3ecb980b371903f4e24dabadd43a683d6db1",
+    "bytes": 3422
+  },
+  "artifact": {
+    "sha256": "b96b24587f7377508fc385ac9d3f208e401f2f575c6521250c976c39bac8da3b",
+    "bytes": 1615339
+  },
+  "explainer": {
+    "preparedSha256": "2ed47399a30e3c931313f4e6c07ab1ace0ffbc798ff67944acd4f02b87e63377",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-before",
+        "inline": true,
+        "sha256": "5210f6b120f3e5822310ebabf9a376374439139ad764d645952466256b19daf8",
+        "bytes": 1282
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-vong1",
+        "inline": true,
+        "sha256": "a1a84a3f5fe8f7066ef12f385c2e2c3f5ec59576934c39ee15e5587021aa84fa",
+        "bytes": 1176
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-redteam",
+        "inline": true,
+        "sha256": "23a8f21b14e7f13f1a812dffb87bea90d812872a842b188e7162d871c289f730",
+        "bytes": 1110
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-v2-qc",
+        "inline": true,
+        "sha256": "7cf4f18fbcded9e2005cce3ada845c02f4a22ee14deb7225c24b5b2b38ea2cfb",
+        "bytes": 1171
+      }
+    ]
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "slug": "2026-11-20-2355-toi-uu-research-phan-tich",
+  "plan_file": "docs\\tdq\\plan\\2026-11-20-2355-toi-uu-research-phan-tich.md",
+  "plan_sha": "f435ad5a2430822735af64758777e2bda929e3d7bc43f445c690b6147a31135a",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "7eba604e6e2f11bd701d7ff752158e1689d1e9498dc0916692e8a1fbd1b99a4d",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/phan-tich-thuc-nghiem-timing.md"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/phan-tich-kien-truc-codebase.md"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/phan-tich-research-ngoai-sau.md"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/evidence-log.md"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/de-xuat-kien-truc-v1.md"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/redteam-a-luong-va-compact.md"
+      ],
+      "dot": 4
+    },
+    "T3.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/redteam-b-bao-mat-va-tinh-tuong-thich.md"
+      ],
+      "dot": 4
+    },
+    "T3.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/redteam-c-stress-test-cases.md"
+      ],
+      "dot": 4
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-20-2355-toi-uu-research-phan-tich/de-xuat-kien-truc-v2.md"
+      ],
+      "dot": 5
+    },
+    "T5.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 6
+    },
+    "Q1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q5": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q6": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}

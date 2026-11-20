@@ -1,0 +1,147 @@
+{
+  "slug": "2026-11-21-0217-trien-khai-investigate-v2",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-0217-trien-khai-investigate-v2.md",
+  "plan_sha": "7add0efc14a54f74f8ddd5440f54c07516ab0ad3dfcdd86af01aa6c6e042b661",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "bae538b4ecba203825a42f296b3564fb8978ab79a80767ea26b5f6e81ae6c457",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py",
+        "tests/test_state.py",
+        "tests/test_phase_table.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/doc_lint.py",
+        "scripts/tdq_plan_scaffold.py",
+        "scripts/tdq_bench.py",
+        "tests/test_doc_lint.py",
+        "tests/test_plan_v2_linter.py"
+      ],
+      "dot": 2
+    },
+    "T1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-conventions/SKILL.md",
+        "skills/tdq-intake/SKILL.md",
+        "skills/tdq-spec/SKILL.md",
+        "skills/tdq-build/SKILL.md",
+        "skills/tdq-spec/references/spec-template.md",
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/references/team-mode.md",
+        "skills/tdq-intake/references/quick-lane-mini.md",
+        "skills/tdq-intake/references/issue-triage.md",
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_team.py",
+        "skills/tdq-conventions/references/handoff-schema.json",
+        "tests/test_team_packet_v2.py"
+      ],
+      "dot": 3
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/_common.py",
+        "hooks/scripts/edit_gate.py",
+        "hooks/scripts/bash_gate.py",
+        "hooks/scripts/prompt_context.py",
+        "hooks/scripts/session_start.py",
+        "hooks/scripts/subagent_stop.py",
+        "hooks/scripts/read_gate.py",
+        "hooks/hooks.json",
+        "tests/test_bash_gate.py",
+        "tests/test_read_gate.py"
+      ],
+      "dot": 2
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/protocol.rs",
+        "hooks/rust/tdq-dispatch/src/command_parser.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs"
+      ],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "agents/tdq-explorer.md",
+        "agents/tdq-debugger.md",
+        "agents/tdq-reviewer.md",
+        "tools/patches/skills_and_agents.py",
+        "tools/patches/agy_hooks.py",
+        "tests/test_agent_frontmatter.py",
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 4
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_investigate_workflow.py"
+      ],
+      "dot": 5
+    },
+    "Q1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q5": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q6": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}

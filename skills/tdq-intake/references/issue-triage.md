@@ -29,3 +29,7 @@ fix spec — never a guess.
 | Fixed with no test | Write a test that reproduces the bug, red → green |
 | Guessing the cause because there is no log | Turn detailed logging on, re-run, read the log |
 | Deleting the capture/log at once | Keep it until the issue is closed, mention it in the report |
+
+## Two-Stage Bugfix vs Debug-RCA
+- Localized bugs (`<= 2` suspect modules, clear repro) open directly in `work_kind=build`.
+- Multi-layer ambiguous bugs open a short `work_kind=investigate` Micro-Spike (`<= 10m`) first to isolate the Point-of-Commitment, then run `tdq_state.py escalate-to-build` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md).
