@@ -142,7 +142,7 @@ Trạng thái plan: CHỜ DUYỆT
 
 ## P4 — Log & test bắt buộc và đóng gói plugin
 
-- [>] **T4.1** (e12m) Biên dịch release `tdq-dispatch.exe` và đóng gói lại `plugins/tdq-workflow-agy/` sạch trong repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .` và `agy plugin validate plugins/tdq-workflow-agy --strict --json`
+- [x] **T4.1** (e12m) Biên dịch release `tdq-dispatch.exe` và đóng gói lại `plugins/tdq-workflow-agy/` sạch trong repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .` và `agy plugin validate plugins/tdq-workflow-agy --strict --json`
   - Req: `§1, §2 #5, §5, §6 Q4` · Ngoài phạm vi: `GIỮ NGUYÊN` `~/.gemini/config/plugins/tdq-workflow-agy/` (không tự động copy hay cài ngoài repo theo lựa chọn 5a) và nhánh `main`
   - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`, `plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py`, `plugins/tdq-workflow-agy/hooks/scripts/_common.py`, `plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json`, `plugins/tdq-workflow-agy/manifest.json`
   - Cần: `T2.1`, `T3.1`, `T3.2`
