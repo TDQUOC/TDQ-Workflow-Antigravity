@@ -12,9 +12,13 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
+import pytest
+
 from helper import ROOT
 import tdq_test
 import tdq_test_report
+
+pytestmark = pytest.mark.smoke
 
 
 class RunnerIntegration(unittest.TestCase):

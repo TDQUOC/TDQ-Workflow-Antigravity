@@ -15,6 +15,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.smoke, pytest.mark.e2e]
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_DIR = REPO_ROOT / "plugins" / "tdq-workflow-agy"
 RUST_BIN = PLUGIN_DIR / "bin" / ("tdq-dispatch.exe" if os.name == "nt" else "tdq-dispatch")

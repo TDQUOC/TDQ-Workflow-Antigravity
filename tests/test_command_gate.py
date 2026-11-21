@@ -10,7 +10,11 @@ import unittest
 import zipfile
 from pathlib import Path
 
+import pytest
+
 from helper import HOOKS, ROOT
+
+pytestmark = [pytest.mark.smoke, pytest.mark.e2e]
 
 TOOLS = os.path.join(ROOT, "tools")
 

@@ -6,8 +6,12 @@ import sys
 import tempfile
 import unittest
 
+import pytest
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "scripts")))
 import tdq_devtool_mcp
+
+pytestmark = pytest.mark.smoke
 
 
 class TestDevtoolMcpIntegration(unittest.TestCase):

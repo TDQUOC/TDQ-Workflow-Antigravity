@@ -14,7 +14,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
 from helper import ROOT
+
+pytestmark = pytest.mark.smoke
 
 AGENTS = os.path.join(ROOT, "agents")
 AGY_AGENTS = os.path.join(ROOT, "plugins", "tdq-workflow-agy", "agents")

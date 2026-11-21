@@ -105,7 +105,7 @@ Next step: `python3 "${PLUGIN_ROOT}/scripts/tdq_state.py" set phase=idle`
 
 `docs/tdq/reports/<slug>.md` — in the user's document language, with NO hard line limit.
 Keep wording simple, clear, visual, and complete (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`) for every reader following [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md).
-Lead with a `Tóm tắt nhanh` blockquote, explain Before → After → Result cleanly across readable sub-bullets instead of packing facts onto middle-dot (`·`) lines, and take every number straight from real output.
+Lead with a `Tóm tắt nhanh` blockquote. Explain Before → After → Result cleanly across readable sub-bullets instead of packing facts onto middle-dot (`·`) lines. Draw behavior and command highlights from `Dev Behavior QC Card` in `docs/tdq/qc/<slug>.md`, and paste verbatim `tdq_timing.py show` output (hiding all-unavailable host columns while preserving JSON v2).
 
 <!-- i18n-allow: report template written in the default document language -->
 ```markdown

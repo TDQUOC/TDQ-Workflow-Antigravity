@@ -2,6 +2,14 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.104.0 — 2026-11-21
+
+Nâng cấp pha QC và `tdq-qc-tester` theo hướng Dev-First, E2E-First qua 3 Wave (`2026-11-21-1536-nang-cap-qc-tester-e2e`). Nổi bật: `--workers auto`, `Auto Meta-Gate` 1 dòng, rút gọn `tdq_timing.py show`, `Changed-Flow E2E Smoke`, `Dev Behavior QC Card`, Accessibility Tree Snapshot và bản `0.104.0` sạch 0 findings.
+
+- **Wave 1 (`scripts/tdq_test.py`, `scripts/tdq_timing.py`, `scripts/tdq_meta_gate.py`, `scripts/doc_lint.py`, `pytest.ini`)**: Thêm `--workers auto`, `.html`/`.htm` ở `DATA_EXTS`, `.ruff_cache` ở `EXCLUDED_DIRS` và tuyến `SMOKE_ROUTES`/`smoke-e2e`. Hàm `bang_markdown()` ẩn 5 cột host `[unavailable]` khi rỗng, còn `Auto Meta-Gate` gom kiểm tài liệu và cờ CLI Bug Board về 1 dòng.
+- **Wave 2 (`tests/test_*`, `tests/test_v01030_regression_smoke.py`)**: Gắn `pytestmark` tầng `smoke`/`e2e` trên 15+ module cốt lõi. Thêm test âm tính khóa lỗi `v0.103.0` (`call_mcp_tool` và tool cấm trên bundle Antigravity compile).
+- **Wave 3 (`skills/tdq-build/references/qc.md`, `report-template.md`, `agents/tdq-qc-tester.md`, `skills/tdq-browser-test/**`, `vision-test-loop.md`)**: Bật `smoke test = CÓ` (`--workers auto`) ở `muc_qc=full`, giới hạn `5` SOLID OOP trong `QC-F4` cho module có class/tầng. Mặc định dùng `take_snapshot` + `uid` fail-closed + `list_console_messages` kèm `scenario-template.md` (`7–19` dòng, Bug Board, opt-in `e2e_adapter: none`).
+
 ## 0.103.1 — 2026-11-21
 
 Vá triệt để lỗi khởi tạo executor khiến `8/8` subagent của `tdq-workflow-agy` sập trên Antigravity 2.0 (`unknown component: tool "call_mcp_tool" not found in registry`), khóa test âm tính chống tái diễn và đồng bộ phát hành `0.103.1` trên cả Rust 3 OS lẫn cài đặt `~/.gemini/`.

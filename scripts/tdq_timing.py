@@ -427,22 +427,77 @@ def _metric_text(metric):
     return f"{dinh_dang(metric['seconds'])} [{metric['quality']}]"
 
 
+def _all_metrics_unavailable(rows):
+    """Return True when every host metric across all rows is unavailable."""
+    return all(
+        (row.get("metrics") or {}).get(key, {}).get("quality") == "unavailable"
+        for row in rows
+        for key in METRIC_KEYS
+    )
+
+
+def _v2_table_lines(rows, all_unavailable):
+    """Render the v2 timing table, hiding host metric columns when all are empty."""
+    labels, keys = ((), ()) if all_unavailable else (METRIC_LABELS, METRIC_KEYS)
+    columns = ("Phase", "Wall clock", *labels, "Times entered")
+    lines = ["| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)]
+    for row in rows:
+        cells = [row["phase"], dinh_dang(row["treo_tuong_giay"])]
+        cells.extend(_metric_text(row["metrics"][key]) for key in keys)
+        lines.append("| " + " | ".join(cells + [str(row["so_lan"])]) + " |")
+    return lines
+
+
+def _metric_reason_lines(so_lieu, all_unavailable):
+    """Render per-metric reasons, or collapse them to one line when hidden."""
+    metrics = so_lieu["metrics"]
+    if not all_unavailable:
+        return [f"- {key}: {metrics[key]['reason']}" for key in METRIC_KEYS]
+    reasons = list(dict.fromkeys(
+        metrics[key].get("reason", "")
+        for key in METRIC_KEYS
+        if metrics[key].get("reason")
+    ))
+    hidden = ", ".join(METRIC_KEYS)
+    summary = ", ".join(reasons) or "unavailable"
+    return [
+        f"Host metrics unavailable ({len(METRIC_KEYS)} hidden: {hidden}): {summary}"
+    ]
+
+
 def bang_markdown(so_lieu):
     """Present the same measured values and quality as JSON, including v1 labels."""
-    lines = [f"Request `{so_lieu['slug']}` · lane {so_lieu['lane'] or '—'} · "
-             f"opened at {so_lieu['started_at'] or '—'}", ""]
+    lines = [
+        (
+            f"Request `{so_lieu['slug']}` · lane {so_lieu['lane'] or '—'} · "
+            f"opened at {so_lieu['started_at'] or '—'}"
+        ),
+        "",
+    ]
     if so_lieu.get("schema_version", 1) != 2:
         return "\n".join(lines + _legacy_markdown(so_lieu))
-    columns = ("Phase", "Wall clock", *METRIC_LABELS, "Times entered")
-    lines.extend(["| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)])
-    for row in so_lieu["phases"] + [dict(so_lieu, phase="Total", so_lan="")]:
-        cells = [row["phase"], dinh_dang(row["treo_tuong_giay"])]
-        cells.extend(_metric_text(row["metrics"][key]) for key in METRIC_KEYS)
-        lines.append("| " + " | ".join(cells + [str(row["so_lan"])]) + " |")
-    lines.extend(["", "Model compute time is unavailable (`model_giay=null`). API includes network/provider latency; "
-                  "tool time is host wait. Observed metrics may overlap; unattributed time is not assumed user/model time.",
-                  f"Transcript attribution: {so_lieu['attribution']}. Complete covers selected supported observations only."])
-    lines.extend(f"- {key}: {so_lieu['metrics'][key]['reason']}" for key in METRIC_KEYS)
+    rows = so_lieu["phases"] + [dict(so_lieu, phase="Total", so_lan="")]
+    all_unavailable = _all_metrics_unavailable(rows)
+    if all_unavailable:
+        _log(
+            f"timing: hid {len(METRIC_KEYS)} unavailable host metric columns "
+            f"for {so_lieu['slug']}"
+        )
+    lines.extend(_v2_table_lines(rows, all_unavailable))
+    lines.extend([
+        "",
+        (
+            "Model compute time is unavailable (`model_giay=null`). "
+            "API includes network/provider latency; tool time is host wait. "
+            "Observed metrics may overlap; unattributed time is not assumed "
+            "user/model time."
+        ),
+        (
+            f"Transcript attribution: {so_lieu['attribution']}. "
+            "Complete covers selected supported observations only."
+        ),
+    ])
+    lines.extend(_metric_reason_lines(so_lieu, all_unavailable))
     if so_lieu["diagnostics"]:
         lines.append("Phase diagnostics: " + ", ".join(so_lieu["diagnostics"]))
     lines.extend(_role_telemetry_markdown(so_lieu.get("role_telemetry") or []))

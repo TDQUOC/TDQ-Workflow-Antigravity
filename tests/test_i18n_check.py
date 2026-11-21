@@ -5,6 +5,10 @@ import sys
 import tempfile
 import unittest
 
+import pytest
+
+pytestmark = pytest.mark.smoke
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOL = os.path.join(ROOT, "scripts", "i18n_check.py")
 

@@ -102,7 +102,7 @@ TEST_DIR = "tests"
 # Data kinds: outside `TOP_DIRS` these match by path only. Anything else there (`.py .ps1 .sh
 # .js .ts .cmd .bat`, or an extension not listed) is code or unknown -> the full suite runs.
 DATA_EXTS = frozenset({".md", ".json", ".jsonl", ".txt", ".yml", ".yaml", ".toml", ".csv",
-                       ".png", ".svg"})
+                       ".png", ".svg", ".html", ".htm"})
 DATA_NAMES = frozenset({".gitignore", ".gitattributes", "LICENSE"})
 NGUONG_TRON_BO = 0.6
 
@@ -964,6 +964,10 @@ def _partial_output(exc):
 def _worker_count(workers, parallel):
     if parallel and workers is not None:
         raise ValueError("--parallel and --workers cannot be combined")
+    if isinstance(workers, str):
+        if workers.strip().lower() == "auto":
+            return min(6, max(1, os.cpu_count() or 1))
+        raise ValueError("workers must be a positive integer or 'auto'")
     workers = (2 if parallel else 1) if workers is None else workers
     if type(workers) is not int or workers < 1:
         raise ValueError("workers must be a positive integer")
@@ -1467,18 +1471,300 @@ def _positive_number(value):
     return number
 
 
+SMOKE_ROUTES = (
+    {
+        "name": "agents",
+        "prefixes": ("agents/",),
+        "marker": "smoke or e2e",
+        "modules": (
+            "tests/test_agent_frontmatter.py",
+            "tests/test_agy_plugin_validate.py",
+            "tests/test_v01030_regression_smoke.py",
+        ),
+    },
+    {
+        "name": "tools_patches",
+        "prefixes": ("tools/patches/", "tools/build_"),
+        "marker": "smoke or e2e",
+        "modules": (
+            "tests/test_agy_plugin_validate.py",
+            "tests/test_build_portable.py",
+            "tests/test_v01030_regression_smoke.py",
+        ),
+    },
+    {
+        "name": "hooks",
+        "prefixes": ("hooks/",),
+        "marker": "smoke or e2e",
+        "modules": (
+            "tests/test_rust_dispatch_parity.py",
+            "tests/test_bash_gate.py",
+            "tests/test_command_gate.py",
+            "tests/test_agy_hooks.py",
+            "tests/test_read_gate.py",
+        ),
+    },
+    {
+        "name": "scripts_tdq_test",
+        "prefixes": ("scripts/tdq_test",),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_tdq_runner_integration.py",
+            "tests/test_smoke_e2e_routing.py",
+            "tests/test_v01030_regression_smoke.py",
+        ),
+    },
+    {
+        "name": "scripts_tdq_state",
+        "prefixes": ("scripts/tdq_state",),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_state_muc_qc.py",
+            "tests/test_tdq_finish.py",
+            "tests/test_command_gate.py",
+        ),
+    },
+    {
+        "name": "scripts_doc_lint",
+        "prefixes": ("scripts/doc_lint", "scripts/tdq_meta_gate", "scripts/i18n_check"),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_doc_lint_r15.py",
+            "tests/test_meta_gate.py",
+            "tests/test_i18n_check.py",
+        ),
+    },
+    {
+        "name": "scripts_tdq_timing",
+        "prefixes": ("scripts/tdq_timing",),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_timing.py",
+            "tests/test_phase1_contract.py",
+        ),
+    },
+    {
+        "name": "skills",
+        "prefixes": ("skills/",),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_token_budget.py",
+            "tests/test_i18n_check.py",
+            "tests/test_dev_qc_card_rules.py",
+            "tests/test_vision_test_loop_doc.py",
+        ),
+    },
+    {
+        "name": "docs",
+        "prefixes": ("docs/",),
+        "marker": "smoke",
+        "modules": (
+            "tests/test_doc_lint_r15.py",
+            "tests/test_devtool_mcp_integration.py",
+            "tests/test_i18n_check.py",
+        ),
+    },
+)
+
+DEFAULT_SMOKE_MODULES = (
+    "tests/test_smoke_e2e_routing.py",
+    "tests/test_tdq_runner_integration.py",
+    "tests/test_v01030_regression_smoke.py",
+    "tests/test_agent_frontmatter.py",
+    "tests/test_doc_lint_r15.py",
+)
+
+SMOKE_MARKER_OPTION = (
+    "markers=smoke: fast changed-flow smoke tests\n"
+    "e2e: end-to-end integration tests\n"
+    "slow: slow tests excluded from smoke"
+)
+
+
+def _is_test_module_path(path):
+    name = path.rsplit("/", 1)[-1]
+    return path.startswith("tests/") and path.endswith(".py") and (
+        name.startswith("test_") or name.endswith("_test.py")
+    )
+
+
+def _match_smoke_routes(paths):
+    routes, modules, markers = [], [], []
+    unmatched = False
+    for path in paths:
+        matched = [route for route in SMOKE_ROUTES if path.startswith(route["prefixes"])]
+        for route in matched:
+            routes.append(route["name"])
+            modules.extend(route["modules"])
+            markers.append(route["marker"])
+        if not matched and _is_test_module_path(path):
+            routes.append("tests")
+            modules.append(path)
+            markers.append("smoke")
+        elif not matched:
+            unmatched = True
+    return routes, modules, markers, unmatched
+
+
+def select_smoke_targets(files, repo=None):
+    """Map changed repo paths to deterministic smoke-e2e routes and test targets."""
+    paths = sorted({chuan_hoa(f) for f in (files or ()) if chuan_hoa(f)})
+    routes, modules, markers, unmatched = _match_smoke_routes(paths)
+    fallback = not paths or unmatched or not routes
+    if fallback:
+        routes.append("default")
+        modules.extend(DEFAULT_SMOKE_MODULES)
+        markers.append("smoke")
+    unique_routes = list(dict.fromkeys(routes))
+    unique_modules = list(dict.fromkeys(modules))
+    if repo is not None:
+        unique_modules = [
+            m for m in unique_modules
+            if os.path.isfile(os.path.join(repo, *m.split("/")))
+        ]
+    marker = "smoke or e2e" if any("e2e" in item for item in markers) else "smoke"
+    return {
+        "routes": unique_routes,
+        "modules": unique_modules,
+        "marker": marker,
+        "fallback": fallback,
+        "files": paths,
+    }
+
+
+def _has_marker_config(repo):
+    for name in ("pytest.ini", "pyproject.toml", "setup.cfg", "tox.ini"):
+        path = os.path.join(repo, name)
+        if os.path.isfile(path):
+            text = _doc(path)
+            if "markers" in text and "smoke" in text:
+                return True
+    return False
+
+
+def _marker_names(marker_expr):
+    return tuple(name for name in ("smoke", "e2e") if name in marker_expr)
+
+
+def _node_has_marker(node, names):
+    for child in ast.walk(node):
+        if not isinstance(child, ast.Attribute) or child.attr not in names:
+            continue
+        owner = child.value
+        if (isinstance(owner, ast.Attribute) and owner.attr == "mark") or (
+                isinstance(owner, ast.Name) and owner.id == "mark"):
+            return True
+    return False
+
+
+def _file_has_smoke_marker(path, names):
+    try:
+        tree = ast.parse(_doc(path))
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if any(_node_has_marker(dec, names) for dec in node.decorator_list):
+                return True
+        elif isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "pytestmark"
+                for target in node.targets) and _node_has_marker(node.value, names):
+            return True
+    return False
+
+
+def _marked_smoke_files(repo, marker_expr, candidates=None):
+    names = _marker_names(marker_expr)
+    if not names:
+        return []
+    if candidates is None:
+        if not os.path.isdir(os.path.join(repo, "tests")):
+            return []
+        candidates = ["tests/" + item for item in _result_inventory(repo)]
+    return [
+        rel for rel in candidates
+        if _file_has_smoke_marker(os.path.join(repo, *rel.split("/")), names)
+    ]
+
+
+def _marker_flags(repo, flags, marker_expr):
+    extra = [] if _has_marker_config(repo) else ["-o", SMOKE_MARKER_OPTION]
+    return [*flags, *extra, "-m", marker_expr]
+
+
+def _smoke_pytest_selectors(repo, plan, *, fail_fast=False):
+    flags = ["--tb=short", *(["-x"] if fail_fast else [])]
+    modules = plan["modules"]
+    if not plan["fallback"] and modules:
+        marked = _marked_smoke_files(repo, plan["marker"], modules)
+        if marked:
+            return [*_marker_flags(repo, flags, plan["marker"]), *marked], marked
+        return [*flags, *modules], modules
+    marked = _marked_smoke_files(repo, plan["marker"])
+    if marked:
+        return [*_marker_flags(repo, flags, plan["marker"]), "tests"], marked
+    targets = modules or ["tests"]
+    return [*flags, *targets], modules or _result_inventory(repo)
+
+
+def _print_smoke_plan(plan, selectors, targets, reason):
+    _log(f"smoke-e2e plan routes={','.join(plan['routes'])} "
+         f"marker={plan['marker']} targets={len(targets)}")
+    names = ",".join(m.removeprefix("tests/") for m in targets) or "(none)"
+    selector_text = ",".join(s.replace("\n", "; ") for s in selectors)
+    print(f"scope=smoke-e2e routes={','.join(plan['routes'])} "
+          f"marker={plan['marker']} selectors={selector_text} "
+          f"modules={names} reason={reason or 'no fallback'}")
+
+
+def cmd_smoke_e2e(args):
+    """Run changed-flow smoke/e2e tests using deterministic SMOKE_ROUTES."""
+    start = time.monotonic()
+    repo = os.path.abspath(args.repo)
+    state = _doc_state(repo)
+    if getattr(args, "changed", False) and getattr(args, "files", None) is not None:
+        raise ValueError("--changed and --files cannot be combined")
+    files, git_reason = _changed_files(args, repo, state)
+    plan = select_smoke_targets([] if git_reason else files, repo=repo)
+    selectors, targets = _smoke_pytest_selectors(
+        repo, plan, fail_fast=getattr(args, "fail_fast", False),
+    )
+    reason = git_reason or ("default smoke fallback" if plan["fallback"] else None)
+    if getattr(args, "plan_only", False):
+        _print_smoke_plan(plan, selectors, targets, reason)
+        return 0
+    silent = getattr(args, "silent", False)
+    inventory = _result_inventory(repo)
+    with _output_stream(repo, silent) as stream:
+        result = _run_pytest(repo, inventory, stream=stream, selectors=selectors,
+                             scope="selected", request=state.get("active_request"),
+                             **_run_options(args))
+    seconds = round(time.monotonic() - start, 2)
+    modules = [m.removeprefix("tests/") for m in targets]
+    _record_result(repo, state, "smoke-e2e", result, seconds=seconds,
+                   selection_scope="smoke-e2e", modules=modules,
+                   files=plan["files"], fallback=reason)
+    _print_result(result, seconds, "smoke-e2e", silent=silent)
+    return 0 if result["status"] == "PASS" else 1
+
+
 def _positive_workers(value):
     import argparse
-    number = int(value)
+    if isinstance(value, str) and value.strip().lower() == "auto":
+        return "auto"
+    try:
+        number = int(value)
+    except (TypeError, ValueError) as exc:
+        raise argparse.ArgumentTypeError("workers must be a positive integer or 'auto'") from exc
     if number < 1:
-        raise argparse.ArgumentTypeError("workers must be a positive integer")
+        raise argparse.ArgumentTypeError("workers must be a positive integer or 'auto'")
     return number
 
 
 def _add_run_options(parser):
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--workers", type=_positive_workers, default=None,
-                       help="bounded worker count (default 1; serial pytest)")
+                       help="bounded worker count or 'auto' (default 1; serial pytest)")
     group.add_argument("--parallel", "-n", action="store_true", default=False,
                        help="compatibility alias for two workers")
     parser.add_argument("--timeout", "--timeout-seconds", dest="timeout",
@@ -1487,6 +1773,22 @@ def _add_run_options(parser):
     parser.add_argument("--reuse", choices=("off", "auto"), default="off")
     parser.add_argument("--fresh", action="store_true", help="require fresh execution")
     parser.add_argument("--artifact-dir", default=None, help="persistent evidence parent directory")
+
+
+def _add_smoke_subparser(sub, common):
+    p = sub.add_parser("smoke-e2e", parents=[common],
+                       help="run changed-flow smoke and e2e tests via deterministic routes")
+    targets = p.add_mutually_exclusive_group()
+    targets.add_argument("--changed", action="store_true", default=False,
+                         help="select smoke routes from git diff against base branch (default)")
+    targets.add_argument("--files", nargs="*", default=None,
+                         help="explicit changed files to map through SMOKE_ROUTES")
+    p.add_argument("--plan-only", action="store_true",
+                   help="print matched smoke routes, marker, and selectors without running tests")
+    p.add_argument("--fail-fast", "-x", action="store_true", default=False,
+                   help="stop on first test failure")
+    _add_run_options(p)
+    p.set_defaults(func=cmd_smoke_e2e)
 
 
 def main(argv=None):
@@ -1511,6 +1813,7 @@ def main(argv=None):
                    help="print selected scope, selectors and reason without running tests")
     _add_run_options(p)
     p.set_defaults(func=cmd_vung_cham)
+    _add_smoke_subparser(sub, common)
     p = sub.add_parser("tron-bo", parents=[common], help="run the full mixed suite and log misses")
     _add_run_options(p)
     p.set_defaults(func=cmd_tron_bo)

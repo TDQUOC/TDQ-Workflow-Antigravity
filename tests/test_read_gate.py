@@ -20,6 +20,8 @@ import tempfile
 import time
 import unittest
 
+import pytest
+
 from helper import ROOT, run_hook
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
@@ -31,6 +33,8 @@ import read_gate  # noqa: E402 — lấy hằng số từ chính cổng, khỏi 
 import subagent_stop  # noqa: E402
 read_gate_SO_SACH = read_gate.SO_SACH
 read_gate_TRAN_DONG = read_gate.TRAN_DONG
+
+pytestmark = pytest.mark.smoke
 
 GATE = "read_gate.py"
 PHIEN = "phien-thu-read-gate"

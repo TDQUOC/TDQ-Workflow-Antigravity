@@ -4,8 +4,14 @@ import sys
 import unittest
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.smoke
+
 ROOT = Path(__file__).resolve().parents[1]
 VISION_DOC = ROOT / "skills" / "tdq-build" / "references" / "vision-test-loop.md"
+BROWSER_TEST_SKILL = ROOT / "skills" / "tdq-browser-test" / "SKILL.md"
+SCENARIO_TEMPLATE = ROOT / "skills" / "tdq-browser-test" / "references" / "scenario-template.md"
 DOC_LINT = ROOT / "scripts" / "doc_lint.py"
 I18N_CHECK = ROOT / "scripts" / "i18n_check.py"
 
@@ -124,6 +130,49 @@ class TestVisionTestLoopDoc(unittest.TestCase):
             or "tdq_vision_diff" in row.get("text", "").lower()
         ]
         self.assertEqual(vision_findings, [], f"Vietnamese text found in vision-test-loop wiring: {vision_findings}")
+
+    def test_accessibility_tree_default_and_conditional_pixel_diff(self):
+        """Both vision-test-loop.md and tdq-browser-test/SKILL.md default to Accessibility Tree snapshot + fail-closed checks."""
+        vision_text = VISION_DOC.read_text(encoding="utf-8")
+        skill_text = BROWSER_TEST_SKILL.read_text(encoding="utf-8")
+
+        for doc_name, text in (("vision-test-loop.md", vision_text), ("tdq-browser-test/SKILL.md", skill_text)):
+            for marker in ("take_snapshot", "list_console_messages", "uid", "tdq_vision_diff.py", "scenario-template.md"):
+                self.assertIn(marker, text, f"Missing {marker!r} in {doc_name}")
+            lower = text.lower()
+            self.assertIn("accessibility tree", lower, f"Missing Accessibility Tree default guidance in {doc_name}")
+            self.assertIn("conditional", lower, f"Missing conditional pixel diff guidance in {doc_name}")
+            self.assertIn("fail-closed", lower, f"Missing fail-closed interaction/console rule in {doc_name}")
+
+        self.assertLessEqual(
+            len(skill_text.splitlines()),
+            85,
+            "skills/tdq-browser-test/SKILL.md exceeds 85-line doc_lint cap",
+        )
+
+    def test_scenario_template_contract_lint_and_i18n(self):
+        """scenario-template.md must define 7-19 line scenarios, Bug Board, opt-in e2e_adapter, and pass lint/i18n."""
+        self.assertTrue(SCENARIO_TEMPLATE.is_file(), f"Missing scenario template: {SCENARIO_TEMPLATE}")
+        content = SCENARIO_TEMPLATE.read_text(encoding="utf-8")
+        for marker in ("7-19", "Bug Board", "e2e_adapter", "docs/tdq/scenarios", "docs/tdq/bugs"):
+            self.assertIn(marker, content, f"Missing {marker!r} in scenario-template.md")
+
+        for doc_path in (BROWSER_TEST_SKILL, SCENARIO_TEMPLATE):
+            lint_proc = subprocess.run(
+                [sys.executable, str(DOC_LINT), str(doc_path)],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(lint_proc.returncode, 0, f"doc_lint failed for {doc_path}:\n{lint_proc.stdout}\n{lint_proc.stderr}")
+
+            i18n_proc = subprocess.run(
+                [sys.executable, str(I18N_CHECK), str(doc_path)],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(i18n_proc.returncode, 0, f"i18n_check failed for {doc_path}:\n{i18n_proc.stdout}\n{i18n_proc.stderr}")
 
 
 if __name__ == "__main__":

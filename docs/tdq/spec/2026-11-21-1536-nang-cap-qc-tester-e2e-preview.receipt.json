@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1536-nang-cap-qc-tester-e2e\\truoc-sau.archify.md",
+    "sha256": "0426a9f5865b3d640d0fef67535e2a4bd262b558c7c8e5514ff76f98af9e348b",
+    "bytes": 2752
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1536-nang-cap-qc-tester-e2e-preview.040783b1f4e24e0b8dcf02a96aee3ef4.html",
+    "sha256": "d28970c8e77266cf3eb017dfa6716f6504d07df7240214f1731369a659f48c00",
+    "bytes": 1256876
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1536-nang-cap-qc-tester-e2e-preview.040783b1f4e24e0b8dcf02a96aee3ef4.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1536-nang-cap-qc-tester-e2e-preview.040783b1f4e24e0b8dcf02a96aee3ef4.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2276,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
