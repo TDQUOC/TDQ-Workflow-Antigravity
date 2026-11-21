@@ -1,0 +1,69 @@
+{
+  "slug": "2026-11-21-1736-mac-dinh-trinh-bay-de-hieu",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md",
+  "plan_sha": "18af154d608eb0231670d8f2b7f02d47c760de025d959d444d67629ab4b92157",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "0187d551463b3618014a4151a678ecb7b7cc9f713241a2d5e7f9aa530a0bef65",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/t1.1-repo-audit.md",
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/t1.1.ev.jsonl"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/t1.2-transcript-rca.md",
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/t1.2.ev.jsonl"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "docs/tdq/research/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md",
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/t1.3.ev.jsonl"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/evidence.jsonl",
+        "docs/tdq/reports/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md"
+      ],
+      "dot": 2,
+      "worktree_required": false
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu/bao-cao.archify.md",
+        "docs/tdq/reports/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.html"
+      ],
+      "dot": 3,
+      "worktree_required": false
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md"
+      ],
+      "dot": 4,
+      "worktree_required": false
+    }
+  }
+}

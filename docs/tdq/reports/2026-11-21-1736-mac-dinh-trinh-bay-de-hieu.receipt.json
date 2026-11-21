@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1736-mac-dinh-trinh-bay-de-hieu\\bao-cao.archify.md",
+    "sha256": "006e536d7e4eec2b696f4e20d97e5a3269ca60ccaf0c9d0d1890443905c795eb",
+    "bytes": 3515
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.3a1f799eff94483892aa7d37e22f4173.html",
+    "sha256": "1fabbd07242bbd8ad3874d70f76e4ab261b00063d01fc92ef4bfa566897eebb4",
+    "bytes": 1270566
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 32 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1736-mac-dinh-trinh-bay-de-hieu\\bao-cao.archify.md",
+        "line": 46,
+        "component": "prose",
+        "panelId": "lo-trinh-3-be-mat"
+      },
+      "evidence": {
+        "reason": "Sentence has 32 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 32,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.3a1f799eff94483892aa7d37e22f4173.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.3a1f799eff94483892aa7d37e22f4173.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2298,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

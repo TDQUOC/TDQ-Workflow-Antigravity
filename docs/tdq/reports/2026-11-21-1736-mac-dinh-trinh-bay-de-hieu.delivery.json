@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "03a68702-7289-478f-b935-006dd148d4ef",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1736-mac-dinh-trinh-bay-de-hieu\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.3a1f799eff94483892aa7d37e22f4173.html",
+  "specification": {
+    "sha256": "006e536d7e4eec2b696f4e20d97e5a3269ca60ccaf0c9d0d1890443905c795eb",
+    "bytes": 3515
+  },
+  "artifact": {
+    "sha256": "1fabbd07242bbd8ad3874d70f76e4ab261b00063d01fc92ef4bfa566897eebb4",
+    "bytes": 1270566
+  },
+  "explainer": {
+    "preparedSha256": "eadd3068c756b2519cc4813e7b714e04b44e4d2441ef18fd7dc40480cb5203cc",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-root-cause",
+        "inline": true,
+        "sha256": "8a449b77c3053a6f75b579d5795b9fc7c6558d6c9912c224851cda2493c2d1db",
+        "bytes": 1726
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-two-tier",
+        "inline": true,
+        "sha256": "e0d371909fa8bfefb52c5380eb47eb3e520f32562bef540f0d3afe0996e8d378",
+        "bytes": 1783
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-surfaces",
+        "inline": true,
+        "sha256": "94f7200258df94f5cd987089713a663ed058638cd39abd4248377c8558480f8f",
+        "bytes": 1348
+      }
+    ]
+  }
+}
