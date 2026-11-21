@@ -63,7 +63,7 @@ Trạng thái plan: CHỜ DUYỆT
 
 ## P1 — Lõi phân tích shell & bảng hướng dẫn
 
-- [ ] **T1.1** (e18m) Nâng cấp bộ phân tích token shell, `extract_git_grants`, khóa `.tdq-runtime/` và miễn trừ bước 3b trong `command_parser.rs` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml command_parser`
+- [x] **T1.1** (e18m) Nâng cấp bộ phân tích token shell, `extract_git_grants`, khóa `.tdq-runtime/` và miễn trừ bước 3b trong `command_parser.rs` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml command_parser`
   - Req: `§1, §2 #1, §3c Bước 1-2` · Ngoài phạm vi: `GIỮ NGUYÊN` các luật chặn `RemoteScriptExecution`, `ExecutionPolicyBypass`, `has_banned_ai_branch` và chữ ký `is_shell_mutator`
   - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`
   - Cần: Không
@@ -77,7 +77,7 @@ Trạng thái plan: CHỜ DUYỆT
     3. Thêm `extract_git_grants` (lọc ngoặc kép, thẻ hệ thống, trích dẫn, dấu `?`, phủ định Việt/Anh, thảo luận meta về hook/spec), `is_pure_intake_branch_create` (1 phân đoạn `git switch -c`/`checkout -b` đúng 5 tiền tố loại request, không nhánh AI, không redirect) và mở rộng `mutates_tdq_state` chặn ghi `docs/tdq/.tdq-runtime/`.
   - Ca góc hiểm & Assert: `inspect_command_safety("py -3 scripts/skill_inventory.py --loc \"hook git push\"") == None`; `inspect_command_safety("bash -c \"git -C repo push --force origin dev\"") == Some(GitForcePushForbidden)`; `inspect_command_safety("git commit -m \"feat: x\" -m \"Co-Authored-By: Claude\"") == Some(CoAuthoredTrailer)`; `extract_git_grants("không push nhé") == Vec::<String>::new()`; `extract_git_grants("mở request update hook cho phép git push") == Vec::<String>::new()`; `extract_git_grants("ok push lên origin đi") == vec!["push"]`; `mutates_tdq_state("echo {} > docs\\tdq\\.tdq-runtime\\turn-meta-1.json") == true`; `is_pure_intake_branch_create("git switch -c feature/abc; echo x > src/a.py") == false`
 
-- [ ] **T1.2** (e10m) Cập nhật nội dung thẻ `GIT` trong `gate_guidance.json` (giữ đúng 23 mã) và kiểm thử hợp đồng guidance — Test: `py -3 -X utf8 -m pytest tests/test_gate_guidance.py -q`
+- [>] **T1.2** (e10m) Cập nhật nội dung thẻ `GIT` trong `gate_guidance.json` (giữ đúng 23 mã) và kiểm thử hợp đồng guidance — Test: `py -3 -X utf8 -m pytest tests/test_gate_guidance.py -q`
   - Req: `§1, §2 #3, §5` · Ngoài phạm vi: `GIỮ NGUYÊN` danh sách 23 mã (`9` hard deny, `2` overwrite, `13` guidance) và toàn bộ 22 mã khác ngoài `GIT`
   - Chạm: `tools/patches/gate_guidance.json`, `tests/test_gate_guidance.py`
   - Cần: Không
