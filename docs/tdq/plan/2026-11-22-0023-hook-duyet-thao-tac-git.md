@@ -124,7 +124,7 @@ Trạng thái plan: CHỜ DUYỆT
     3. Mở rộng `edit_gate.py` và `agy_pretooluse_gate.py` chặn chỉnh sửa trực tiếp `docs/tdq/.tdq-runtime/**` bằng `TDQ:STATE`.
   - Ca góc hiểm & Assert: `extract_git_grants("đừng push") == []`; `extract_git_grants("duyệt git reset --hard") == ["reset_hard"]`; `inspect_git_command_safety("git commit -m 'docs: git push'") is None`; `inspect_git_command_safety("git commit -m 'Co-Authored-By: Claude'") == "co_authored_trailer"`; `agy_pretooluse_gate._writes_state("echo x > docs/tdq/.tdq-runtime/turn-meta-1.json") is True`
 
-- [>] **T3.2** (e20m) Cập nhật patch Antigravity trong `tools/patches/agy_hooks.py` đồng bộ 1-1 hành vi vé duyệt git, đọc `USER_INPUT` từ `transcriptPath`, khóa `.tdq-runtime/` và miễn trừ bước 3b — Test: `py -3 -X utf8 -m pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q`
+- [x] **T3.2** (e20m) Cập nhật patch Antigravity trong `tools/patches/agy_hooks.py` đồng bộ 1-1 hành vi vé duyệt git, đọc `USER_INPUT` từ `transcriptPath`, khóa `.tdq-runtime/` và miễn trừ bước 3b — Test: `py -3 -X utf8 -m pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q`
   - Req: `§1, §2 #3, §3c Bước 1-3, §4, §5` · Ngoài phạm vi: `GIỮ NGUYÊN` các patch không liên quan (`_patch_read_gate`, `_patch_lsp_gate`, `_patch_search_gate`, `_patch_stop_gate`) và `i18n_check` delta `+0`
   - Chạm: `tools/patches/agy_hooks.py`
   - Cần: `T2.1`, `T3.1`

@@ -1255,10 +1255,10 @@
     "semantic_hash": "baa5c9939b6c5af6498eeee7da3d949d"
   },
   "tools/patches/agy_hooks.py": {
-    "mtime": 1795277881.0478733,
-    "seen": 1795280099.2564602,
-    "ast_hash": "60fd87fe74fe2584f986716983becf4f",
-    "semantic_hash": "60fd87fe74fe2584f986716983becf4f"
+    "mtime": 1795286403.6722398,
+    "seen": 1795286495.9749854,
+    "ast_hash": "a28446640aa9990ffaa2f8506c1db315",
+    "semantic_hash": "a28446640aa9990ffaa2f8506c1db315"
   },
   "tools/patches/agy_manifests.py": {
     "mtime": 1795277881.0483923,
