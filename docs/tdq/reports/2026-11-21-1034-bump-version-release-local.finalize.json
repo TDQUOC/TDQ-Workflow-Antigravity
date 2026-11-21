@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-21T04:39:32.927Z",
+  "startedAt": "2026-11-21T05:34:41.329Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-    "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-    "bytes": 6626
+    "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+    "bytes": 6644
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
-    "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-    "bytes": 1641897
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
+    "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+    "bytes": 1641993
   },
   "stages": {
     "browser-check": {
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28292_1795239279242\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -44,8 +44,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-          "bytes": 6626
+          "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+          "bytes": 6644
         },
         "validation": {
           "checksPassed": 4,
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1321,
+      "durationMs": 1383,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28292_1795239279242\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "165bceeb-9f79-4448-99eb-cb72ec3a9a26",
+        "receiptId": "8f97bb66-c957-49f8-aec5-64138fa83832",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
         "explainer": {
-          "preparedSha256": "d09d96706ab9ade3946084f49925cfbcdf773cce7e95c712f26f04f464333054",
+          "preparedSha256": "2941804ca948096a54ac9df8c11125ee8c75ecaff434f897c91bb2b51688a841",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -110,18 +110,18 @@
               "kind": "diagram-spec",
               "id": "bao-cao-ket-qua",
               "inline": true,
-              "sha256": "54f93624bbc84e18c3d2c3ec77964966aba3061ce93408a096a3313f114f9407",
-              "bytes": 1240
+              "sha256": "73ad854ce0c9bff752d537aa96c78b59c3f9ead547bd02680eab190db4819338",
+              "bytes": 1238
             }
           ]
         },
         "specification": {
-          "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-          "bytes": 6626
+          "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+          "bytes": 6644
         },
         "artifact": {
-          "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-          "bytes": 1641897
+          "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+          "bytes": 1641993
         },
         "validation": {
           "checksPassed": 4,
@@ -176,7 +176,7 @@
           {
             "code": "explainer/writing-sentence-length",
             "severity": "warning",
-            "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+            "message": "Sentence has 66 reading units, above the configured en limit of 28.",
             "subject": {
               "line": 31,
               "component": "prose",
@@ -185,9 +185,9 @@
             },
             "evidence": {
               "rule": "sentence-length",
-              "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+              "reason": "Sentence has 66 reading units, above the configured en limit of 28.",
               "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
-              "units": 54,
+              "units": 66,
               "limit": 28
             },
             "supportedFixes": [
@@ -249,26 +249,26 @@
           "reason": "disabled"
         }
       },
-      "stderr": "archify: Sentence has 71 reading units, above the configured en limit of 28.\narchify: Sentence has 57 reading units, above the configured en limit of 28.\narchify: Sentence has 54 reading units, above the configured en limit of 28.\narchify: Sentence has 82 reading units, above the configured en limit of 28.\narchify: Sentence has 46 reading units, above the configured en limit of 28."
+      "stderr": "archify: Sentence has 71 reading units, above the configured en limit of 28.\narchify: Sentence has 57 reading units, above the configured en limit of 28.\narchify: Sentence has 66 reading units, above the configured en limit of 28.\narchify: Sentence has 82 reading units, above the configured en limit of 28.\narchify: Sentence has 46 reading units, above the configured en limit of 28."
     },
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 688,
+      "durationMs": 745,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28292_1795239279242\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
         "family": "explainer",
         "artifact": {
-          "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-          "bytes": 1641897
+          "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+          "bytes": 1641993
         },
         "checks": [
           {
@@ -315,7 +315,7 @@
               "id": "bao-cao-truoc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-tBKOK0\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-P739xv\\child.html",
                 "artifact": {
                   "sha256": "5213fa9fffc3ac669e48bd5adca95eb21e1f9f4e87f282196ae52113b02b5ef2",
                   "bytes": 811589
@@ -442,7 +442,7 @@
               "id": "bao-cao-sau",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-FGcZTC\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-z6JRrq\\child.html",
                 "artifact": {
                   "sha256": "e809f078118ecf66a0212a6cad2aa031785736d48849a13e1ddeb852a9b41f30",
                   "bytes": 811709
@@ -569,7 +569,7 @@
               "id": "bao-cao-kiem-tra",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-PJmx0d\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ye10aN\\child.html",
                 "artifact": {
                   "sha256": "db72af462db6172f1f8d1a3a2f866f1c0105614ab27e783023c0a4896f09bab0",
                   "bytes": 811684
@@ -696,10 +696,10 @@
               "id": "bao-cao-ket-qua",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-bwbz3S\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-dLIioa\\child.html",
                 "artifact": {
-                  "sha256": "652adbd181789d50fb912bac12a7578420e776a02ad56b017872fb894f386ed4",
-                  "bytes": 811442
+                  "sha256": "175bb3b11fe3e9b8af9585ed527622b0cf7279e37cab59df1078049f5840d345",
+                  "bytes": 811450
                 },
                 "checks": [
                   {
@@ -823,7 +823,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "165bceeb-9f79-4448-99eb-cb72ec3a9a26"
+        "deliveryReceiptId": "8f97bb66-c957-49f8-aec5-64138fa83832"
       }
     }
   },
@@ -876,7 +876,7 @@
     {
       "code": "explainer/writing-sentence-length",
       "severity": "warning",
-      "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+      "message": "Sentence has 66 reading units, above the configured en limit of 28.",
       "subject": {
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
         "line": 31,
@@ -884,10 +884,10 @@
         "panelId": "sau-request"
       },
       "evidence": {
-        "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+        "reason": "Sentence has 66 reading units, above the configured en limit of 28.",
         "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
         "rule": "sentence-length",
-        "units": 54,
+        "units": 66,
         "limit": 28
       },
       "supportedFixes": [
@@ -938,12 +938,12 @@
     }
   ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-21T04:39:35.459Z",
-  "durationMs": 2531,
+  "finishedAt": "2026-11-21T05:34:43.972Z",
+  "durationMs": 2643,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

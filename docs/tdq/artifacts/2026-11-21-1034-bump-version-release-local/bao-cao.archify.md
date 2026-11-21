@@ -28,7 +28,7 @@ Trước khi thực thi, các thành phần phát hành bị lệch pha: manifes
 | rust_3os > agy_pack | SSH ubuntu-100-95 & mbair = 0 rác |
 | agy_pack > gemini_live | Giữ Caveman 3 server · ~/.claude nguyên |
 
-Sau cập nhật, `0.60.0`–`0.61.0` được tách trọn vẹn sang `docs/CHANGELOG-archive-3.md` (`110` dòng) giúp `CHANGELOG.md` ghi mục `0.103.0` mà vẫn gọn ở `461/500` dòng; cả `3` nhị phân `tdq-dispatch` (`Windows MZ`, `Linux musl ELF`, `macOS ARM64 Mach-O`) được biên dịch bản phát hành `0.103.0` trên đúng từng hệ điều hành thật rồi đóng gói sạch vào `plugins/tdq-workflow-agy/` (`253` tệp); cuối cùng cài đặt live vào `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` kèm giữ nguyên `tdq_mcp_shrink.py` (`lsp`, `chrome-devtools`, `tavily-primary`), `rtk (1.2.0)` và đồng bộ `C:\Users\admin\.gemini\GEMINI.md` (không chạm `~/.claude/` hay `~/.codex/`). Phần merge `dev` → `--sinh-main` & tag local `v0.103.0` (`T5.2`/`Q6`) sẵn sàng chạy ngay khi bạn duyệt commit.
+Sau cập nhật, `0.60.0`–`0.61.0` được tách trọn vẹn sang `docs/CHANGELOG-archive-3.md` (`110` dòng) giúp `CHANGELOG.md` ghi mục `0.103.0` mà vẫn gọn ở `461/500` dòng; cả `3` nhị phân `tdq-dispatch` (`Windows MZ`, `Linux musl ELF`, `macOS ARM64 Mach-O`) được biên dịch bản phát hành `0.103.0` trên đúng từng hệ điều hành thật rồi đóng gói sạch vào `plugins/tdq-workflow-agy/` (`253` tệp); cuối cùng cài đặt live vào `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` kèm giữ nguyên `tdq_mcp_shrink.py` (`lsp`, `chrome-devtools`, `tavily-primary`), `rtk (1.2.0)` và đồng bộ `C:\Users\admin\.gemini\GEMINI.md` (không chạm `~/.claude/` hay `~/.codex/`), đồng thời merge `dev@b4656ca` và xuất nhánh local `main@38f7ce6` (`kept=190`, `dropped=6964`) kèm tag `v0.103.0` (chưa push remote).
 
 ## 3. Đã test gì: Red→Green, Cargo 3 OS, SSH Simulation, Strict Validate & 222 Module {#da-test}
 
@@ -49,7 +49,7 @@ Quy trình kiểm thử bao phủ đầy đủ từ đơn vị đến tích hợ
 | suite_full | 4603 passed, 36 skip, 0 fail | messagebus |
 | cargo_ssh | 29/29 x 3 OS · SSH 0 rác | backend |
 | plugin_live | findings=[] · 0.103.0 enabled | security |
-| q6_ready | Đạt Q1-Q5, Q7 · Q6 chờ commit | external |
+| q6_ready | Đạt Q1–Q7 · main & v0.103.0 | external |
 | suite_full > cargo_ssh | 2892 subtests · bo_sot=0 |
 | cargo_ssh > plugin_live | Caveman 3 server + ~/.claude nguyên |
 | plugin_live > q6_ready | tdq-qc-tester: PASS everything |

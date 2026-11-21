@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "receiptId": "165bceeb-9f79-4448-99eb-cb72ec3a9a26",
+  "receiptId": "8f97bb66-c957-49f8-aec5-64138fa83832",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
   "specification": {
-    "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-    "bytes": 6626
+    "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+    "bytes": 6644
   },
   "artifact": {
-    "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-    "bytes": 1641897
+    "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+    "bytes": 1641993
   },
   "explainer": {
-    "preparedSha256": "d09d96706ab9ade3946084f49925cfbcdf773cce7e95c712f26f04f464333054",
+    "preparedSha256": "2941804ca948096a54ac9df8c11125ee8c75ecaff434f897c91bb2b51688a841",
     "dependencies": [
       {
         "kind": "diagram-spec",
@@ -42,8 +42,8 @@
         "kind": "diagram-spec",
         "id": "bao-cao-ket-qua",
         "inline": true,
-        "sha256": "54f93624bbc84e18c3d2c3ec77964966aba3061ce93408a096a3313f114f9407",
-        "bytes": 1240
+        "sha256": "73ad854ce0c9bff752d537aa96c78b59c3f9ead547bd02680eab190db4819338",
+        "bytes": 1238
       }
     ]
   }

@@ -3,7 +3,7 @@
 Ngày: 2026-11-21 · Spec: ../spec/2026-11-21-1034-bump-version-release-local.md (bản 1.0, ĐÃ DUYỆT) · Lane: full
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: main — `tdq_bench.py simulate` (`--he-so-agent 1.5`) chấm `main` thắng `0.1` phút (`18.3` vs `18.4` phút trên `9` task / `6` wave do chuỗi phụ thuộc tuần tự `P3→P4→P5` và thao tác SSH/user-level cần kiểm soát chặt) (ĐỀ XUẤT, user chốt lúc duyệt)
-Trạng thái plan: ĐÃ DUYỆT (mode main)
+Trạng thái plan: HOÀN THÀNH
 
 > **Tóm tắt dễ hiểu:** Kế hoạch chia thành `5` đợt tuần tự: trước hết tách bớt mục cũ để `CHANGELOG.md` dưới `500` dòng và nâng mọi tệp phiên bản lên `0.103.0`; tiếp theo biên dịch lại đủ `3` nhị phân Rust trên Windows, Ubuntu (`ubuntu-100-95`) và macOS (`mbair`) kèm test mô phỏng và dọn sạch `100%` máy SSH; sau đó build gói `plugins/tdq-workflow-agy/`, chạy kiểm định `full` toàn repo; cuối cùng cài cập nhật cho Antigravity trên máy (`~/.gemini/` và `GEMINI.md`) rồi sau khi gộp `dev` sẽ xuất bản nhánh `main` sạch kèm tag `v0.103.0` ở local.
 
@@ -183,7 +183,7 @@ Trạng thái plan: ĐÃ DUYỆT (mode main)
   - Logic cốt lõi: Chụp `mtime` `~/.claude/`, chạy `install.py`, chạy `ghim_huong_dan_tool` chỉ cho `~/.gemini/GEMINI.md`, hậu kiểm `plugin.json`, `mcp_config.json`, `GEMINI.md`, `agy plugin validate` và `agy plugin list`
   - Ca góc hiểm & Assert: Không truyền cờ làm gỡ Caveman; kiểm `GEMINI.md` không trùng marker `<!-- TDQ:TOOLS -->`
 
-- [ ] **T5.2** (e4m) Sau khi người dùng xác nhận commit & merge về `dev`, chạy `py -3 -X utf8 scripts/build_portable.py --sinh-main --nguon dev --nhanh-dich main` để xuất bản nhánh `main` sạch tại local và gắn annotated tag `v0.103.0` lên `main` (tuyệt đối không `git push`) — Test: `git show main:.claude-plugin/plugin.json && git rev-parse v0.103.0^{commit} main`
+- [x] **T5.2** (e4m) Sau khi người dùng xác nhận commit & merge về `dev`, chạy `py -3 -X utf8 scripts/build_portable.py --sinh-main --nguon dev --nhanh-dich main` để xuất bản nhánh `main` sạch tại local và gắn annotated tag `v0.103.0` lên `main` (tuyệt đối không `git push`) — Test: `git show main:.claude-plugin/plugin.json && git rev-parse v0.103.0^{commit} main`
   - Req: `§1, §2#6, §3c B5, §6 Q6` · Ngoài phạm vi: Không chạy `git push` lên bất kỳ remote nào (`3a`); không thêm trailer `Co-Authored-By:`
   - Chạm: `docs/tdq/reports/2026-11-21-1034-bump-version-release-local.md`
   - Cần: `T5.1`
@@ -213,5 +213,5 @@ Trạng thái plan: ĐÃ DUYỆT (mode main)
 - [x] Q3 Hai máy test SSH (`ubuntu-100-95`, `mbair`) sạch `0` tàn dư sau build & test — `ssh ubuntu-100-95 "ls -d /tmp/tdq* /tmp/tdq_dispatch* ~/tdq* 2>/dev/null | wc -l" && ssh mbair "ls -d /tmp/tdq* ~/tdq* 2>/dev/null | wc -l"`
 - [x] Q4 Compiler & gói plugin `plugins/tdq-workflow-agy/` (`v0.103.0`) đạt chuẩn nghiêm ngặt — `py -3 -X utf8 tools/build_agy_plugin.py --upstream . && agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json && py -3 -X utf8 scripts/token_budget.py --kiem`
 - [x] Q5 Bộ kiểm thử toàn repo (`muc_qc = full`) đạt `0 failed` (`bo_sot == 0`) & QC độc lập PASS — `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 1 --fresh --reuse off`
-- [ ] Q6 Nhánh phát hành local `main` (`--sinh-main` từ `dev`) & annotated tag `v0.103.0` hợp lệ, không `git push` — `git show main:.claude-plugin/plugin.json && git rev-parse v0.103.0^{commit} main`
+- [x] Q6 Nhánh phát hành local `main` (`--sinh-main` từ `dev`) & annotated tag `v0.103.0` hợp lệ, không `git push` — `git show main:.claude-plugin/plugin.json && git rev-parse v0.103.0^{commit} main`
 - [x] Q7 Antigravity user-level (`~/.gemini/config/plugins/tdq-workflow-agy` + `~/.gemini/GEMINI.md`) chạy `0.103.0` nguyên Caveman/RTK và không chạm `~/.claude/` — `agy.EXE plugin validate C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy --strict --json && agy.EXE plugin list`

@@ -5,11 +5,11 @@
   "evidence_kind": "working-tree",
   "revision": null,
   "document_path": "docs/tdq/reports/2026-11-21-1034-bump-version-release-local.md",
-  "document_digest": "c025614af458d24ebf408514ddfa5051ae0be032c5ba85a240216d779db345c2",
+  "document_digest": "c324bf631e53be2ba6d5316de296a3c8521a76143893a671d37a886b908e1130",
   "candidate_path": "docs/tdq/artifacts/2026-11-21-1034-bump-version-release-local/bao-cao.archify.md",
-  "candidate_digest": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
+  "candidate_digest": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
   "artifact_path": "docs/tdq/reports/2026-11-21-1034-bump-version-release-local.html",
-  "artifact_digest": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
+  "artifact_digest": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
   "source_paths": [
     ".agents/plugins.json",
     ".agents/plugins/marketplace.json",
@@ -8783,7 +8783,7 @@
     "install.ps1": "f947e7ea074f3f13ab7a225d9ee1f32f517c53c43818471c71bb1ee795a28002",
     "install.py": "6778f42e571ef0614528025589c9ee4dac56d077830920ea368a2b1d2e967894",
     "install.sh": "3aa336512458aed5886e8390cd98c4a852d1ec96ba2e8d1568dfbd6bc72bdf7d",
-    "plugins/tdq-workflow-agy/README.md": "e6c1889719fb446a46b95937345c20e3b026a56f4d133cd805d27c6c8a0df8ca",
+    "plugins/tdq-workflow-agy/README.md": "3822be5abc3178926486296d40611b1724f1aa74a6e5eea5df478a1b50a5ef76",
     "plugins/tdq-workflow-agy/agents/tdq-build-resolver.md": "63663af733cff11e98791075d20927a8c695440b14e79feb6159a9c60ad96fc4",
     "plugins/tdq-workflow-agy/agents/tdq-debugger.md": "14e4a9aae07384a3cb6fb6aabc760143e08050c9aacc8d7915e42b32105124bb",
     "plugins/tdq-workflow-agy/agents/tdq-explorer.md": "5b54c44cca2fed99d4db38fcbae96d404be00036ab1efe86ac03490eae95cecb",
@@ -8817,9 +8817,9 @@
     "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py": "0bcd8ef054c7507b51e2d4d1de4481db0f77a0edf7e10aff11de1ac77c18b76a",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "88340baa049f22353b58ca6890d26f565c5c0539afed430c4ead529c1cfc253b",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_stop.py": "232e6118b647194390799b48667c5f867ae20f34cda1a8ab998f325017008767",
-    "plugins/tdq-workflow-agy/manifest.json": "0d8ee6f740259f3a35b52edaba450e21edf4fe95ba6114d2a47fb3cb63e5f823",
+    "plugins/tdq-workflow-agy/manifest.json": "b1c4d360cbe989fb43115ff4992911fa6a8f61f97a4a712a53071997f5aba92f",
     "plugins/tdq-workflow-agy/mcp_config.json": "a57528098063231b167df408b63da1469b2435fc2a3ecebeefe76e9e966b6d2c",
-    "plugins/tdq-workflow-agy/plugin.json": "c6fd9e7f8cb15390ede2bb592727e03c8d58443618b3c4954f1c5966be3a0db2",
+    "plugins/tdq-workflow-agy/plugin.json": "de164143aff20d4974a0f1bce9fdae09ca09b0ae99e00d0540a66250ca3daf17",
     "plugins/tdq-workflow-agy/rules/AGENTS.md": "b384d78a1f219080e81cefa1228b6520325c0f28427d7527be5c83d8d855be0a",
     "plugins/tdq-workflow-agy/rules/domain-git-safety.md": "cf541e35f05ee77f220c02bd9dfad8096bf6eda9b3bf6ec8279bdfbf42df9998",
     "plugins/tdq-workflow-agy/rules/domain-mcp-first.md": "55b23cda15e7f4af1a991b4950c65777b5e6f70c2b5fdc2cb8ff66440dc30380",
@@ -9427,13 +9427,13 @@
     "quality": "showcase",
     "specification": {
       "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-      "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-      "bytes": 6626
+      "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+      "bytes": 6644
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
-      "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-      "bytes": 1641897
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
+      "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+      "bytes": 1641993
     },
     "gates": {
       "validate": "pass",
@@ -9486,7 +9486,7 @@
       {
         "code": "explainer/writing-sentence-length",
         "severity": "warning",
-        "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+        "message": "Sentence has 66 reading units, above the configured en limit of 28.",
         "subject": {
           "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
           "line": 31,
@@ -9494,10 +9494,10 @@
           "panelId": "sau-request"
         },
         "evidence": {
-          "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+          "reason": "Sentence has 66 reading units, above the configured en limit of 28.",
           "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
           "rule": "sentence-length",
-          "units": 54,
+          "units": 66,
           "limit": 28
         },
         "supportedFixes": [
@@ -9553,11 +9553,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 2531,
+    "durationMs": 2643,
     "browserCheck": {
       "requested": false,
       "ran": false

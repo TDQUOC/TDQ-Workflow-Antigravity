@@ -7,13 +7,13 @@
   "quality": "showcase",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
-    "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
-    "bytes": 6626
+    "sha256": "1fa45c9ada4936e28223627e29428905d91fdb819ebf6263c5f5313125e22f7f",
+    "bytes": 6644
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
-    "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
-    "bytes": 1641897
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.html",
+    "sha256": "890ba303dcdfa09e5388fe73ba7dbb236fb724b00586d0152ea9fb9e6681f390",
+    "bytes": 1641993
   },
   "gates": {
     "validate": "pass",
@@ -66,7 +66,7 @@
     {
       "code": "explainer/writing-sentence-length",
       "severity": "warning",
-      "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+      "message": "Sentence has 66 reading units, above the configured en limit of 28.",
       "subject": {
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
         "line": 31,
@@ -74,10 +74,10 @@
         "panelId": "sau-request"
       },
       "evidence": {
-        "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+        "reason": "Sentence has 66 reading units, above the configured en limit of 28.",
         "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
         "rule": "sentence-length",
-        "units": 54,
+        "units": 66,
         "limit": 28
       },
       "supportedFixes": [
@@ -133,11 +133,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.1b25f42f2b054c1eb202d65df7868db3.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2531,
+  "durationMs": 2643,
   "browserCheck": {
     "requested": false,
     "ran": false
