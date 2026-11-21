@@ -1,7 +1,7 @@
 ---
 name: tdq-debugger
 description: Adversarial root-cause debugger isolating Point-of-Commitment vs Manifestation with counterfactual falsification tests and scoped artifact shards.
-tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]
 model: inherit
 ---
 

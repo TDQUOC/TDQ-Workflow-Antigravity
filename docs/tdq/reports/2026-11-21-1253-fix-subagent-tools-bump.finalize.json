@@ -1,0 +1,611 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "startedAt": "2026-11-21T07:17:21.224Z",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
+    "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
+    "bytes": 2454
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+    "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
+    "bytes": 1229896
+  },
+  "stages": {
+    "browser-check": {
+      "status": "not-run",
+      "execution": "not-requested"
+    },
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "deliver",
+        "explainer",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
+          "bytes": 2454
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1199,
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "deliver",
+        "explainer",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "76b7d857-226e-4047-b65c-71cef3642986",
+        "ok": true,
+        "command": "deliver",
+        "type": "explainer",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "explainer": {
+          "preparedSha256": "8dd9f165c5400fe44d6c1e737132951998ee475e2f38c8e62efdbed7304ef187",
+          "dependencies": [
+            {
+              "kind": "diagram-spec",
+              "id": "wf-fix-summary",
+              "inline": true,
+              "sha256": "5f1a5b7a481b5a22da201bc8b676efb72fa8e82d0d82d70b8958145ad6eef870",
+              "bytes": 1003
+            },
+            {
+              "kind": "diagram-spec",
+              "id": "wf-build-qc",
+              "inline": true,
+              "sha256": "d0edc989342fd958c26b46491958583b0adb073bf86b5109d9c546496b203eff",
+              "bytes": 957
+            },
+            {
+              "kind": "diagram-spec",
+              "id": "wf-install-release",
+              "inline": true,
+              "sha256": "dec9563e1e98b647a6b6c16729f747c79bcb4db97338c98507aa072bc034ed8e",
+              "bytes": 1001
+            }
+          ]
+        },
+        "specification": {
+          "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
+          "bytes": 2454
+        },
+        "artifact": {
+          "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
+          "bytes": 1229896
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 600,
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "family": "explainer",
+        "artifact": {
+          "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
+          "bytes": 1229896
+        },
+        "checks": [
+          {
+            "name": "explainer_structure",
+            "ok": true,
+            "details": [
+              "50 unique DOM IDs"
+            ]
+          },
+          {
+            "name": "explainer_payload_identity",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "explainer_dependencies",
+            "ok": true,
+            "details": [
+              "3 frozen dependencies"
+            ]
+          },
+          {
+            "name": "explainer_native_diagrams",
+            "ok": true,
+            "details": [
+              "wf-fix-summary: pass",
+              "wf-build-qc: pass",
+              "wf-install-release: pass"
+            ]
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "issues": [],
+          "nativeDiagrams": [
+            {
+              "id": "wf-fix-summary",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ihPXuW\\child.html",
+                "artifact": {
+                  "sha256": "1c4b27d4df924a9b48db3baf7ba54812f7f9e47203a05b3fa2b452c0d61626f6",
+                  "bytes": 810426
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 122.1,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 7.126436781609195,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 75.6,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 0,
+                    "shortEndpointSegmentCount": 0,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "bad_01030-to-fix_tools-1",
+                      "from": "bad_01030",
+                      "to": "fix_tools"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 7.126436781609195,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            },
+            {
+              "id": "wf-build-qc",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-AHafiJ\\child.html",
+                "artifact": {
+                  "sha256": "9c9e1d01964c8c82e863b7e9bd17d6109ea16e9896574bfe873d2ca79cb3f3f6",
+                  "bytes": 810121
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 128.1,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 6.769790718835305,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 80.4,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 0,
+                    "shortEndpointSegmentCount": 0,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "agy_pkg-to-tron_bo-1",
+                      "from": "agy_pkg",
+                      "to": "tron_bo"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 6.769790718835305,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            },
+            {
+              "id": "wf-install-release",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-eCaWNJ\\child.html",
+                "artifact": {
+                  "sha256": "162c7e473dd7c73f717dabd3aae0c78c969343a8d2bde5fc459c2ad8aaca8d78",
+                  "bytes": 810200
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 141.1,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 6.751361161524501,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 85.2,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 0,
+                    "shortEndpointSegmentCount": 0,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "claude_safe-to-wait_commit-1",
+                      "from": "claude_safe",
+                      "to": "wait_commit"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 6.751361161524501,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            }
+          ]
+        },
+        "diagnostics": [],
+        "provenance": "current",
+        "deliveryReceiptId": "76b7d857-226e-4047-b65c-71cef3642986"
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  },
+  "diagnostics": [],
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-11-21T07:17:23.525Z",
+  "durationMs": 2300,
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "disabled"
+  }
+}

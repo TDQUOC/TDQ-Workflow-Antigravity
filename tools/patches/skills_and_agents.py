@@ -27,22 +27,17 @@ M01_M20_REPLACEMENTS: Tuple[Tuple[str, str], ...] = (
 
 _READONLY_TOOLS: List[str] = [
     "read_file",
-    "grep_search",
-    "find_by_name",
-    "list_dir",
-    "call_mcp_tool",
     "run_command",
+    "manage_task",
     "send_message",
 ]
 _WRITER_TOOLS: List[str] = [
     "read_file",
     "edit_file",
     "write_file",
-    "grep_search",
-    "find_by_name",
-    "list_dir",
-    "call_mcp_tool",
     "run_command",
+    "manage_task",
+    "search_web",
     "send_message",
 ]
 _STRICT_READONLY_AGENTS = frozenset({

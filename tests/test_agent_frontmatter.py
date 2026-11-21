@@ -8,7 +8,11 @@ Bảng mặc định + lý do: skills/tdq-conventions/references/subagent-tuning
 import hashlib
 import os
 import re
+import shutil
+import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 from helper import ROOT
 
@@ -31,7 +35,17 @@ SCOPED_INVESTIGATION_AGENTS = (
     "tdq-debugger.md",
 )
 READONLY_AGENTS = STRICT_READONLY_AGENTS
-AGY_DISCOVERY_TOOLS = {"read_file", "grep_search", "find_by_name", "list_dir"}
+AGY_ALLOWED_TOOLS = {
+    "read_file",
+    "edit_file",
+    "write_file",
+    "run_command",
+    "manage_task",
+    "search_web",
+    "send_message",
+}
+AGY_FORBIDDEN_TOOLS = {"call_mcp_tool", "grep_search", "find_by_name", "list_dir"}
+AGY_DISCOVERY_TOOLS = {"read_file", "run_command", "manage_task", "send_message"}
 AGY_WRITE_TOOLS = {
     "edit_file",
     "write_file",
@@ -117,6 +131,64 @@ class AgentFrontmatterTest(unittest.TestCase):
                     self.assertIsNotNone(head, f"{label}/{name}: missing frontmatter")
                     self.assertEqual(field(head, "model"), "inherit")
 
+    def test_skills_and_agents_tool_lists_forbid_unregistered_tools(self):
+        """AGY compiler lists and transform_agents() output only valid Antigravity 2.0 tools."""
+        if ROOT not in sys.path:
+            sys.path.insert(0, ROOT)
+        from tools.patches import skills_and_agents
+
+        self.assertEqual(
+            skills_and_agents._READONLY_TOOLS,
+            ["read_file", "run_command", "manage_task", "send_message"],
+        )
+        self.assertEqual(
+            skills_and_agents._WRITER_TOOLS,
+            [
+                "read_file",
+                "edit_file",
+                "write_file",
+                "run_command",
+                "manage_task",
+                "search_web",
+                "send_message",
+            ],
+        )
+        for name, meta in skills_and_agents.AGENT_FRONTMATTERS.items():
+            tools = set(meta["tools"])
+            self.assertLessEqual(tools, AGY_ALLOWED_TOOLS, f"{name}: invalid tools {tools}")
+            self.assertEqual(tools & AGY_FORBIDDEN_TOOLS, set(), f"{name}: forbidden tools")
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            tmp_agents = tmp_root / "agents"
+            shutil.copytree(AGENTS, tmp_agents)
+            self.assertEqual(skills_and_agents.transform_agents(tmp_root), len(EXPECTED_AGENTS))
+            for name in EXPECTED_AGENTS:
+                path = tmp_agents / name
+                tools = _parse_tools_list(frontmatter(path))
+                self.assertLessEqual(tools, AGY_ALLOWED_TOOLS, f"transformed {name}: invalid tools")
+                self.assertEqual(tools & AGY_FORBIDDEN_TOOLS, set(), f"transformed {name}: forbidden")
+                self.assertLessEqual(AGY_DISCOVERY_TOOLS, tools, f"transformed {name}: missing base")
+                if name in STRICT_READONLY_AGENTS:
+                    self.assertEqual(tools & AGY_WRITE_TOOLS, set())
+            explorer_body = (tmp_agents / "tdq-explorer.md").read_text(encoding="utf-8")
+            self.assertNotIn("(`write_file`/`edit_file`/`write_file`)", explorer_body)
+
+    def test_built_agy_agents_forbid_unregistered_tools(self):
+        """Built plugins/tdq-workflow-agy/agents/tdq-*.md must forbid unregistered tools."""
+        for name in EXPECTED_AGENTS:
+            with self.subTest(agent=name):
+                path = os.path.join(AGY_AGENTS, name)
+                tools = _parse_tools_list(frontmatter(path))
+                self.assertTrue(tools, f"{name}: empty tools list")
+                self.assertLessEqual(tools, AGY_ALLOWED_TOOLS, f"{name}: unregistered tools {tools}")
+                self.assertEqual(
+                    tools & AGY_FORBIDDEN_TOOLS,
+                    set(),
+                    f"{name}: forbidden tools {tools & AGY_FORBIDDEN_TOOLS}",
+                )
+        explorer_body = Path(AGY_AGENTS, "tdq-explorer.md").read_text(encoding="utf-8")
+        self.assertNotIn("(`write_file`/`edit_file`/`write_file`)", explorer_body)
+
     def test_built_agy_agents_tools_and_readonly_notices(self):
         """AGY agents declare discovery tools, strict READONLY notices, and scoped QC notice."""
         for name in EXPECTED_AGENTS:
@@ -128,6 +200,14 @@ class AgentFrontmatterTest(unittest.TestCase):
                 tools = _parse_tools_list(head)
                 self.assertLessEqual(
                     AGY_DISCOVERY_TOOLS, tools, f"{name}: missing AGY discovery tools"
+                )
+                self.assertLessEqual(
+                    tools, AGY_ALLOWED_TOOLS, f"{name}: unregistered AGY tools {tools}"
+                )
+                self.assertEqual(
+                    tools & AGY_FORBIDDEN_TOOLS,
+                    set(),
+                    f"{name}: forbidden AGY tools {tools & AGY_FORBIDDEN_TOOLS}",
                 )
                 if name in STRICT_READONLY_AGENTS:
                     self.assertEqual(

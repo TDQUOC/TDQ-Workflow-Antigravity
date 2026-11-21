@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
+    "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
+    "bytes": 2454
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+    "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
+    "bytes": 1229896
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2300,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

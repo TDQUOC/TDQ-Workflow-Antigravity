@@ -2,6 +2,14 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.103.1 — 2026-11-21
+
+Vá triệt để lỗi khởi tạo executor khiến `8/8` subagent của `tdq-workflow-agy` sập trên Antigravity 2.0 (`unknown component: tool "call_mcp_tool" not found in registry`), khóa test âm tính chống tái diễn và đồng bộ phát hành `0.103.1` trên cả Rust 3 OS lẫn cài đặt `~/.gemini/`.
+
+- **Chuẩn hóa registry tool subagent AGY (`tools/patches/skills_and_agents.py`, `agents/tdq-explorer.md`)**: Loại bỏ 4 tên tool không tồn tại trong executor subagent Antigravity 2.0 (`call_mcp_tool`, `grep_search`, `find_by_name`, `list_dir`) khỏi `_READONLY_TOOLS` và `_WRITER_TOOLS`; giữ nguyên bộ tool chuẩn (`read_file`, `edit_file`, `write_file`, `run_command`, `manage_task`, `search_web`, `send_message`), giữ nguyên `call_mcp_tool`/`grep_search` trong `hooks/` cho agent chính và xóa lặp `write_file` ở `tdq-explorer.md`.
+- **Test khóa âm tính (`tests/test_agent_frontmatter.py`)**: Thêm `AGY_ALLOWED_TOOLS`/`AGY_FORBIDDEN_TOOLS`, `test_skills_and_agents_tool_lists_forbid_unregistered_tools` và `test_built_agy_agents_forbid_unregistered_tools` khóa cả compiler lẫn `plugins/tdq-workflow-agy/agents/tdq-*.md`.
+- **Phát hành đồng bộ `0.103.1` (`Cargo.toml`, 3 OS, `~/.gemini/`, `main`)**: Biên dịch mới `tdq-dispatch` `0.103.1` trên Windows/Linux musl/macOS ARM64, build `plugins/tdq-workflow-agy/` `0` finding, cập nhật `~/.gemini/` giữ nguyên Caveman + RTK và xuất nhánh local `main` + tag `v0.103.1`.
+
 ## 0.103.0 — 2026-11-21
 
 Tổng hợp 3 đợt nâng cấp lớn sau `0.102.0` (`4 trụ cột hệ thống Agent`, kiến trúc điều tra `investigate V2` và chuẩn trình bày ngắn gọn dễ hiểu mặc định) kèm biên dịch đồng bộ nhị phân Rust 3 hệ điều hành và phát hành bản `tdq-workflow-agy` `v0.103.0`. Báo cáo: `docs/tdq/reports/2026-11-20-1230-trien-khai-4-de-xuat-agent.md`, `docs/tdq/reports/2026-11-21-0217-trien-khai-investigate-v2.md`, `docs/tdq/reports/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md`.

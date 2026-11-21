@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "601134ae-bb0b-4317-8f9e-710e4f7b645f",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1253-fix-subagent-tools-bump-preview.2bd313806ac6437fb5d5f3739a02e7b9.html",
+  "specification": {
+    "sha256": "a1591dea40d3498d554ff0c074aa12a068e78b7cb6453039caeef922e45df516",
+    "bytes": 2922
+  },
+  "artifact": {
+    "sha256": "6dac26a317370856a2c250309b8cfbb975c7d6d51c1cdd1ed186717f8ad5a54c",
+    "bytes": 1240442
+  },
+  "explainer": {
+    "preparedSha256": "8fbfbb48fd69f791e3d08dd856446c46b140123acf678f5f6b5ac2ab22f6ee87",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-truoc-fix",
+        "inline": true,
+        "sha256": "2e2eb659be3d437c30061088c3db7cdf377361e540db29efe553297585ea9939",
+        "bytes": 1254
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sau-m1-m3",
+        "inline": true,
+        "sha256": "a534e837938090b23fe475d8f25ee6802ca3651e5af44eda3ded5346f03add4f",
+        "bytes": 1033
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sau-m4-m5",
+        "inline": true,
+        "sha256": "0ddec9d34e49fc43992a184c79c9a5c3b9a2b998bb82180466f9ae54e8044471",
+        "bytes": 1234
+      }
+    ]
+  }
+}

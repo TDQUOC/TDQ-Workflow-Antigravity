@@ -1,7 +1,7 @@
 ---
 name: tdq-build-resolver
 description: Rapid-response subagent fixing compiler errors, build failures, syntax faults, and type check breaks with surgical, minimal diffs.
-tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]
 model: inherit
 ---
 

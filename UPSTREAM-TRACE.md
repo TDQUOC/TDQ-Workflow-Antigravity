@@ -21,7 +21,7 @@ Kho mã nguồn này được fork và phát triển độc lập nhằm tối �
 * **Repository Hiện Tại:** `https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git`
 * **Nhánh Mặc Định / Phát Hành (Release Branch):** `main`
 * **Nhánh Phát Triển (Development Branch):** `dev`
-* **Release Tag:** `v0.103.0`
+* **Release Tag:** `v0.103.1`
 * **Plugin ID & Bundle Bản Địa:** `tdq-workflow-agy` tại `plugins/tdq-workflow-agy/` (chuẩn Antigravity 2.0 Plugin Specification)
 
 ---
