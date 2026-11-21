@@ -18,8 +18,13 @@ import unittest
 from unittest import mock
 
 import helper  # noqa: F401  — nạp sys.path cho scripts/
+import pytest
+
+# isort: split
 import build_portable
 import tdq_checkportable  # chủ của phép kiểm dấu ~
+
+pytestmark = pytest.mark.smoke
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(ROOT, "scripts", "build_portable.py")

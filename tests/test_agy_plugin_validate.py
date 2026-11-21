@@ -12,8 +12,10 @@ PLUGIN_DIR = WORKSPACE / "plugins" / "tdq-workflow-agy"
 TOOLS_DIR = WORKSPACE / "tools"
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
-import build_agy_plugin
+import build_agy_plugin  # noqa: E402
 from patches import common_utils  # noqa: E402
+
+pytestmark = pytest.mark.smoke
 
 
 def _run(cmd, cwd=WORKSPACE):

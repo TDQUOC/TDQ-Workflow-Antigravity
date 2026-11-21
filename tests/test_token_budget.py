@@ -8,8 +8,19 @@ import os
 import tempfile
 import unittest
 
-from helper import (ROOT, bo_duong_dan_plugin, decision, load_fixture, run_hook, tdq_state,
-                    write_file, write_state)
+import pytest
+from helper import (
+    ROOT,
+    bo_duong_dan_plugin,
+    decision,
+    load_fixture,
+    run_hook,
+    tdq_state,
+    write_file,
+    write_state,
+)
+
+pytestmark = pytest.mark.smoke
 
 PHASES = ("analyze", "spec", "plan", "implement", "qc", "report")
 
