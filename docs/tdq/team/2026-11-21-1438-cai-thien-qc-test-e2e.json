@@ -1,0 +1,63 @@
+{
+  "slug": "2026-11-21-1438-cai-thien-qc-test-e2e",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-1438-cai-thien-qc-test-e2e.md",
+  "plan_sha": "fb0371201f4d26f0fb6cf194ae4b06051fe3976427aaeb71affc29a41c20a8e8",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "980fafd52175ad709a83b66292afa208fb05441635612754cb20b52569de4531",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1438-cai-thien-qc-test-e2e/audit-tdq-qc-test.md"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1438-cai-thien-qc-test-e2e/phan-tich-terterarmy-cli.md"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/research/2026-11-21-1438-cai-thien-qc-test-e2e.md"
+      ],
+      "dot": 1,
+      "worktree_required": false
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "hop-dong",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-21-1438-cai-thien-qc-test-e2e/evidence-log.md",
+        "docs/tdq/artifacts/2026-11-21-1438-cai-thien-qc-test-e2e/evidence.jsonl"
+      ],
+      "dot": 2,
+      "worktree_required": false
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/reports/2026-11-21-1438-cai-thien-qc-test-e2e.md"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1438-cai-thien-qc-test-e2e.md"
+      ],
+      "dot": 4
+    }
+  }
+}
