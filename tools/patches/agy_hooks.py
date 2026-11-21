@@ -699,13 +699,14 @@ def write_turn_meta(cwd, conv_id, meta):
 
 
 def mark_turn_closed(cwd, conv_id):
-    """Set turn_closed=True in turn-meta-<sid>.json so the next prompt starts a fresh turn."""
+    """Set turn_closed=True and clear git_grants in turn-meta-<sid>.json."""
     if not conv_id:
         return
     meta = read_turn_meta(cwd, conv_id)
-    if meta.get("turn_closed") is True:
+    if meta.get("turn_closed") is True and not meta.get("git_grants"):
         return
     meta["turn_closed"] = True
+    meta["git_grants"] = []
     write_turn_meta(cwd, conv_id, meta)
 
 
@@ -1686,41 +1687,69 @@ _TAIL_BYTES = 65536
 
 
 def _prompt_sha(payload):
-    text = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
+    text = str(
+        (payload or {}).get("prompt")
+        or (payload or {}).get("user_message")
+        or (payload or {}).get("lastUserInput")
+        or ""
+    )
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16] if text else ""
 
 
-def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
-    """Read <= 64 KB tail of transcriptPath in O(1) for the last USER_INPUT signature."""
-    if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
+def _is_human_user_input(rec):
+    """True when rec is a human USER_INPUT entry (blank or USER_EXPLICIT source)."""
+    if not isinstance(rec, dict) or rec.get("type") != "USER_INPUT":
+        return False
+    src = str(rec.get("source") or "").strip().lower()
+    return src in ("", "user_explicit")
+
+
+def _parse_human_user_line(raw_line):
+    text = raw_line.decode("utf-8", "replace").strip()
+    if not text:
         return None
+    try:
+        rec = json.loads(text)
+    except ValueError:
+        return None
+    return rec if _is_human_user_input(rec) else None
+
+
+def _read_last_human_user_record(tpath):
+    """Read <= 64 KB tail of transcriptPath in O(1) and return (last_human_rec, last_end)."""
+    if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
+        return None, 0
     try:
         with open(tpath, "rb") as fh:
             fh.seek(0, os.SEEK_END)
-            size = fh.tell()
-            start = max(0, size - _TAIL_BYTES)
+            start = max(0, fh.tell() - _TAIL_BYTES)
             fh.seek(start)
             if start > 0:
                 fh.readline()
-            last_rec = None
-            last_end = start
+            last_rec, last_end = None, start
             while True:
                 raw_line = fh.readline()
                 if not raw_line:
                     break
-                cur_end = fh.tell()
-                text = raw_line.decode("utf-8", "replace").strip()
-                if not text:
-                    continue
-                try:
-                    rec = json.loads(text)
-                except ValueError:
-                    continue
-                if isinstance(rec, dict) and rec.get("type") == "USER_INPUT":
-                    last_rec = rec
-                    last_end = cur_end
+                rec = _parse_human_user_line(raw_line)
+                if rec is not None:
+                    last_rec, last_end = rec, fh.tell()
     except OSError:
-        return None
+        return None, 0
+    return last_rec, last_end
+
+
+def _extract_transcript_human_prompt(tpath):
+    """Return text content of the last human USER_INPUT record from <= 64 KB tail."""
+    last_rec, _ = _read_last_human_user_record(tpath)
+    if last_rec is None:
+        return ""
+    return str(last_rec.get("content") or "")
+
+
+def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
+    """Read <= 64 KB tail of transcriptPath in O(1) for the last human USER_INPUT signature."""
+    last_rec, last_end = _read_last_human_user_record(tpath)
     if last_rec is not None:
         step_idx = last_rec.get("step_index")
         created = last_rec.get("created_at") or last_rec.get("timestamp") or ""
@@ -1802,6 +1831,103 @@ def _patch_ask_gate(hooks_scripts_dir: Path) -> None:
     )
 
 
+_BASH_GIT_HELPER = r'''
+
+
+def _check_agy_banned_branch(cmd, cwd, payload):
+    from _common import block
+    cleaned = _strip_powershell_herestrings(cmd)
+    branch_names = []
+    for pattern in BRANCH_PATTERNS:
+        branch_names += [_clean(m) for m in pattern.findall(cleaned)]
+    for b_name, w_path in WORKTREE.findall(cleaned):
+        if b_name:
+            branch_names.append(_clean(b_name))
+        if w_path:
+            branch_names.append(os.path.basename(_clean(w_path).replace("\\", "/").rstrip("/")))
+    for name in branch_names:
+        if BAN.match(name):
+            block(cwd, payload, "TDQ:GIT", [
+                f"AI-prefixed branch/worktree name {name!r} is banned; name it after the work.",
+            ])
+            return True
+    return False
+
+
+def _verify_agy_git_grants(cwd, payload, needed):
+    from _common import block, detect_subagent, observe, read_turn_meta, session_id
+    from tdq_state import _info
+    if detect_subagent(payload, cwd).get("is_subagent") or payload.get("agent_id"):
+        block(cwd, payload, "TDQ:GIT", [
+            "Subagents cannot execute protected git commands even with user turn grant.",
+        ])
+        return True
+    sid = session_id(payload)
+    meta = read_turn_meta(cwd, sid)
+    if not meta:
+        block(cwd, payload, "TDQ:GIT", [
+            f"git `{needed[0]}` requires explicit user approval in this turn before running.",
+        ])
+        return True
+    if meta.get("turn_closed") is True:
+        block(cwd, payload, "TDQ:GIT", [
+            f"Turn is closed; ask the user again in a new turn to approve git `{needed[0]}`.",
+        ])
+        return True
+    raw_grants = meta.get("git_grants")
+    grants = raw_grants if isinstance(raw_grants, list) else []
+    missing = next((k for k in needed if k not in grants), None)
+    if missing:
+        block(cwd, payload, "TDQ:GIT", [
+            f"git `{missing}` requires explicit user approval in this turn before running.",
+        ])
+        return True
+    _info(f"bash_gate: git_grant allowed sid={sid} grants={needed}")
+    observe(cwd, payload, "git_grant_used", grants=needed)
+    return False
+
+
+def _has_banned_shell_policy(cmd, cwd, payload):
+    from _common import block
+    cleaned = re.sub(r"(?s)@'\r?\n.*?\r?\n'@|@\"\r?\n.*?\r?\n\"@", " ", cmd).lower()
+    if any(w in cleaned for w in ("curl ", "wget ", "invoke-webrequest")) and any(p in cleaned for p in ("| bash", "| sh", "| iex")):
+        block(cwd, payload, "TDQ:VUNG", ["Piping remote downloads to shell is forbidden."])
+        return True
+    if "-executionpolicy bypass" in cleaned or "-ep bypass" in cleaned:
+        block(cwd, payload, "TDQ:VUNG", ["PowerShell ExecutionPolicy bypass is blocked."])
+        return True
+    return False
+
+
+def _has_banned_agy_git(cmd, cwd, payload):
+    from _common import block
+    if _check_agy_banned_branch(cmd, cwd, payload):
+        return True
+    violations = collect_git_policy_violations(cmd)
+    if "force_push_forbidden" in violations:
+        block(cwd, payload, "TDQ:GIT", [
+            "Force-push (--force/-f/--force-with-lease/+refspec) is strictly forbidden.",
+        ])
+        return True
+    if "co_authored_trailer" in violations:
+        block(cwd, payload, "TDQ:GIT", ["AI co-author trailers are banned in commits."])
+        return True
+    grant_map = {
+        "push_needs_approval": "push",
+        "reset_hard_needs_approval": "reset_hard",
+        "clean_force_needs_approval": "clean_f",
+    }
+    needed = []
+    for violation in violations:
+        key = grant_map.get(violation)
+        if key and key not in needed:
+            needed.append(key)
+    if needed and _verify_agy_git_grants(cwd, payload, needed):
+        return True
+    return _has_banned_shell_policy(cmd, cwd, payload)
+'''
+
+
 def _patch_bash_gate(hooks_scripts_dir: Path) -> None:
     """Enforce read-only subagent, STATE (merging GATE), and GIT blocks on Antigravity."""
     bash_path = hooks_scripts_dir / "bash_gate.py"
@@ -1846,7 +1972,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         'block(cwd, payload, "GATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])',
         'block(cwd, payload, "STATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])',
         label="bash_gate_merge_gate_to_state",
-        sentinel='block(cwd, payload, "STATE"',
+        sentinel='block(cwd, payload, "STATE", ["Do not mutate TDQ state',
     )
     replace_exact(
         bash_path,
@@ -1858,41 +1984,11 @@ def _enforce_agy_bash_guards(payload, cwd):
         sentinel="if agy and _has_banned_agy_git(",
     )
     if "def _has_banned_agy_git(" not in read_utf8(bash_path):
-        git_helper = (
-            "\n\ndef _has_banned_agy_git(cmd, cwd, payload):\n"
-            "    from _common import block\n"
-            "    branch_names = []\n"
-            "    for pattern in BRANCH_PATTERNS:\n"
-            "        branch_names += [_clean(m) for m in pattern.findall(cmd)]\n"
-            "    for b_name, w_path in WORKTREE.findall(cmd):\n"
-            "        if b_name:\n"
-            "            branch_names.append(_clean(b_name))\n"
-            "        if w_path:\n"
-            '            branch_names.append(os.path.basename(_clean(w_path).rstrip("/")))\n'
-            "    for name in branch_names:\n"
-            "        if BAN.match(name):\n"
-            '            block(cwd, payload, "TDQ:GIT", [f"AI-prefixed branch/worktree name {name!r} is banned; name it after the work."])\n'
-            "            return True\n"
-            '    if re.search(r"git\\b.*\\bcommit\\b", cmd, re.DOTALL) and any(p.search(cmd) for p in BAD_MSG):\n'
-            '        block(cwd, payload, "TDQ:GIT", ["AI trailers (Co-Authored-By / generated with) are banned in commit messages."])\n'
-            "        return True\n"
-            '    low = cmd.lower()\n'
-            '    if "git push" in low:\n'
-            '        block(cwd, payload, "TDQ:GIT", ["git push is forbidden by TDQ policy; only push when explicitly asked."])\n'
-            "        return True\n"
-            '    if "git reset --hard" in low or "git clean -f" in low:\n'
-            '        block(cwd, payload, "TDQ:GIT", ["Destructive git reset/clean is prohibited to protect user worktree."])\n'
-            "        return True\n"
-            '    cleaned = re.sub(r"(?s)@\'\\r?\\n.*?\\r?\\n\'@|@\\"\\r?\\n.*?\\r?\\n\\"@", " ", cmd).lower()\n'
-            '    if any(w in cleaned for w in ("curl ", "wget ", "invoke-webrequest")) and any(p in cleaned for p in ("| bash", "| sh", "| iex")):\n'
-            '        block(cwd, payload, "TDQ:VUNG", ["Piping remote downloads to shell is forbidden."])\n'
-            "        return True\n"
-            '    if "-executionpolicy bypass" in cleaned or "-ep bypass" in cleaned:\n'
-            '        block(cwd, payload, "TDQ:VUNG", ["PowerShell ExecutionPolicy bypass is blocked."])\n'
-            "        return True\n"
-            "    return False\n"
+        txt_b = read_utf8(bash_path).replace(
+            "def _enforce_agy_bash_guards(",
+            _BASH_GIT_HELPER + "\n\ndef _enforce_agy_bash_guards(",
+            1,
         )
-        txt_b = read_utf8(bash_path).replace("def _enforce_agy_bash_guards(", git_helper + "\n\ndef _enforce_agy_bash_guards(", 1)
         write_utf8(bash_path, txt_b)
     replace_exact(
         bash_path,
@@ -1922,8 +2018,12 @@ def _enforce_agy_bash_guards(payload, cwd):
         '               for t in _part_stdout_targets(part))\n'
         '        for part in parts)\n'
         '    if is_agy() and state.get("active_request") and _mutates_src_shell:\n'
-        '        from tdq_state import cong_dang_cho\n'
-        '        _pending_gate = cong_dang_cho(state)\n'
+        '        from tdq_state import cong_dang_cho, effective_phase\n'
+        '        _step3b_exempt = (\n'
+        '            is_pure_intake_branch_create(cmd)\n'
+        '            and effective_phase(state, warn=False) in ("analyze", "idle")\n'
+        '        )\n'
+        '        _pending_gate = None if _step3b_exempt else cong_dang_cho(state)\n'
         '        if _pending_gate:\n'
         '            block(cwd, payload, "TDQ:APPROVE", [\n'
         '                f"{_pending_gate} has no recorded approval — do not mutate source via shell.",\n'
@@ -1992,26 +2092,37 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     )
     replace_exact(
         edit_path,
-        '    if abs_target in (state_file, state_md) and payload.get("agent_id"):',
-        '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):',
+        '    if is_protected_state and payload.get("agent_id"):',
+        '    if is_protected_state and (payload.get("agent_id") or is_agy()):',
         label="edit_gate_agy_state_block",
         sentinel='(payload.get("agent_id") or is_agy())',
     )
     replace_exact(
         edit_path,
-        '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):\n'
+        '    if is_protected_state and (payload.get("agent_id") or is_agy()):\n'
         '        block(cwd, payload, "TDQ:STATE", [\n'
-        '            "A sub-agent may not write TDQ state or its generated mirror.",\n'
+        '            "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",\n'
         '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
+        '        ])\n'
+        '    if in_runtime:\n'
+        '        block(cwd, payload, "TDQ:STATE", [\n'
+        '            "Direct edit of docs/tdq/.tdq-runtime/ is prohibited.",\n'
+        '            "Only verified TDQ hooks manage single-turn runtime files.",\n'
         '        ])',
-        '    if abs_target in (state_file, state_md) and (payload.get("agent_id") or is_agy()):\n'
+        '    if is_protected_state and (payload.get("agent_id") or is_agy()):\n'
         '        block(cwd, payload, "TDQ:STATE", [\n'
-        '            "A sub-agent may not write TDQ state or its generated mirror.",\n'
+        '            "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",\n'
         '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
+        '        ])\n'
+        '        return\n'
+        '    if in_runtime:\n'
+        '        block(cwd, payload, "TDQ:STATE", [\n'
+        '            "Direct edit of docs/tdq/.tdq-runtime/ is prohibited.",\n'
+        '            "Only verified TDQ hooks manage single-turn runtime files.",\n'
         '        ])\n'
         '        return',
         label="edit_gate_state_block_return",
-        sentinel="Return structured output to the TDQ leader; only tdq_state.py writes state.\n        ])\n        return",
+        sentinel="Only verified TDQ hooks manage single-turn runtime files.\n        ])\n        return",
     )
     replace_exact(
         edit_path,
@@ -2401,7 +2512,23 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             pc_path,
             old_hook,
             _PROMPT_TURN_META_HELPER.lstrip("\n")
-            + "\n\ndef _agy_pre_invocation_hook(payload, cwd):\n"
+            + "\n\ndef _mint_agy_turn_meta(cwd, payload, sid, sig):\n"
+            "    prev_meta = read_turn_meta(cwd, sid)\n"
+            "    shard = _shard_turn_path(cwd, sid)\n"
+            "    if os.path.isfile(shard):\n"
+            "        try:\n"
+            "            os.remove(shard)\n"
+            "        except OSError:\n"
+            "            pass\n"
+            "    st_cur = load(cwd, heal=False) or {}\n"
+            '    raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")\n'
+            "    if not raw_prompt.strip():\n"
+            '        raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))\n'
+            "    grants = extract_git_grants(raw_prompt)\n"
+            '    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})\n'
+            "    if grants:\n"
+            '        _info(f"prompt_context: git_grant minted sid={sid} grants={grants}")\n\n\n'
+            "def _agy_pre_invocation_hook(payload, cwd):\n"
             "    sid = session_id(payload)\n"
             "    model_text, user_md = flush_pending_channels(cwd, sid)\n"
             "    if model_text:\n"
@@ -2418,15 +2545,7 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "    is_new, sig = _detect_new_user_turn(cwd, payload, sid)\n"
             '    _RUNTIME_STATE["new_user_turn"] = is_new\n'
             "    if is_new:\n"
-            "        prev_meta = read_turn_meta(cwd, sid)\n"
-            "        shard = _shard_turn_path(cwd, sid)\n"
-            "        if os.path.isfile(shard):\n"
-            "            try:\n"
-            "                os.remove(shard)\n"
-            "            except OSError:\n"
-            "                pass\n"
-            '        st_cur = load(cwd, heal=False) or {}\n'
-            '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or "")})\n'
+            "        _mint_agy_turn_meta(cwd, payload, sid, sig)\n"
             "    return False, is_new\n\n\n"
             "def _agy_phase_anchor(cwd, state, payload, sid):\n"
             '    """Inject 1-line [TDQ:GON], [TDQ:QC], or [TDQ:PLAIN] once per phase entry or post-compaction."""\n'
@@ -2475,6 +2594,12 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "    # even when the change went through the shell (the turn ledger only sees Edit/Write).\n"
         "    # Written to the ledger, NOT printed into context → costs the model no tokens.\n"
         '    turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))\n'
+        '    prompt = payload.get("prompt") or payload.get("user_message") or ""\n'
+        "    git_grants = extract_git_grants(prompt)\n"
+        "    if git_grants:\n"
+        '        turn_log_append(cwd, "signal", session=sid, event="git_grant",\n'
+        '                        target="git_grant", grants=git_grants)\n'
+        '        _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
         "    _nhac_worktree(cwd)",
         "    sid = session_id(payload)\n"
         "    agy_mode = is_agy()\n"
@@ -2490,9 +2615,18 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "            if anc:\n"
         "                emit_context([anc])\n"
         "                return\n"
+        '    prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")\n'
+        "    if agy_mode and not prompt.strip():\n"
+        '        prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))\n'
         "    if not agy_mode or is_new_turn:\n"
         "        turn_log_clear(cwd, sid)\n"
         '        turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))\n'
+        "        git_grants = extract_git_grants(prompt)\n"
+        "        if git_grants:\n"
+        '            turn_log_append(cwd, "signal", session=sid, event="git_grant",\n'
+        '                            target="git_grant", grants=git_grants)\n'
+        "            if not agy_mode:\n"
+        '                _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
         "        _nhac_worktree(cwd)",
         label="prompt_context_conditional_snapshot",
         sentinel="should_stop, is_new_turn = _agy_pre_invocation_hook",
