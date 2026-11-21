@@ -58,14 +58,13 @@ Selected `deep_ultracode` spec review follows the [Ultracode contract](../tdq-co
    components, in that order, the approval block at the end of the message:
    <!-- i18n-allow: chat block written in the user's document language -->
    ```
-   Tôi đã viết xong spec cho yêu cầu của bạn.
+   Mình đã viết xong bản đặc tả cho yêu cầu của bạn. Tóm tắt dễ hiểu:
 
-   **Mục tiêu:** <1–2 câu>.
-   **Đầu ra chính:** <gạch đầu dòng ngắn>.
-   **Luồng & Giải thuật:** <1–2 câu tóm tắt sơ đồ luồng và giải thuật chính>.
-   **Bản xem trước kiến trúc:** <link HTML đã kiểm và tồn tại; nếu chưa sinh được, nêu lý do và phần kiểm còn thiếu>.
-   **Định nghĩa hoàn thành:** <gạch đầu dòng ngắn>.
-   **Rủi ro đáng chú ý:** <gạch đầu dòng ngắn>.
+   **Mục tiêu:** <1–2 câu đời thường nêu rõ vấn đề cần giải quyết và lợi ích>.
+   **Trước và sau nâng cấp:** <trước đây vướng gì → sau khi làm xong đổi gì>.
+   **Luồng & Giải thuật:** <1–2 câu mô tả luồng xử lý tự nhiên, lồng số liệu ngắn>.
+   **Đầu ra & Xem trước:** <đầu ra chính + link HTML Archify đã kiểm và tồn tại>.
+   **Định nghĩa hoàn thành & Rủi ro:** <tiêu chí xong chính và rủi ro đáng chú ý>.
 
    Xem đầy đủ tại: `docs/tdq/spec/<slug>.md`
 
@@ -73,7 +72,9 @@ Selected `deep_ultracode` spec review follows the [Ultracode contract](../tdq-co
 
    **Bạn duyệt spec này chứ?**
 
-   ➤ Duyệt: nhắn "duyệt spec" (duyệt xong tôi viết plan ngay) · Góp ý: nhắn trực tiếp
+   ➤ Duyệt: nhắn "duyệt spec" (duyệt xong mình viết plan ngay) · Góp ý: nhắn trực tiếp
+
+   ---
    ```
    The body is ≤ 50 lines and must be a REAL summary; a bare status line like "written to the
    log, waiting for approval" is banned. A thin summary → write the missing part now.

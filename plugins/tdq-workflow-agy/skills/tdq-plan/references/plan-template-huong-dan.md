@@ -31,6 +31,7 @@ runtime, not human waiting time). The unit is always minutes, an integer 1–999
 
 ## Check before presenting
 
+- Top summary `> **Tóm tắt dễ hiểu:**` sits right under `Trạng thái plan:` so any reader grasps what each phase delivers (Trước → Sau → Kết quả) in 10–15 seconds without technical jargon. <!-- i18n-allow -->
 - Every output in spec §2 maps to ≥ 1 task.
 - Every task holds exactly one piece of work and one measurable check — no task shaped like
   "finish X".

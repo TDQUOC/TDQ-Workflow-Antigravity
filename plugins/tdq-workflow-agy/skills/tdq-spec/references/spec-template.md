@@ -1,6 +1,6 @@
 # The spec shape
 <!-- muc-luc-dong:
-  File em=150
+  File em=152
 -->
 
 Copy the whole block below into `docs/tdq/spec/<slug>.md` and fill it in. Drop a section
@@ -13,6 +13,8 @@ that does not apply, but say **why** it does not apply.
 Ngày: YYYY-MM-DD · Bản: 1.0 · Brief: ../brief/<slug>.md · Lane: full · Work kind: build | investigate
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Trạng thái: CHỜ DUYỆT
+
+> **Tóm tắt dễ hiểu:** <2–3 câu: trước vướng gì → nay sửa gì → kết quả ra sao>.
 
 ## Mục lục
 
@@ -102,19 +104,19 @@ Phán quyết chỉ nhận: DÙNG / KHÔNG (+ 1 trong 4 lý do đóng) / NỀN (
 Bóc tách thuật toán chi tiết để lập trình viên fresher nắm chắc nghiệp vụ logic:
 
 - **Từng bước giải thuật (Step-by-step Execution Logic)**:
-  1. Bước 1: <khởi tạo cấu trúc dữ liệu, đọc tham số đầu vào>.
-  2. Bước 2: <vòng lặp, điều kiện rẽ nhánh, biến đổi trạng thái>.
-  3. Bước 3: <tổng hợp kết quả, xử lý trả về>.
+  1. Bước 1: <khởi tạo, đọc đầu vào>.
+  2. Bước 2: <xử lý chính, rẽ nhánh>.
+  3. Bước 3: <tổng hợp, trả kết quả>.
 - **Độ phức tạp tính toán**:
-  - Thời gian (Time Complexity): $O(\dots)$ — <giải thích ngắn gọn>.
-  - Không gian (Space Complexity): $O(\dots)$ — <giải thích bộ nhớ đệm sử dụng>.
+  - Thời gian (Time Complexity): $O(\dots)$ — <giải thích ngắn>.
+  - Không gian (Space Complexity): $O(\dots)$ — <bộ nhớ sử dụng>.
 - **Các ca góc hiểm (Edge Cases & Defensive Handling)**:
-  - Đầu vào rỗng hoặc null: <cách xử lý phòng thủ>.
-  - Timeout, mất kết nối hoặc dữ liệu không hợp lệ: <cách phục hồi an toàn>.
+  - Đầu vào rỗng/null: <xử lý phòng thủ>.
+  - Timeout/dữ liệu lỗi: <phục hồi an toàn>.
 
 ## 3d. Mental Model cho Fresher Dev
 
-- **Ẩn dụ trực quan (Analogy)**: <1 đoạn ngắn ví von cơ chế hoạt động với một hiện tượng thực tế đời thường giúp dev dễ hình dung>.
+- **Ẩn dụ trực quan (Analogy)**: <1 ví von đời thường giúp dễ hình dung>.
 - **Thuật ngữ dự án (Glossary)**:
   - `<Khái niệm A>`: <giải thích ngắn gọn 1 câu>.
   - `<Khái niệm B>`: <giải thích ngắn gọn 1 câu>.

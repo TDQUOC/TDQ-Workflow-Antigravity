@@ -100,5 +100,6 @@ Chi tiết cẩm nang: `<đường dẫn thư mục cài TDQ-Workflow>/skills/td
 ## Chuẩn Trình bày & Báo cáo (Soul & Report)
 
 - Luôn trình bày đơn giản, dễ hiểu, ngắn gọn nhưng trực quan, đầy đủ thông tin để mọi người đọc đều nắm được bản chất và bằng chứng.
+- Mặc định cho cả `spec`, `plan` và `report`: kể theo mạch Trước → Sau → Kết quả với ô `Tóm tắt dễ hiểu` ở đầu file `.md`. Viết ngắn gọn, tự nhiên để ai đọc 10–15 giây cũng hiểu ngay, không nhồi tường `·`.
 - Phase `report` luôn xuất cặp `docs/tdq/reports/<slug>.md` và `Archify HTML` (`docs/tdq/reports/<slug>.html`); khi có cập nhật bắt buộc nêu rõ 4 phần: (1) Trước request trạng thái/flow thế nào, (2) Sau request thế nào, (3) Đã test gì, và (4) Kết quả test ra được cái gì.
 <!-- /TDQ:TOOLS -->

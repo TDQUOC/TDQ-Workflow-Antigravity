@@ -1,0 +1,169 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "TDQ Presentation Upgrade — Plain-Language First & Schema-Safe Layering",
+    "subtitle": "Before: Dense Single-Line Compression & Label Lists · After: 10s Story Arc First + Verified Tables Below",
+    "output": "2026-11-21-0917-mac-dinh-trinh-bay-ngan-preview.html",
+    "locale": "en",
+    "animation": "trace",
+    "visual_preset": "blueprint",
+    "quality_profile": "standard",
+    "legend": {
+      "entries": {
+        "external": { "label": "Before (Pain Point)" },
+        "frontend": { "label": "Layer 1: Plain Story" },
+        "security": { "label": "Invariants & Gates" },
+        "cloud": { "label": "Templates & Skills" },
+        "backend": { "label": "Build & Plugin Sync" },
+        "database": { "label": "Layer 2: Ledger & Tables" }
+      }
+    },
+    "translations": {
+      "legend.architecture.external": "Before (Pain Point)",
+      "legend.architecture.frontend": "Layer 1: Plain Story",
+      "legend.architecture.security": "Invariants & Gates",
+      "legend.architecture.cloud": "Templates & Skills",
+      "legend.architecture.backend": "Build & Plugin Sync",
+      "legend.architecture.database": "Layer 2: Ledger & Tables",
+      "viewer.kind.external": "Before (Pain Point)",
+      "viewer.kind.frontend": "Layer 1: Plain Story",
+      "viewer.kind.security": "Invariants & Gates",
+      "viewer.kind.cloud": "Templates & Skills",
+      "viewer.kind.backend": "Build & Plugin Sync",
+      "viewer.kind.database": "Layer 2: Ledger & Tables"
+    }
+  },
+  "components": [
+    {
+      "id": "before_pain",
+      "type": "external",
+      "label": "Trước: Nén dòng & Thuật ngữ",
+      "sublabel": "report-template ép '·' · user phải hỏi lại",
+      "tag": "before",
+      "pos": [40, 80],
+      "size": [250, 78]
+    },
+    {
+      "id": "conventions_rule",
+      "type": "frontend",
+      "label": "Sau: Chuẩn Văn phong Tự nhiên",
+      "sublabel": "user-facing-block.md + vi-du.md (như 1.jpg)",
+      "tag": "layer 1",
+      "pos": [440, 80],
+      "size": [270, 78]
+    },
+    {
+      "id": "templates_top",
+      "type": "cloud",
+      "label": "Spec · Plan · Report · Quick",
+      "sublabel": "Ô Tóm tắt dễ hiểu đầu file + Chat kể chuyện",
+      "tag": "templates",
+      "pos": [860, 80],
+      "size": [270, 78]
+    },
+    {
+      "id": "tables_bottom",
+      "type": "database",
+      "label": "Lớp Bảng & Neo Bất biến",
+      "sublabel": "4 mục report · R14 Spec · token <= 3500",
+      "tag": "layer 2",
+      "pos": [440, 320],
+      "size": [270, 78]
+    },
+    {
+      "id": "guards_tests",
+      "type": "security",
+      "label": "Lưới Kiểm tra Tự động",
+      "sublabel": "doc_lint · test_user_facing_block · luat-hien-co",
+      "tag": "verify",
+      "pos": [860, 320],
+      "size": [270, 78]
+    },
+    {
+      "id": "repo_build",
+      "type": "backend",
+      "label": "Đồng bộ Setup & Plugin Repo",
+      "sublabel": "tdq_setup.py · AGENTS.md · plugins/tdq-workflow-agy",
+      "tag": "build",
+      "pos": [1280, 200],
+      "size": [270, 84]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c_before_rule",
+      "from": "before_pain",
+      "to": "conventions_rule",
+      "label": "đổi chuẩn",
+      "variant": "dashed"
+    },
+    {
+      "id": "c_rule_templates",
+      "from": "conventions_rule",
+      "to": "templates_top",
+      "label": "như 1.jpg",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c_rule_tables",
+      "from": "conventions_rule",
+      "to": "tables_bottom",
+      "label": "giữ neo",
+      "labelAt": [575, 239]
+    },
+    {
+      "id": "c_templates_guards",
+      "from": "templates_top",
+      "to": "guards_tests",
+      "label": "<= 3500 tok",
+      "labelAt": [995, 239]
+    },
+    {
+      "id": "c_tables_guards",
+      "from": "tables_bottom",
+      "to": "guards_tests",
+      "label": "giữ R14",
+      "variant": "security"
+    },
+    {
+      "id": "c_templates_build",
+      "from": "templates_top",
+      "to": "repo_build",
+      "label": "build repo"
+    },
+    {
+      "id": "c_guards_build",
+      "from": "guards_tests",
+      "to": "repo_build",
+      "label": "QC PASS",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Lớp 1 — Đọc 10 giây hiểu ngay (giống 1.jpg)",
+      "items": [
+        "Gỡ bỏ câu ép nén mỗi mục vào một dòng nối '·' trong report-template.md",
+        "Mở đầu chat và đầu file .md bằng mạch Trước đây → Sau khi làm xong → Kết quả thật"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Lớp 2 — Giữ trọn bảng kiểm & trần 3.500 token",
+      "items": [
+        "Giữ nguyên 4 đề mục report, bảng R14 Spec, nhãn **Luồng & Giải thuật:** và SO_KHOI",
+        "Đẩy hướng dẫn viết chi tiết vào *-huong-dan.md để spec-template và plan-template không vượt trần"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phạm vi đóng gói theo chốt 3b",
+      "items": [
+        "Cập nhật scripts/tdq_setup.py, docs/claude-md-mau.md, tools/patches/agy_manifests.py",
+        "Build mới plugins/tdq-workflow-agy/ và kiểm dry-run; không ghi đè thư mục live ~/.gemini/"
+      ]
+    }
+  ]
+}

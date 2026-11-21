@@ -117,6 +117,22 @@ class TestKhaoSat3Chieu(unittest.TestCase):
         self.assertIn("Grep tự do", khoi)
         self.assertIn("Ngoại lệ Refactor & Kiến trúc sạch", khoi)
 
+    def test_plan_va_quick_co_tom_tat_de_hieu(self):
+        """plan-template, plan-template-huong-dan, quick-lane-mini và tdq-plan/SKILL.md phải có tóm tắt tự nhiên."""
+        for rel in (
+            os.path.join("skills", "tdq-plan", "references", "plan-template.md"),
+            os.path.join("skills", "tdq-intake", "references", "quick-lane-mini.md"),
+        ):
+            with io.open(os.path.join(ROOT, rel), encoding="utf-8") as f:
+                self.assertIn("Tóm tắt dễ hiểu:", f.read(), rel)
+        with io.open(os.path.join(ROOT, "skills", "tdq-plan", "references", "plan-template-huong-dan.md"), encoding="utf-8") as f:
+            hd = f.read()
+        self.assertIn("Tóm tắt dễ hiểu", hd)
+        self.assertIn("10–15", hd)
+        with io.open(os.path.join(ROOT, "skills", "tdq-plan", "SKILL.md"), encoding="utf-8") as f:
+            plan_skill = f.read()
+        self.assertIn("**Làm được gì:**", plan_skill)
+
 
 if __name__ == "__main__":
     unittest.main()

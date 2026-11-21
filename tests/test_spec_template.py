@@ -94,6 +94,15 @@ class TestSpecTruocSauVaDod(unittest.TestCase):
         self.assertIn("Fresher Accessibility", content)
         self.assertIn("**Luồng & Giải thuật:**", content)
 
+    def test_spec_defaults_to_plain_top_summary_and_narrative_chat(self):
+        """spec-template, huong-dan và SKILL.md phải mặc định có Tóm tắt dễ hiểu và khung chat kể chuyện Trước → Sau."""
+        self.assertIn("Tóm tắt dễ hiểu:", self.content)
+        huong_dan = _read_file(PATH_HUONG_DAN)
+        self.assertIn("Tóm tắt dễ hiểu", huong_dan)
+        self.assertIn("10–15", huong_dan)
+        skill = _read_file(PATH_SKILL)
+        self.assertIn("**Trước và sau nâng cấp:**", skill)
+
 
 if __name__ == "__main__":
     unittest.main()

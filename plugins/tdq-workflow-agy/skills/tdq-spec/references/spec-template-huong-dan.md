@@ -3,9 +3,9 @@
   §6 holds the CONDITION, never the check command=15-33 ·
   Measure every numeric threshold BEFORE approval=34-49 · Check before presenting=50-63 ·
   The scope checklist — every box answered before presenting=64-77 ·
-  Fresher Accessibility Check — thẩm định độ thấu suốt cho Fresher Dev=78-94 ·
-  Contract Signatures Table (`§3c` — Greenfield `--from-spec`)=95-98 ·
-  Quy tắc chi tiết các phần điều kiện trong Spec=99
+  Fresher Accessibility Check — thẩm định độ thấu suốt cho Fresher Dev=78-95 ·
+  Contract Signatures Table (`§3c` — Greenfield `--from-spec`)=96-99 ·
+  Quy tắc chi tiết các phần điều kiện trong Spec=100
 -->
 
 Split out of `spec-template.md` on 2026-10-02 (954 tokens). The three sections below are SELF-CHECK
@@ -89,8 +89,9 @@ Tự kiểm tra độ thân thiện và minh bạch của bản đặc tả vớ
 | **Ca góc hiểm (§3c)** | Nêu tối thiểu 2 edge cases kèm cách phòng thủ | §3c Ca góc hiểm |
 | **Ẩn dụ trực quan (§3d)** | Có ví von thực tế đời thường giúp dễ hình dung | §3d Mental Model |
 | **Thuật ngữ (§3d)** | Giải nghĩa các khái niệm mới hoặc viết tắt | §3d Glossary |
+| **Tóm tắt dễ hiểu (đầu file)** | Bất kỳ ai đọc 10–15 giây cũng hiểu Trước → Sau → Kết quả mà không vấp thuật ngữ | Dưới `Trạng thái:` |
 
-Tiêu chí quyết định: "Một lập trình viên fresher đọc bản spec này có nắm trọn kiến trúc và giải thuật mà AI chuẩn bị làm hay không?". Nếu câu trả lời là chưa rõ ràng, phải viết lại trước khi trình duyệt.
+Tiêu chí quyết định: "Một lập trình viên fresher hoặc người không chuyên đọc phần `Tóm tắt dễ hiểu` và bản spec này có nắm trọn vấn đề trong 10–15 giây hay không?". Nếu câu trả lời là chưa rõ ràng, phải viết lại trước khi trình duyệt. <!-- i18n-allow -->
 
 ## Contract Signatures Table (`§3c` — Greenfield `--from-spec`)
 

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c8dbb824-0601-4081-aa54-ec04240b9cd4",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\2026-11-21-0917-mac-dinh-trinh-bay-ngan-preview.candidate.json",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan-preview.a3465fc89fcf427eaa9f2a41dd33d194.html",
+  "specification": {
+    "sha256": "1172e27c44f0dbd3bebbeeffd46133266bf8652c827f5081217d3e8d9078c88f",
+    "bytes": 5365
+  },
+  "artifact": {
+    "sha256": "4f698a08b834d7410e656e0e72a78dafce652f6a3ee2bee515e18f875c521887",
+    "bytes": 823040
+  }
+}

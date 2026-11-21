@@ -91,7 +91,8 @@ MAU = (
 SO_KHOI = {
     # 2026-10-02: 1 → 0. Khối mẫu duy nhất của file này nằm trong mục `After (Sau)`, nay ở file em.
     "tdq-conventions/references/user-facing-block.md": 0,
-    "tdq-conventions/references/user-facing-block-vi-du.md": 1,
+    # 2026-11-21: 1 → 2. Added Natural Narrative Report showcase alongside Before/After example.
+    "tdq-conventions/references/user-facing-block-vi-du.md": 2,
     "tdq-spec/SKILL.md": 1,
     "tdq-plan/SKILL.md": 1,
     # 2026-09-12: 1 → 2. Mode `codex` là mode thứ ba, nên khối hỏi tách đôi: khối 3 lựa
@@ -343,6 +344,22 @@ class UserFacingBlockTest(unittest.TestCase):
             with self.subTest(file="/".join(parts)):
                 self.assertIn("user-facing-block", read(SKILLS, *parts),
                               "file này nói với user nhưng không trỏ về khuôn chung")
+
+    def test_plain_language_narrative_rule_and_samples(self):
+        """Khối trình bày phải có luật văn phong tự nhiên: kể Trước → Sau → Kết quả, không nhồi dấu `·`."""
+        block_text = read(BLOCK)
+        sample_text = read(VI_DU)
+        self.assertIn("## Plain-Language Narrative Rule", block_text)
+        for cum in (
+            "10–15 seconds",
+            "Trước",
+            "Sau",
+            "Kết quả",
+            "middle-dot",
+        ):
+            self.assertIn(cum, block_text, f"thiếu quy tắc văn phong tự nhiên: {cum!r}")
+        for cum in ("Trước đây:", "Sau khi làm xong:"):
+            self.assertIn(cum, sample_text, f"ví dụ thiếu mạch kể chuyện tự nhiên: {cum!r}")
 
 
 if __name__ == "__main__":
