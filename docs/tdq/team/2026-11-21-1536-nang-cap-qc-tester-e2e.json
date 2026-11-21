@@ -1,0 +1,132 @@
+{
+  "slug": "2026-11-21-1536-nang-cap-qc-tester-e2e",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-1536-nang-cap-qc-tester-e2e.md",
+  "plan_sha": "2d67876060eb0ec88496d87ab97b63595b8a2d22348f391b4f1ee80db593ad63",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "62b174b181a194a909a306914cddcbb8ab56cb472c368befc62830123966156a",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_test.py",
+        "scripts/tdq_test_receipt.py",
+        "tests/test_tdq_test.py",
+        "tests/test_tdq_test_receipt.py",
+        "tests/test_smoke_e2e_routing.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_timing.py",
+        "tests/test_timing.py",
+        "tests/test_phase1_contract.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_meta_gate.py",
+        "scripts/doc_lint.py",
+        "tests/test_meta_gate.py",
+        "tests/test_doc_lint.py"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_agent_frontmatter.py",
+        "tests/test_agy_plugin_validate.py",
+        "tests/test_build_portable.py",
+        "tests/test_token_budget.py",
+        "tests/test_i18n_check.py"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_agy_hooks.py",
+        "tests/test_rust_dispatch_parity.py",
+        "tests/test_bash_gate.py",
+        "tests/test_command_gate.py",
+        "tests/test_state_muc_qc.py"
+      ],
+      "dot": 2
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_tdq_runner_integration.py",
+        "tests/test_tdq_finish.py",
+        "tests/test_doc_lint_r15.py",
+        "tests/test_devtool_mcp_integration.py",
+        "tests/test_read_gate.py",
+        "tests/test_v01030_regression_smoke.py"
+      ],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/references/report-template.md",
+        "agents/tdq-qc-tester.md",
+        "tests/test_muc_qc_qc_md.py",
+        "tests/test_dev_qc_card_rules.py"
+      ],
+      "dot": 2
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "skills/tdq-browser-test/SKILL.md",
+        "skills/tdq-browser-test/references/scenario-template.md",
+        "skills/tdq-build/references/vision-test-loop.md",
+        "tests/test_vision_test_loop_doc.py"
+      ],
+      "dot": 2
+    },
+    "T4.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        "hooks/rust/tdq-dispatch/Cargo.toml",
+        "tools/patches/agy_manifests.py",
+        "tools/patches/__init__.py",
+        "tools/build_agy_plugin.py"
+      ],
+      "dot": 3
+    },
+    "T4.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 4
+    },
+    "T5.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_meta_gate.py"
+      ],
+      "dot": 2
+    }
+  }
+}

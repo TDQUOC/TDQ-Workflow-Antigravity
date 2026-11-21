@@ -69,7 +69,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P1 — Wave 1: Runner Core, Compact Timing & Auto Meta-Gate
 
-- [>] **T1.1** (e12m) Vá `DATA_EXTS` (`.html`, `.htm`), `EXCLUDED_DIRS` (`.ruff_cache`), thêm `--workers auto` (`min(6, cpu_count)`), subcommand `smoke-e2e` (`--changed`, `--files`, `--plan-only`, `--fail-fast`) và `pytest.ini` — Test: `py -3 -X utf8 -m pytest tests/test_tdq_test.py tests/test_tdq_test_receipt.py tests/test_smoke_e2e_routing.py -q`
+- [x] **T1.1** (e12m) Vá `DATA_EXTS` (`.html`, `.htm`), `EXCLUDED_DIRS` (`.ruff_cache`), thêm `--workers auto` (`min(6, cpu_count)`), subcommand `smoke-e2e` (`--changed`, `--files`, `--plan-only`, `--fail-fast`) và `pytest.ini` — Test: `py -3 -X utf8 -m pytest tests/test_tdq_test.py tests/test_tdq_test_receipt.py tests/test_smoke_e2e_routing.py -q`
   - Req: `§2#1, §3c#1, §3c#2, Q1` · Ngoài phạm vi: `GIỮ NGUYÊN` mặc định nội bộ `1` khi không truyền `--workers`, `GIỮ NGUYÊN` khóa SHA-256 receipt và `bo_sot`, không đụng `scripts/tdq_runtime_bench.py`
   - Chạm: `scripts/tdq_test.py`, `scripts/tdq_test_receipt.py`, `pytest.ini`, `tests/test_tdq_test.py`, `tests/test_tdq_test_receipt.py`, `tests/test_smoke_e2e_routing.py`
   - Sinh ra: `pytest.ini`, `tests/test_smoke_e2e_routing.py`
