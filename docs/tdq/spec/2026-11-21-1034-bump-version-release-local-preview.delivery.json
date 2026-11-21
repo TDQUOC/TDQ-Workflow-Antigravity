@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2392d8f4-a015-4e40-9bae-23a9267e903e",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1034-bump-version-release-local-preview.39e4568391774235954351e62fa2cf97.html",
+  "specification": {
+    "sha256": "cff7058fe63d8cc004bee92c403862a51ea573e9369c870a8495a4002e6df2c7",
+    "bytes": 3549
+  },
+  "artifact": {
+    "sha256": "efd59e8ed21d69021308a11ba61148d4b2b0587715d91ad8a737f2d3424e0bf9",
+    "bytes": 1254945
+  },
+  "explainer": {
+    "preparedSha256": "935f33c5faab9ebf7510a3b56519bd5bc228d8b88e3621cb2f6a23b08898e807",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-truoc-release",
+        "inline": true,
+        "sha256": "1a4dd322d32f04920c8de865bbd70b3b1732614456cb43d60bf67d9aabc4731f",
+        "bytes": 1265
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-m1-m2-release",
+        "inline": true,
+        "sha256": "ed5eff88c11f4376b07b0cf536e34eeea17d4d37ba05eedd33dc479dc105fb85",
+        "bytes": 1214
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-m3-m4-release",
+        "inline": true,
+        "sha256": "1af7047e9d4635f73477ea3e6c3a1b558c33ba754d02f183ef3725bd877e73b6",
+        "bytes": 1287
+      }
+    ]
+  }
+}

@@ -1,0 +1,958 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "startedAt": "2026-11-21T04:39:32.927Z",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+    "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
+    "bytes": 6626
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+    "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
+    "bytes": 1641897
+  },
+  "stages": {
+    "browser-check": {
+      "status": "not-run",
+      "execution": "not-requested"
+    },
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "deliver",
+        "explainer",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
+          "bytes": 6626
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 1321,
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "deliver",
+        "explainer",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "165bceeb-9f79-4448-99eb-cb72ec3a9a26",
+        "ok": true,
+        "command": "deliver",
+        "type": "explainer",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "explainer": {
+          "preparedSha256": "d09d96706ab9ade3946084f49925cfbcdf773cce7e95c712f26f04f464333054",
+          "dependencies": [
+            {
+              "kind": "diagram-spec",
+              "id": "bao-cao-truoc",
+              "inline": true,
+              "sha256": "8dbbfbc733dffdcf2899c96c9ac750dba071afd7aa08252b3d5c65a9e6d4e1f4",
+              "bytes": 1283
+            },
+            {
+              "kind": "diagram-spec",
+              "id": "bao-cao-sau",
+              "inline": true,
+              "sha256": "31c2ba72abc13652e1d76da1065dbc37f8b8eda7c5546df624fa973f95f74d88",
+              "bytes": 1276
+            },
+            {
+              "kind": "diagram-spec",
+              "id": "bao-cao-kiem-tra",
+              "inline": true,
+              "sha256": "95be3a0309bf5d41f5b7b746cd4e2cdea3fa09c6392ad9da89552be4817edb7c",
+              "bytes": 1240
+            },
+            {
+              "kind": "diagram-spec",
+              "id": "bao-cao-ket-qua",
+              "inline": true,
+              "sha256": "54f93624bbc84e18c3d2c3ec77964966aba3061ce93408a096a3313f114f9407",
+              "bytes": 1240
+            }
+          ]
+        },
+        "specification": {
+          "sha256": "fe64bb34aeb7290fef589014cb90491fa6d90aafbd0249343d07dea8bb44d0bd",
+          "bytes": 6626
+        },
+        "artifact": {
+          "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
+          "bytes": 1641897
+        },
+        "validation": {
+          "checksPassed": 4,
+          "checkCount": 4,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "diagnostics": [
+          {
+            "code": "explainer/writing-sentence-length",
+            "severity": "warning",
+            "message": "Sentence has 71 reading units, above the configured en limit of 28.",
+            "subject": {
+              "line": 5,
+              "component": "answer",
+              "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md"
+            },
+            "evidence": {
+              "rule": "sentence-length",
+              "reason": "Sentence has 71 reading units, above the configured en limit of 28.",
+              "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+              "units": 71,
+              "limit": 28
+            },
+            "supportedFixes": [
+              "Split at a logical action or condition boundary while preserving qualifications and causal links."
+            ]
+          },
+          {
+            "code": "explainer/writing-sentence-length",
+            "severity": "warning",
+            "message": "Sentence has 57 reading units, above the configured en limit of 28.",
+            "subject": {
+              "line": 18,
+              "component": "prose",
+              "panelId": "truoc-request",
+              "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md"
+            },
+            "evidence": {
+              "rule": "sentence-length",
+              "reason": "Sentence has 57 reading units, above the configured en limit of 28.",
+              "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+              "units": 57,
+              "limit": 28
+            },
+            "supportedFixes": [
+              "Split at a logical action or condition boundary while preserving qualifications and causal links."
+            ]
+          },
+          {
+            "code": "explainer/writing-sentence-length",
+            "severity": "warning",
+            "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+            "subject": {
+              "line": 31,
+              "component": "prose",
+              "panelId": "sau-request",
+              "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md"
+            },
+            "evidence": {
+              "rule": "sentence-length",
+              "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+              "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+              "units": 54,
+              "limit": 28
+            },
+            "supportedFixes": [
+              "Split at a logical action or condition boundary while preserving qualifications and causal links."
+            ]
+          },
+          {
+            "code": "explainer/writing-sentence-length",
+            "severity": "warning",
+            "message": "Sentence has 82 reading units, above the configured en limit of 28.",
+            "subject": {
+              "line": 44,
+              "component": "prose",
+              "panelId": "da-test",
+              "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md"
+            },
+            "evidence": {
+              "rule": "sentence-length",
+              "reason": "Sentence has 82 reading units, above the configured en limit of 28.",
+              "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+              "units": 82,
+              "limit": 28
+            },
+            "supportedFixes": [
+              "Split at a logical action or condition boundary while preserving qualifications and causal links."
+            ]
+          },
+          {
+            "code": "explainer/writing-sentence-length",
+            "severity": "warning",
+            "message": "Sentence has 46 reading units, above the configured en limit of 28.",
+            "subject": {
+              "line": 57,
+              "component": "prose",
+              "panelId": "ket-qua",
+              "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md"
+            },
+            "evidence": {
+              "rule": "sentence-length",
+              "reason": "Sentence has 46 reading units, above the configured en limit of 28.",
+              "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+              "units": 46,
+              "limit": 28
+            },
+            "supportedFixes": [
+              "Split at a logical action or condition boundary while preserving qualifications and causal links."
+            ]
+          }
+        ],
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      },
+      "stderr": "archify: Sentence has 71 reading units, above the configured en limit of 28.\narchify: Sentence has 57 reading units, above the configured en limit of 28.\narchify: Sentence has 54 reading units, above the configured en limit of 28.\narchify: Sentence has 82 reading units, above the configured en limit of 28.\narchify: Sentence has 46 reading units, above the configured en limit of 28."
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 688,
+      "command": [
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\11292_1795235971140\\node.EXE",
+        "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.html",
+        "family": "explainer",
+        "artifact": {
+          "sha256": "668ea8305b47672f9dfb76e2605598a5aeda8f4de9741d261044b6a30ac165f6",
+          "bytes": 1641897
+        },
+        "checks": [
+          {
+            "name": "explainer_structure",
+            "ok": true,
+            "details": [
+              "64 unique DOM IDs"
+            ]
+          },
+          {
+            "name": "explainer_payload_identity",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "explainer_dependencies",
+            "ok": true,
+            "details": [
+              "4 frozen dependencies"
+            ]
+          },
+          {
+            "name": "explainer_native_diagrams",
+            "ok": true,
+            "details": [
+              "bao-cao-truoc: pass",
+              "bao-cao-sau: pass",
+              "bao-cao-kiem-tra: pass",
+              "bao-cao-ket-qua: pass"
+            ]
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "issues": [],
+          "nativeDiagrams": [
+            {
+              "id": "bao-cao-truoc",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-tBKOK0\\child.html",
+                "artifact": {
+                  "sha256": "5213fa9fffc3ac669e48bd5adca95eb21e1f9f4e87f282196ae52113b02b5ef2",
+                  "bytes": 811589
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 71.5,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 6.2944162436548226,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 8,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 1,
+                    "shortEndpointSegmentCount": 1,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "changelog_full-to-rust_ssh_old-1",
+                      "from": "changelog_full",
+                      "to": "rust_ssh_old"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 6.2944162436548226,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            },
+            {
+              "id": "bao-cao-sau",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-FGcZTC\\child.html",
+                "artifact": {
+                  "sha256": "e809f078118ecf66a0212a6cad2aa031785736d48849a13e1ddeb852a9b41f30",
+                  "bytes": 811709
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 4,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 7.258536585365854,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 8,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 2,
+                    "shortEndpointSegmentCount": 2,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "agy_pack-to-gemini_live-1",
+                      "from": "agy_pack",
+                      "to": "gemini_live"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 7.258536585365854,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            },
+            {
+              "id": "bao-cao-kiem-tra",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-PJmx0d\\child.html",
+                "artifact": {
+                  "sha256": "db72af462db6172f1f8d1a3a2f866f1c0105614ab27e783023c0a4896f09bab0",
+                  "bytes": 811684
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 86,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 7.322834645669292,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 8,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 4,
+                    "shortEndpointSegmentCount": 4,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "cargo_3os-to-ssh_clean-1",
+                      "from": "cargo_3os",
+                      "to": "ssh_clean"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 7.322834645669292,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            },
+            {
+              "id": "bao-cao-ket-qua",
+              "receipt": {
+                "ok": true,
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-bwbz3S\\child.html",
+                "artifact": {
+                  "sha256": "652adbd181789d50fb912bac12a7578420e776a02ad56b017872fb894f386ed4",
+                  "bytes": 811442
+                },
+                "checks": [
+                  {
+                    "name": "single_svg",
+                    "ok": true,
+                    "details": [
+                      "found 1 <svg> block(s)"
+                    ]
+                  },
+                  {
+                    "name": "finite_svg",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "orthogonal_arrows",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "label_route_clearance",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_crossings",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "relationship_corridors",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "container_border_runs",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "route_rhythm",
+                    "ok": true,
+                    "details": []
+                  },
+                  {
+                    "name": "legend_clearance",
+                    "ok": true,
+                    "details": []
+                  }
+                ],
+                "composition": {
+                  "schemaVersion": 1,
+                  "profile": "showcase",
+                  "status": "pass",
+                  "summary": {
+                    "errors": 0,
+                    "warnings": 0
+                  },
+                  "metrics": {
+                    "properCrossings": 0,
+                    "resolvedCrossovers": 0,
+                    "ambiguousCorridors": 0,
+                    "arrowheadCollisions": 0,
+                    "containerBorderRuns": 0,
+                    "labelRouteClearanceIssues": 0,
+                    "labelCanvasOverflowIssues": 0,
+                    "minLabelRouteClearance": 54.5,
+                    "desktopReadabilityIssues": 0,
+                    "viewportHeightIssues": 0,
+                    "minProjectedNodeTextPx": 6.289095519864751,
+                    "maxBends": 0,
+                    "routesOverSuggestedBends": 0,
+                    "maxStretch": 1,
+                    "routesOverSuggestedStretch": 0,
+                    "minSegmentPx": 8,
+                    "minInteriorSegmentPx": null,
+                    "shortSegmentCount": 1,
+                    "shortEndpointSegmentCount": 1,
+                    "shortInteriorSegmentCount": 0,
+                    "microSegmentCount": 0
+                  },
+                  "suggestedLimits": {
+                    "bendsPerRelationship": 2,
+                    "stretch": 1.35,
+                    "segmentPx": 16,
+                    "microSegmentPx": 8
+                  },
+                  "routeReview": {
+                    "crossings": [],
+                    "detours": []
+                  },
+                  "leadingSpace": {
+                    "measured": false,
+                    "reviewSuggested": false
+                  },
+                  "desktopReadability": {
+                    "budgetBasis": "legacy-930",
+                    "readerContract": "declared-wide-v1",
+                    "availableDiagramWidth": 930,
+                    "actualBudgetPx": 930,
+                    "limit": "legacy",
+                    "requestedTargetPx": null,
+                    "requestedTargetMet": null,
+                    "hardFloorPx": 6,
+                    "hardFloorMet": true,
+                    "minimumOwner": {
+                      "kind": "edge",
+                      "id": "cargo_ssh-to-plugin_live-1",
+                      "from": "cargo_ssh",
+                      "to": "plugin_live"
+                    },
+                    "minimumSourceTextPx": 8,
+                    "minimumProjectedTextPx": 6.289095519864751,
+                    "semanticTextCount": 7
+                  },
+                  "issues": []
+                }
+              }
+            }
+          ]
+        },
+        "diagnostics": [],
+        "provenance": "current",
+        "deliveryReceiptId": "165bceeb-9f79-4448-99eb-cb72ec3a9a26"
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 71 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "line": 5,
+        "component": "answer"
+      },
+      "evidence": {
+        "reason": "Sentence has 71 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 71,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    },
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 57 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "line": 18,
+        "component": "prose",
+        "panelId": "truoc-request"
+      },
+      "evidence": {
+        "reason": "Sentence has 57 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 57,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    },
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 54 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "line": 31,
+        "component": "prose",
+        "panelId": "sau-request"
+      },
+      "evidence": {
+        "reason": "Sentence has 54 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 54,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    },
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 82 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "line": 44,
+        "component": "prose",
+        "panelId": "da-test"
+      },
+      "evidence": {
+        "reason": "Sentence has 82 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 82,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    },
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 46 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1034-bump-version-release-local\\bao-cao.archify.md",
+        "line": 57,
+        "component": "prose",
+        "panelId": "ket-qua"
+      },
+      "evidence": {
+        "reason": "Sentence has 46 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 46,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1034-bump-version-release-local.2d814776251044fbb91a3147bb63e032.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "finishedAt": "2026-11-21T04:39:35.459Z",
+  "durationMs": 2531,
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "disabled"
+  }
+}

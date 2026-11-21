@@ -2,6 +2,15 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.103.0 — 2026-11-21
+
+Tổng hợp 3 đợt nâng cấp lớn sau `0.102.0` (`4 trụ cột hệ thống Agent`, kiến trúc điều tra `investigate V2` và chuẩn trình bày ngắn gọn dễ hiểu mặc định) kèm biên dịch đồng bộ nhị phân Rust 3 hệ điều hành và phát hành bản `tdq-workflow-agy` `v0.103.0`. Báo cáo: `docs/tdq/reports/2026-11-20-1230-trien-khai-4-de-xuat-agent.md`, `docs/tdq/reports/2026-11-21-0217-trien-khai-investigate-v2.md`, `docs/tdq/reports/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md`.
+
+- **4 trụ cột nâng cấp Agent (`2026-11-20-1230`)**: Chuẩn hóa `tdq-config.json` & `scripts/tdq_config.py` (thang Gemini `3.8 Flash → 4 Carbon`, mặc định `inherit`, `ultra_max_subagents=5`/không giới hạn); mở rộng đội hình `8` agent (`tdq-explorer`, `tdq-debugger`) kèm `Auto-Clarity` và mục Plan `## Phân bổ Model & Effort`; hợp nhất `handoff-schema.json` + Packet V2+ đa ngôn ngữ + Blackboard; vá quote-aware shell guard (`command_parser.rs`/`bash_gate.py`), thêm `subagent_stop.py` và telemetry theo `agent_role`.
+- **Kiến trúc `work_kind=investigate` V2 (`2026-11-21-0217`)**: Tách rạch ròi `build` và `investigate` ngay từ `tdq_state.py init`, thêm `escalate-to-build --by`, miễn có điều kiện `R10`/`R14` & Double Archify; thêm engine `tdq_team.py evidence add|merge|render` khóa đa nền tảng (Windows NTFS/POSIX không phụ thuộc `fcntl`) và chế độ `no_worktree`; đồng bộ bảo mật `scoped-write` 5 lớp Python ↔ Rust và Weighted Burden (`>= 40` điểm phát `[TDQ:DOC]`) giữ tốc độ `14.35–14.76 ms`.
+- **Trình bày ngắn gọn, tự nhiên mặc định (`2026-11-21-0917`)**: Bổ sung `Plain-Language Narrative Rule` trong `user-facing-block.md`, gỡ lệnh nén dày dấu `·` trong `report-template.md`, thêm ô `Tóm tắt nhanh`/`Tóm tắt dễ hiểu` ở `spec`/`plan`/`report`/`quick-lane-mini` dưới trần `3.500` token và đồng bộ khối `TDQ:TOOLS` trên `tdq_setup.py`, `docs/claude-md-mau.md` và `AGENTS.md`.
+- **Phát hành & Nhị phân Rust `0.103.0` đa nền tảng**: Cập nhật `Cargo.toml` và biên dịch native mới đủ 3 nền tảng (`Windows` MSVC tĩnh, `Linux musl` static-pie trên `ubuntu-100-95`, `macOS ARM64` trên `mbair`), đóng gói `plugins/tdq-workflow-agy/` (`v0.103.0`, `agy plugin validate --strict` `0` lỗi) và xuất nhánh sạch `main`.
+
 ## 0.102.0 — 2026-11-20
 
 Nâng cấp trọn vẹn kiến trúc lập kế hoạch Plan V2+ với Per-Task Mini-Spec, công cụ scaffold/verify 2 lượt và gói ngữ cảnh subagent (`2026-11-20-0015-trien-khai-plan-v2-planner-spec`). Báo cáo: `docs/tdq/reports/2026-11-20-0015-trien-khai-plan-v2-planner-spec.md`.
@@ -446,35 +455,7 @@ Kế hoạch: `docs/tdq/plan/2026-10-11-0932-auto-update-setup-version.md`.
   bắt buộc mọi yêu cầu mới mở qua `tdq-intake` và trao đổi trong chat.
 - **Áp dụng đa nền tảng.** Hoạt động đồng bộ êm dịu trên cả Claude Code và Codex.
 
-## 0.61.0 — 2026-10-11
-
-Hợp thức hóa các câu lệnh hành động dứt khoát tự nhiên ("làm đi", "tiến hành đi", "triển đi",
-"go ahead"...) thành câu duyệt hợp lệ cho các cổng `spec` và `plan`. Tuyệt đối cấm ở cổng `mode`
-hoặc cổng `quick` (nơi còn câu hỏi mode hoặc mức QC đang chờ), và chặn câu hành động khi có câu hỏi
-hoặc điều kiện/confirm đi kèm. Kế hoạch: `docs/tdq/plan/2026-10-11-0159-hop-thuc-hoa-duyet-tu-nhien.md`.
-
-- **Cụm hành động tự nhiên (`ACTION_APPROVAL`).** Trong `hooks/scripts/prompt_context.py`, nhận diện
-  các câu dứt khoát ("làm đi", "tiến hành", "triển đi"...) là duyệt khi đang chờ `spec` hoặc `plan`.
-- **Chặn khi có câu hỏi hoặc điều kiện.** Chặn câu hành động trần ở cổng `mode` và `quick` (bắt buộc
-  chọn mode/QC); chặn khi câu nói chứa nghi vấn, điều kiện hoặc confirm (`nhưng`, `confirm`, `xác nhận`, `nếu`, `?`...).
-- **Cập nhật quy định.** `skills/tdq-conventions/references/approval.md` ghi rõ nguyên tắc duyệt tự nhiên
-  theo ngữ cảnh và các ngoại lệ bắt buộc hỏi lại. Bảo toàn các điểm neo luật trong `docs/tdq/audit/luat-hien-co.md`.
-
-## 0.60.0 — 2026-10-10
-
-Bổ sung chỉ dẫn rõ ràng vào các phase: user trả lời và duyệt trực tiếp trong chat (dạng `1a 2b 3c`,
-"duyệt spec", "duyệt plan", "duyệt nhanh"), tuyệt đối cấm mở popup tool / dialog câu hỏi chọn
-(`AskUserQuestion`). Kế hoạch: `docs/tdq/plan/2026-10-09-1948-luat-hoi-duyet-trong-chat.md`.
-
-- **Cấm `AskUserQuestion` và popup tool.** Bổ sung quy định chat-only tại 6 file:
-  `skills/tdq-conventions/references/user-facing-block.md`,
-  `skills/tdq-conventions/references/approval.md`, `skills/tdq-conventions/SKILL.md`,
-  `skills/tdq-intake/references/interview.md`, `skills/tdq-spec/SKILL.md`, `skills/tdq-plan/SKILL.md`.
-- **Khối trả lời chuẩn.** Hướng dẫn rõ ràng định dạng trả lời `1a 2b 3c` hoặc câu tự nhiên, kết
-  lượt chờ user nhắn trong chat thay vì gọi tool popup.
-- **Giữ nguyên điểm neo luật.** Bảo toàn số dòng của các quy tắc trong `docs/tdq/audit/luat-hien-co.md`.
-
 ## Lịch sử cũ hơn
 
-Bản 0.59.0 đến 0.57.0: `docs/CHANGELOG-archive-3.md`; bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`;
+Bản 0.61.0 đến 0.57.0: `docs/CHANGELOG-archive-3.md`; bản 0.56.0 đến 0.37.0: `docs/CHANGELOG-archive-2.md`;
 bản 0.36.0 trở xuống: `docs/CHANGELOG-archive.md`. Tách để giữ file chính dưới 500 dòng; chữ nghĩa giữ nguyên.
