@@ -442,6 +442,14 @@ def _detect_new_user_turn(cwd, payload, sid):
     return False, sig
 
 
+def _is_stale_or_nonhuman_grant_turn(payload, prev_meta, sig):
+    src = str((payload or {}).get("source") or "").strip().lower()
+    if src in ("compact", "resume", "system"):
+        return True
+    prev_sig = str((prev_meta or {}).get("last_user_sig") or "")
+    return bool((prev_meta or {}).get("turn_closed") is True and sig and prev_sig and sig == prev_sig)
+
+
 def _mint_agy_turn_meta(cwd, payload, sid, sig):
     prev_meta = read_turn_meta(cwd, sid)
     shard = _shard_turn_path(cwd, sid)
@@ -451,11 +459,18 @@ def _mint_agy_turn_meta(cwd, payload, sid, sig):
         except OSError:
             pass
     st_cur = load(cwd, heal=False) or {}
-    raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")
-    if not raw_prompt.strip():
-        raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))
-    grants = extract_git_grants(raw_prompt)
-    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})
+    stale = _is_stale_or_nonhuman_grant_turn(payload, prev_meta, sig)
+    if stale:
+        grants = []
+        keep_closed = bool(prev_meta.get("turn_closed") is True)
+    else:
+        raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")
+        if not raw_prompt.strip():
+            raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))
+        grants = extract_git_grants(raw_prompt)
+        keep_closed = False
+    _RUNTIME_STATE["git_grants"] = list(grants)
+    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": keep_closed, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})
     if grants:
         _info(f"prompt_context: git_grant minted sid={sid} grants={grants}")
 
@@ -535,7 +550,7 @@ def main():
     if not agy_mode or is_new_turn:
         turn_log_clear(cwd, sid)
         turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
-        git_grants = extract_git_grants(prompt)
+        git_grants = list(_RUNTIME_STATE.get("git_grants") or []) if agy_mode else extract_git_grants(prompt)
         if git_grants:
             turn_log_append(cwd, "signal", session=sid, event="git_grant",
                             target="git_grant", grants=git_grants)

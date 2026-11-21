@@ -1,5 +1,6 @@
 """B3 — bash_gate.py: NHẮC (allow + additionalContext) về quy ước git và state.json,
 không bao giờ chặn lệnh."""
+import base64
 import importlib.util
 import io
 import json
@@ -611,6 +612,39 @@ class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
         rc_read, out_read, _ = run_hook("bash_gate.py", read_payload)
         self.assertEqual(rc_read, 0)
         self.assertNotIn("deny", out_read)
+
+    def test_qc1_security_hardening_vectors(self):
+        for mut_cmd in (
+            "echo {} > docs/tdq/sub/../.tdq-runtime/turn-meta-1.json",
+            "cd docs/tdq && echo {} > state.json",
+            "sc docs/tdq/state.json x",
+            "python -c \"import shutil; shutil.copy('a', 'docs/tdq/.tdq-runtime/x')\"",
+        ):
+            with self.subTest(mut_cmd=mut_cmd):
+                self.assertTrue(self.mod.mutates_tdq_state(mut_cmd))
+        self.assertFalse(self.mod.mutates_tdq_state("cat docs/tdq/state.json"))
+
+        self.assertEqual(self.mod.inspect_git_command_safety('echo "@\'\n$(git push --force origin dev)\n\'@"'), "force_push_forbidden")
+        self.assertEqual(self.mod.inspect_git_command_safety('@"\n$(git push origin dev)\n"@'), "push_needs_approval")
+        self.assertIsNone(self.mod.inspect_git_command_safety("@'\ngit push --force origin dev\n'@\n"))
+
+        enc = base64.b64encode("git push origin dev".encode("utf-16-le")).decode("ascii")
+        for wrapped in (
+            "$(git push origin dev)",
+            "`git push origin dev`",
+            '/bin/bash -c "git push origin dev"',
+            'bash -ce "git push origin dev"',
+            "pwsh -Com { git push origin dev }",
+            f"pwsh -enc {enc}",
+            'cmd /c"git push origin dev"',
+            'bash -c "sh -c \\"bash -c \'git push origin dev\'\\""',
+            "env -u FOO git push origin dev",
+            "exec git push origin dev",
+        ):
+            with self.subTest(wrapped=wrapped):
+                self.assertEqual(self.mod.inspect_git_command_safety(wrapped), "push_needs_approval")
+        self.assertEqual(self.mod.inspect_git_command_safety('git push -o "" --force origin dev'), "force_push_forbidden")
+        self.assertEqual(self.mod.has_banned_ai_branch("git -C repo switch -c claude-a"), "claude-a")
 
 
 if __name__ == "__main__":

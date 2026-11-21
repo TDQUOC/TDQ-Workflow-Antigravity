@@ -1,5 +1,6 @@
 """Golden Parity Test Suite: verify 1-1 behavioral parity across 22 AGY gates x 6 events."""
 import atexit
+import base64
 import json
 import os
 import re
@@ -1247,3 +1248,56 @@ def test_git_grant_tdq_log_1_vs_0_rust_and_python_dispatch(tmp_path: Path) -> No
         proc_off, out_off = _invoke_hook_raw(cmd, payload, repo, env_off)
         assert out_off == {"decision": "allow"}
         assert proc_off.stderr == "", f"Expected empty stderr for {cmd} with TDQ_LOG=0, got {proc_off.stderr!r}"
+
+
+def test_qc1_security_command_and_state_parity(tmp_path: Path) -> None:
+    """Verify Findings #1-#3 state, herestring, wrapper, and branch parity on real binaries."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "sec1", "2026-11-22-0201-qc1cmd")
+    for state_cmd in (
+        "echo {} > docs/tdq/sub/../.tdq-runtime/turn-meta-1.json",
+        "cd docs/tdq && echo {} > state.json",
+        "sc docs/tdq/state.json x",
+        "python -c \"import shutil; shutil.copy('a', 'docs/tdq/.tdq-runtime/x')\"",
+    ):
+        r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r, c=state_cmd: _cmd_payload(r, "c-sec-st", c))
+        assert_full_json_parity(r_out, p_out, expected_code="STATE")
+        assert r_out["decision"] == "deny"
+
+    enc = base64.b64encode("git push origin dev".encode("utf-16-le")).decode("ascii")
+    for wrapped_cmd in (
+        '/bin/bash -c "git push origin dev"',
+        f"pwsh -enc {enc}",
+        'cmd /c"git push origin dev"',
+        '@"\n$(git push origin dev)\n"@',
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-sec-def", wrapped_cmd)
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": "c-sec-gr", "prompt": "ok push lên origin đi"})  # i18n-allow
+    for hard_deny in (
+        'echo "@\'\n$(git push --force origin dev)\n\'@"',
+        'git push -o "" --force origin dev',
+        "git -C repo switch -c claude-a",
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-sec-gr", hard_deny)
+
+
+def test_qc1_security_stale_sig_and_camel_agent_parity(tmp_path: Path) -> None:
+    """Verify Findings #4 stale closed-turn replay and #5 camelCase agentId deny parity."""
+    r_ctx, p_ctx = _setup_twin_repos(
+        tmp_path / "sec2", "2026-11-22-0202-qc1stale", plan_body="- [x] **T1.1** Done\n", with_today_log=True,
+    )
+    sid = "c-qc1-stale"
+    tr_r, tr_p = tmp_path / "tr_qc1_r.jsonl", tmp_path / "tr_qc1_p.jsonl"
+    row1 = json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:05:00Z", "content": "ok push lên origin đi"}) + "\n"  # i18n-allow
+    for tr in (tr_r, tr_p):
+        tr.write_text(row1, encoding="utf-8")
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p)})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev", agentId="sub-camel-1")
+    _run_twin(r_ctx, p_ctx, "Stop", lambda r: {"cwd": str(r), "conversationId": sid})
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p)})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev")
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p), "source": "resume"})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev")
+

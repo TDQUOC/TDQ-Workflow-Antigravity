@@ -616,6 +616,41 @@ class TestAgySmartHardeningStaged(unittest.TestCase):
                 self.assertEqual(pc_proc.stderr, "")
                 self.assertEqual(bg_proc.stderr, "")
 
+    def test_qc1_stale_sig_no_remint_and_windows_case_and_agentid(self):
+        from pathlib import Path
+
+        self._init_implement(plan_text="- [x] **T1** a\n")
+        sid = "conv-qc1-stale"
+        tr = Path(self._tmp.name) / "tr_qc1.jsonl"
+        tr.write_text(json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:00:00Z", "content": "ok push lên origin đi"}) + "\n", encoding="utf-8")  # i18n-allow
+        self._run_staged("PreInvocation", {"conversationId": sid, "transcriptPath": str(tr)})
+        common_mod = self._load_staged_module("_common")
+        common_mod.mark_turn_closed(str(self.project), sid)
+
+        for replay in (
+            {"conversationId": sid, "transcriptPath": str(tr)},
+            {"conversationId": sid, "transcriptPath": str(tr), "source": "resume"},
+            {"conversationId": sid, "transcriptPath": str(tr), "source": "compact"},
+        ):
+            self._run_staged("PreInvocation", replay)
+            meta = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json").read_text(encoding="utf-8"))
+            self.assertEqual(meta["git_grants"], [])
+            deny = self._run_staged("PreToolUse", {"conversationId": sid, "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+            self.assertEqual(deny.get("decision"), "deny")
+
+        tr.write_text(tr.read_text(encoding="utf-8") + json.dumps({"step_index": 2, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:02:00Z", "content": "ok push lên origin đi"}) + "\n", encoding="utf-8")  # i18n-allow
+        self._run_staged("PreInvocation", {"conversationId": sid, "transcriptPath": str(tr)})
+        allow = self._run_staged("PreToolUse", {"conversationId": sid, "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+        self.assertEqual(allow.get("decision"), "allow")
+        sub_deny = self._run_staged("PreToolUse", {"conversationId": sid, "agentId": "sub-camel", "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+        self.assertEqual(sub_deny.get("decision"), "deny")
+
+        rc_win, out_win, _ = agy("edit_gate.py", {"cwd": str(self.project), "tool_input": {"file_path": str(self.project / "Docs" / "Tdq" / ".tdq-runtime" / "turn-meta-s1.json")}})
+        self.assertEqual(rc_win, 0)
+        self.assertEqual(parsed(out_win).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+        res_st = self._run_staged("PreToolUse", {"tool_name": "edit_file", "tool_input": {"TargetFile": str(self.project / "DOCS" / "TDQ" / "STATE.JSON")}})
+        self.assertEqual(res_st.get("decision"), "deny")
+
 
 if __name__ == "__main__":
     unittest.main()

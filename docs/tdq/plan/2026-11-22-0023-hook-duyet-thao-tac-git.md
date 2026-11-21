@@ -186,7 +186,7 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic: Mirror `QC1.1` herestring, tokenizer, depth-4 wrapper/command substitution, normalized path/alias state guards, and recursive branch checks across Python hooks, plus `os.path.normcase` in `within()`.
   - Tiêu chí & Assert: Existing hook tests pass `0 fail`, adversarial probe catches all bypass vectors, `i18n_check` and `ruff` delta `+0`
 
-- [ ] **QC1.3** (e10m) Fix stale-sig `git_grants` re-mint (#4) and sync hardened helpers/anchors in `tools/patches/agy_hooks.py` — Test: `py -3 -X utf8 -m pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q`
+- [x] **QC1.3** (e10m) Fix stale-sig `git_grants` re-mint (#4) and sync hardened helpers/anchors in `tools/patches/agy_hooks.py` — Test: `py -3 -X utf8 -m pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q`
   - Chạm: `tools/patches/agy_hooks.py`
   - Cần: `QC1.1`, `QC1.2`
   - Neo & Công cụ: `edit_file` on `tools/patches/agy_hooks.py` (`_patch_prompt_context`, `_patch_bash_gate`, `_patch_edit_gate`)
@@ -194,7 +194,7 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic: Reject stale closed-turn or `compact`/`resume`/`system` turns from minting `git_grants`, keep `turn_closed` preserved on stale ticks, add `agentId` camelCase checks, and delegate branch/herestring guards to `QC1.2` helpers.
   - Tiêu chí & Assert: `pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q` passes `0 fail`, stale-sig probe never re-mints grants, `i18n`/`ruff` delta `+0`
 
-- [ ] **QC1.4** (e10m) Rebuild release `tdq-dispatch.exe` and repackage `plugins/tdq-workflow-agy/` cleanly in-repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
+- [x] **QC1.4** (e10m) Rebuild release `tdq-dispatch.exe` and repackage `plugins/tdq-workflow-agy/` cleanly in-repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
   - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`, `plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py`, `plugins/tdq-workflow-agy/hooks/scripts/_common.py`, `plugins/tdq-workflow-agy/manifest.json`
   - Cần: `QC1.1`, `QC1.2`, `QC1.3`
   - Neo & Công cụ: `cargo build --release` + `tools/build_agy_plugin.py --upstream .` + `agy plugin validate --strict --json`
@@ -202,7 +202,7 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic: Compile release `tdq-dispatch.exe`, rebuild `plugins/tdq-workflow-agy/` via `tools/build_agy_plugin.py --upstream .`, and verify SHA-256 parity and `agy plugin validate --strict` with zero host changes.
   - Tiêu chí & Assert: `agy plugin validate plugins/tdq-workflow-agy --strict --json` returns exit `0`, `"findings": []`; `~/.gemini/config/plugins/` untouched
 
-- [ ] **QC1.5** (e10m) Add adversarial regression & parity tests for all 5 QC1 security findings — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py -q`
+- [x] **QC1.5** (e10m) Add adversarial regression & parity tests for all 5 QC1 security findings — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py -q`
   - Chạm: `tests/test_rust_dispatch_parity.py`, `tests/test_bash_gate.py`, `tests/test_agy_hooks.py`
   - Cần: `QC1.4`
   - Neo & Công cụ: `edit_file` on the 3 test modules targeting newly hardened Rust & Python paths

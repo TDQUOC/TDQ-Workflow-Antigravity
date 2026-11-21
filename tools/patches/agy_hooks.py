@@ -1836,28 +1836,19 @@ _BASH_GIT_HELPER = r'''
 
 def _check_agy_banned_branch(cmd, cwd, payload):
     from _common import block
-    cleaned = _strip_powershell_herestrings(cmd)
-    branch_names = []
-    for pattern in BRANCH_PATTERNS:
-        branch_names += [_clean(m) for m in pattern.findall(cleaned)]
-    for b_name, w_path in WORKTREE.findall(cleaned):
-        if b_name:
-            branch_names.append(_clean(b_name))
-        if w_path:
-            branch_names.append(os.path.basename(_clean(w_path).replace("\\", "/").rstrip("/")))
-    for name in branch_names:
-        if BAN.match(name):
-            block(cwd, payload, "TDQ:GIT", [
-                f"AI-prefixed branch/worktree name {name!r} is banned; name it after the work.",
-            ])
-            return True
+    bad = has_banned_ai_branch(cmd)
+    if bad:
+        block(cwd, payload, "TDQ:GIT", [
+            f"AI-prefixed branch/worktree name {bad!r} is banned; name it after the work.",
+        ])
+        return True
     return False
 
 
 def _verify_agy_git_grants(cwd, payload, needed):
     from _common import block, detect_subagent, observe, read_turn_meta, session_id
     from tdq_state import _info
-    if detect_subagent(payload, cwd).get("is_subagent") or payload.get("agent_id"):
+    if detect_subagent(payload, cwd).get("is_subagent") or payload.get("agent_id") or payload.get("agentId"):
         block(cwd, payload, "TDQ:GIT", [
             "Subagents cannot execute protected git commands even with user turn grant.",
         ])
@@ -1889,7 +1880,7 @@ def _verify_agy_git_grants(cwd, payload, needed):
 
 def _has_banned_shell_policy(cmd, cwd, payload):
     from _common import block
-    cleaned = re.sub(r"(?s)@'\r?\n.*?\r?\n'@|@\"\r?\n.*?\r?\n\"@", " ", cmd).lower()
+    cleaned = _strip_powershell_herestrings(cmd).lower()
     if any(w in cleaned for w in ("curl ", "wget ", "invoke-webrequest")) and any(p in cleaned for p in ("| bash", "| sh", "| iex")):
         block(cwd, payload, "TDQ:VUNG", ["Piping remote downloads to shell is forbidden."])
         return True
@@ -1993,7 +1984,7 @@ def _enforce_agy_bash_guards(payload, cwd):
     replace_exact(
         bash_path,
         '    if payload.get("agent_id") and state.get("active_request") \\',
-        '    if (payload.get("agent_id") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \\',
+        '    if (payload.get("agent_id") or payload.get("agentId") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \\',
         label="bash_gate_agy_team_guard",
         sentinel="is_agy() and detect_subagent(payload, cwd)",
     )
@@ -2014,7 +2005,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         '        return False\n'
         '    _mutates_src_shell = any(\n'
         '        (SHELL_MUTATOR.search(part) and not re.search(r"(?:^|[\\s\'\\"=])docs[\\\\/]", part, re.IGNORECASE))\n'
-        '        or any(not re.search(r"^(?:\\./)?docs[\\\\/]", t.lstrip("\'\\"").replace("\\\\", "/"), re.IGNORECASE)\n'
+        '        or any(not re.search(r"^(?:\\./)?docs[\\\\/]", _collapse_path_token(t.lstrip("\'\\"")), re.IGNORECASE)\n'
         '               for t in _part_stdout_targets(part))\n'
         '        for part in parts)\n'
         '    if is_agy() and state.get("active_request") and _mutates_src_shell:\n'
@@ -2093,13 +2084,13 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     replace_exact(
         edit_path,
         '    if is_protected_state and payload.get("agent_id"):',
-        '    if is_protected_state and (payload.get("agent_id") or is_agy()):',
+        '    if is_protected_state and (payload.get("agent_id") or payload.get("agentId") or is_agy()):',
         label="edit_gate_agy_state_block",
-        sentinel='(payload.get("agent_id") or is_agy())',
+        sentinel='or payload.get("agentId") or is_agy())',
     )
     replace_exact(
         edit_path,
-        '    if is_protected_state and (payload.get("agent_id") or is_agy()):\n'
+        '    if is_protected_state and (payload.get("agent_id") or payload.get("agentId") or is_agy()):\n'
         '        block(cwd, payload, "TDQ:STATE", [\n'
         '            "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",\n'
         '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
@@ -2109,7 +2100,7 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         '            "Direct edit of docs/tdq/.tdq-runtime/ is prohibited.",\n'
         '            "Only verified TDQ hooks manage single-turn runtime files.",\n'
         '        ])',
-        '    if is_protected_state and (payload.get("agent_id") or is_agy()):\n'
+        '    if is_protected_state and (payload.get("agent_id") or payload.get("agentId") or is_agy()):\n'
         '        block(cwd, payload, "TDQ:STATE", [\n'
         '            "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",\n'
         '            "Return structured output to the TDQ leader; only tdq_state.py writes state.",\n'
@@ -2129,6 +2120,7 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         '    if isinstance(payload.get("agent_id"), str) and payload["agent_id"] \\\n'
         '            and within(abs_target, os.path.realpath(cwd)) \\',
         '    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \\\n'
+        '            or (isinstance(payload.get("agentId"), str) and payload["agentId"]) \\\n'
         '            or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) \\\n'
         '            and within(abs_target, os.path.realpath(cwd)) \\',
         label="edit_gate_agy_team_subagent_block",
@@ -2512,7 +2504,13 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             pc_path,
             old_hook,
             _PROMPT_TURN_META_HELPER.lstrip("\n")
-            + "\n\ndef _mint_agy_turn_meta(cwd, payload, sid, sig):\n"
+            + "\n\ndef _is_stale_or_nonhuman_grant_turn(payload, prev_meta, sig):\n"
+            '    src = str((payload or {}).get("source") or "").strip().lower()\n'
+            '    if src in ("compact", "resume", "system"):\n'
+            "        return True\n"
+            '    prev_sig = str((prev_meta or {}).get("last_user_sig") or "")\n'
+            '    return bool((prev_meta or {}).get("turn_closed") is True and sig and prev_sig and sig == prev_sig)\n\n\n'
+            "def _mint_agy_turn_meta(cwd, payload, sid, sig):\n"
             "    prev_meta = read_turn_meta(cwd, sid)\n"
             "    shard = _shard_turn_path(cwd, sid)\n"
             "    if os.path.isfile(shard):\n"
@@ -2521,11 +2519,18 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             "        except OSError:\n"
             "            pass\n"
             "    st_cur = load(cwd, heal=False) or {}\n"
-            '    raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")\n'
-            "    if not raw_prompt.strip():\n"
-            '        raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))\n'
-            "    grants = extract_git_grants(raw_prompt)\n"
-            '    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})\n'
+            "    stale = _is_stale_or_nonhuman_grant_turn(payload, prev_meta, sig)\n"
+            "    if stale:\n"
+            "        grants = []\n"
+            '        keep_closed = bool(prev_meta.get("turn_closed") is True)\n'
+            "    else:\n"
+            '        raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")\n'
+            "        if not raw_prompt.strip():\n"
+            '            raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))\n'
+            "        grants = extract_git_grants(raw_prompt)\n"
+            "        keep_closed = False\n"
+            '    _RUNTIME_STATE["git_grants"] = list(grants)\n'
+            '    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": keep_closed, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})\n'
             "    if grants:\n"
             '        _info(f"prompt_context: git_grant minted sid={sid} grants={grants}")\n\n\n'
             "def _agy_pre_invocation_hook(payload, cwd):\n"
@@ -2621,7 +2626,7 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "    if not agy_mode or is_new_turn:\n"
         "        turn_log_clear(cwd, sid)\n"
         '        turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))\n'
-        "        git_grants = extract_git_grants(prompt)\n"
+        '        git_grants = list(_RUNTIME_STATE.get("git_grants") or []) if agy_mode else extract_git_grants(prompt)\n'
         "        if git_grants:\n"
         '            turn_log_append(cwd, "signal", session=sid, event="git_grant",\n'
         '                            target="git_grant", grants=git_grants)\n'
