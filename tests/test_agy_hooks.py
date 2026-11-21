@@ -11,10 +11,14 @@ import sys
 import tempfile
 import unittest
 
+import pytest
+
 from helper import HOOKS as HOOKS_DIR, run_hook, write_state, write_file
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "hooks", "scripts"))
+
+pytestmark = [pytest.mark.smoke, pytest.mark.e2e]
 
 
 def agy(script, payload_dict):
