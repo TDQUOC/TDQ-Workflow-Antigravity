@@ -152,7 +152,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P4 — Log & Test Bắt buộc + Kiểm định Toàn repo Đa Worker
 
-- [ ] **T4.1** (e4m) Kiểm chứng log service bật mặc định có timestamp ISO (`TDQ_LOG=1`) và im lặng hoàn toàn khi tắt (`TDQ_LOG=0`) trên `tools/build_agy_plugin.py`, `scripts/build_portable.py --sinh-main --nguon HEAD --dry-run` và `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`; khởi tạo biên bản QC `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md` — Test: `py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_rust_dispatch_parity.py -q`
+- [>] **T4.1** (e4m) Kiểm chứng log service bật mặc định có timestamp ISO (`TDQ_LOG=1`) và im lặng hoàn toàn khi tắt (`TDQ_LOG=0`) trên `tools/build_agy_plugin.py`, `scripts/build_portable.py --sinh-main --nguon HEAD --dry-run` và `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`; khởi tạo biên bản QC `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md` — Test: `py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_rust_dispatch_parity.py -q`
   - Req: `§4` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ mã nguồn runtime (chỉ đo kiểm và ghi hồ sơ QC)
   - Chạm: `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md`
   - Cần: `T3.1`
