@@ -10,6 +10,8 @@ translate headings and labels while preserving the shape. <!-- i18n-allow: canon
 **Trạng thái:** CHỜ DUYỆT
 **Ước tính sẽ dùng skill:** <skill sẽ DÙNG, hoặc "không có">
 
+> **Tóm tắt dễ hiểu:** <1–2 câu đời thường: trước vướng gì → nay sửa gì → xong ra kết quả gì>.
+
 ## Phạm vi
 - Trong: <gạch đầu dòng>
 - NGOÀI: <gạch đầu dòng>
@@ -33,18 +35,20 @@ all 5 components, the approval block at the end of the message, and no emoji:
 
 <!-- i18n-allow: sample block written in the default language -->
 ```
-Tôi đã lên kế hoạch gọn cho yêu cầu của bạn.
+Mình đã lên kế hoạch gọn cho yêu cầu của bạn. Tóm tắt dễ hiểu:
 
-**Sẽ làm:** <gạch đầu dòng ngắn>.
-**Đụng tới:** <file/khu vực>.
-**Kiểm thế nào:** <lệnh hoặc tiêu chí>.
+**Trước đây → Sau khi làm xong:** <1–2 câu đời thường nêu thay đổi cốt lõi và kết quả mong đợi>.
+**Sẽ làm:** <gạch đầu dòng ngắn theo việc thực tế làm được>.
+**Đụng tới & Kiểm:** <khu vực/file> — kiểm bằng <lệnh hoặc tiêu chí đo>.
 **Ước tính sẽ dùng skill:** <skill sẽ DÙNG, hoặc "không có">.
 
 Xem đầy đủ tại: `docs/tdq/plan/<slug>.md`
 
 ---
 
-**Bạn duyệt để tôi làm luôn chứ?**
+**Bạn duyệt để mình làm luôn chứ?**
 
-➤ Duyệt: nhắn "duyệt nhanh" kèm mức QC (vd "duyệt nhanh, QC full"); "duyệt quick" vẫn chạy — duyệt xong tôi làm ngay · Góp ý: nhắn trực tiếp
+➤ Duyệt: nhắn "duyệt nhanh" kèm mức QC (vd "duyệt nhanh, QC full"); "duyệt quick" vẫn chạy — duyệt xong mình làm ngay · Góp ý: nhắn trực tiếp
+
+---
 ```

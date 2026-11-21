@@ -1,6 +1,6 @@
 # The plan shape
 <!-- muc-luc-dong:
-  The minute estimate `(eNm)`=122
+  The minute estimate `(eNm)`=124
 -->
 
 Copy the whole block into `docs/tdq/plan/<slug>.md` and fill it in. File em:
@@ -16,6 +16,8 @@ Ngày: YYYY-MM-DD · Spec: ../spec/<slug>.md (bản 1.0, ĐÃ DUYỆT) · Lane: 
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: <main|subagent|codex> — <lý do 1–2 câu> (ĐỀ XUẤT, user chốt lúc duyệt)
 Trạng thái plan: CHỜ DUYỆT
+
+> **Tóm tắt dễ hiểu:** <2–3 câu: chia đợt thế nào và kết quả ra sao>.
 
 ## Mục lục
 

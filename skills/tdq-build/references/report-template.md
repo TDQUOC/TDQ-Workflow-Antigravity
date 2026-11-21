@@ -1,7 +1,7 @@
 # Report template
 <!-- muc-luc-dong:
-  Table of contents=7-13 · The execution steps=14-94 · The report shape=95-144 ·
-  Check before presenting=145
+  Table of contents=7-13 · The execution steps=14-101 · The report shape=102-154 ·
+  Check before presenting=155
 -->
 
 ## Table of contents
@@ -49,10 +49,15 @@ below before writing the report; working from memory is banned.
     [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md):
     <!-- i18n-allow: chat block written in the default document language -->
     ```
-    Tôi đã làm xong yêu cầu của bạn.
+    Mọi thứ của <tên việc> đã hoàn tất, kiểm sạch và sẵn sàng để bạn chốt. Tóm tắt ngắn gọn:
 
-    **Đã làm:** <gạch đầu dòng ngắn>.
-    **Kết quả kiểm:** <số hạng mục QC, kết quả test>.
+    1. Trước và sau request có gì khác?
+
+    - **Trước đây:** <trạng thái/vướng mắc cũ>.
+    - **Sau khi làm xong:** <thay đổi cốt lõi>:
+      - **<Ý chính 1>:** <tác dụng, số liệu ngắn>.
+      - **<Ý chính 2>:** <tác dụng>.
+    - **Đã test & Kết quả:** <kiểm gì, số đạt/lỗi>.
 
     Xem đầy đủ tại: `docs/tdq/reports/<slug>.md`
 
@@ -61,6 +66,8 @@ below before writing the report; working from memory is banned.
     **Bạn có muốn tôi commit phần thay đổi này không?**
 
     ➤ Trả lời: nhắn "commit" (tôi commit, không push) hoặc "chưa" (giữ nguyên chỗ làm việc) · Góp ý: nhắn trực tiếp
+
+    ---
     ```
     User agrees → a message describing the change, containing NO "generated with …", NO
     "Co-Authored-By: Claude Code...", and no AI trailer; branch named per the conventions.
@@ -97,9 +104,8 @@ Next step: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_state.py" set phase=idle`
 (deliberate repetition — the original is step 7 of `## The execution steps` in this file.)
 
 `docs/tdq/reports/<slug>.md` — in the user's document language, with NO hard line limit.
-**As short as possible, around 10-20 lines**; longer than that, say why (many proposals, many
-tasks…) instead of cutting the truth. Keep wording simple, clear, visual, and complete (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`) for every reader; compress each item into ONE line, separating ideas with
-`·`, and take every number straight from real output.
+Keep wording simple, clear, visual, and complete (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`) for every reader following [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md).
+Lead with a `Tóm tắt nhanh` blockquote, explain Before → After → Result cleanly across readable sub-bullets instead of packing facts onto middle-dot (`·`) lines, and take every number straight from real output.
 
 <!-- i18n-allow: report template written in the default document language -->
 ```markdown
@@ -107,14 +113,18 @@ tasks…) instead of cutting the truth. Keep wording simple, clear, visual, and 
 
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 
-**Trước request (trạng thái/flow):** <trạng thái và luồng trước khi sửa, dễ hiểu cho mọi người đọc>
-**Sau request (trạng thái/flow):** <trạng thái và luồng sau khi sửa> · **Đã làm:** <P1 …> · <P2 …> · <P3 …>
-**Đã test gì:** <các kịch bản, vùng chạm và lệnh kiểm thử đã chạy>
-**Kết quả test:** <output thực tế, số test pass/skip/fail> · **Kết quả:** <chỉ số> <trước> → <sau> · **Kiểm:** <lint> · QC <PASS x/y mục DoD, defect đã sửa>
-**Đầu ra:** <đường dẫn file chính> · **Archify HTML:** `docs/tdq/reports/<slug>.html` · Backup: <đường dẫn, nếu có sửa ngoài repo>
-**Giới hạn:** <cái gì chưa làm, vì sao, ảnh hưởng gì>
-**Lệch spec chờ duyệt:** <mỗi lệch một dòng: Qn · ngưỡng → đo được · phương án đã áp — hoặc "không có">
-**Git:** <chưa commit / commit nào đã tạo>
+> **Tóm tắt nhanh:** <2–3 câu: trước vướng gì → sau sửa gì → kết quả thật>.
+
+**Trước request (trạng thái/flow):** <trạng thái và luồng trước khi sửa, dễ hiểu>
+**Sau request (trạng thái/flow):** <luồng mới ngắn gọn, tách ý con bên dưới nếu cần>
+- **<Ý chính 1>:** <tác dụng và con số chính>
+- **<Ý chính 2>:** <tác dụng>
+**Đã test gì:** <kịch bản, vùng chạm và lệnh kiểm>
+**Kết quả test:** <số pass/skip/fail, đo thực tế trước → sau, QC PASS x/y DoD>
+**Đầu ra:** <file chính> · **Archify HTML:** `docs/tdq/reports/<slug>.html` · Backup: <đường dẫn nếu có>
+**Giới hạn:** <việc chưa làm và ảnh hưởng, hoặc "không có">
+**Lệch spec chờ duyệt:** <Qn · ngưỡng → đo · phương án — hoặc "không có">
+**Git:** <chưa commit / commit đã tạo>
 
 ## Thời gian
 

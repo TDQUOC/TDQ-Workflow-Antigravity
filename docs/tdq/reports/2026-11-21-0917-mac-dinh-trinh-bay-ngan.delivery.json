@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "04f93046-c67d-432d-bb44-f4a702a50c3c",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-0917-mac-dinh-trinh-bay-ngan\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+  "specification": {
+    "sha256": "d8ca771b584790fb591f88d154fe6ff0448174ce9c4e2087fba8bb4884a03cc3",
+    "bytes": 5412
+  },
+  "artifact": {
+    "sha256": "e0d73302cf343da88eef78b1e567210cce13faa66f9b427b71891fe5158bdbd6",
+    "bytes": 1615922
+  },
+  "explainer": {
+    "preparedSha256": "963019367c19875c77c20e63f68eb2cc7dc38e4ee5dabffdf58b6cdd385bc052",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-truoc",
+        "inline": true,
+        "sha256": "65bded1791eca7e16b0609cf6aa96862b8195ab11c8fbd4011f6a246e7328b6b",
+        "bytes": 962
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-sau",
+        "inline": true,
+        "sha256": "36c98a85d1a2e11e2832b5bb20e6f3306fd9211736a90715324d52031d5d79a8",
+        "bytes": 1122
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-kiem-tra",
+        "inline": true,
+        "sha256": "8fa607e036538b0180ea4311f8da0878745dbff04fb0112fe49b957a5c946718",
+        "bytes": 1084
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "bao-cao-ket-qua",
+        "inline": true,
+        "sha256": "8731f439a8a62c4d6f1753db7a777852c49804514875f0982e4216fd10265170",
+        "bytes": 1062
+      }
+    ]
+  }
+}

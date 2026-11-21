@@ -58,6 +58,18 @@ class ReportVisualContract(unittest.TestCase):
             self.assertIn("before/after state & flow", target.lower())
             self.assertIn("what was tested & actual test results", target.lower())
 
+    def test_report_template_defaults_to_natural_story_without_dot_packing(self):
+        template = text("skills/tdq-build/references/report-template.md")
+        self.assertNotIn("compress each item into ONE line", template)
+        self.assertNotIn("separating ideas with `·`", template)
+        for phrase in (
+            "Tóm tắt nhanh:",
+            "1. Trước và sau request có gì khác?",
+            "Trước đây:",
+            "Sau khi làm xong:",
+        ):
+            self.assertIn(phrase, template)
+
 
 if __name__ == "__main__":
     unittest.main()

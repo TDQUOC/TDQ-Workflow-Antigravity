@@ -80,12 +80,12 @@ scope. Spec approved → plan NOW.
    components, the approval block at the end of the message, and **no** mode question here:
    <!-- i18n-allow: chat block written in the user's document language -->
    ```
-   Tôi đã viết xong plan để thực hiện yêu cầu của bạn.
+   Mình đã lập xong kế hoạch thực hiện yêu cầu của bạn theo từng đợt rõ ràng:
 
-   **Cách làm:** <1–2 câu>.
-   **Khối lượng:** <số phase>, <số task>, ước tính <tổng phút>.
+   **Làm được gì:** <1–2 câu đời thường nêu rõ Trước → Sau → Kết quả chính từng đợt mang lại>.
+   **Khối lượng & Tiến độ:** <số phase>, <số task>, ước tính <tổng phút> (kèm lý do chia đợt gọn).
    **Model & Effort (được phép đổi khi duyệt):** <implement / qc / report model & effort>.
-   **Kiểm thế nào:** <số dòng DoD>, mỗi dòng một lệnh kiểm.
+   **Kiểm thế nào:** <số dòng DoD>, mỗi hạng mục có lệnh kiểm chứng thực tế.
 
    Xem đầy đủ tại: `docs/tdq/plan/<slug>.md`
 
@@ -93,7 +93,9 @@ scope. Spec approved → plan NOW.
 
    **Bạn duyệt plan này chứ?**
 
-   ➤ Duyệt: nhắn "duyệt plan" (duyệt xong tôi hỏi bạn một câu về cách chạy) · Góp ý hoặc đổi model/effort: nhắn trực tiếp
+   ➤ Duyệt: nhắn "duyệt plan" (duyệt xong mình hỏi bạn một câu về cách chạy) · Góp ý hoặc đổi model/effort: nhắn trực tiếp
+
+   ---
    ```
    The body is ≤ 14 lines and a REAL summary; a bare status line ("written to the log, waiting for
    approval") is banned. Quoting a template as an example → label it right before the excerpt, in the

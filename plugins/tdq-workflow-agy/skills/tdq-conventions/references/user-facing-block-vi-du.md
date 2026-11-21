@@ -1,4 +1,8 @@
 # The user-facing block: the symbol table and a BEFORE/AFTER example
+<!-- muc-luc-dong:
+  The symbols allowed=12-30 · Examples=31-36 · Before (`Trước`)=37-56 · After (`Sau`)=57-81 ·
+  Plain Narrative Report Contrast (1.jpg Style)=82
+-->
 
 Split out of `user-facing-block.md` on 2026-10-02 (965 tokens). Both parts are lookup material: the
 symbol table is opened when you are unsure whether a mark is allowed; the example when you want to
@@ -74,3 +78,41 @@ Xem đầy đủ tại: `docs/tdq/spec/<slug>.md`
 
 The second `---` is component 6, the closing rule of the turn. The `Trước` version has only the
 first one, which is part of what makes it the counter-example.
+
+### Plain Narrative Report Contrast (1.jpg Style)
+
+#### Compressed Counter-Example (Avoid)
+
+<!-- i18n-allow: counter-example showing why middle-dot wall compression fails plain readability, not a template to copy -->
+```
+Đã xong request.
+Trước request: mọi thứ chạy chung luồng build · dư R10/R14 · không có chốt team · mất telemetry khi approve.
+Sau request: thêm work_kind · investigate-mode.md · evidence add/merge/render · khóa fcntl/NTFS · TDQ:DOC ở 40 điểm.
+Đã test: tdq_test.py tron-bo · 4596 passed · 36 skipped · Q1-Q6 PASS.
+➤ Duyệt: nhắn "commit"
+```
+
+#### Natural Narrative Showcase (Default)
+
+<!-- i18n-allow: khuôn mẫu báo cáo tự nhiên viết bằng ngôn ngữ mặc định khi doc_lang = vi -->
+```
+Mọi thứ đã hoàn tất, test sạch toàn bộ hệ thống và sẵn sàng để bạn chốt merge. Tóm tắt ngắn gọn để bạn dễ nắm:
+
+1. Trước và sau request có gì khác?
+
+- **Trước đây:** Mọi việc điều tra lỗi đều bị ép đi chung quy trình dựng code nên dư nhiều bảng mẫu không cần thiết và thiếu chỗ gom bằng chứng an toàn.
+- **Sau khi làm xong:** Hệ thống tách rạch ròi hai luồng xử lý ngay từ khâu mở request:
+  - **Nhẹ ở đầu, sâu ở bước làm:** Giảm thủ tục thừa cho tác vụ điều tra, vẫn giữ lối nâng cấp khi chuyển sang vá lỗi.
+  - **Giữ ngữ cảnh và an toàn:** Đồng bộ khóa ghi chép và giữ nguyên tốc độ đọc theo dải dòng (`14,35 ms`).
+- **Kiểm tra & Kết quả:** Đã chạy toàn bộ bộ kiểm thử nền (`4.596` test đạt, `0` lỗi) và kiểm chứng độc lập đạt toàn bộ tiêu chuẩn.
+
+Xem đầy đủ tại: `docs/tdq/reports/<slug>.md`
+
+---
+
+**Bạn muốn mình commit kết quả này không?**
+
+➤ Trả lời: nhắn "commit" (hoặc "duyệt commit") nếu đồng ý · Chỉnh sửa: nhắn trực tiếp
+
+---
+```

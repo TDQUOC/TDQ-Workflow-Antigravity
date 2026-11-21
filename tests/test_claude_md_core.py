@@ -218,6 +218,11 @@ class KhoiHuongDanToolTest(unittest.TestCase):
         ):
             self.assertIn(cum, khoi)
 
+    def test_khoi_mac_dinh_trinh_bay_tu_nhien_cho_spec_plan_report(self):
+        khoi = tdq_setup.khoi_huong_dan(tdq_setup.GOC_MAU)
+        for cum in ("spec", "plan", "report", "Trước → Sau → Kết quả", "Tóm tắt dễ hiểu"):
+            self.assertIn(cum, khoi)
+
 
 class AclDescriptorTest(unittest.TestCase):
     @staticmethod

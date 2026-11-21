@@ -2,7 +2,7 @@
 <!-- muc-luc-dong:
   Table of contents=17-25 · The seven places this shape is mandatory=26-30 ·
   The six components (all six, in order)=31-59 · The eight decoration rules=60-99 ·
-  Hard rules=100-126 · Bảng ký hiệu và ví dụ TRƯỚC/SAU=127
+  Hard rules=100-126 · Plain-Language Narrative Rule=127-143 · Bảng ký hiệu và ví dụ TRƯỚC/SAU=144
 -->
 
 Applies to **every** place where TDQ asks a question or presents a result to the user. The reader
@@ -123,6 +123,23 @@ content to be changed, removed or added.
   Any answer is "no" → fix the draft, do not send it. This check exists because the numbering
   rule got broken in practice while the rule itself was already written down: it lived only in
   the skill files that ask questions, and nobody re-read the draft before sending.
+
+## Plain-Language Narrative Rule
+
+Applies to **every** `spec`, `plan`, `report`, and `quick` summary — both the chat block and
+the top blockquote of the markdown file (`> **Tóm tắt dễ hiểu:**` / `> **Tóm tắt nhanh:**`). <!-- i18n-allow: canonical top summary labels in the default language -->
+
+1. **10–15 seconds readability:** Write so any reader — developer or non-specialist — grasps
+   what changed, why, and what works in 10–15 seconds without asking "tóm tắt lại dễ hiểu hơn". <!-- i18n-allow: sample user follow-up phrase -->
+2. **Tell the story arc (`Trước` → `Sau` → `Kết quả`):** Start with plain cause-and-effect <!-- i18n-allow: canonical narrative arc markers -->
+   prose: what pain existed before (`Trước đây:`), what changes now (`Sau khi làm xong:`), and <!-- i18n-allow: sample narrative lead-ins in the default language -->
+   the outcome (`Kết quả`). Keep internal jargon explained inline when first named.
+3. **Breathe, never pack middle-dot (`·`) walls:** Give each main point one clear bullet with
+   a plain-language label (`**Nhãn ngắn:**`). Weave key numbers gently into sentences instead of <!-- i18n-allow: sample label formatting -->
+   compressing 4–5 facts onto one middle-dot (`·`) line. Keep long paths, CLI flags, and dense
+   tables behind `Xem đầy đủ tại:`. <!-- i18n-allow: sample lead-in in the default language -->
+4. **Two-tier `.md` structure:** Put the short plain summary immediately under the document `#`
+   title, and keep all machine-checked tables and headings intact underneath.
 
 ## Bảng ký hiệu và ví dụ TRƯỚC/SAU
 

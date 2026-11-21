@@ -217,3 +217,25 @@ def test_v2_build_verify_binary_magic_and_stage_guard(tmp_path: Path):
     assert set(staged.keys()) == {"windows", "linux", "darwin"}
     for target, path in staged.items():
         assert build_agy_plugin.verify_binary_magic(path, target)
+
+
+def test_v2_plain_language_presentation_synced_in_plugin():
+    """Verify compiled AGY plugin carries plain-language presentation updates."""
+    agents_md = (PLUGIN_DIR / "rules" / "AGENTS.md").read_text(encoding="utf-8")
+    assert "Default plain-language narrative across `spec`, `plan`, and `report`" in agents_md
+
+    block_md = (
+        PLUGIN_DIR / "skills" / "tdq-conventions" / "references" / "user-facing-block.md"
+    ).read_text(encoding="utf-8")
+    assert "## Plain-Language Narrative Rule" in block_md
+
+    report_md = (
+        PLUGIN_DIR / "skills" / "tdq-build" / "references" / "report-template.md"
+    ).read_text(encoding="utf-8")
+    assert "Tóm tắt nhanh:" in report_md
+    assert "compress each item into ONE line" not in report_md
+
+    spec_md = (
+        PLUGIN_DIR / "skills" / "tdq-spec" / "references" / "spec-template.md"
+    ).read_text(encoding="utf-8")
+    assert "Tóm tắt dễ hiểu:" in spec_md

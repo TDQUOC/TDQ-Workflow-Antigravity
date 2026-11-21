@@ -20,6 +20,7 @@
     "Source file modified: scripts/tdq_bench.py",
     "Source file modified: scripts/tdq_ccr.py",
     "Source file modified: scripts/tdq_eval.py",
+    "Source file modified: scripts/tdq_setup.py",
     "Source file modified: scripts/tdq_state.py",
     "Source file modified: scripts/tdq_team.py",
     "Source file modified: scripts/tdq_ten_lenh.py",
@@ -27,12 +28,15 @@
     "Source file modified: scripts/token_audit.py",
     "Source file modified: skills/tdq-build/SKILL.md",
     "Source file modified: skills/tdq-build/references/qc.md",
+    "Source file modified: skills/tdq-build/references/report-template.md",
     "Source file modified: skills/tdq-build/references/team-mode-tra-cuu.md",
     "Source file modified: skills/tdq-build/references/team-mode.md",
     "Source file modified: skills/tdq-build/references/vision-test-loop.md",
     "Source file modified: skills/tdq-conventions/SKILL.md",
     "Source file modified: skills/tdq-conventions/references/handoff-schema.json",
     "Source file modified: skills/tdq-conventions/references/subagent-tuning.md",
+    "Source file modified: skills/tdq-conventions/references/user-facing-block-vi-du.md",
+    "Source file modified: skills/tdq-conventions/references/user-facing-block.md",
     "Source file modified: skills/tdq-intake/SKILL.md",
     "Source file modified: skills/tdq-intake/references/issue-triage.md",
     "Source file modified: skills/tdq-intake/references/quick-lane-mini.md",
@@ -3217,5 +3221,5 @@
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-21T02:19:06Z"
+  "checked_at": "2026-11-21T03:26:14Z"
 }
