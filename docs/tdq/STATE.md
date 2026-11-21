@@ -1,14 +1,14 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-21T17:37:37+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-21T18:19:01+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-21-1536-nang-cap-qc-tester-e2e |
-| Work kind | build |
+| Request | 2026-11-21-1736-mac-dinh-trinh-bay-de-hieu |
+| Work kind | investigate |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-21-1536-nang-cap-qc-tester-e2e.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-21-1536-nang-cap-qc-tester-e2e.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-21-1736-mac-dinh-trinh-bay-de-hieu.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
