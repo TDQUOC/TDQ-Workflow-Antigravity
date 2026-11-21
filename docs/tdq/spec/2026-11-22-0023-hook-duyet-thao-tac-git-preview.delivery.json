@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "6395a36c-370c-4a24-82f6-d24fc3c1f899",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.truoc-sau.archify.e0604e1c09d14bbaa25370260a7d2cb1.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git-preview.496350f1d36d4e3ead7a599b81f500ac.html",
+  "specification": {
+    "sha256": "ab989a15a3e3a27a8520f9814cf7e7cc70cfc8c0c2613a7958dfae4fcbf0e3eb",
+    "bytes": 2128
+  },
+  "artifact": {
+    "sha256": "d9ef6ebdec3bed00044aaa166c44d3798b4892703cfc8739d700f452168112c5",
+    "bytes": 872322
+  },
+  "explainer": {
+    "preparedSha256": "42c94f73a31a5b426e2859b1b5574bfe000f902eea336f4657a4669fabaf2dc6",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-git-grant",
+        "inline": true,
+        "sha256": "ec984924931ebebc6348ef7c5c0073c762e2cbaefcb216e9d6f10a8c40a7331d",
+        "bytes": 1583
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-shell-parse",
+        "inline": true,
+        "sha256": "6b591d0e5dacce601321288ba4ec56306a5d89d8eb0d4650283397715b4c9f66",
+        "bytes": 1089
+      }
+    ]
+  }
+}
