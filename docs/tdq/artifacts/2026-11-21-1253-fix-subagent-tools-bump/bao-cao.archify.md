@@ -30,15 +30,15 @@ Loại `call_mcp_tool`, `grep_search`, `find_by_name`, `list_dir` khỏi `_READO
 
 Crate Rust `0.103.1` biên dịch thành công trên Windows, `ubuntu-100-95` (`musl`) và `mbair` (`ARM64`) với `0` tàn dư SSH, gói plugin sạch lỗi và trọn bộ `6` worker đạt `4.605 passed` (`0 failed`).
 
-## 3. Cài `~/.gemini/` bảo toàn Caveman & chờ duyệt `T5.2` {#cai-dat-va-cho-commit}
+## 3. Cài `~/.gemini/` bảo toàn Caveman & phát hành local `main` + `v0.103.1` {#cai-dat-va-cho-commit}
 
-@workflow id=wf-install-release title="Cai ~/.gemini/ 0.103.1, goi thu live va cho duyet T5.2"
+@workflow id=wf-install-release title="Cai ~/.gemini/ 0.103.1, goi thu live va phat hanh main v0.103.1"
 | install_ag | Cai ~/.gemini/ | external |
 | live_probe | tdq-explorer ok | backend |
 | claude_safe | ~/.claude nguyen | security |
-| wait_commit | Cho T5.2 main | messagebus |
+| wait_commit | Main va v0.103.1 | messagebus |
 | install_ag > live_probe | Caveman va RTK |
 | live_probe > claude_safe | read va send ok |
-| claude_safe > wait_commit | dev va v0.103.1 |
+| claude_safe > wait_commit | dev 35a75e32 ok |
 
-Bản `0.103.1` đã chạy thật trên Antigravity user-level, giữ nguyên Caveman/RTK và `~/.claude/`, xác minh gọi live `tdq-explorer` thành công và sẵn sàng thực thi `T5.2` khi người dùng duyệt `"commit"`.
+Bản `0.103.1` đã chạy thật trên Antigravity user-level, giữ nguyên Caveman/RTK và `~/.claude/`, gọi live `tdq-explorer` thành công và đã hoàn tất `T5.2` (`dev@35a75e32`, `main@91db3046`, tag `v0.103.1` local).

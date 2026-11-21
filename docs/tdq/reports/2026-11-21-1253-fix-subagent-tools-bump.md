@@ -3,7 +3,7 @@
 > **Tóm tắt nhanh:**
 > - **Trước:** Toàn bộ `8/8` subagent của `tdq-workflow-agy` (`v0.103.0`) mang `call_mcp_tool`, `grep_search`, `find_by_name`, `list_dir` ở YAML `tools:` (`tdq-explorer.md` còn lặp `write_file`) khiến `invoke_subagent` vỡ khởi tạo `unknown component: tool "call_mcp_tool" not found in registry`, dù `agy plugin validate` không phát hiện.
 > - **Sau:** Đưa `_READONLY_TOOLS` và `_WRITER_TOOLS` về đúng danh sách tool thật của Antigravity 2.0, sửa `tdq-explorer.md`, khóa thêm test âm tính, giữ nguyên `hooks/` cho agent chính, đồng bộ `0.103.1` và biên dịch lại crate Rust trên cả `3` hệ điều hành (`Windows`, `Linux musl` qua `ubuntu-100-95`, `macOS ARM64` qua `mbair`) với `0` tàn dư SSH, đóng gói `plugins/tdq-workflow-agy/` và cài ra `~/.gemini/` mà không chạm `~/.claude/`.
-> - **Kết quả:** `4.605 passed` (`36` skipped, `0` failed, `314.31s`), `29` Cargo tests PASS, `agy.EXE plugin validate --strict` `findings: []`, kiểm gọi live `invoke_subagent(tdq-explorer)` khởi tạo và thực thi thành công ngay trong phiên Antigravity, QC độc lập `tdq-qc-tester` xác nhận **PASS** (`Q1`–`Q6`, `QC-F1`–`QC-F4`), chỉ chờ duyệt `"commit"` để thực thi `T5.2`/`Q7` (merge `dev`, sinh `main` local và gắn tag `v0.103.1`).
+> - **Kết quả:** `4.605 passed` (`36` skipped, `0` failed, `314.31s`), `29` Cargo tests PASS, `agy.EXE plugin validate --strict` `findings: []`, kiểm gọi live `invoke_subagent(tdq-explorer)` khởi tạo và thực thi thành công ngay trong phiên Antigravity, QC độc lập `tdq-qc-tester` xác nhận **PASS** (`Q1`–`Q6`, `QC-F1`–`QC-F4`), và đã hoàn tất `T5.2`/`Q7` (merge `--no-ff` vào `dev@35a75e32`, sinh nhánh local `main@91db3046` + gắn annotated tag `v0.103.1`, không `git push`).
 
 Ngày: 2026-11-21 · Request: `2026-11-21-1253-fix-subagent-tools-bump` · Nhánh: `bugfix/fix-subagent-tools-bump` → `dev` · Spec: [2026-11-21-1253-fix-subagent-tools-bump.md](../spec/2026-11-21-1253-fix-subagent-tools-bump.md) · Plan: [2026-11-21-1253-fix-subagent-tools-bump.md](../plan/2026-11-21-1253-fix-subagent-tools-bump.md) · QC: [2026-11-21-1253-fix-subagent-tools-bump.md](../qc/2026-11-21-1253-fix-subagent-tools-bump.md)
 
@@ -46,7 +46,7 @@ Ngày: 2026-11-21 · Request: `2026-11-21-1253-fix-subagent-tools-bump` · Nhán
 - Bảo toàn môi trường cài: `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy\mcp_config.json` bọc đủ `['lsp', 'chrome-devtools', 'tavily-primary']` qua `tdq_mcp_shrink.py`, `rtk 1.2.0` sẵn sàng, `GEMINI.md` (`9.376` B) nguyên vẹn, `C:\Users\admin\.claude\plugins\installed_plugins.json` giữ nguyên `mtime = 1795000633.190871`.
 - Thử runtime trực tiếp: `invoke_subagent(TypeName="tdq-explorer", Role="Live 0.103.1 Subagent Probe")` (`4b121235`) khởi tạo executor sạch không crash, gọi `read_file` + `send_message` trả đúng frontmatter tools `[read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]`.
 - Trọn bộ toàn repo (`tron-bo --workers 6 --fresh --reuse off`, `receipt=908d60074c52418b9197d175329a8919`): **PASS (`exit_code=0`, `details_complete=True`, `4.605 passed`, `36 skipped`, `0 failed` trong `314.31s`, `bo_sot=0`)**.
-- QC độc lập `tdq-qc-tester` (`d12387d8`): **PASS (`Q1`–`Q6`, `QC-F1`–`QC-F4`)**; `Q7`/`T5.2` ở trạng thái `CHỜ` đến khi duyệt `"commit"`.
+- QC độc lập `tdq-qc-tester` (`d12387d8`) & chốt phát hành `T5.2`/`Q7`: **PASS (`Q1`–`Q7`, `QC-F1`–`QC-F4`)** — `dev@35a75e32`, `main@91db304635f142b457284d55accf82c28a813239` (`kept=190`, `.claude-plugin/plugin.json` & `.codex-plugin/plugin.json` `0.103.1`), annotated tag `v0.103.1` khớp `main` HEAD (local only, không `git push`).
 
 ---
 
@@ -56,6 +56,7 @@ Ngày: 2026-11-21 · Request: `2026-11-21-1253-fix-subagent-tools-bump` · Nhán
 - `plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64` (`2,422,392` B, ELF, SHA256 `d34f6c73ff6ffbcac2d226aa580871d2a9ea7827874a308d35cd1c11912d8cb5`)
 - `plugins/tdq-workflow-agy/bin/tdq-dispatch-darwin-arm64` (`1,845,856` B, Mach-O ARM64, SHA256 `76b06c26c635fd81113dec18f31b0c449ca82705c50a8dc8d704f597cfd0361f`)
 - Gói native `plugins/tdq-workflow-agy/` (`v0.103.1`, `upstream_commit=d74393da`) và bản cài user-level `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` (`253` tệp, `0/8` tool cấm)
+- Nhánh `dev` merge commit `35a75e32`, nhánh local `main@91db304635f142b457284d55accf82c28a813239` (`kept=190`) và annotated tag `v0.103.1` (`91db304635f142b457284d55accf82c28a813239`, chỉ local)
 
 ## Archify HTML
 
@@ -68,7 +69,7 @@ Ngày: 2026-11-21 · Request: `2026-11-21-1253-fix-subagent-tools-bump` · Nhán
 - Subagent làm việc trong git worktree (`T3.1` `fec114cb`, `T4.1` `6b7e9628`) hoàn tất test + commit và gửi digest `MERGE-READY: yes`, nhưng Stop hook `[TDQ:LOG]`/`[TDQ:TICK]` của host chặn khi kết thúc phiên vì phạm vi ghi của subagent không được sửa `plan`/`workinglog` ở repo gốc; coordinator đã nghiệm thu `check`/`merge`/dọn worktree và đóng subagent sạch sẽ.
 - Lần chạy `tron-bo` đầu (`task-12326`) chạy xong `4.605 passed` nhưng bị đánh dấu `INCOMPLETE` vì lệnh `ruff check` chạy xen kẽ ghi `.ruff_cache/0.17.3/*`; lần chạy lại sạch (`task-12432`, `receipt=908d60074c52418b9197d175329a8919`) đạt `PASS` trọn vẹn.
 - Ghi nhận Low (không chặn): `README.md:4,237` giữ số `4602 passed` (`4.602 passed`) từ `0.103.0` trong khi thực đo `0.103.1` đạt `4.605 passed` (do bổ sung test âm tính `test_agent_frontmatter.py`; cố ý không sửa `README.md` sau `tron-bo` để giữ sạch receipt; `test_docs_consistency.py` vẫn PASS).
-- Tác vụ `T5.2` & `Q7` (merge `--no-ff` về `dev`, chạy `build_portable.py --sinh-main --nguon dev --nhanh-dich main`, gắn annotated tag `v0.103.1` local, không `git push`) đang chờ người dùng duyệt `"commit"`.
+- Phát hành `T5.2` & `Q7` giữ phạm vi local (`dev@35a75e32`, `main@91db3046`, tag `v0.103.1`) theo nguyên tắc không `git push`; bản đồ kiến trúc tổng `docs/architecture/` báo `stale` ở `agents/tdq-build-resolver.md` được giữ nguyên sau `tron-bo` để giữ sạch receipt kiểm thử (`Archify HTML` của báo cáo này đã xác thực `current`).
 - Thời gian `model_giay=null` (`no_usable_source` từ transcript Antigravity theo `tdq_timing.py show`).
 
 ## Lệch spec chờ duyệt
@@ -76,6 +77,8 @@ Ngày: 2026-11-21 · Request: `2026-11-21-1253-fix-subagent-tools-bump` · Nhán
 Không có (`tdq_state.py lech list` → `0 item(s), 0 pending`).
 
 ## Commit trung gian trên nhánh `bugfix/fix-subagent-tools-bump`
+
+- `13e52f20` — `docs(tdq): finalize QC Q1-Q6 and report artifacts for v0.103.1` (sau đó merge `--no-ff` về `dev@35a75e32` và xóa nhánh request)
 
 - `67cb10fc` — `merge tdq/2026-11-21-1253-fix-subagent-tools-bump/t4.1 into bugfix/fix-subagent-tools-bump` (chứa `8d183c0a` `docs(qc): record T4.1 TDQ_LOG and portable/parity evidence`)
 - `2ccf2f35` — `docs(plan): mark T4.1 delegated to worktree`
@@ -138,5 +141,5 @@ Sửa triệt để lỗi khởi tạo executor của `8/8` subagent Antigravity
 - `agy.EXE plugin validate --strict --json`: `findings: []`; live `invoke_subagent(tdq-explorer)` (`4b121235`) PASS ngay trong phiên đang mở; QC độc lập `tdq-qc-tester` (`d12387d8`) **PASS** (`Q1`–`Q6`, `QC-F1`–`QC-F4`).
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-21-1253-fix-subagent-tools-bump.manifest.json -->
-<!-- manifest_digest: e2b398b9dcbc7e6660f26ffc3a9e3c6e9b9f70b4617cce7a42c4224cb2b40cf7 -->
+<!-- manifest_digest: c3ec273be283b309f986a3db83534c425e5aad2b61cc0901bcc583cf6f33821d -->
 <!-- tdq-archify-binding:end -->

@@ -5,16 +5,16 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-21T07:17:21.224Z",
+  "startedAt": "2026-11-21T07:25:28.202Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
-    "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
-    "bytes": 2454
+    "sha256": "c8be82cfb27f00e3412041200148ce2d755ded5b5189dc7db0dae43f5bd5b271",
+    "bytes": 2485
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
-    "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
-    "bytes": 1229896
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
+    "sha256": "067999e398a5c7ef17c1351d332020331597def7dfa5662315f62431b756d616",
+    "bytes": 1230428
   },
   "stages": {
     "browser-check": {
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\19056_1795245926819\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -44,8 +44,8 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
-          "bytes": 2454
+          "sha256": "c8be82cfb27f00e3412041200148ce2d755ded5b5189dc7db0dae43f5bd5b271",
+          "bytes": 2485
         },
         "validation": {
           "checksPassed": 4,
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1199,
+      "durationMs": 1181,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\19056_1795245926819\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "76b7d857-226e-4047-b65c-71cef3642986",
+        "receiptId": "e4aa8f58-c5f8-472f-8333-b80af6441086",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
         "explainer": {
-          "preparedSha256": "8dd9f165c5400fe44d6c1e737132951998ee475e2f38c8e62efdbed7304ef187",
+          "preparedSha256": "91e65b0efc29b0a7e95b3f27a19be6c849a3b514912b63137d10b3914d548614",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -103,18 +103,18 @@
               "kind": "diagram-spec",
               "id": "wf-install-release",
               "inline": true,
-              "sha256": "dec9563e1e98b647a6b6c16729f747c79bcb4db97338c98507aa072bc034ed8e",
-              "bytes": 1001
+              "sha256": "a5605bc3b2c9cfc9c0b363eccf3179e34a031c297fae1ce388bb2a8d121518f2",
+              "bytes": 1022
             }
           ]
         },
         "specification": {
-          "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
-          "bytes": 2454
+          "sha256": "c8be82cfb27f00e3412041200148ce2d755ded5b5189dc7db0dae43f5bd5b271",
+          "bytes": 2485
         },
         "artifact": {
-          "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
-          "bytes": 1229896
+          "sha256": "067999e398a5c7ef17c1351d332020331597def7dfa5662315f62431b756d616",
+          "bytes": 1230428
         },
         "validation": {
           "checksPassed": 4,
@@ -140,21 +140,21 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 600,
+      "durationMs": 595,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\23808_1795245439837\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\19056_1795245926819\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
         "family": "explainer",
         "artifact": {
-          "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
-          "bytes": 1229896
+          "sha256": "067999e398a5c7ef17c1351d332020331597def7dfa5662315f62431b756d616",
+          "bytes": 1230428
         },
         "checks": [
           {
@@ -200,7 +200,7 @@
               "id": "wf-fix-summary",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ihPXuW\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-iTkPyI\\child.html",
                 "artifact": {
                   "sha256": "1c4b27d4df924a9b48db3baf7ba54812f7f9e47203a05b3fa2b452c0d61626f6",
                   "bytes": 810426
@@ -327,7 +327,7 @@
               "id": "wf-build-qc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-AHafiJ\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-VGZY3s\\child.html",
                 "artifact": {
                   "sha256": "9c9e1d01964c8c82e863b7e9bd17d6109ea16e9896574bfe873d2ca79cb3f3f6",
                   "bytes": 810121
@@ -454,10 +454,10 @@
               "id": "wf-install-release",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-eCaWNJ\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-NYWy2H\\child.html",
                 "artifact": {
-                  "sha256": "162c7e473dd7c73f717dabd3aae0c78c969343a8d2bde5fc459c2ad8aaca8d78",
-                  "bytes": 810200
+                  "sha256": "b5b1b7b781197af141852c34b79d085de0d3115028d106256f7340b2868846e3",
+                  "bytes": 810356
                 },
                 "checks": [
                   {
@@ -527,7 +527,7 @@
                     "minLabelRouteClearance": 141.1,
                     "desktopReadabilityIssues": 0,
                     "viewportHeightIssues": 0,
-                    "minProjectedNodeTextPx": 6.751361161524501,
+                    "minProjectedNodeTextPx": 6.690647482014389,
                     "maxBends": 0,
                     "routesOverSuggestedBends": 0,
                     "maxStretch": 1,
@@ -570,7 +570,7 @@
                       "to": "wait_commit"
                     },
                     "minimumSourceTextPx": 8,
-                    "minimumProjectedTextPx": 6.751361161524501,
+                    "minimumProjectedTextPx": 6.690647482014389,
                     "semanticTextCount": 7
                   },
                   "issues": []
@@ -581,7 +581,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "76b7d857-226e-4047-b65c-71cef3642986"
+        "deliveryReceiptId": "e4aa8f58-c5f8-472f-8333-b80af6441086"
       }
     }
   },
@@ -591,12 +591,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-21T07:17:23.525Z",
-  "durationMs": 2300,
+  "finishedAt": "2026-11-21T07:25:30.475Z",
+  "durationMs": 2272,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

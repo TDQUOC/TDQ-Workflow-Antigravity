@@ -13,7 +13,7 @@ Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conve
 | Q4 | Compiler & gói plugin `plugins/tdq-workflow-agy/` (`v0.103.1`) đạt chuẩn nghiêm ngặt | `agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json`, `token_budget.py --kiem`, build `--output tmp` | `findings: []`, exit `0`, parity `--output tmp` khớp `0.103.1` (`d12387d8`) | PASS |
 | Q5 | Bộ kiểm thử toàn repo `muc_qc = full` (`--workers 6`) & QC độc lập | `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off` + `tdq_test.py so` + `tdq-qc-tester` | `PASS` (`4.605` passed, `36` skipped, `0` failed, `314.31s`, `bo_sot=0`, `details_complete=True`) + biên bản `d12387d8` | PASS |
 | Q6 | Cài Antigravity user-level `0.103.1` (`~/.gemini/`), kiểm gọi `invoke_subagent` & giữ nguyên `~/.claude/` | `py -3 -X utf8 install.py`, `agy.EXE plugin validate ~/.gemini/... --strict --json`, `agy.EXE plugin list`, `invoke_subagent(tdq-explorer)` (`4b121235`) | `0.103.1 enabled`, `findings: []`, `0/8` tool cấm, Caveman `3` MCP + `rtk 1.2.0` + `GEMINI.md` giữ nguyên, `~/.claude/` `mtime=1795000633.190871`, live probe `4b121235` PASS (`d12387d8`) | PASS |
-| Q7 | Nhánh phát hành local `main` (`--sinh-main` từ `dev`) & annotated tag `v0.103.1` (không `git push`) | `CHỜ` (`build_portable.py --sinh-main --nguon dev --nhanh-dich main` + `git show main:.claude-plugin/plugin.json` + `git rev-parse main`) | `CHỜ` (`T5.2` sau khi user duyệt `"commit"`) | CHỜ (`T5.2`) |
+| Q7 | Nhánh phát hành local `main` (`--sinh-main` từ `dev`) & annotated tag `v0.103.1` (không `git push`) | `build_portable.py --sinh-main --nguon dev --nhanh-dich main`, `git tag -a v0.103.1 main`, `git show main:.claude-plugin/plugin.json`, `git rev-parse main` | `dev@35a75e32` (`merge --no-ff`), `main@91db304635f142b457284d55accf82c28a813239` (`kept=190`, `version=0.103.1`), tag `v0.103.1` khớp `main` HEAD 40 ký tự, không `git push` | PASS |
 | QC-F1 | Trọn bộ `tron-bo --workers 6 --fresh --reuse off` sau sửa code cuối | `tdq_test.py tron-bo --workers 6 --fresh --reuse off` (`receipt=908d60074c52418b9197d175329a8919`) | `PASS` · `4.605 passed, 36 skipped, 0 failed` trong `314.31s` (`details_complete=True`) | PASS |
 | QC-F2 | Hồi quy vùng chạm theo mọi dòng `Chạm:` trong plan | `test_agent_frontmatter.py`, `test_docs_consistency.py`, `test_adapter_host.py`, `test_build_portable.py`, `test_rust_*`, `test_remote_*_simulation.py` | Toàn bộ vùng chạm PASS độc lập lẫn trong `tron-bo` (`0` failed) | PASS |
 | QC-F3 | Ràng buộc kiến trúc phải giữ (Spec §5: `skills/` dùng chung, `CHANGELOG.md <= 500` dòng, `main` chỉ giữ phần lõi qua `--sinh-main`) | `git diff dev..HEAD -- skills/ scripts/ .agents/ .opencode/`, `rg` `hooks/`, đếm dòng `CHANGELOG.md` | `skills/` & `scripts/` diff=0; `hooks/` giữ nguyên `call_mcp_tool`/`grep_search`; `CHANGELOG.md` `469/500` dòng; `T5.2` chờ duyệt `"commit"` | PASS |
@@ -135,7 +135,7 @@ PASS (`tdq-qc-tester` `d12387d8`: `tdq_test.py so` + `result.json` `908d60074c52
 PASS (`tdq-qc-tester` `d12387d8` xác nhận độc lập toàn bộ `agy validate/list`, `mcp_config.json` Caveman 3 server, `GEMINI.md`, `~/.claude/` `mtime=1795000633.190871` & live probe `4b121235`).
 
 ### Q7
-CHỜ (`T5.2` — sinh nhánh local `main` qua `build_portable.py --sinh-main --nguon dev --nhanh-dich main` và gắn annotated tag `v0.103.1`, chỉ chạy sau khi người dùng duyệt `"commit"` ở cuối `report`).
+PASS (đã chạy `T5.2`: commit `13e52f20`, merge `--no-ff` về `dev@35a75e32`, xóa nhánh `bugfix/fix-subagent-tools-bump`, chạy `py -3 -X utf8 scripts/build_portable.py --sinh-main --nguon dev --nhanh-dich main` → `main@91db304635f142b457284d55accf82c28a813239` với `kept=190` / `version=0.103.1`, gắn annotated tag `v0.103.1` khớp `main` HEAD 40 ký tự; chỉ local, không `git push`).
 
 ### QC-F1
 PASS (`tron-bo --workers 6 --fresh --reuse off` sau sửa code cuối đạt `4.605 passed, 36 skipped, 0 failed` trong `314.31s`, `bo_sot=0`, `details_complete=True`).
@@ -160,4 +160,4 @@ Không có (`tdq_state.py lech list` → `0 item(s), 0 pending`).
 
 ## Kết luận
 
-PASS (`Q1`–`Q6` & `QC-F1`–`QC-F4` ĐẠT qua biên bản độc lập `tdq-qc-tester` `d12387d8`; `Q7` giữ `CHỜ (T5.2)` đến khi người dùng duyệt `"commit"` ở cuối pha `report`).
+PASS (`Q1`–`Q7` & `QC-F1`–`QC-F4` ĐẠT trọn vẹn `muc_qc=full`: `4.605 passed` / `0 failed`, `29` Cargo pass trên `3` OS + `COUNT=0` SSH, `~/.gemini/` chạy `0.103.1` với `invoke_subagent(tdq-explorer)` PASS, `dev@35a75e32` và `main@91db3046` + tag `v0.103.1` local).

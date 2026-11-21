@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
-  "receiptId": "76b7d857-226e-4047-b65c-71cef3642986",
+  "receiptId": "e4aa8f58-c5f8-472f-8333-b80af6441086",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1253-fix-subagent-tools-bump\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.c9d7fd4fb4574b55b385b7f8c7a291de.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1253-fix-subagent-tools-bump.0b7b53dd0e064e2ab3e51af676b45acd.html",
   "specification": {
-    "sha256": "2d7ccfd7ba428d926af6b2d3c268792810b2611e123d17f2feefb87ece3bc0e5",
-    "bytes": 2454
+    "sha256": "c8be82cfb27f00e3412041200148ce2d755ded5b5189dc7db0dae43f5bd5b271",
+    "bytes": 2485
   },
   "artifact": {
-    "sha256": "43df5fc50768680de322f1bebaa045f627efd73374aa126da346b3487e82893e",
-    "bytes": 1229896
+    "sha256": "067999e398a5c7ef17c1351d332020331597def7dfa5662315f62431b756d616",
+    "bytes": 1230428
   },
   "explainer": {
-    "preparedSha256": "8dd9f165c5400fe44d6c1e737132951998ee475e2f38c8e62efdbed7304ef187",
+    "preparedSha256": "91e65b0efc29b0a7e95b3f27a19be6c849a3b514912b63137d10b3914d548614",
     "dependencies": [
       {
         "kind": "diagram-spec",
@@ -35,8 +35,8 @@
         "kind": "diagram-spec",
         "id": "wf-install-release",
         "inline": true,
-        "sha256": "dec9563e1e98b647a6b6c16729f747c79bcb4db97338c98507aa072bc034ed8e",
-        "bytes": 1001
+        "sha256": "a5605bc3b2c9cfc9c0b363eccf3179e34a031c297fae1ce388bb2a8d121518f2",
+        "bytes": 1022
       }
     ]
   }
