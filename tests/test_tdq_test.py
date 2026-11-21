@@ -1258,5 +1258,63 @@ class StructuredRadiusAccounting(unittest.TestCase):
         self.assertNotIn("radius_complete", tdq_test.dem([row], "r"))
 
 
+class HtmlDataAndWorkerAutoTests(RepoTam):
+    """HTML/HTM files count as data outside TOP_DIRS, and --workers auto is capped at 6."""
+
+    def test_html_and_htm_are_data_files_without_full_fallback(self):
+        self.assertTrue(tdq_test.la_du_lieu("docs/tdq/reports/summary.html"))
+        self.assertTrue(tdq_test.la_du_lieu("preview/card.HTM"))
+        self.assertEqual(self.ban_kinh("docs/tdq/reports/summary.html", "preview/card.htm"), ([], None))
+        ghi(self.goc, "tests/test_html_report.py", "TARGET = 'docs/tdq/reports/summary.html'\n")
+        mods, reason = self.ban_kinh("docs/tdq/reports/summary.html")
+        self.assertIsNone(reason)
+        self.assertEqual(mods, ["test_html_report.py"])
+
+    def test_vung_cham_html_change_skips_instead_of_full_fallback(self):
+        lam_repo_vung_cham(self.goc)
+        ghi(self.goc, "docs/tdq/reports/preview.html", "<html></html>\n")
+        proc = chay_cli(self.goc, "--files", "docs/tdq/reports/preview.html", "--plan-only")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("scope=none", proc.stdout)
+        self.assertIn("selected=0/", proc.stdout)
+
+    def test_worker_count_auto_caps_at_six_and_preserves_defaults(self):
+        self.assertEqual(tdq_test._worker_count(None, False), 1)
+        self.assertEqual(tdq_test._worker_count(None, True), 2)
+        with mock.patch.object(tdq_test.os, "cpu_count", return_value=24):
+            self.assertEqual(tdq_test._worker_count("auto", False), 6)
+            self.assertEqual(tdq_test._worker_count("AUTO", False), 6)
+        with mock.patch.object(tdq_test.os, "cpu_count", return_value=4):
+            self.assertEqual(tdq_test._worker_count("auto", False), 4)
+        with mock.patch.object(tdq_test.os, "cpu_count", return_value=None):
+            self.assertEqual(tdq_test._worker_count("auto", False), 1)
+
+    def test_worker_count_and_parser_reject_invalid_and_conflicting_flags(self):
+        import argparse
+        self.assertEqual(tdq_test._positive_workers("Auto"), "auto")
+        for bad in ("0", "-1", "abc"):
+            with self.subTest(bad=bad), self.assertRaises(argparse.ArgumentTypeError):
+                tdq_test._positive_workers(bad)
+        for bad_count, parallel in (("auto", True), ("bad", False), (0, False), (-1, False)):
+            with self.subTest(bad_count=bad_count, parallel=parallel), self.assertRaises(ValueError):
+                tdq_test._worker_count(bad_count, parallel)
+        lam_repo_vung_cham(self.goc)
+        ghi(self.goc, "tests/test_b.py", TEST_DAT)
+        for cli_flags in (("--workers", "auto", "--parallel"), ("--workers", "0"), ("--workers", "-1")):
+            with self.subTest(cli_flags=cli_flags):
+                proc = chay_lenh(self.goc, "tron-bo", *cli_flags)
+                self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+
+    def test_chay_tron_bo_result_workers_auto_runs_with_bounded_workers(self):
+        lam_repo_vung_cham(self.goc)
+        ghi(self.goc, "tests/test_b.py", TEST_DAT)
+        with mock.patch.object(tdq_test.os, "cpu_count", return_value=16):
+            result = tdq_test.chay_tron_bo_result(
+                self.goc, stream=io.StringIO(), workers="auto", fresh=True, reuse="off",
+            )
+        self.assertEqual(result["status"], "PASS", result)
+        self.assertEqual(result["run_options"]["workers"], 6)
+
+
 if __name__ == "__main__":
     unittest.main()
