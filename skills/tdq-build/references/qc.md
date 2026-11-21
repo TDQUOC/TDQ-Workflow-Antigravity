@@ -107,7 +107,7 @@ Run every `ultra` smoke/runtime check under a **120-second cap per check** (`tim
 3. Diagnose hang vs slow check. **Never raise the cap on your own**: ask the user with measured duration first. Fix hangs; do not widen timeouts.
 
 ## Investigation Evidence QC (`work_kind=investigate`)
-When `work_kind=investigate`, keep the `lite/full/ultra` table above unchanged for scope depth and run `QC-I1..I4` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md); any diff outside `docs/tdq/` re-enables `QC-F1` + `QC-F4`.
+When `work_kind=investigate`, keep `lite/full/ultra` unchanged and run `QC-I1..I4` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md); diffs outside `docs/tdq/` re-enable `QC-F1` + `QC-F4`.
 
 ## Recording the result
 
@@ -116,7 +116,7 @@ When `work_kind=investigate`, keep the `lite/full/ultra` table above unchanged f
 <!-- i18n-allow: qc file template written in the default document language -->
 ```markdown
 # QC — <tên việc>
-Ngày: YYYY-MM-DD · Plan: ../plan/<slug>.md · Vòng: 1
+Ngày: YYYY-MM-DD · Plan: ../plan/<slug>.md (Vòng 1)
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 
 ## Dev Behavior QC Card
@@ -150,7 +150,7 @@ approve or reject it, which happens in the report.
 
 - `ANTI-1 (Fake Red)`: Test failing on syntax error/bad import/wrong path is NOT valid RED.
 - `ANTI-2 (Blind Assertion)`: Assertions that cannot fail (`assert True`, empty checks) are banned.
-- `ANTI-5 (Raw Dump)`: Pasting test logs >15 lines into chat is banned; summarize outcome.
+- `ANTI-5 (Raw Dump)`: Pasting >15-line logs/tables into chat or top `Tóm tắt dễ hiểu` is banned. <!-- i18n-allow -->
 - `ANTI-6 (False Clean PASS)`: Treating timeout/crash/missing evidence/unverified as PASS is banned (O04); mark FAIL or HOLD/CHỜ.
 
 ## When it FAILs

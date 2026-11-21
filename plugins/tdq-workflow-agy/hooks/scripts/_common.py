@@ -51,6 +51,7 @@ AGY_CODES = (
     "ANCHOR",
     "DOD",
     "INTAKE",
+    "PLAIN",
 )
 CODES = AGY_CODES
 

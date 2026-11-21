@@ -9,9 +9,12 @@ Strictly stdlib-only. All functions have cyclomatic complexity <= 10.
 from __future__ import annotations
 
 import argparse
+import base64
+import gzip
 import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -386,7 +389,280 @@ def _step_detail_text(step: dict[str, Any]) -> str:
     return f"{detail} ({', '.join(refs)})" if detail and refs else (detail or ", ".join(refs))
 
 
-def _build_master_explainer(validated_model: dict[str, Any], quality: str) -> dict[str, Any]:
+_META_LOCALE_RE = re.compile(r"(?im)^@meta\b[^\n]*\blocale\s*=")
+_HTML_LANG_RE = re.compile(r"<html\b([^>]*?)\blang=([\"'])(?:en|zh(?:-[A-Za-z0-9]+)?)\2", re.IGNORECASE)
+_READER_WORDS_RE = re.compile(
+    r'(<script\b[^>]*id="explainer-reader-words"[^>]*>)(.*?)(</script>)',
+    re.DOTALL,
+)
+_PREPARED_BUNDLE_RE = re.compile(
+    r'(<script\s+type="application/json"\s+id="archify-explainer-prepared">)(.*?)(</script>)',
+    re.DOTALL,
+)
+_VI_BRANCH_RE = re.compile(r"分支\s+(\d+)")
+
+# i18n-allow: Vietnamese UI dictionary mirroring Archify explainer/render.mjs keys
+_VI_READER_WORDS: dict[str, Any] = {
+    "answer": "Tóm tắt",  # i18n-allow
+    "answerMark": "Đ",  # i18n-allow
+    "scope": "Phạm vi áp dụng",  # i18n-allow
+    "sources": "Nguồn đối chiếu",  # i18n-allow
+    "print": "In / PDF",  # i18n-allow
+    "image": "Ảnh dài",  # i18n-allow
+    "imageHints": ["Nét nhất", "Nhẹ nhất", "Mở mọi nơi"],  # i18n-allow
+    "export": "Xuất tệp",  # i18n-allow
+    "style": "Giao diện",  # i18n-allow
+    "styles": {
+        "clean": "Gọn sạch",  # i18n-allow
+        "editorial": "Tạp chí",  # i18n-allow
+        "product": "Sản phẩm",  # i18n-allow
+        "swiss": "Lưới chuẩn",  # i18n-allow
+    },
+    "auto": "Hệ thống",  # i18n-allow
+    "light": "Sáng",  # i18n-allow
+    "dark": "Tối",  # i18n-allow
+    "typical": "Giá trị điển hình",  # i18n-allow
+    "explore": "Mở sơ đồ tương tác",  # i18n-allow
+    "exploreTitle": "Phóng to, tìm nút, lần luồng dữ liệu và xuất ảnh",  # i18n-allow
+    "close": "Đóng",  # i18n-allow
+    "loading": "Đang mở sơ đồ…",  # i18n-allow
+    "graph": "Cấu trúc sơ đồ",  # i18n-allow
+    "changes": "Thay đổi cấu trúc",  # i18n-allow
+    "added": "Thêm mới",  # i18n-allow
+    "removed": "Đã xóa",  # i18n-allow
+    "modified": "Đã sửa",  # i18n-allow
+    "copy": "Sao chép",  # i18n-allow
+    "copied": "Đã sao chép",  # i18n-allow
+    "walk": "Xem từng bước",  # i18n-allow
+    "walkMessages": "Chạy từng thông điệp",  # i18n-allow
+    "walkFlow": "Đi theo luồng",  # i18n-allow
+    "prev": "Quay lại",  # i18n-allow
+    "next": "Tiếp theo",  # i18n-allow
+    "end": "Xong",  # i18n-allow
+    "ask": "Hỏi thêm",  # i18n-allow
+    "askQuote": "Hỏi về đoạn này",  # i18n-allow
+    "askPlaceholder": "Chỗ nào chưa rõ hoặc muốn bổ sung gì?",  # i18n-allow
+    "askCopy": "Sao chép câu hỏi",  # i18n-allow
+    "askCopied": "Đã sao chép. Dán câu hỏi cho agent.",  # i18n-allow
+    "askCancel": "Hủy",  # i18n-allow
+    "askChips": [
+        "Tôi chưa hiểu phần này",  # i18n-allow
+        "Giải thích sâu hơn",  # i18n-allow
+        "Cho ví dụ cụ thể",  # i18n-allow
+        "Dựa trên bằng chứng nào?",  # i18n-allow
+    ],
+    "askPage": "Trang",  # i18n-allow
+    "askFile": "Tệp",  # i18n-allow
+    "askWhere": "Vị trí",  # i18n-allow
+    "askQuoteLabel": "Trích dẫn",  # i18n-allow
+    "askQuestion": "Câu hỏi",  # i18n-allow
+    "askNote": "Sao chép trang, khung và mã ID để agent sửa đúng phần này.",  # i18n-allow
+    "askPatch": "Chỉ sửa khung này qua Archify patch explainer và giữ nguyên ID.",  # i18n-allow
+    "tagline": "Biến mọi nội dung cần hiểu, lên kế hoạch hay chia sẻ thành trang trực quan tương tác.",  # i18n-allow
+}
+
+_VI_STATIC_REPLACEMENTS: tuple[tuple[str, str], ...] = (
+    ('<a class="skip-link" href="#board">Skip to content</a>', '<a class="skip-link" href="#board">Chuyển tới nội dung</a>'),  # i18n-allow
+    ('aria-label="Theme"', 'aria-label="Chế độ màu"'),  # i18n-allow
+    ('>System</button>', '>Hệ thống</button>'),  # i18n-allow
+    ('>Light</button>', '>Sáng</button>'),  # i18n-allow
+    ('>Dark</button>', '>Tối</button>'),  # i18n-allow
+    ('aria-label="Style"', 'aria-label="Giao diện"'),  # i18n-allow
+    ('<span data-style-label>Clean</span>', '<span data-style-label>Gọn sạch</span>'),  # i18n-allow
+    ('<span data-style-label>Editorial</span>', '<span data-style-label>Tạp chí</span>'),  # i18n-allow
+    ('<span data-style-label>Product</span>', '<span data-style-label>Sản phẩm</span>'),  # i18n-allow
+    ('<span data-style-label>Swiss</span>', '<span data-style-label>Lưới chuẩn</span>'),  # i18n-allow
+    ('<span>Export</span>', '<span>Xuất tệp</span>'),  # i18n-allow
+    ('aria-label="Export"', 'aria-label="Xuất tệp"'),  # i18n-allow
+    ('>Long image</p>', '>Ảnh dài</p>'),  # i18n-allow
+    ('aria-label="Long image ', 'aria-label="Ảnh dài '),  # i18n-allow
+    ('<small>Sharpest</small>', '<small>Nét nhất</small>'),  # i18n-allow
+    ('<small>Smallest</small>', '<small>Nhẹ nhất</small>'),  # i18n-allow
+    ('<small>Opens anywhere</small>', '<small>Mở mọi nơi</small>'),  # i18n-allow
+    ('<span>Print / PDF</span>', '<span>In / PDF</span>'),  # i18n-allow
+    ('>A</span><h2>Answer</h2>', '>Đ</span><h2>Tóm tắt</h2>'),  # i18n-allow
+    ('<span class="scope-label">Applies to</span>', '<span class="scope-label">Phạm vi áp dụng</span>'),  # i18n-allow
+    (
+        'title="Zoom, find nodes, trace paths, upstream and downstream, export images or motion"',
+        'title="Phóng to, tìm nút, lần luồng dữ liệu và xuất ảnh"',  # i18n-allow
+    ),
+    ('<span>Open interactive view</span>', '<span>Mở sơ đồ tương tác</span>'),  # i18n-allow
+    ('<summary>Diagram structure</summary>', '<summary>Cấu trúc sơ đồ</summary>'),  # i18n-allow
+    ('<dt>Structure changes</dt>', '<dt>Thay đổi cấu trúc</dt>'),  # i18n-allow
+    ('<span class="chip added">Added</span>', '<span class="chip added">Thêm mới</span>'),  # i18n-allow
+    ('<span class="chip removed">Removed</span>', '<span class="chip removed">Đã xóa</span>'),  # i18n-allow
+    ('<span class="chip modified">Modified</span>', '<span class="chip modified">Đã sửa</span>'),  # i18n-allow
+    ('>Copy</button>', '>Sao chép</button>'),  # i18n-allow
+    ('<span class="typical">Typical value</span>', '<span class="typical">Giá trị điển hình</span>'),  # i18n-allow
+    ('<h2>Typical value notes</h2>', '<h2>Ghi chú giá trị điển hình</h2>'),  # i18n-allow
+    ('aria-label="Code changes"', 'aria-label="Thay đổi mã"'),  # i18n-allow
+    (
+        '<th scope="col">Old</th><th scope="col">New</th><th scope="col">Change</th>',
+        '<th scope="col">Cũ</th><th scope="col">Mới</th><th scope="col">Thay đổi</th>',  # i18n-allow
+    ),
+    ('<section class="sources"><h2>Sources</h2>', '<section class="sources"><h2>Nguồn đối chiếu</h2>'),  # i18n-allow
+    (
+        '<span class="colophon-tagline">Turn anything you want to understand, plan, or share into an interactive visual.</span>',
+        '<span class="colophon-tagline">Biến mọi nội dung cần hiểu, lên kế hoạch hay chia sẻ thành trang trực quan tương tác.</span>',  # i18n-allow
+    ),
+    ('<span>Close</span>', '<span>Đóng</span>'),  # i18n-allow
+    ('role="status">Opening diagram…</p>', 'role="status">Đang mở sơ đồ…</p>'),  # i18n-allow
+)
+
+_VI_REGEX_REPLACEMENTS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r'(<button\b[^>]*data-style-choice="clean"[^>]*>(?:<span[^>]*></span>)?<span>)Clean(</span>)'), r'\1Gọn sạch\2'),  # i18n-allow
+    (re.compile(r'(<button\b[^>]*data-style-choice="editorial"[^>]*>(?:<span[^>]*></span>)?<span>)Editorial(</span>)'), r'\1Tạp chí\2'),  # i18n-allow
+    (re.compile(r'(<button\b[^>]*data-style-choice="product"[^>]*>(?:<span[^>]*></span>)?<span>)Product(</span>)'), r'\1Sản phẩm\2'),  # i18n-allow
+    (re.compile(r'(<button\b[^>]*data-style-choice="swiss"[^>]*>(?:<span[^>]*></span>)?<span>)Swiss(</span>)'), r'\1Lưới chuẩn\2'),  # i18n-allow
+    (re.compile(r'(<span class="assessment good"[^>]*>(?:<span[^>]*>(?:<i></i>)*</span>)?<b>)Favorable(</b>)'), r'\1Tích cực\2'),  # i18n-allow
+    (re.compile(r'(<span class="assessment caution"[^>]*>(?:<span[^>]*>(?:<i></i>)*</span>)?<b>)Tradeoff(</b>)'), r'\1Cần cân nhắc\2'),  # i18n-allow
+    (re.compile(r'(<span class="assessment bad"[^>]*>(?:<span[^>]*>(?:<i></i>)*</span>)?<b>)Unfavorable(</b>)'), r'\1Bất lợi\2'),  # i18n-allow
+    (re.compile(r"<span>(\d+)\s+panels?</span>"), r"<span>\1 bảng</span>"),  # i18n-allow
+    (re.compile(r"<span>(\d+)\s+diagrams?\s+validated</span>"), r"<span>\1 sơ đồ đã kiểm chuẩn</span>"),  # i18n-allow
+    (re.compile(r"<span>(\d+)\s+sources?</span>"), r"<span>\1 nguồn</span>"),  # i18n-allow
+    (re.compile(r"<span>code pinned to ([^<]+)</span>"), r"<span>mã cố định ở \1</span>"),  # i18n-allow
+    (_VI_BRANCH_RE, r"Nhánh \1"),  # i18n-allow
+    (re.compile(r'(<p class="metric-value">)Limit '), r"\1Giới hạn "),  # i18n-allow
+    (re.compile(r'(<p class="metric-overflow">)Over limit by '), r"\1Vượt mức "),  # i18n-allow
+)
+
+
+def _read_doc_lang(project_root: Path) -> str:
+    """Read `doc_lang` from docs/tdq/state.json; default to 'vi' when absent or unreadable."""
+    state_file = project_root / "docs" / "tdq" / "state.json"
+    if not state_file.is_file():
+        return "vi"
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "vi"
+    lang = str(data.get("doc_lang") or "vi").strip().lower()
+    return lang or "vi"
+
+
+def _ensure_explainer_locale_candidate(
+    cand_path: Path,
+    temp_dir: Optional[Path] = None,
+) -> tuple[Path, Optional[Path]]:
+    """Inject English fallback locale into a transient candidate copy when omitted.
+
+    Prevents upstream Archify from falling back to `zh-CN` when `@meta locale=` is absent,
+    without modifying the authored candidate file before manifest digest hashing.
+    """
+    raw = cand_path.read_text(encoding="utf-8")
+    target_dir = temp_dir or cand_path.parent
+    tmp_name = f".tmp.{cand_path.stem}.{uuid.uuid4().hex}{cand_path.suffix}"
+    if cand_path.suffix.lower() == ".json":
+        try:
+            payload = json.loads(raw)
+        except ValueError:
+            return cand_path, None
+        meta = payload.get("meta") if isinstance(payload, dict) else None
+        if not isinstance(meta, dict) or meta.get("locale"):
+            return cand_path, None
+        meta["locale"] = "en"
+        tmp_path = target_dir / tmp_name
+        tmp_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        return tmp_path, tmp_path
+
+    if _META_LOCALE_RE.search(raw):
+        return cand_path, None
+    lines = raw.splitlines(keepends=True)
+    insert_at = 1 if lines and re.match(r"^#{1,2}\s+", lines[0]) else 0
+    lines.insert(insert_at, "\n@meta locale=en\n")
+    tmp_path = target_dir / tmp_name
+    tmp_path.write_text("".join(lines), encoding="utf-8")
+    return tmp_path, tmp_path
+
+
+def _serialize_script_json(payload: dict[str, Any]) -> str:
+    """Serialize JSON safely for inline `<script type="application/json">` embedding."""
+    serialized = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    for ch, esc in (("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"), ("\u2028", "\\u2028"), ("\u2029", "\\u2029")):
+        serialized = serialized.replace(ch, esc)
+    return serialized
+
+
+def _localize_html_gzip_vi(encoded: str) -> tuple[str, bool]:
+    """Localize auto-generated Chinese branch labels inside a gzipped child diagram."""
+    try:
+        raw = gzip.decompress(base64.b64decode(encoded)).decode("utf-8")
+    except (ValueError, OSError, UnicodeDecodeError):
+        return encoded, False
+    updated = _VI_BRANCH_RE.sub(r"Nhánh \1", raw)  # i18n-allow
+    if updated == raw:
+        return encoded, False
+    repacked = base64.b64encode(gzip.compress(updated.encode("utf-8"), compresslevel=6)).decode("ascii")
+    return repacked, True
+
+
+def _replace_branch_in_json(node: Any) -> tuple[Any, bool]:
+    """Recursively localize workflow branch labels in prepared-bundle JSON and `htmlGzip`."""
+    if isinstance(node, str):
+        updated = _VI_BRANCH_RE.sub(r"Nhánh \1", node)  # i18n-allow
+        return updated, updated != node
+    if isinstance(node, list):
+        items = [_replace_branch_in_json(item) for item in node]
+        return ([item for item, _ in items], any(changed for _, changed in items))
+    if isinstance(node, dict):
+        out: dict[str, Any] = {}
+        any_changed = False
+        for key, val in node.items():
+            if key == "htmlGzip" and isinstance(val, str):
+                new_val, changed = _localize_html_gzip_vi(val)
+            else:
+                new_val, changed = _replace_branch_in_json(val)
+            out[key] = new_val
+            any_changed = any_changed or changed
+        return out, any_changed
+    return node, False
+
+
+def _localize_prepared_diagrams_vi(html_text: str) -> str:
+    """Translate auto-generated Chinese lane/branch labels inside `#archify-explainer-prepared`."""
+    def _replace(match: re.Match[str]) -> str:
+        prefix, body, suffix = match.group(1), match.group(2), match.group(3)
+        try:
+            data = json.loads(body)
+        except ValueError:
+            return match.group(0)
+        updated, changed = _replace_branch_in_json(data)
+        if not changed or not isinstance(updated, dict):
+            return match.group(0)
+        return f"{prefix}{_serialize_script_json(updated)}{suffix}"
+
+    return _PREPARED_BUNDLE_RE.sub(_replace, html_text, count=1)
+
+
+def _localize_reader_words_json(html_text: str) -> str:
+    """Translate embedded `#explainer-reader-words` JSON safely for browser JS controls."""
+    def _replace(match: re.Match[str]) -> str:
+        prefix, body, suffix = match.group(1), match.group(2), match.group(3)
+        try:
+            words = json.loads(body)
+        except ValueError:
+            return match.group(0)
+        if not isinstance(words, dict):
+            return match.group(0)
+        merged = dict(words)
+        for key, val in _VI_READER_WORDS.items():
+            merged[key] = dict(val) if isinstance(val, dict) else list(val) if isinstance(val, list) else val
+        return f"{prefix}{_serialize_script_json(merged)}{suffix}"
+
+    return _READER_WORDS_RE.sub(_replace, html_text, count=1)
+
+
+def _localize_explainer_html_vi(html_text: str) -> str:
+    """Localize rendered Archify explainer HTML chrome and JS word table to Vietnamese."""
+    out = _HTML_LANG_RE.sub(lambda m: f"<html{m.group(1)}lang={m.group(2)}vi{m.group(2)}", html_text, count=1)
+    for src, dst in _VI_STATIC_REPLACEMENTS:
+        out = out.replace(src, dst)
+    for pat, repl in _VI_REGEX_REPLACEMENTS:
+        out = pat.sub(repl, out)
+    return _localize_prepared_diagrams_vi(_localize_reader_words_json(out))
+
+
+def _build_master_explainer(validated_model: dict[str, Any], quality: str, doc_lang: str = "en") -> dict[str, Any]:
     master = validated_model["master"]
     views = validated_model["views"]
     views_by_id = {v["id"]: v for v in views}
@@ -442,13 +718,14 @@ def _build_master_explainer(validated_model: dict[str, Any], quality: str) -> di
         })
 
     title = str(validated_model.get("title", "Master Architecture"))
+    locale = "vi" if str(doc_lang).strip().lower().startswith("vi") else "en"
     return {
         "schema_version": 1,
         "diagram_type": "explainer",
         "meta": {
             "id": _alloc_id("master-architecture", used),
             "title": title,
-            "locale": "en",
+            "locale": locale,
             "output": "index.html",
             "quality_profile": quality,
         },
@@ -666,10 +943,11 @@ def sync_master(
         )
 
         index_out = staging_dir / "index.html"
+        doc_lang = _read_doc_lang(project_root)
         if "master" in validated_model:
             master_cand = staging_dir / "master.candidate.json"
             master_cand.write_text(
-                json.dumps(_build_master_explainer(validated_model, quality), indent=2),
+                json.dumps(_build_master_explainer(validated_model, quality, doc_lang=doc_lang), indent=2),
                 encoding="utf-8",
             )
             res = run_finalize(
@@ -681,6 +959,8 @@ def sync_master(
             )
             if not res.status or not index_out.is_file():
                 raise RuntimeError(f"Failed to finalize master explainer: {res.receipt}")
+            if doc_lang.startswith("vi"):
+                index_out.write_text(_localize_explainer_html_vi(index_out.read_text(encoding="utf-8")), encoding="utf-8")
             child_files["master.candidate.json"] = _hash_file(master_cand)
             receipts["master"] = res.receipt
         else:
@@ -971,6 +1251,36 @@ def _rollback_render_transaction(
             pass
 
 
+def _run_localized_finalize(
+    diagram_type: str,
+    cand_path: Path,
+    temp_out: Path,
+    quality: str,
+    project_root: Path,
+) -> FinalizeResult:
+    """Run upstream finalize with explainer locale fallback and pre-manifest VI chrome localization."""
+    effective_cand, temp_cand = (cand_path, None)
+    if diagram_type == "explainer":
+        effective_cand, temp_cand = _ensure_explainer_locale_candidate(cand_path, cand_path.parent)
+    try:
+        result = run_finalize(
+            diagram_type=diagram_type,
+            candidate_path=effective_cand,
+            output_path=temp_out,
+            quality=quality,
+            repo_root=project_root,
+        )
+    finally:
+        if temp_cand and temp_cand.exists():
+            try:
+                temp_cand.unlink()
+            except OSError:
+                pass
+    if result.status and temp_out.is_file() and diagram_type == "explainer" and _read_doc_lang(project_root).startswith("vi"):
+        temp_out.write_text(_localize_explainer_html_vi(temp_out.read_text(encoding="utf-8")), encoding="utf-8")
+    return result
+
+
 def handle_render(args: argparse.Namespace) -> int:
     """Handle CLI render sub-command with staging, full transactional rollback, and structured error handling.
 
@@ -1002,12 +1312,12 @@ def handle_render(args: argparse.Namespace) -> int:
     had_receipt = receipt_path.is_file()
 
     try:
-        result = run_finalize(
+        result = _run_localized_finalize(
             diagram_type=args.type,
-            candidate_path=cand_path,
-            output_path=temp_out,
+            cand_path=cand_path,
+            temp_out=temp_out,
             quality=args.quality,
-            repo_root=project_root,
+            project_root=project_root,
         )
 
         if not result.status or not temp_out.is_file():

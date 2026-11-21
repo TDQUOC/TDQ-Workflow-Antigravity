@@ -390,10 +390,10 @@ def _agy_pre_invocation_hook(payload, cwd):
 
 
 def _agy_phase_anchor(cwd, state, payload, sid):
-    """Inject 1-line [TDQ:GON] or [TDQ:QC] once per phase entry or post-compaction."""
+    """Inject 1-line [TDQ:GON], [TDQ:QC], or [TDQ:PLAIN] once per phase entry or post-compaction."""
     req = str((state or {}).get("active_request") or "")
     pha = effective_phase(state, warn=False)
-    if not req or pha not in ("implement", "qc"):
+    if not req or pha not in ("implement", "qc", "spec", "plan", "report"):
         return
     meta = read_turn_meta(cwd, sid)
     anchor = f"{req}:{pha}"
@@ -407,8 +407,15 @@ def _agy_phase_anchor(cwd, state, payload, sid):
             cap_lim = MAX_GON_CHARS if work_kind_hieu_luc(state) == "investigate" else min(MAX_GON_CHARS, 160)
             dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), cap_lim)
             emit_context([dong])
-    else:
+    elif pha == "qc":
         emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])
+    else:
+        plain_hint = _truncate(
+            f"[TDQ:PLAIN] ({pha}) Layer-1 front (chat & Tóm tắt dễ hiểu): 10-15s plain "  # i18n-allow
+            "prose (<=120w, <=6 backticks/100w, <=2 ·/line); push path:line below.",
+            MAX_CHARS,
+        )
+        emit_context([plain_hint])
     meta["phase_anchor"] = anchor
     write_turn_meta(cwd, sid, meta)
 
@@ -556,6 +563,25 @@ def main():
     else:
         _nhac_gon(cwd, state, payload, sid)
         _nhac_qc(cwd, state, payload, sid)
+        _nhac_plain(cwd, state, payload, sid)
+
+
+def _nhac_plain(cwd, state, payload, session):
+    """At presentation phases, inject a concise [TDQ:PLAIN] Layer-1 recency reminder."""
+    pha = effective_phase(state, warn=False)
+    if pha not in ("spec", "plan", "report"):
+        return
+    ma_plain = "TDQ:PLAIN"
+    if already_reminded(cwd, payload, f"{ma_plain}:{pha}"):
+        return
+    dong = _truncate(
+        f"[{ma_plain}] ({pha}) Layer-1 front (chat & Tóm tắt dễ hiểu): 10-15s plain "  # i18n-allow
+        "prose (<=120w, <=6 backticks/100w, <=2 ·/line); push path:line below.",
+        MAX_CHARS,
+    )
+    turn_log_append(cwd, "remind", session=session, code=f"{ma_plain}:{pha}",
+                    event="UserPromptSubmit", so_dong=1)
+    emit_context([dong])
 
 
 def _nhac_qc(cwd, state, payload, session):

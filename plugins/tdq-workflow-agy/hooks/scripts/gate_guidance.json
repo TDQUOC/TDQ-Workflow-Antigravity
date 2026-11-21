@@ -26,7 +26,8 @@
     "WORKTREE",
     "ANCHOR",
     "DOD",
-    "INTAKE"
+    "INTAKE",
+    "PLAIN"
   ],
   "all_agy_codes": [
     "APPROVE",
@@ -50,7 +51,8 @@
     "WORKTREE",
     "ANCHOR",
     "DOD",
-    "INTAKE"
+    "INTAKE",
+    "PLAIN"
   ],
   "lean_removed_codes": [
     "ASK",
@@ -215,6 +217,13 @@
       "lam_gi": "Mở skill `tdq-intake` (với `_tdq_direct`: phân tích, lập mini-plan và chốt 1 cổng duyệt).",
       "bo_qua": "Bỏ qua nếu lượt hiện tại đang trả lời tiếp cuộc phỏng vấn `tdq-intake` đã mở.",
       "model_hint": "No active TDQ request open; start with tdq-intake (for _tdq_direct, analyze and stop once at mini-plan gate)."
+    },
+    "PLAIN": {
+      "chuyen_gi": "Chuẩn bị viết `spec`, `plan`, `report` hoặc tóm tắt gửi người dùng.",
+      "vi_sao": "Tách Lớp 1 dễ đọc khỏi chi tiết kỹ thuật giúp người xem nắm ngay trong 10–15 giây.",
+      "lam_gi": "Mở đầu bằng `> **Tóm tắt dễ hiểu:**` (<=120 từ, <=6 backtick/100 từ), không bọc code quanh số.",
+      "bo_qua": "Phần chứng cứ chi tiết bên dưới (Lớp 2) vẫn giữ đủ mã bằng chứng và dòng tệp.",
+      "model_hint": "Layer-1 front (chat & top callout): 10-15s plain prose (<=120w, <=6 backticks/100w, <=2 middle-dots/line); push path:line below."
     }
   }
 }

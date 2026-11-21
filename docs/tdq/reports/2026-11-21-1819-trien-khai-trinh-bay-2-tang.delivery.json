@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4f9e7ade-8607-448d-99b6-e786782c27b1",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1819-trien-khai-trinh-bay-2-tang\\.tmp.bao-cao.archify.16466239d53048d6a3b4d9a345870f1c.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1819-trien-khai-trinh-bay-2-tang.9e63285bdc724fb0ab4ed91d3828c482.html",
+  "specification": {
+    "sha256": "4233935f0208a9b7a788a005808d241bf08122eac77e67d1b4fa074840ccecd4",
+    "bytes": 2888
+  },
+  "artifact": {
+    "sha256": "bfb344c986b99cf4e37e22fb2c9fe116ea4ab4e9e806ee4f5c9f22222b3231df",
+    "bytes": 1229108
+  },
+  "explainer": {
+    "preparedSha256": "6731c39c38c355d1608fd489b39992f842839e75bc60cbf4553cdbcb706b4233",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-two-tier",
+        "inline": true,
+        "sha256": "9ebb6e7f70ee6f862716cf218146c76eac0fcfe2f8786c9684aa61415b55bddb",
+        "bytes": 996
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-plain-r16",
+        "inline": true,
+        "sha256": "1368fa2355d689e31992db4a649e615946250b2868a1661f43fb99d1a8a54eb4",
+        "bytes": 1031
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-archify-report",
+        "inline": true,
+        "sha256": "d16be57ca68ef3573ea6e87e5742a872e7d4212b93e42eaa9b22140a1d04f86c",
+        "bytes": 1043
+      }
+    ]
+  }
+}

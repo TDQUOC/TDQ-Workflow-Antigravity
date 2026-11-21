@@ -1,0 +1,86 @@
+{
+  "slug": "2026-11-21-1819-trien-khai-trinh-bay-2-tang",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-1819-trien-khai-trinh-bay-2-tang.md",
+  "plan_sha": "68e2a421884db39fd9faedaa89a631f5c067545c6a60635f764a99f58de54b99",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "e157384b0fa39bcb13b76162277a9e90e17c4f3925bcd211473018b17602ef3e",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-conventions/references/user-facing-block.md",
+        "skills/tdq-conventions/references/user-facing-block-vi-du.md",
+        "skills/tdq-spec/references/spec-template.md",
+        "skills/tdq-plan/references/plan-template.md",
+        "skills/tdq-build/references/report-template.md",
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/SKILL.md",
+        "docs/claude-md-mau.md",
+        "scripts/tdq_setup.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/patches/gate_guidance.py",
+        "tools/patches/agy_hooks.py",
+        "hooks/scripts/_common.py",
+        "hooks/scripts/prompt_context.py",
+        "tests/test_gate_guidance.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/doc_lint.py",
+        "tests/test_doc_lint_r16.py"
+      ],
+      "dot": 1
+    },
+    "T1.4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_archify.py",
+        "skills/tdq-spec/references/archify-ba.md",
+        "skills/tdq-build/references/archify-lifecycle.md",
+        "tests/test_archify_vi.py"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tests/test_report_visual.py",
+        "tests/test_user_facing_block.py",
+        "tests/test_hooks_dual_protocol.py",
+        ".claude-plugin/plugin.json",
+        "tools/build_agy_plugin.py",
+        "tools/patches/__init__.py",
+        "tools/patches/agy_manifests.py",
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 2,
+      "worktree_required": false
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1819-trien-khai-trinh-bay-2-tang.md",
+        "docs/tdq/reports/2026-11-21-1819-trien-khai-trinh-bay-2-tang.md",
+        "docs/tdq/reports/2026-11-21-1819-trien-khai-trinh-bay-2-tang.html",
+        "docs/tdq/artifacts/2026-11-21-1819-trien-khai-trinh-bay-2-tang/bao-cao.archify.md"
+      ],
+      "dot": 3,
+      "worktree_required": false
+    }
+  }
+}

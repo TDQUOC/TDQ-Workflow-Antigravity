@@ -432,6 +432,25 @@ def main():
     # what pushes the NEXT line out of the 240-char ceiling.
     _nhac_gon(cwd, state, payload, sid)
     _nhac_qc(cwd, state, payload, sid)
+    _nhac_plain(cwd, state, payload, sid)
+
+
+def _nhac_plain(cwd, state, payload, session):
+    """At presentation phases, inject a concise [TDQ:PLAIN] Layer-1 recency reminder."""
+    pha = effective_phase(state, warn=False)
+    if pha not in ("spec", "plan", "report"):
+        return
+    ma_plain = "TDQ:PLAIN"
+    if already_reminded(cwd, payload, f"{ma_plain}:{pha}"):
+        return
+    dong = _truncate(
+        f"[{ma_plain}] ({pha}) Layer-1 front (chat & Tóm tắt dễ hiểu): 10-15s plain "  # i18n-allow
+        "prose (<=120w, <=6 backticks/100w, <=2 ·/line); push path:line below.",
+        MAX_CHARS,
+    )
+    turn_log_append(cwd, "remind", session=session, code=f"{ma_plain}:{pha}",
+                    event="UserPromptSubmit", so_dong=1)
+    emit_context([dong])
 
 
 def _nhac_qc(cwd, state, payload, session):

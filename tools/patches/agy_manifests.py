@@ -8,7 +8,7 @@ from typing import Dict, List
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
-PLUGIN_VERSION = "0.104.0"
+PLUGIN_VERSION = "0.105.0"
 
 
 def _default_lsp_args() -> List[str]:
@@ -52,7 +52,7 @@ def generate_plugin_json(plugin_root: Path) -> None:
         "repository": "https://github.com/TDQUOC/TDQ-Workflow-Antigravity",
         "description": (
             "Spec-driven engineering workflow for Google Antigravity: intake -> spec -> plan -> "
-            "implement -> QC -> report. Includes 24 [TDQ:*] lifecycle gates, LSP-first 3-tier "
+            "implement -> QC -> report. Includes 23 [TDQ:*] lifecycle gates, LSP-first 3-tier "
             "search discipline, Chrome DevTools & Archify verification, and 8 domain subagents."
         ),
         "logo": "assets/logo.svg",

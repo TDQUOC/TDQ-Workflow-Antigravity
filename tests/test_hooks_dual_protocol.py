@@ -1,4 +1,4 @@
-"""V3 Verification: Live cmd.exe /c dual-protocol hooks, 22 AGY TDQ:* codes, EC-01..EC-17."""
+"""V3 Verification: Live cmd.exe /c dual-protocol hooks, 23 AGY TDQ:* codes, EC-01..EC-17."""
 import importlib.util
 import io
 import json
@@ -25,10 +25,11 @@ sys.modules["_agy_plugin_gate_guidance"] = _gate_guidance
 _gg_spec.loader.exec_module(_gate_guidance)
 
 
-EXPECTED_22_CODES = {
+EXPECTED_23_CODES = {
     "APPROVE", "GIT", "TEAM", "STATE", "READONLY", "VUNG", "ZERO-POPUP",
     "SUBAGENT", "UNFINISHED", "LSP", "SEARCH", "TICK", "DOC", "LOG",
     "OUTPUT", "SETUP", "GON", "NEXT", "WORKTREE", "ANCHOR", "DOD", "INTAKE",
+    "PLAIN",
 }
 LEAN_REMOVED_CODES = {"ASK", "DEVTOOL", "FEEDBACK", "GATE", "QC", "RULE", "STUCK"}
 
@@ -68,11 +69,11 @@ def _state_cli(repo: Path, *args: str):
     return subprocess.run([sys.executable, "-X", "utf8", str(PLUGIN_DIR / "scripts" / "tdq_state.py"), *args], **kw)
 
 
-def test_all_22_tdq_codes_registered():
-    assert len(_common.CODES) == 22
-    assert set(_common.CODES) == EXPECTED_22_CODES
+def test_all_23_tdq_codes_registered():
+    assert len(_common.CODES) == 23
+    assert set(_common.CODES) == EXPECTED_23_CODES
     assert LEAN_REMOVED_CODES.isdisjoint(set(_common.CODES))
-    assert set(_gate_guidance.ALL_AGY_CODES) == EXPECTED_22_CODES
+    assert set(_gate_guidance.ALL_AGY_CODES) == EXPECTED_23_CODES
     assert set(_gate_guidance.LEAN_REMOVED_CODES) == LEAN_REMOVED_CODES
 
 

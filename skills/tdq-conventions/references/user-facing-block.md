@@ -1,8 +1,9 @@
 # Shape of a block spoken to the user
 <!-- muc-luc-dong:
-  Table of contents=17-25 · The seven places this shape is mandatory=26-30 ·
-  The six components (all six, in order)=31-59 · The eight decoration rules=60-99 ·
-  Hard rules=100-126 · Plain-Language Narrative Rule=127-143 · Bảng ký hiệu và ví dụ TRƯỚC/SAU=144
+  Two-Tier Presentation Standard (Layer 1 vs Layer 2)=18-30 · Table of contents=31-39 ·
+  The seven places this shape is mandatory=40-44 · The six components (all six, in order)=45-73 ·
+  The eight decoration rules=74-113 · Hard rules=114-141 · Plain-Language Narrative Rule=142-158 ·
+  Bảng ký hiệu và ví dụ TRƯỚC/SAU=159
 -->
 
 Applies to **every** place where TDQ asks a question or presents a result to the user. The reader
@@ -13,6 +14,19 @@ Language: every word of the block is written in the language of state field `doc
 `vi`). The rules below shape it; they never dictate the wording. Every Vietnamese string quoted
 here is a SAMPLE of the shape in the default language, not a string to copy when `doc_lang`
 is something else.
+
+## Two-Tier Presentation Standard (Layer 1 vs Layer 2)
+
+Every user output splits into **Layer 1 (Reader Front)** and **Layer 2 (Technical OBD Port)**:
+
+| Surface | Layer 1 Hard Ceilings (Grasp in 10–15s) | Layer 2 Location (100% Audit) |
+|---|---|---|
+| Chat reply | 8–16 lines, <= 25 words/bullet, <= 6 backtick pairs/100 words, 0 wrapped plain numbers, <= 3 links | Behind `Xem đầy đủ tại:` <!-- i18n-allow --> |
+| `.md` (`spec`/`plan`/`report`) | Strictly `> **Tóm tắt dễ hiểu:**` (<= 120 words, sentences <= 35 words, <= 6 backtick/100w, 0 raw `path:line`, <= 2 `·`/line) <!-- i18n-allow --> | Sections `§1`–`§4`, `qc.md`, timing tables |
+| Archify HTML | Domain action labels in diagram nodes/edges and Vietnamese UI chrome when `doc_lang=vi` | Node `detail` drawer and sources |
+
+Never copy Layer-2 file lists, CLI flags, SHAs, or timing tables verbatim into chat or top `.md` summaries.
+See [user-facing-block-vi-du.md](user-facing-block-vi-du.md) for side-by-side Before/After contrast.
 
 ## Table of contents
 
@@ -69,7 +83,7 @@ content to be changed, removed or added.
    the label line; never break a single item out into a bullet.
 3. Paths go in backticks, the lead-in `Xem đầy đủ tại: ` stays bare — that way the line still <!-- i18n-allow: sample string of the default language -->
    matches every old search.
-4. File names, command names and numbers inside the body go in backticks.
+4. Reserve backticks strictly for CLI commands, paths on `Xem đầy đủ tại:`, or Layer-2 technical symbols — never wrap plain numbers, counts, percentages, or everyday Layer-1 words in backticks. <!-- i18n-allow -->
 5. Keep the `---` rule with exactly one blank line above and below. Never swap it for another
    drawing character.
 6. An option list keeps the shape `- A (đề xuất): nội dung`, one option per line; bold is allowed <!-- i18n-allow: sample string of the default language -->
@@ -115,6 +129,7 @@ content to be changed, removed or added.
   component 6; anything else printed there breaks the shape.
 - The turn keeps running after this block was printed → reprint it **word for word, 100%** in the
   last message (rule §1 item 5 of [SKILL.md](../SKILL.md)).
+- **Layer-1 Check:** Before sending chat or saving `.md`, unwrap numbers and move `path:line` or variable names behind `Xem đầy đủ tại:` or §2+. <!-- i18n-allow -->
 - **Self-check before sending — mandatory, never skipped.** The block holds at least one option
   list → read your own draft back and answer these three before the message goes out:
   1. Does every question line open with its number (`1.`, `2.`, …)? A single question counts too.
@@ -127,7 +142,7 @@ content to be changed, removed or added.
 ## Plain-Language Narrative Rule
 
 Applies to **every** `spec`, `plan`, `report`, and `quick` summary — both the chat block and
-the top blockquote of the markdown file (`> **Tóm tắt dễ hiểu:**` / `> **Tóm tắt nhanh:**`). <!-- i18n-allow: canonical top summary labels in the default language -->
+the top blockquote (`> **Tóm tắt dễ hiểu:**` only — never `Tóm tắt nhanh:`). <!-- i18n-allow: canonical top summary label in the default language -->
 
 1. **10–15 seconds readability:** Write so any reader — developer or non-specialist — grasps
    what changed, why, and what works in 10–15 seconds without asking "tóm tắt lại dễ hiểu hơn". <!-- i18n-allow: sample user follow-up phrase -->
@@ -135,7 +150,7 @@ the top blockquote of the markdown file (`> **Tóm tắt dễ hiểu:**` / `> **
    prose: what pain existed before (`Trước đây:`), what changes now (`Sau khi làm xong:`), and <!-- i18n-allow: sample narrative lead-ins in the default language -->
    the outcome (`Kết quả`). Keep internal jargon explained inline when first named.
 3. **Breathe, never pack middle-dot (`·`) walls:** Give each main point one clear bullet with
-   a plain-language label (`**Nhãn ngắn:**`). Weave key numbers gently into sentences instead of <!-- i18n-allow: sample label formatting -->
+   a plain-language label (`**Nhãn ngắn:**`). Express key numbers naturally in prose instead of <!-- i18n-allow: sample label formatting -->
    compressing 4–5 facts onto one middle-dot (`·`) line. Keep long paths, CLI flags, and dense
    tables behind `Xem đầy đủ tại:`. <!-- i18n-allow: sample lead-in in the default language -->
 4. **Two-tier `.md` structure:** Put the short plain summary immediately under the document `#`

@@ -384,8 +384,8 @@ def _measure_ranged_reads(repo: Path, home: Path, sid: str, count: int) -> list[
     return latencies
 
 
-def test_weighted_burden_sid_isolation_hot_latency_and_22_guidance_codes(tmp_path: Path) -> None:
-    """Measure <=25ms ranged-read hot-direct, verify sid burden >=40 DOC, and 22 AGY codes."""
+def test_weighted_burden_sid_isolation_hot_latency_and_23_guidance_codes(tmp_path: Path) -> None:
+    """Measure <=25ms ranged-read hot-direct, verify sid burden >=40 DOC, and 23 AGY codes."""
     repo, home = _setup_inv_repo(tmp_path / "burden")
     _measure_ranged_reads(repo, home, "warm-sid", 3)
     latencies = _measure_ranged_reads(repo, home, "worker-a", 14)
@@ -414,8 +414,8 @@ def test_weighted_burden_sid_isolation_hot_latency_and_22_guidance_codes(tmp_pat
     assert json.loads((rt_dir / "checkpoint-worker-c.json").read_text(encoding="utf-8"))["score"] == 0
 
     guidance = json.loads(GUIDANCE_JSON.read_text(encoding="utf-8"))
-    assert len(guidance["guidance_codes"]) == 22
-    assert len(guidance["all_agy_codes"]) == 22 and "DOC" in guidance["guidance_codes"]
+    assert len(guidance["guidance_codes"]) == 23
+    assert len(guidance["all_agy_codes"]) == 23 and "DOC" in guidance["guidance_codes"]
 
 
 def test_tdq_log_0_silences_stderr_and_default_emits_iso(tmp_path: Path) -> None:

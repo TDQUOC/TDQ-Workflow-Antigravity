@@ -74,10 +74,17 @@ class TokenBudgetTest(unittest.TestCase):
         for phase in self.each_phase():
             payload = load_fixture("prompt.json", cwd=self.cwd, session_id=f"b2{phase}")
             _, out, _ = run_hook("prompt_context.py", payload)
-            dau, _, gon = out.partition("[TDQ:GON]")
+            dau, tag_gon, rest = out.partition("[TDQ:GON]")
+            if not tag_gon:
+                dau, tag_plain, plain_rest = out.partition("[TDQ:PLAIN]")
+                gon = ""
+            else:
+                gon, tag_plain, plain_rest = rest.partition("[TDQ:PLAIN]")
             budget(self, dau.rstrip(), 3, 240, f"UserPromptSubmit/{phase}")
-            if gon:
-                budget(self, "[TDQ:GON]" + gon, 3, 200, f"UserPromptSubmit nhắc luật/{phase}")
+            if tag_gon:
+                budget(self, tag_gon + gon.rstrip(), 3, 200, f"UserPromptSubmit nhắc luật/{phase}")
+            if tag_plain:
+                budget(self, tag_plain + plain_rest.rstrip(), 3, 200, f"UserPromptSubmit nhắc trình bày/{phase}")
 
     def test_pre_tool_use(self):
         write_file(self.cwd, "src/app.py")

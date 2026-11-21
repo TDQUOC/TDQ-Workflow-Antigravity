@@ -43,10 +43,10 @@ LIFECYCLE_EVENTS: tuple[str, ...] = (
 
 
 def _load_agy_codes() -> tuple[str, ...]:
-    """Load canonical 22 Antigravity gate codes from gate_guidance.json."""
+    """Load canonical 23 Antigravity gate codes from gate_guidance.json."""
     data = json.loads(GUIDANCE_JSON.read_text(encoding="utf-8"))
     codes = tuple(data["all_agy_codes"])
-    assert len(codes) == 22, f"Expected 22 all_agy_codes, got {len(codes)}"
+    assert len(codes) == 23, f"Expected 23 all_agy_codes, got {len(codes)}"
     return codes
 
 
@@ -643,6 +643,17 @@ def _case_intake(tmp_path: Path) -> None:
     assert_full_json_parity(r_out, p_out, expected_code="INTAKE")
 
 
+def _case_plain(tmp_path: Path) -> None:
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path, "2026-11-21-2200-plain", phase="spec")
+    r_out, p_out = _run_twin(
+        r_ctx,
+        p_ctx,
+        "PreInvocation",
+        lambda r: {"cwd": str(r), "conversationId": "c-plain", "prompt": "draft spec"},
+    )
+    assert_full_json_parity(r_out, p_out, expected_code="PLAIN")
+
+
 @dataclass(frozen=True)
 class ParityCase:
     """Single Golden Parity matrix entry tying a gate code to a lifecycle event."""
@@ -675,11 +686,12 @@ MATRIX_CASES: tuple[ParityCase, ...] = (
     ParityCase("ANCHOR", "SessionStart", lambda t: _case_setup_gon_next_anchor(t, "ANCHOR", source="compact")),
     ParityCase("DOD", "PostInvocation", _case_dod),
     ParityCase("INTAKE", "PreInvocation", _case_intake),
+    ParityCase("PLAIN", "PreInvocation", _case_plain),
 )
 
 
-def test_matrix_covers_all_22_agy_codes_and_6_events() -> None:
-    """Guarantee the Golden Parity matrix covers 22/22 codes and all 6 lifecycle events."""
+def test_matrix_covers_all_23_agy_codes_and_6_events() -> None:
+    """Guarantee the Golden Parity matrix covers 23/23 codes and all 6 lifecycle events."""
     covered_codes = {case.code for case in MATRIX_CASES}
     covered_events = {case.event for case in MATRIX_CASES}
     assert covered_codes == set(AGY_CODES)
@@ -687,8 +699,8 @@ def test_matrix_covers_all_22_agy_codes_and_6_events() -> None:
 
 
 @pytest.mark.parametrize("case", MATRIX_CASES, ids=lambda c: f"{c.code}_{c.event}")
-def test_golden_parity_22_codes_x_6_events(case: ParityCase, tmp_path: Path) -> None:
-    """Execute each of the 22 gate codes across the 6 lifecycle events on twin repos."""
+def test_golden_parity_23_codes_x_6_events(case: ParityCase, tmp_path: Path) -> None:
+    """Execute each of the 23 gate codes across the 6 lifecycle events on twin repos."""
     case.runner(tmp_path)
 
 

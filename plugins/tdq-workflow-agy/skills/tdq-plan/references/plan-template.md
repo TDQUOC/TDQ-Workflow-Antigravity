@@ -12,12 +12,12 @@ Read [plan-template-co-che.md](plan-template-co-che.md) (conditional sections) a
 ```markdown
 # PLAN — <tên việc>
 
-Ngày: YYYY-MM-DD · Spec: ../spec/<slug>.md (bản 1.0, ĐÃ DUYỆT) · Lane: full
+Ngày: YYYY-MM-DD · Spec: ../spec/<slug>.md (bản 1.0, ĐÃ DUYỆT)
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
-Mode thực thi: <main|subagent|codex> — <lý do 1–2 câu> (ĐỀ XUẤT, user chốt lúc duyệt)
+Mode thực thi: <main|subagent|codex> — <lý do> (ĐỀ XUẤT, user chốt lúc duyệt)
 Trạng thái plan: CHỜ DUYỆT
 
-> **Tóm tắt dễ hiểu:** <2–3 câu: chia đợt thế nào và kết quả ra sao>.
+> **Tóm tắt dễ hiểu:** <2–3 câu ngắn: chia đợt ra sao → kết quả thế nào>.
 
 ## Mục lục
 
