@@ -5,7 +5,7 @@
   "evidence_kind": "working-tree",
   "revision": null,
   "document_path": "docs/tdq/reports/2026-11-21-1438-cai-thien-qc-test-e2e.md",
-  "document_digest": "a77d6d4bd75d89831d51a42082e07a09f4df929733a9e26c653ac5a3e9c03cfe",
+  "document_digest": "573bcfbc0e7e842ec19e56e03de0c93a3d976ce60398b3076ff5ad1c8ba32c7b",
   "candidate_path": "docs/tdq/artifacts/2026-11-21-1438-cai-thien-qc-test-e2e/bao-cao.archify.md",
   "candidate_digest": "1a568746cccb32686781475f9ce8759b3530a4864422848e181879b8c5debd6f",
   "artifact_path": "docs/tdq/reports/2026-11-21-1438-cai-thien-qc-test-e2e.html",
@@ -10565,7 +10565,7 @@
       "bytes": 2860
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
       "sha256": "4a4d1da190a53ed3e18ce52bc969a98067658edc77a5a20ae8375cc3ca545778",
       "bytes": 1247087
     },
@@ -10604,11 +10604,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 2362,
+    "durationMs": 2251,
     "browserCheck": {
       "requested": false,
       "ran": false

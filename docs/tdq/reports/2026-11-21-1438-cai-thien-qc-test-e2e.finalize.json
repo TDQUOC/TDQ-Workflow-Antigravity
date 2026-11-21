@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-21T08:28:19.377Z",
+  "startedAt": "2026-11-21T08:39:19.641Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
     "sha256": "1a568746cccb32686781475f9ce8759b3530a4864422848e181879b8c5debd6f",
     "bytes": 2860
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
     "sha256": "4a4d1da190a53ed3e18ce52bc969a98067658edc77a5a20ae8375cc3ca545778",
     "bytes": 1247087
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13864_1795249697877\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\24228_1795250358111\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1192,
+      "durationMs": 1163,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13864_1795249697877\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\24228_1795250358111\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "1e49a8a2-d87c-47e0-ab59-c7d7b9caa75c",
+        "receiptId": "7deb1b00-2d60-41a7-a68a-27c34bd5aaa5",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
         "explainer": {
-          "preparedSha256": "34216b5c20973163853c46f9d28bbdbde35a9c51dc0a3710854fa6601cd17034",
+          "preparedSha256": "212bef582fbbcc5dffc0f3911b6e864f9daf1822082e107cec9467307d2da34c",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -164,17 +164,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 648,
+      "durationMs": 605,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13864_1795249697877\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\24228_1795250358111\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
         "family": "explainer",
         "artifact": {
           "sha256": "4a4d1da190a53ed3e18ce52bc969a98067658edc77a5a20ae8375cc3ca545778",
@@ -224,7 +224,7 @@
               "id": "wf-hien-trang",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Wf4Pnu\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-dUldZ5\\child.html",
                 "artifact": {
                   "sha256": "1bccd75481d0e30df5a519a2af57bf5e4e063cf817dc875c32a074cba1d8db65",
                   "bytes": 811391
@@ -351,7 +351,7 @@
               "id": "wf-mo-hinh-moi",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-NDe3rt\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-WX4tco\\child.html",
                 "artifact": {
                   "sha256": "da941ea581c83d5d514af24d13517d222bf1686fae4f1428d99786d114e65735",
                   "bytes": 812816
@@ -478,7 +478,7 @@
               "id": "wf-lo-trinh",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-xRVWKA\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-DhXBgX\\child.html",
                 "artifact": {
                   "sha256": "d4ea9733a972b6cbe192268aefff6506304bb10005b5bbf58d8100f8d63ee511",
                   "bytes": 810914
@@ -605,7 +605,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "1e49a8a2-d87c-47e0-ab59-c7d7b9caa75c"
+        "deliveryReceiptId": "7deb1b00-2d60-41a7-a68a-27c34bd5aaa5"
       }
     }
   },
@@ -637,12 +637,12 @@
     }
   ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-21T08:28:21.740Z",
-  "durationMs": 2362,
+  "finishedAt": "2026-11-21T08:39:21.893Z",
+  "durationMs": 2251,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

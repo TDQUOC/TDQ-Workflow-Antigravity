@@ -17,14 +17,14 @@ Quy trình QC mặc định (`muc_qc = full`) chạy toàn bộ hơn `4.600` bà
 
 Báo cáo hoàn tất kiểm toán `3` lớp quy trình TDQ, mổ xẻ toàn bộ `33` tệp của `C:\Users\admin\Documents\terterarmy-cli` và đối chiếu chuẩn ngành từ Playwright, Testing Trophy, Instawork TIA, `obra/superpowers` và `agent-browser` `[EV-014]`, `[EV-017]`, `[EV-019]`, `[EV-020]`, `[EV-022]`. Từ đó xác lập kiến trúc đề xuất **Dev-First, E2E-First** gồm `Auto Meta-Gate`, `Dev Behavior QC Card`, kiến trúc kiểm thử `3` tầng tốc độ, mẫu kịch bản plain-language và lộ trình `3` đợt triển khai kèm KPI đo được `[EV-024]`.
 
-## 3. Đã kiểm chứng gì
+## 3. Đã test và kiểm chứng gì
 
 - **Kiểm toán nội bộ TDQ (`T1.1`):** Đọc và phân loại `82` mục trong `8` biên bản `docs/tdq/qc/*.md` (`2026-11-20` đến `2026-11-21`), phân tích `179` bản ghi `docs/tdq/timing.jsonl`, `38` lượt chạy `docs/tdq/.tdq-test.jsonl`, và quét marker trên `222` tệp `tests/test_*.py` `[EV-001]`, `[EV-008]`, `[EV-009]`, `[EV-013]`.
 - **Phân tích đối chuẩn `terterarmy-cli` (`T1.2`):** Đọc đủ `33` tệp ngoài `.git`, đối chiếu mẫu test `7–19` dòng, debug trace `4` lớp, bug board và script đồng bộ manifest `[EV-014]`, `[EV-015]`, `[EV-016]`.
 - **Nghiên cứu chuẩn ngành (`T1.3`):** Truy vấn và trích xuất văn bản gốc vào `raw/01..04*.txt` từ `22` URL thuộc `4` nhóm chuẩn ngành lớn `[EV-017]`–`[EV-023]`.
 - **Cổng bằng chứng & chuẩn tài liệu (`T3.1`):** Kiểm `100%` `[EV-001]`..`[EV-024]` khớp `evidence.jsonl` (`QC-I1`), đối chiếu phát ngôn với trích đoạn gốc (`QC-I2`), gắn nhãn độ tin cậy (`QC-I4`), chạy `doc_lint.py`, kiểm tra `Zero-Code-Touch` qua `git diff --name-only dev..HEAD` và xác thực Archify HTML.
 
-## 4. Kết quả kiểm chứng
+## 4. Kết quả test và kiểm chứng
 
 | Hạng mục đối chiếu | Thực tế đo được tại TDQ | Phán quyết & độ tin cậy |
 | :--- | :--- | :--- |
@@ -248,5 +248,5 @@ Hoàn tất điều tra thực chứng quy trình QC/kiểm thử nội bộ c�
 - Chỉ thêm tài liệu điều tra, bằng chứng, báo cáo đề xuất, QC và Archify HTML trong `docs/tdq/` và nhật ký trong `docs/workinglog/` (`Zero-Code-Touch`: `0` chỉnh sửa mã nguồn sản phẩm).
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-21-1438-cai-thien-qc-test-e2e.manifest.json -->
-<!-- manifest_digest: 551b880c41053b5e0880c8953d02182a474244f6d81075f6b27a943164c850fc -->
+<!-- manifest_digest: 688cc558d8361115f3105d99d64f9ee7a1b21071024ca99c8bb58657d9ddd56f -->
 <!-- tdq-archify-binding:end -->

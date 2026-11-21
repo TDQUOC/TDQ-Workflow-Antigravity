@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "1e49a8a2-d87c-47e0-ab59-c7d7b9caa75c",
+  "receiptId": "7deb1b00-2d60-41a7-a68a-27c34bd5aaa5",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.50276bf58e5e4bcda4ffef2d0a81e1b1.html",
   "specification": {
     "sha256": "1a568746cccb32686781475f9ce8759b3530a4864422848e181879b8c5debd6f",
     "bytes": 2860
@@ -15,7 +15,7 @@
     "bytes": 1247087
   },
   "explainer": {
-    "preparedSha256": "34216b5c20973163853c46f9d28bbdbde35a9c51dc0a3710854fa6601cd17034",
+    "preparedSha256": "212bef582fbbcc5dffc0f3911b6e864f9daf1822082e107cec9467307d2da34c",
     "dependencies": [
       {
         "kind": "diagram-spec",
