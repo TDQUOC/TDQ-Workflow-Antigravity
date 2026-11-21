@@ -26,7 +26,9 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import tdq_state  # noqa: E402
 
 sys.path.insert(0, os.path.join(ROOT, 'hooks', 'scripts'))
+import _common  # noqa: E402
 import read_gate  # noqa: E402 — lấy hằng số từ chính cổng, khỏi chép tay
+import subagent_stop  # noqa: E402
 read_gate_SO_SACH = read_gate.SO_SACH
 read_gate_TRAN_DONG = read_gate.TRAN_DONG
 
@@ -280,6 +282,180 @@ class NhacCcrFileDuLieuLon(BaseReadGate):
         with io.open(tep_json, "w", encoding="utf-8") as fh:
             fh.write('{"k": "' + ("a" * 35000) + '"}\n')
         self.assertEqual(self.nhac_trong(self.goi(tep=tep_json, offset=1, limit=20)), "")
+
+
+class TestScopedWriteSecurityAndInvestigateHooks(unittest.TestCase):
+    """V2 M3/M4: 5-layer scoped-write security, subagent_stop, static anchor, TDQ:GON, hooks.json."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = self._tmp.name
+        os.makedirs(os.path.join(self.cwd, "docs", "tdq", "artifacts", "2026-11-21-inv"), exist_ok=True)
+        os.makedirs(os.path.join(self.cwd, "docs", "tdq", "artifacts", "other-slug"), exist_ok=True)
+        os.makedirs(os.path.join(self.cwd, "docs", "tdq", "research"), exist_ok=True)
+        st = tdq_state.default_state()
+        st.update({
+            "active_request": "2026-11-21-inv",
+            "lane": "full",
+            "phase": "implement",
+            "spec_approved": True,
+            "plan_approved": True,
+            "implement_mode": "subagent",
+            "work_kind": "investigate",
+        })
+        tdq_state.save(self.cwd, st)
+        self.state = st
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_normalize_tool_aliases_maps_target_file_and_line_ranges(self):
+        norm = _common._normalize_tool_aliases("read_file", {
+            "TargetFile": "docs/tdq/artifacts/2026-11-21-inv/t1.md",
+            "StartLine": 10,
+            "EndLine": 25,
+        })
+        self.assertEqual(norm["file_path"], "docs/tdq/artifacts/2026-11-21-inv/t1.md")
+        self.assertEqual(norm["offset"], 10)
+        self.assertEqual(norm["limit"], 16)
+
+    def test_5_layer_scoped_write_security_matrix(self):
+        slug = "2026-11-21-inv"
+        allowed_roles = ("tdq-explorer", "explorer", "tdq-debugger", "debugger", "tdq-reviewer", "reviewer")
+        for role in allowed_roles:
+            with self.subTest(allowed_role=role):
+                self.assertTrue(_common.is_investigation_artifact_target(
+                    f"docs/tdq/artifacts/{slug}/shard.md", self.cwd, role, self.state))
+                self.assertTrue(_common.is_investigation_artifact_target(
+                    f"docs/tdq/artifacts/{slug}/nested/deep/shard.json", self.cwd, role, self.state))
+                self.assertTrue(_common.is_investigation_artifact_target(
+                    f"docs/tdq/research/{slug}.md", self.cwd, role, self.state))
+                self.assertTrue(_common.is_investigation_artifact_target(
+                    f"docs/tdq/research/{slug}-part1.md", self.cwd, role, self.state))
+
+        denied_cases = [
+            ("tdq-security-reviewer", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("security-reviewer", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("tdq-browser", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("browser", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("subagent", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("fake-explorer", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("tdq-qc-tester", f"docs/tdq/artifacts/{slug}/shard.md"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/evidence.jsonl"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/evidence-log.md"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/trial_1.json"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/rec_01.json"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/evil.py"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/../other-slug/pwn.md"),
+            ("tdq-explorer", f"docs/tdq/artifacts/other-slug/shard.md"),
+            ("tdq-explorer", f"docs/tdq/research/{slug}/nested.md"),
+            ("tdq-explorer", "docs/tdq/research/other-slug.md"),
+            ("tdq-explorer", "scripts/tdq_state.py"),
+            ("tdq-explorer", f"docs/tdq/artifacts/{slug}/sub/../../outside.md"),
+        ]
+        for role, path in denied_cases:
+            with self.subTest(role=role, path=path):
+                self.assertFalse(_common.is_investigation_artifact_target(path, self.cwd, role, self.state))
+
+        # Traversal in active_slug must fail closed
+        bad_state = dict(self.state, active_request="../escape")
+        self.assertFalse(_common.is_investigation_artifact_target(
+            "docs/tdq/artifacts/2026-11-21-inv/t1.md", self.cwd, "tdq-explorer", bad_state))
+
+    def test_edit_gate_allows_scoped_write_and_blocks_security_reviewer(self):
+        from helper import decision as get_decision
+        ok_payload = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Edit",
+            "cwd": self.cwd,
+            "session_id": "exp-scoped-ok",
+            "agent_id": "ag-exp",
+            "agent_type": "tdq-explorer",
+            "tool_input": {"file_path": "docs/tdq/artifacts/2026-11-21-inv/t1.md"},
+        }
+        rc, out, _ = run_hook("edit_gate.py", ok_payload)
+        self.assertEqual(rc, 0)
+        self.assertNotIn("deny", out)
+
+        bad_payload = {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Edit",
+            "cwd": self.cwd,
+            "session_id": "sec-rev-deny",
+            "agent_id": "ag-sec",
+            "agent_type": "tdq-security-reviewer",
+            "tool_input": {"file_path": "docs/tdq/artifacts/2026-11-21-inv/t1.md"},
+        }
+        rc2, out2, _ = run_hook("edit_gate.py", bad_payload)
+        self.assertEqual(rc2, 0)
+        self.assertEqual(get_decision(out2)[0], "deny")
+        self.assertIn("READONLY", out2)
+
+    def test_subagent_stop_posttooluse_registers_only_without_telemetry(self):
+        payload = {
+            "hook_event_name": "PostToolUse",
+            "tool_name": "invoke_subagent",
+            "cwd": self.cwd,
+            "session_id": "leader-sid",
+            "tool_input": {"TypeName": "tdq-explorer", "Prompt": "Investigate T2.2"},
+            "response": {"conversationId": "conv-exp-99"},
+        }
+        rc = subagent_stop._handle_spawn_event(payload, self.cwd, "PostToolUse")
+        self.assertEqual(rc, 0)
+        sess_path = os.path.join(self.cwd, "docs", "tdq", ".tdq-runtime", "sessions.json")
+        self.assertTrue(os.path.isfile(sess_path))
+        tel_path = os.path.join(self.cwd, "docs", "tdq", ".tdq-agent-telemetry.jsonl")
+        self.assertFalse(os.path.exists(tel_path), "PostToolUse spawn must not record premature stop telemetry")
+
+    def test_session_start_and_prompt_context_investigate_gon_and_static_anchor(self):
+        import re as _re
+        plan_path = os.path.join(self.cwd, "docs", "tdq", "plan", "2026-11-21-inv.md")
+        os.makedirs(os.path.dirname(plan_path), exist_ok=True)
+        with io.open(plan_path, "w", encoding="utf-8") as fh:
+            fh.write("- [~] **T1.1** Investigate\n")
+
+        # 1. session_start with source=resume and work_kind=investigate swaps TDQ:GON + static anchor < 600c
+        ss_payload = {
+            "hook_event_name": "SessionStart",
+            "cwd": self.cwd,
+            "session_id": "ss-inv-resume",
+            "source": "resume",
+        }
+        rc, out, _ = run_hook("session_start.py", ss_payload)
+        self.assertEqual(rc, 0)
+        ctx = json.loads(out).get("hookSpecificOutput", {}).get("additionalContext", "") if out.lstrip().startswith("{") else out
+        self.assertIn("[TDQ:GON]", ctx)
+        self.assertNotIn("rung 1", ctx.lower())
+        self.assertIn("artifact", ctx.lower())
+        self.assertIn("[TDQ:ANCHOR]", ctx)
+        anchor_section = ctx[ctx.index("[TDQ:ANCHOR]"):]
+        self.assertLess(len(anchor_section), 600)
+        self.assertIsNone(_re.search(r"\d{2}:\d{2}:\d{2}", anchor_section))
+
+        # 2. prompt_context subagent anchor on resume/compact
+        _common.register_subagent_role(self.cwd, "sub-exp-1", "tdq-explorer", target_task="T1.1")
+        sub_payload = {
+            "hook_event_name": "UserPromptSubmit",
+            "cwd": self.cwd,
+            "session_id": "sub-exp-1",
+            "source": "resume",
+            "prompt": "continue",
+        }
+        rc2, out2, _ = run_hook("prompt_context.py", sub_payload)
+        self.assertEqual(rc2, 0)
+        ctx2 = json.loads(out2).get("hookSpecificOutput", {}).get("additionalContext", "") if out2.lstrip().startswith("{") else out2
+        self.assertIn("[TDQ:ANCHOR]", ctx2)
+        self.assertIn("2026-11-21-inv", ctx2)
+        self.assertLess(len(ctx2), 600)
+
+    def test_hooks_json_contains_search_web_matcher(self):
+        with io.open(os.path.join(ROOT, "hooks", "hooks.json"), encoding="utf-8") as fh:
+            cfg = json.load(fh)
+        pre = [item.get("matcher", "") for item in cfg["hooks"]["PreToolUse"]]
+        post = [item.get("matcher", "") for item in cfg["hooks"]["PostToolUse"]]
+        self.assertTrue(any("search_web" in m for m in pre))
+        self.assertTrue(any("search_web" in m for m in post))
 
 
 if __name__ == "__main__":

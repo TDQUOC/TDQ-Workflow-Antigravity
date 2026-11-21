@@ -162,7 +162,7 @@ fn extract_shell_subcommands(part: &str) -> Vec<String> {
     static RE_WRAPPER: OnceLock<Regex> = OnceLock::new();
     let wrap = compiled_regex(
         &RE_WRAPPER,
-        r"(?i)(?:^|\s)(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)\s+",
+        r"(?i)(?:^|\s)(?:(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)|cmd(?:\.exe)?\b[^\n]*?\s+/[ck])\s+",
     );
     let mut subs = Vec::new();
     for m in wrap.find_iter(part) {
@@ -172,6 +172,9 @@ fn extract_shell_subcommands(part: &str) -> Vec<String> {
             continue;
         };
         if quote != '\'' && quote != '"' {
+            if !rest.is_empty() {
+                subs.push(rest.to_string());
+            }
             continue;
         }
         let mut buf = String::new();
@@ -198,11 +201,11 @@ fn part_has_shell_mutator_depth(part: &str, depth: usize) -> bool {
     static RE_SH: OnceLock<Regex> = OnceLock::new();
     let ps = compiled_regex(
         &RE_PS,
-        r"(?i)\b(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b",
+        r"(?i)\b(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b|\[(?:System\.)?IO\.File\]::",
     );
     let sh = compiled_regex(
         &RE_SH,
-        r#"(?is)(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b)|\b(?:python3?|py)\b.*\b(?:open\([^)]*['"](?:w|a|x)['"]|write_text\b|write_bytes\b|os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|fs\.promises\.(?:writeFile|unlink|rm))|\bgit\b(?:\s+-C\s+(?:"[^"]*"|'[^']*'|\S+))?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)"#,
+        r#"(?is)(?:^\s*(?:rm\b|del\b|erase\b|rmdir\b|mklink\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b)|\b(?:python3?|py)\b.*\b(?:open\([^)]*['"](?:w|a|x)['"]|write_text\b|write_bytes\b|os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|\bnode\b.*(?:\b(?:writeFile|writeFileSync|appendFile|appendFileSync|rmSync|unlinkSync|createWriteStream)\b|fs\.promises\.(?:writeFile|unlink|rm))|\bgit\b(?:\s+-C\s+(?:"[^"]*"|'[^']*'|\S+))?\s+(?:commit|add|rm|mv|reset|checkout|switch|clean|push|merge|rebase|cherry-pick)\b)"#,
     );
     if ps.is_match(part) || sh.is_match(part) {
         return true;
@@ -313,7 +316,7 @@ pub fn mutates_tdq_state(raw_cmd: &str) -> bool {
     static RE_WRITE: OnceLock<Regex> = OnceLock::new();
     let wr = compiled_regex(
         &RE_WRITE,
-        r#"(?i)(?:>{1,2}\s*['"]?\S*docs/tdq/(?:state\.json|STATE\.md)|\b(?:tee|sed[^;|&]*\s-i|mv|cp|truncate|Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item)\b[^;|&]*docs/tdq/(?:state\.json|STATE\.md)|\bopen\([^)]*docs/tdq/(?:state\.json|STATE\.md)[^)]*['"](?:w|a|x))"#,
+        r#"(?i)(?:>{1,2}\s*['"]?\S*docs/tdq/(?:state\.json|STATE\.md)|\b(?:tee|sed[^;|&]*\s-i|mv|cp|truncate|Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item)\b[^;|&]*docs/tdq/(?:state\.json|STATE\.md)|\[(?:System\.)?IO\.File\]::[^;|&]*docs/tdq/(?:state\.json|STATE\.md)|\bopen\([^)]*docs/tdq/(?:state\.json|STATE\.md)[^)]*['"](?:w|a|x))"#,
     );
     wr.is_match(&cleaned)
 }
@@ -497,5 +500,16 @@ mod tests {
             r#"python3 -c "import shutil; shutil.rmtree('src_dir')""#
         ));
         assert!(is_shell_mutator(r#"bash -c "echo hi > evil.py""#));
+        assert!(is_shell_mutator(r#"cmd /c "echo pwn > evil.py""#));
+        assert!(is_shell_mutator("cmd /c del /f foo.py"));
+        assert!(is_shell_mutator(
+            r#"pwsh -Command "[IO.File]::WriteAllText('x.py', '1')""#
+        ));
+        assert!(is_shell_mutator(
+            r#"pwsh -Command "[System.IO.File]::WriteAllText('x.py', '1')""#
+        ));
+        assert!(mutates_tdq_state(
+            "[IO.File]::WriteAllText('docs/tdq/state.json', '{}')"
+        ));
     }
 }

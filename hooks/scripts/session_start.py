@@ -22,14 +22,15 @@ import sys
 import time
 from datetime import datetime
 
-from _common import (already_reminded, emit_context, is_agy, payload_cwd,
+from _common import (INVESTIGATE_GON_TEXT, already_reminded, emit_context, is_agy, payload_cwd,
                      read_payload, session_id, turn_log_append)
 # Placed AFTER `from _common`: `_common` itself injects `scripts/` into sys.path. The
 # from-import shape (not a module attribute call) is what lets graphify emit a cross-file
 # `calls` edge.
 from luat_gon import doc_than_luat, loc_than_luat  # noqa: E402
 from tdq_state import (_TASK_LINE, default_state, effective_phase, lenh_cho_project, load,  # noqa: E402
-                       muc_gat_hieu_luc, phase_row, plan_tick_state, render_next)
+                       muc_gat_hieu_luc, phase_row, plan_tick_state, render_next,
+                       work_kind_hieu_luc)
 import search_rules  # noqa: E402
 import tdq_setup  # noqa: E402
 import tdq_devtool_mcp  # noqa: E402
@@ -332,13 +333,14 @@ def main():
     than = loc_than_luat(doc_than_luat(GOC_LUAT), muc)
     ghi = bool(than) and not already_reminded(cwd, payload, MA_GON)
     pha = effective_phase(state, warn=False)
-    # Lazy load: only load the full law body during phase 'implement'. In all other phases
-    # (idle, analyze, spec, plan, qc, report) or when no active request is open, inject a
-    # concise 1-line pointer to save ~2,000 tokens of carry-cost per turn.
-    nap_day_du = (pha == "implement")
+    wk = work_kind_hieu_luc(state)
+    # Lazy load: only load the full law body during phase 'implement' (for code build).
+    nap_day_du = (pha == "implement" and wk != "investigate")
     law_text = ""
     if ghi:
-        if nap_day_du:
+        if wk == "investigate":
+            law_text = INVESTIGATE_GON_TEXT.format(ma=MA_GON, muc=muc)
+        elif nap_day_du:
             law_text = (f"[{MA_GON}] The build-less-than-asked law (muc_gat={muc}) — climb this "
                         f"ladder before you create anything:\n{than}")
         else:
@@ -377,7 +379,7 @@ def main():
         resume_hint = (f" resume_task={resume_task}; check tool/receipt before retry"
                        if pha == "implement" and resume_task else "")
         row = phase_row(state)
-        next_hint = row.get("cmd") or row.get("action") or "none"
+        next_hint = (row.get("cmd") or row.get("action") or "none")[:60]
 
         raw_cwd = str(payload.get("cwd") or os.getcwd())
         cwd_str = str(cwd)
@@ -392,13 +394,13 @@ def main():
                 wt_str = f"worktree:{wt_str}"
 
         label = "Compact recovery:" if src == "compact" else f"{src.capitalize()} recovery:"
-        anchor_block = (
-            f"[TDQ:ANCHOR] {label} request={req} phase={pha} source={src} owner={owner} "
+        anchor_raw = (
+            f"[TDQ:ANCHOR] {label} request={req} kind={wk} phase={pha} source={src} owner={owner} "
             f"plan={plan_f} doing={doing_str} dispatched={dispatched_str}{resume_hint} next={next_hint} worktree={wt_str}\n"
-            f"MCP-First: ưu tiên MCP & bộ skill MCP, pre-flight check kết nối; LSP-Autonomy: toàn quyền tự quyết gate LSP (--bo-qua-lsp cho doc/research/internal-ref), tự tìm & cài dependency LSP thiếu, không hỏi người dùng.\n"
-            f"Core anti-patterns: ANTI-1 (no fake red) · ANTI-2 (no blind assert) · ANTI-3 (clean git state) · "
-            f"ANTI-4 (tick before code) · ANTI-5 (cap logs <= 15 lines) · ANTI-6 (explicit files in Cham)."
+            f"MCP-First: ưu tiên MCP & bộ skill MCP; LSP-Autonomy: toàn quyền tự quyết gate LSP (--bo-qua-lsp doc/research).\n"
+            f"Core anti-patterns: ANTI-1..ANTI-6 (no fake red/blind assert/clean git/tick before code/cap logs<=15L/explicit Cham)."
         )
+        anchor_block = anchor_raw[:595] if len(anchor_raw) >= 600 else anchor_raw
 
     sections = [out]
     if law_text:

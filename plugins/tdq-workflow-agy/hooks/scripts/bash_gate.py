@@ -82,7 +82,7 @@ NEXT_PHASE_TARGET = {"plan": "spec", "implement": "plan"}
 # is also the answer to the mode gate, so a matched `mode` signal opens it too.
 SIGNAL_TARGETS = {"nhanh": ("quick",), "express": ("quick",), "plan": ("plan", "mode")}  # i18n-allow
 SHELL_MUTATOR = re.compile(
-    r"(?:^\s*(?:rm\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b|"
+    r"(?:^\s*(?:rm\b|del\b|erase\b|rmdir\b|mklink\b|sed\b.*(?:^|\s)-i(?:\s|$)|(?:cp|mv|tee|truncate)\b|"
     r"(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b)|"
     r"\b(?:python3?|py)\b.*\b(?:open\([^)]*['\"](?:w|a|x)['\"]|write_text\b|write_bytes\b|"
     r"os\.(?:remove|unlink|replace|rename)\b|shutil\.(?:copy|move|rmtree)\b)|"
@@ -92,7 +92,7 @@ SHELL_MUTATOR = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _SHELL_WRAPPER_RE = re.compile(
-    r"(?:^|\s)(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)\s+",
+    r"(?:^|\s)(?:(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)|cmd(?:\.exe)?\b[^\n]*?\s+/[ck])\s+",
     re.IGNORECASE,
 )
 STDOUT_WRITE = re.compile(r"(?<![<=!-])(?<!\d)(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
@@ -139,7 +139,7 @@ def _clean(raw):
 
 
 _PS_WRITE_PATTERN = re.compile(
-    r"(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item)\b",
+    r"(?:Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item)\b|\[(?:System\.)?IO\.File\]::",
     re.IGNORECASE,
 )
 
@@ -205,7 +205,12 @@ def _extract_shell_subcommands(part):
         idx = match.end()
         while idx < len(part) and part[idx].isspace():
             idx += 1
-        if idx >= len(part) or part[idx] not in ("'", '"'):
+        if idx >= len(part):
+            continue
+        if part[idx] not in ("'", '"'):
+            rem = part[idx:].strip()
+            if rem:
+                subs.append(rem)
             continue
         quote = part[idx]
         idx += 1

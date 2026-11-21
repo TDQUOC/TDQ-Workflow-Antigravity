@@ -24,12 +24,13 @@ EXPECTED_AGENTS = (
     "tdq-explorer.md",
     "tdq-debugger.md",
 )
-READONLY_AGENTS = (
+STRICT_READONLY_AGENTS = ("tdq-security-reviewer.md",)
+SCOPED_INVESTIGATION_AGENTS = (
     "tdq-reviewer.md",
-    "tdq-security-reviewer.md",
     "tdq-explorer.md",
     "tdq-debugger.md",
 )
+READONLY_AGENTS = STRICT_READONLY_AGENTS
 AGY_DISCOVERY_TOOLS = {"read_file", "grep_search", "find_by_name", "list_dir"}
 AGY_WRITE_TOOLS = {
     "edit_file",
@@ -128,11 +129,15 @@ class AgentFrontmatterTest(unittest.TestCase):
                 self.assertLessEqual(
                     AGY_DISCOVERY_TOOLS, tools, f"{name}: missing AGY discovery tools"
                 )
-                if name in READONLY_AGENTS:
+                if name in STRICT_READONLY_AGENTS:
                     self.assertEqual(
                         tools & AGY_WRITE_TOOLS, set(), f"{name}: read-only has write tools"
                     )
                     self.assertIn("[TDQ:READONLY]", body, f"{name}: missing [TDQ:READONLY]")
+                elif name in SCOPED_INVESTIGATION_AGENTS:
+                    self.assertIn("write_file", tools, f"{name}: missing scoped write_file tool")
+                    self.assertIn("edit_file", tools, f"{name}: missing scoped edit_file tool")
+                    self.assertIn("[TDQ:SCOPED-WRITE]", body, f"{name}: missing [TDQ:SCOPED-WRITE]")
                 elif name == "tdq-qc-tester.md":
                     self.assertIn("docs/tdq/qc/*.md", body)
                     self.assertIn("[TDQ:QC-SCOPED]", body)

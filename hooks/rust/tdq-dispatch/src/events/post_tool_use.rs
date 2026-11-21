@@ -5,8 +5,8 @@ use crate::command_parser::is_graphify_shell_query;
 use crate::protocol::{HookDecision, HookPayload, NormalizedToolCall};
 use crate::storage::{
     append_jsonl_record, append_turn_row, check_and_store_ccr, khoa_hien_tai, now_iso_utc,
-    read_ledger_path, read_tdq_state, register_sessions_role, reset_stop_streak,
-    search_ledger_path, unix_timestamp_f64,
+    read_tdq_state, register_sessions_role, reset_stop_streak, search_ledger_path,
+    unix_timestamp_f64,
 };
 use crate::RouteOutcome;
 use serde_json::Value;
@@ -73,16 +73,6 @@ pub fn handle_post_tool_use(payload: &HookPayload, workspace_root: &Path) -> Hoo
     let state = read_tdq_state(workspace_root);
     let khoa = khoa_hien_tai(state.as_ref(), &sid);
 
-    if matches!(norm.tool_name.as_str(), "read_file" | "view_file" | "Read") {
-        if let Some(target) = norm.target_path() {
-            let rec = serde_json::json!({
-                "ts": unix_timestamp_f64(),
-                "khoa": khoa,
-                "path": target.replace('\\', "/"),
-            });
-            let _ = append_jsonl_record(&read_ledger_path(workspace_root), &rec);
-        }
-    }
     if let Some(label) = extract_concept_label(&norm, cmd_opt.as_deref()) {
         let rec = serde_json::json!({
             "ts": unix_timestamp_f64(),

@@ -15,7 +15,8 @@ import os
 import re
 import sys
 
-from _common import (_shard_turn_path, already_reminded, approve_hint,
+from _common import (INVESTIGATE_GON_TEXT, _shard_turn_path,
+                     already_reminded, approve_hint,
                      detect_subagent, emit_context, flush_pending_reminders,
                      is_agy, payload_cwd, plan_mode, read_payload, session_id)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
@@ -25,7 +26,7 @@ from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
                        muc_gat_hieu_luc, normalize_mode, phase_key,
                        prompt_context_last, prompt_context_save, render_next,
                        sha256_noi_dung, turn_log_append, turn_log_clear,
-                       turn_snapshot)
+                       turn_snapshot, work_kind_hieu_luc)
 
 MAX_LINES = 3
 MAX_CHARS = 240
@@ -224,6 +225,26 @@ def _nhac_worktree(cwd):
                                        "python3 scripts/tdq_team.py sweep", cwd)])
 
 
+def _subagent_anchor_line(cwd, payload, sub):
+    """Build a static <600c recovery anchor for a subagent on compact/resume."""
+    src = str(payload.get("source") or "").strip().lower()
+    if src not in ("compact", "resume"):
+        return ""
+    state = load(cwd, heal=False) or {}
+    req = str(state.get("active_request") or "").strip()
+    if not req:
+        return ""
+    wk = work_kind_hieu_luc(state)
+    pha = effective_phase(state, warn=False)
+    role = sub.get("role") or "subagent"
+    task = sub.get("task") or "none"
+    line = (
+        f"[TDQ:ANCHOR] Subagent {src}: request={req} kind={wk} phase={pha} "
+        f"role={role} task={task} artifacts=docs/tdq/artifacts/{req}/"
+    )
+    return line[:595]
+
+
 def _nhac_gon(cwd, state, payload, session):
     """One pointer line at phase `implement` — never the law body.
 
@@ -238,7 +259,8 @@ def _nhac_gon(cwd, state, payload, session):
     muc = muc_gat_hieu_luc(state)
     if muc == "off" or already_reminded(cwd, payload, MA_GON):
         return
-    dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), MAX_GON_CHARS)
+    tmpl = INVESTIGATE_GON_TEXT if work_kind_hieu_luc(state) == "investigate" else NHAC_GON
+    dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), MAX_GON_CHARS)
     # `so_dong` here is 1, not the body's size: this channel injects the pointer line and
     # nothing else, and the field means "law lines THIS channel put in the context".
     turn_log_append(cwd, "remind", session=session, code=MA_GON,
@@ -254,6 +276,9 @@ def _agy_pre_invocation_hook(payload, cwd):
         emit_context(queued)
     sub = detect_subagent(payload, cwd)
     if sub.get("is_subagent"):
+        anc = _subagent_anchor_line(cwd, payload, sub)
+        if anc:
+            emit_context([anc])
         return True
     shard = _shard_turn_path(cwd, sid)
     if os.path.isfile(shard):
@@ -273,6 +298,12 @@ def main():
     cwd = payload_cwd(payload)
     if is_agy() and _agy_pre_invocation_hook(payload, cwd):
         return
+    sub = detect_subagent(payload, cwd)
+    if sub.get("is_subagent"):
+        anc = _subagent_anchor_line(cwd, payload, sub)
+        if anc:
+            emit_context([anc])
+            return
     sid = session_id(payload)
     turn_log_clear(cwd, sid)
     # Start-of-turn disk snapshot — so stop_gate can tell at end of turn what REALLY changed,

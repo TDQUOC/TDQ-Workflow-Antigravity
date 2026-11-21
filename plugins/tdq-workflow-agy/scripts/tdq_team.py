@@ -30,6 +30,7 @@ for _p in (_tdq_scripts, _tdq_here):
 import utf8_io  # noqa: E402,F401
 import argparse
 import ast
+import contextlib
 import hashlib
 import json
 import os
@@ -158,6 +159,7 @@ class Task:
         self.sinh_ra = []
         self.nhan_loai = ""
         self.can_mcp = False
+        self.worktree_required = True
         self._sections = []               # parallel section key for each self.text entry
         self._has_cham = False
         self._tham_chieu_syms = {}
@@ -306,16 +308,42 @@ def _feed_task_line(hien_tai, line, sec_state, task_indent):
     return True
 
 
+def is_artifact_only_paths(paths):
+    """True when paths is non-empty and every target stays cleanly under docs/tdq/{artifacts,research}/."""
+    if not paths or not isinstance(paths, (list, tuple)):
+        return False
+    for raw in paths:
+        if not isinstance(raw, str):
+            return False
+        norm = raw.replace("\\", "/").strip()
+        if not norm or norm.startswith("/") or "\x00" in norm or ":" in norm:
+            return False
+        if ".." in [seg for seg in norm.split("/") if seg]:
+            return False
+        art_ok = norm.startswith("docs/tdq/artifacts/") and len(norm) > len("docs/tdq/artifacts/")
+        res_ok = norm.startswith("docs/tdq/research/") and len(norm) > len("docs/tdq/research/")
+        if not (art_ok or res_ok):
+            return False
+    return True
+
+
 def _finalize_tasks(tasks):
     for t in tasks:
         if not t._has_cham and t.text:
             for duong in _extract_paths(t.text[0]):
                 if duong not in t.vung_file:
                     t.vung_file.append(duong)
+        explicit_no_wt = False
         for dong in t.text:
             if dong.startswith("Dùng:") and dong.rstrip().endswith("(mcp)"):  # i18n-allow
                 t.can_mcp = True
+            low = dong.strip().lower()
+            if (low.startswith("worktree:") and "no_worktree" in low) or "`no_worktree`" in low:
+                explicit_no_wt = True
         t.nhan_loai = _detect_nhan_loai(t)
+        all_targets = list(t.vung_file) + list(t.sinh_ra)
+        if explicit_no_wt or (all_targets and is_artifact_only_paths(all_targets)):
+            t.worktree_required = False
 
 
 def doc_plan(duong_dan):
@@ -800,6 +828,7 @@ def lenh_phan_cong(project, _args):
                 "ly_do": quyet[t.ma][1],
                 "vung_file": t.vung_file,
                 "dot": dot[t.ma],
+                **({} if t.worktree_required else {"worktree_required": False}),
             } for t in tasks
         },
     }
@@ -1270,6 +1299,10 @@ def lenh_mo(project, args):
     if rec["quyet_dinh"] != "giao":
         raise LoiLuat(f"{ma} is marked tu_lam ({rec['ly_do']}) — no branch is opened. "
                       f"The leader does this task itself.")
+    if rec.get("worktree_required") is False:
+        _log(f"mo {ma} → no_worktree (artifact-only shard mode)")
+        print(f"{ma}: no_worktree (artifact-only shard mode; no branch/worktree opened)")
+        return 0
     if not _la_repo(project):
         raise LoiLuat("This directory is not a git repo — no worktree can be opened.")
     tich_hop, _ = _bao_dam_tich_hop(project, slug)
@@ -1797,6 +1830,8 @@ def canh_bao_lach_luat(cwd, rel_target):
             t = tasks.get(ma)
             if t is not None and t.xong:
                 return None                      # already merged; editing on is the leader's job
+            if rec.get("worktree_required") is False and is_artifact_only_paths([muc_tieu]):
+                return None                      # no_worktree artifact shard does not open branch
             nhanh = _ten_nhanh(slug, ma)
             if _la_repo(cwd) and _co_nhanh(cwd, nhanh):
                 return None                      # the sub-agent already has its own place to work
@@ -1910,7 +1945,7 @@ _DEFAULT_HANDOFF_REQUIRED = (
     "task_id", "status", "files", "test_result", "branch", "merge_ready", "tick_ready", "notes",
 )
 _DEFAULT_HANDOFF_PROPS = set(_DEFAULT_HANDOFF_REQUIRED) | {
-    "test_verdict", "blocker", "role", "model", "effort", "elapsed_s",
+    "test_verdict", "blocker", "role", "model", "effort", "elapsed_s", "worktree_required",
 }
 
 
@@ -2319,7 +2354,7 @@ def _check_handoff_field_types(payload, props, errs):
         files = payload["files"]
         if not isinstance(files, list) or not all(isinstance(x, str) for x in files):
             errs.append("field 'files' must be a list of strings")
-    for bkey in ("merge_ready", "tick_ready"):
+    for bkey in ("merge_ready", "tick_ready", "worktree_required"):
         if bkey in payload and not isinstance(payload[bkey], bool):
             errs.append(f"field {bkey!r} must be a boolean")
     if "elapsed_s" in payload:
@@ -2425,6 +2460,9 @@ def _apply_handoff_kv(out, key, val):
     elif k == "TICK-READY":
         b = _to_bool_flag(v)
         out["tick_ready"] = v if b is None else b
+    elif k == "WORKTREE-REQUIRED":
+        b = _to_bool_flag(v)
+        out["worktree_required"] = v if b is None else b
     elif k == "NOTES":
         out["notes"] = v
     elif k == "BLOCKER":
@@ -2446,7 +2484,7 @@ def parse_handoff_from_text(raw_text):
         m = re.match(r"^\s*([A-Za-z_-]+)\s*:\s*(.*)$", line)
         if m and m.group(1).upper().replace("_", "-") in {
             "TASK", "TASK-ID", "STATUS", "FILES", "TEST", "TEST-RESULT",
-            "BRANCH", "MERGE-READY", "TICK-READY", "NOTES", "BLOCKER",
+            "BRANCH", "MERGE-READY", "TICK-READY", "WORKTREE-REQUIRED", "NOTES", "BLOCKER",
             "ROLE", "MODEL", "EFFORT",
         }:
             last_key = m.group(1).upper().replace("_", "-")
@@ -2484,6 +2522,65 @@ def blackboard_read(project, slug=None):
     return {"slug": resolved, "entries": [], "updated_at": "", "corrupt": True}
 
 
+@contextlib.contextmanager
+def _ntfs_lock(lock_path, timeout_s=5.0):
+    """Cross-platform non-blocking polling lock for NTFS/POSIX JSONL writes."""
+    os.makedirs(os.path.dirname(lock_path) or ".", exist_ok=True)
+    deadline = time.monotonic() + timeout_s
+    if sys.platform != "win32":
+        fd = None
+        while fd is None:
+            try:
+                fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+            except FileExistsError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Lock timeout on {lock_path}")
+                time.sleep(0.01)
+        try:
+            yield
+        finally:
+            os.close(fd)
+            try:
+                os.unlink(lock_path)
+            except OSError:
+                pass
+        return
+    import msvcrt
+    fh = open(lock_path, "a+b")
+    acquired = False
+    try:
+        while not acquired:
+            try:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+                acquired = True
+            except OSError:
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(f"Lock timeout on {lock_path}")
+                time.sleep(0.01)
+        yield
+    finally:
+        if acquired:
+            try:
+                fh.seek(0)
+                msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+            except OSError:
+                pass
+        fh.close()
+
+
+def _atomic_write_text(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tdq_", suffix=".tmp", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(text)
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
 def blackboard_record(
     project,
     task_id,
@@ -2500,8 +2597,8 @@ def blackboard_record(
 ):
     """Append a structured handoff/diagnostic entry to .tdq-runtime/blackboard/<slug>.json."""
     resolved = _active_slug_or_default(project, slug)
-    board = blackboard_read(project, resolved)
-    board.pop("corrupt", None)
+    path = blackboard_path(project, resolved)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     entry = {
         "task_id": str(task_id),
         "role": str(role or "unknown"),
@@ -2514,19 +2611,12 @@ def blackboard_record(
         "test_command": str(test_command or ""),
         "timestamp": datetime.now().isoformat(timespec="seconds"),
     }
-    board.setdefault("entries", []).append(entry)
-    board["updated_at"] = entry["timestamp"]
-    path = blackboard_path(project, resolved)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(prefix=".bb_", suffix=".tmp", dir=os.path.dirname(path))
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
-            json.dump(board, fh, ensure_ascii=False, indent=2)
-            fh.write("\n")
-        os.replace(tmp_path, path)
-    finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+    with _ntfs_lock(path + ".lock"):
+        board = blackboard_read(project, resolved)
+        board.pop("corrupt", None)
+        board.setdefault("entries", []).append(entry)
+        board["updated_at"] = entry["timestamp"]
+        _atomic_write_text(path, json.dumps(board, ensure_ascii=False, indent=2) + "\n")
     _log(f"blackboard record slug={resolved} task={task_id} status={status}")
     return entry
 
@@ -2617,7 +2707,11 @@ def _extract_mini_spec_fields(task):
 
 def _build_packet_payload(project, slug, task, tasks, ban_do):
     goc = os.environ.get("TDQ_WORKTREE_DIR") or os.path.join(project, ".tdq-worktrees")
-    wt_dir = os.path.join(goc, slug, task.ma.lower())
+    wt_dir = (
+        os.path.join(goc, slug, task.ma.lower())
+        if task.worktree_required
+        else "(no_worktree — root cwd, write ONLY artifact shards)"
+    )
     base_branch = _nhanh_tich_hop(project, slug)
     files_str = ", ".join(task.vung_file) if task.vung_file else "(none declared)"
     task_head = task.text[0] if task.text else ""
@@ -2640,6 +2734,7 @@ def _build_packet_payload(project, slug, task, tasks, ban_do):
     }
     return {
         "task_id": task.ma,
+        "worktree_required": bool(task.worktree_required),
         "prompt_fields": prompt_fields,
         "mini_spec": mini_spec,
         "blackboard_failures": failures,
@@ -2791,6 +2886,140 @@ def lenh_blackboard(project, args):
     return 0
 
 
+def _evidence_dir(project, slug):
+    clean = str(slug or "").strip()
+    if not clean or not re.fullmatch(r"[A-Za-z0-9._-]+", clean) or ".." in clean:
+        raise LoiLuat(f"Invalid request slug for evidence store: {slug!r}")
+    return os.path.join(project, "docs", "tdq", "artifacts", clean)
+
+
+def _read_text_arg(inline_val, file_path, label):
+    if file_path:
+        if not os.path.isfile(file_path):
+            raise LoiLuat(f"{label} file not found: {file_path}")
+        with open(file_path, encoding="utf-8", errors="replace") as fh:
+            return fh.read().strip()
+    return str(inline_val or "").strip()
+
+
+def evidence_add(
+    project, *, slug=None, shard="", claim="", claim_file=None, source="",
+    excerpt="", excerpt_file=None, confidence="medium", role="unknown", status="confirmed",
+):
+    """Append one evidence claim atomically to a shard `.ev.jsonl` or `evidence.jsonl`."""
+    resolved = _active_slug_or_default(project, slug)
+    ev_dir = _evidence_dir(project, resolved)
+    claim_txt = _read_text_arg(claim, claim_file, "--claim-file")
+    excerpt_txt = _read_text_arg(excerpt, excerpt_file, "--excerpt-file")
+    source_txt = str(source or "").strip()
+    if not claim_txt or not source_txt:
+        raise LoiLuat("evidence add requires non-empty claim (--claim/--claim-file) and --source")
+    clean_shard = re.sub(r"[^A-Za-z0-9._-]", "_", str(shard or "").strip())
+    target = os.path.join(ev_dir, f"{clean_shard}.ev.jsonl" if clean_shard else "evidence.jsonl")
+    os.makedirs(ev_dir, exist_ok=True)
+    digest = hashlib.sha256(f"{clean_shard}|{source_txt}|{claim_txt}".encode("utf-8")).hexdigest()[:12]
+    row = {
+        "id": digest, "ts": datetime.now().isoformat(timespec="seconds"), "shard": clean_shard,
+        "role": str(role or "unknown"), "claim": claim_txt, "source": source_txt,
+        "excerpt": excerpt_txt, "confidence": str(confidence or "medium"), "status": str(status or "confirmed"),
+    }
+    with _ntfs_lock(target + ".lock"):
+        with open(target, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
+            fh.flush()
+    _log(f"evidence add slug={resolved} shard={clean_shard or 'main'} id={digest}")
+    return row
+
+
+def _read_jsonl_rows(path):
+    if not os.path.isfile(path):
+        return []
+    out = []
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            s = line.strip()
+            if s:
+                out.append(json.loads(s))
+    return out
+
+
+def _md_cell(val):
+    return str(val or "").replace("|", "\\|").replace("\r", " ").replace("\n", " ").strip()
+
+
+def evidence_render(project, *, slug=None, out=None):
+    """Render deterministic Markdown table from docs/tdq/artifacts/<slug>/evidence.jsonl."""
+    resolved = _active_slug_or_default(project, slug)
+    ev_dir = _evidence_dir(project, resolved)
+    ev_path = os.path.join(ev_dir, "evidence.jsonl")
+    md_path = out or os.path.join(ev_dir, "evidence-log.md")
+    with _ntfs_lock(ev_path + ".lock"):
+        rows = _read_jsonl_rows(ev_path)
+    ordered = sorted(rows, key=lambda r: (str(r.get("shard") or ""), str(r.get("id") or "")))
+    lines = [
+        f"# Evidence Log — {resolved}", "",
+        "| # | ID | Shard | Claim | Source | Confidence |",
+        "|---|---|---|---|---|---|",
+    ]
+    for i, r in enumerate(ordered, 1):
+        lines.append(
+            f"| {i} | `{r.get('id', '')}` | `{_md_cell(r.get('shard') or '-')}` "
+            f"| {_md_cell(r.get('claim'))} | `{_md_cell(r.get('source'))}` | `{_md_cell(r.get('confidence'))}` |"
+        )
+    _atomic_write_text(md_path, "\n".join(lines) + "\n")
+    _log(f"evidence render slug={resolved} rows={len(ordered)}")
+    return md_path
+
+
+def evidence_merge(project, *, slug=None):
+    """Merge all `*.ev.jsonl` shards into `evidence.jsonl` under NTFS lock and render log."""
+    resolved = _active_slug_or_default(project, slug)
+    ev_dir = _evidence_dir(project, resolved)
+    ev_path = os.path.join(ev_dir, "evidence.jsonl")
+    os.makedirs(ev_dir, exist_ok=True)
+    with _ntfs_lock(ev_path + ".lock"):
+        merged, seen = [], set()
+        shard_files = sorted(
+            os.path.join(ev_dir, fn) for fn in os.listdir(ev_dir) if fn.endswith(".ev.jsonl")
+        )
+        for src_path in [ev_path] + shard_files:
+            for row in _read_jsonl_rows(src_path):
+                key = row.get("id") or (row.get("claim"), row.get("source"))
+                if key not in seen:
+                    seen.add(key)
+                    merged.append(row)
+        body = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in merged)
+        _atomic_write_text(ev_path, body)
+    md_path = evidence_render(project, slug=resolved)
+    _log(f"evidence merge slug={resolved} count={len(merged)} shards={len(shard_files)}")
+    return merged, md_path
+
+
+def lenh_evidence(project, args):
+    """CLI handler for `evidence add|merge|render`."""
+    slug = _active_slug_or_default(project, getattr(args, "slug", None))
+    action = getattr(args, "action", "render") or "render"
+    if action == "add":
+        row = evidence_add(
+            project, slug=slug, shard=getattr(args, "shard", "") or "",
+            claim=getattr(args, "claim", "") or "", claim_file=getattr(args, "claim_file", None),
+            source=getattr(args, "source", "") or "", excerpt=getattr(args, "excerpt", "") or "",
+            excerpt_file=getattr(args, "excerpt_file", None), confidence=getattr(args, "confidence", "medium") or "medium",
+            role=getattr(args, "role", "unknown") or "unknown", status=getattr(args, "status", "confirmed") or "confirmed",
+        )
+        print(json.dumps(row, ensure_ascii=False) if getattr(args, "json", False) else f"Evidence added: {row['id']}")
+    elif action == "merge":
+        rows, md_path = evidence_merge(project, slug=slug)
+        if getattr(args, "json", False):
+            print(json.dumps({"slug": slug, "count": len(rows), "md_path": md_path}, ensure_ascii=False))
+        else:
+            print(f"Evidence merged: {len(rows)} row(s) -> {md_path}")
+    else:
+        md_path = evidence_render(project, slug=slug, out=getattr(args, "out", None))
+        print(json.dumps({"slug": slug, "md_path": md_path}, ensure_ascii=False) if getattr(args, "json", False) else f"Rendered: {md_path}")
+    return 0
+
+
 # ------------------------------------------------------------------ CLI
 LENH = {
     "assign": (lenh_phan_cong, "read the whole plan, write the assignment map"),
@@ -2805,6 +3034,7 @@ LENH = {
     "packet": (lenh_packet, "build a self-contained task dispatch packet"),
     "validate-handoff": (lenh_validate_handoff, "validate a handoff JSON or 7-line digest against handoff-schema.json"),
     "blackboard": (lenh_blackboard, "read or record shared runtime diagnostics in .tdq-runtime/blackboard"),
+    "evidence": (lenh_evidence, "add, merge, or render investigation evidence shards under docs/tdq/artifacts/<slug>/"),
 }
 BANG_TEN = tdq_ten_lenh.BANG_DOI_TEN["tdq_team.py"]
 
@@ -2836,6 +3066,20 @@ def build_parser():
             con.add_argument("--role", default="unknown", help="agent role name")
             con.add_argument("--model", default="", help="model ID used")
             con.add_argument("--error", default="", help="error diagnostic snippet")
+            con.add_argument("--json", action="store_true", help="emit JSON output")
+        if ten == "evidence":
+            con.add_argument("action", choices=("add", "merge", "render"), help="evidence action")
+            con.add_argument("--slug", default=None, help="request slug (default: active_request)")
+            con.add_argument("--shard", default="", help="optional worker shard ID (writes <shard>.ev.jsonl)")
+            con.add_argument("--claim", default="", help="claim summary text")
+            con.add_argument("--claim-file", default=None, help="UTF-8 file path containing claim text")
+            con.add_argument("--source", default="", help="file:line or URL+ts citation")
+            con.add_argument("--excerpt", default="", help="optional supporting excerpt")
+            con.add_argument("--excerpt-file", default=None, help="UTF-8 file path containing excerpt")
+            con.add_argument("--confidence", default="medium", choices=("high", "medium", "low"))
+            con.add_argument("--role", default="unknown", help="worker role name")
+            con.add_argument("--status", default="confirmed", choices=("confirmed", "disputed", "open"))
+            con.add_argument("--out", default=None, help="optional output path for render")
             con.add_argument("--json", action="store_true", help="emit JSON output")
         if ten == "clean":
             con.add_argument("task", nargs="?", default=None,

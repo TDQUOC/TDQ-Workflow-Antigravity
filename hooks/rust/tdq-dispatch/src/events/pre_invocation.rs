@@ -3,8 +3,11 @@
 //! while handling mid-turn flushes and subagent invocations directly in Rust.
 
 use crate::events::post_invocation::handle_post_invocation;
-use crate::protocol::HookPayload;
-use crate::storage::{read_sessions_role, read_turn_meta, shard_turn_path, turn_meta_path};
+use crate::protocol::{HookDecision, HookPayload};
+use crate::storage::{
+    effective_phase, pending_reminders_path, pop_pending_reminders, read_sessions_role,
+    read_tdq_state, read_turn_meta, shard_turn_path, turn_meta_path,
+};
 use crate::RouteOutcome;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -123,6 +126,54 @@ fn state_newer_than_meta(workspace_root: &Path, sid: &str) -> bool {
     }
 }
 
+fn subagent_resume_decision(payload: &HookPayload, workspace_root: &Path, sid: &str) -> HookDecision {
+    let base = handle_post_invocation(payload, workspace_root);
+    let src = payload
+        .extra
+        .get("source")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_ascii_lowercase())
+        .unwrap_or_default();
+    if src != "compact" && src != "resume" {
+        return base;
+    }
+    let Some(state) = read_tdq_state(workspace_root) else {
+        return base;
+    };
+    let Some(req) = state.active_request.as_deref().filter(|s| !s.trim().is_empty()) else {
+        return base;
+    };
+    let wk = state.work_kind.as_deref().unwrap_or("build");
+    let pha = effective_phase(&state);
+    let sess = read_sessions_role(workspace_root, sid);
+    let role = payload
+        .agent_type
+        .as_deref()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| sess.as_ref().map(|r| r.role.as_str()).filter(|s| !s.trim().is_empty()))
+        .unwrap_or("subagent");
+    let task = sess
+        .as_ref()
+        .map(|r| r.task.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or("none");
+    let anchor = format!(
+        "[TDQ:ANCHOR] Subagent {}: request={} kind={} phase={} role={} task={} artifacts=docs/tdq/artifacts/{}/",
+        src, req, wk, pha, role, task, req
+    );
+    let mut parts = Vec::new();
+    let qpath = pending_reminders_path(workspace_root, sid);
+    if fs::metadata(&qpath).map(|m| m.len() > 0).unwrap_or(false) {
+        let items = pop_pending_reminders(workspace_root, sid);
+        let (model_text, _user_md) = crate::protocol::GuidanceRepo::merge_pending_channels(&items);
+        if !model_text.trim().is_empty() {
+            parts.push(model_text);
+        }
+    }
+    parts.push(anchor.chars().take(595).collect());
+    HookDecision::inject(parts.join("\n"), None)
+}
+
 /// Route `PreInvocation`: flush subagent/mid-turn in Rust or delegate new turns to Python.
 pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> RouteOutcome {
     let sid = payload.canonical_session_id();
@@ -136,7 +187,7 @@ pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> Ro
             .is_some_and(|s| !s.trim().is_empty())
         || read_sessions_role(workspace_root, &sid).is_some();
     if is_subagent {
-        return RouteOutcome::Decided(handle_post_invocation(payload, workspace_root));
+        return RouteOutcome::Decided(subagent_resume_decision(payload, workspace_root, &sid));
     }
     let Some(meta) = read_turn_meta(workspace_root, &sid) else {
         return RouteOutcome::DelegatePython;
@@ -154,7 +205,7 @@ pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> Ro
     if sig != meta.last_user_sig || (sig.is_empty() && !turns_exists) {
         return RouteOutcome::DelegatePython;
     }
-    if matches!(payload.extra.get("source").and_then(|v| v.as_str()), Some(s) if s.eq_ignore_ascii_case("compact"))
+    if matches!(payload.extra.get("source").and_then(|v| v.as_str()), Some(s) if s.eq_ignore_ascii_case("compact") || s.eq_ignore_ascii_case("resume"))
     {
         return RouteOutcome::DelegatePython;
     }
@@ -201,6 +252,42 @@ mod tests {
             handle_pre_invocation(&p, &tmp),
             RouteOutcome::DelegatePython
         ));
+
+        // Reopen turn-meta and verify source="resume" delegates to Python
+        let reopened = TurnMeta {
+            turn_closed: false,
+            ..closed
+        };
+        write_turn_meta(&tmp, "conv-pre", &reopened).unwrap();
+        let mut p_resume = p.clone();
+        p_resume.extra.insert("source".to_string(), serde_json::json!("resume"));
+        assert!(matches!(
+            handle_pre_invocation(&p_resume, &tmp),
+            RouteOutcome::DelegatePython
+        ));
+
+        // Subagent resume emits static <600c [TDQ:ANCHOR]
+        fs::write(
+            tmp.join("docs").join("tdq").join("state.json"),
+            r#"{"active_request":"inv1","phase":"implement","work_kind":"investigate"}"#,
+        )
+        .unwrap();
+        crate::storage::register_sessions_role(&tmp, "sub-res-1", "tdq-explorer", "T1.1");
+        let sub_res = HookPayload {
+            conversation_id: Some("sub-res-1".to_string()),
+            extra: [("source".to_string(), serde_json::json!("resume"))]
+                .into_iter()
+                .collect(),
+            ..Default::default()
+        };
+        match handle_pre_invocation(&sub_res, &tmp) {
+            RouteOutcome::Decided(d) => {
+                let s = d.to_json_string();
+                assert!(s.contains("[TDQ:ANCHOR]"), "missing subagent resume anchor: {}", s);
+                assert!(s.contains("inv1"));
+            }
+            RouteOutcome::DelegatePython => panic!("expected static subagent anchor in Rust"),
+        }
 
         let _ = fs::remove_dir_all(&tmp);
     }

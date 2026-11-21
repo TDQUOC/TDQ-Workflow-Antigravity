@@ -106,10 +106,21 @@ mod tests {
         };
         let p_res = handle_post_tool_use(&post_payload, &tmp);
         assert_eq!(p_res.to_json_string(), "{}");
+        assert!(
+            !tmp.join("docs").join("tdq").join(".tdq-read.jsonl").is_file(),
+            "PostToolUse(read_file) must not write obsolete .tdq-read.jsonl schema"
+        );
+        let lsp_post = HookPayload {
+            conversation_id: Some("sid-002".to_string()),
+            tool_name: Some("mcp__lsp__find_symbol".to_string()),
+            arguments: Some(json!({ "query": "handle_pre_tool_use" })),
+            ..Default::default()
+        };
+        assert_eq!(handle_post_tool_use(&lsp_post, &tmp).to_json_string(), "{}");
         assert!(tmp
             .join("docs")
             .join("tdq")
-            .join(".tdq-read.jsonl")
+            .join(".tdq-search.jsonl")
             .is_file());
 
         let stop_idle = HookPayload {

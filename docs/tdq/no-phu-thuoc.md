@@ -20,3 +20,4 @@ Ghi kèm tên máy vì một món có thể thiếu trên máy này mà đủ tr
 - 2026-10-19 · DESKTOP-QNBEKDT · hook dry-run thất bại: hook vẫn dính lỗi 'Python was not found' từ Microsoft Store stub
 - 2026-11-16 · DESKTOP-QNBEKDT · bậc 7 (đồ thị graphify): lệnh có ký tự của shell — không chạy chuỗi ghép, hãy khai từng lệnh một — `cd c:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity && graphify extract . --code-only`
 - 2026-11-19 · DESKTOP-QNBEKDT · bậc 6 (cấu hình gốc import theo ngôn ngữ): lệnh nằm ngoài danh sách phụ thuộc đã khai — `dự án thiếu manifest build nên gần như chắc chắn đã hỏng sẵn — báo user, không tự tạo`
+- 2026-11-21 · DESKTOP-QNBEKDT · bậc 7 (đồ thị graphify): lệnh có ký tự của shell — không chạy chuỗi ghép, hãy khai từng lệnh một — `cd C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity && graphify extract . --code-only`

@@ -131,19 +131,6 @@ def _handle_spawn_event(payload: dict, cwd: str, event_name: str) -> int:
         tdq_state._info(
             f"subagent_stop({event_name}): registered {meta['conv_id']} -> {meta['role']}"
         )
-    if event_name == "PostToolUse" and meta["role"]:
-        sub_sid = meta["conv_id"] or session_id(payload)
-        handle_subagent_stop(
-            {
-                **payload,
-                "agent_type": meta["role"],
-                "conversationId": sub_sid,
-                "conversation_id": sub_sid,
-                "session_id": sub_sid,
-            },
-            cwd,
-            allow_stop_block=False,
-        )
     return 0
 
 

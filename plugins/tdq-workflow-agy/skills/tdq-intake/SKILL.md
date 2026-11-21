@@ -7,7 +7,7 @@ description: Open a new TDQ request - record the ask, pick the lane, init state,
 <!-- muc-luc-dong:
   Tier `nhỏ` — answer or fix on the spot, no request opened=17-32 ·
   Part A — Open the request (phase `no_state`)=33-102 ·
-  Part B — Analysis (phase `analyze`, deep pipeline only)=103-129 · Part C — Express pipeline=130
+  Part B — Analysis (phase `analyze`, deep pipeline only)=103-124 · Part C — Express pipeline=125
 -->
 
 Load [tdq-conventions](../tdq-conventions/SKILL.md) first. Every output for the user is written
@@ -108,12 +108,7 @@ steps (capability inventory, read the code, research, interview, settle the know
 gate check) per [references/analyze-full.md](references/analyze-full.md). The verdict
 table template for the capability-inventory step (B0):
 [references/skill-inventory.md](references/skill-inventory.md).
-The interview runs general → specific: the **scope round** first (which areas + context in
-numbers), and only then the detail questions inside the areas the user picked. The scope round
-is conditional; skip it and one line of reasoning goes into the brief.
-[references/scope-round.md](references/scope-round.md) is read ONLY when you actually run that
-round — the whole file is the procedure for it, so a request that skips the round pays 2,066
-tokens for a procedure it never performs.
+The scope round is conditional; skip it and one line of reasoning goes into the brief. Read [references/scope-round.md](references/scope-round.md) ONLY when running it (skipping saves 2,066 tokens). When `work_kind=investigate`, keep pre-implement scoping shallow per [investigate-mode.md](../tdq-conventions/references/investigate-mode.md).
 
 The LAST step of this phase is step 5c: ask the QC level and write it into `muc_qc`. It sits
 here and not later because spec §6 is written from it.

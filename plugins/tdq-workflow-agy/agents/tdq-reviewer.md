@@ -1,7 +1,7 @@
 ---
 name: tdq-reviewer
-description: Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering. Read-only - reports findings, never edits.
-tools: [read_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+description: Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering; scoped-write to investigation artifact shards only.
+tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
 model: inherit
 ---
 
@@ -23,7 +23,7 @@ Review for:
 
 **Digest threshold ≤ 1,500 characters** for the final message (Auto-Clarity & Compact Handoff: `path:line — symbol — note`; drop filler prose, keep full clarity on blocking/security findings): pasting raw tool output or long excerpts of the reviewed file is banned — 2 lines per finding at most, pointing at `file:line` instead of copying the content. The number of findings is NOT capped: over the threshold, tighten the wording, never drop a finding.
 
-Do NOT edit any file. Return a numbered findings list, most severe first: each item = file/section, problem, concrete suggested fix (1–2 lines). If the document is sound, say so explicitly with what you checked. Write the findings in the user's document language.
+Do NOT edit source, test, plan, spec, or state files (`[TDQ:SCOPED-WRITE]`: write ONLY to your assigned review shard under `docs/tdq/artifacts/<slug>/` if delegated with a shard path; never touch `evidence*`/`trial_*.json`/`rec_*.json` or run mutating shell commands). Return a numbered findings list, most severe first: each item = file/section, problem, concrete suggested fix (1–2 lines). If the document is sound, say so explicitly with what you checked. Write the findings in the user's document language.
 
 Return format — copy this shape exactly:
 
@@ -35,4 +35,4 @@ Return format — copy this shape exactly:
 CONCLUSION: <number of findings> finding(s) · checked: <list of items inspected>
 ```
 
-> **Host Enforcement:** Write tools are omitted and shell mutations are blocked by TDQ `bash_gate.py` (`[TDQ:READONLY]`).
+> **Host Enforcement (`[TDQ:SCOPED-WRITE]`):** Writes are strictly scoped to assigned shards under `docs/tdq/artifacts/<active_slug>/` (`.md`/`.json`/`.jsonl`, excluding `evidence*`, `trial_*.json`, `rec_*.json`) and flat `docs/tdq/research/<slug>*.md`. Source/test/plan/spec/state edits and shell mutations are blocked (`[TDQ:READONLY]`).

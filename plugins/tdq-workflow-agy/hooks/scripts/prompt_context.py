@@ -23,10 +23,11 @@ import os
 import re
 import sys
 
-from _common import (_RUNTIME_STATE, _shard_turn_path, already_reminded, approve_hint,
-                     detect_subagent, emit_context, emit_user_markdown,
-                     flush_pending_channels, is_agy, payload_cwd, plan_mode,
-                     read_payload, read_turn_meta, session_id, write_turn_meta)
+from _common import (INVESTIGATE_GON_TEXT, _RUNTIME_STATE, _shard_turn_path,
+                     already_reminded, approve_hint, detect_subagent, emit_context,
+                     emit_user_markdown, flush_pending_channels, is_agy,
+                     payload_cwd, plan_mode, read_payload, read_turn_meta,
+                     session_id, write_turn_meta)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
 from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
@@ -34,7 +35,7 @@ from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
                        muc_gat_hieu_luc, normalize_mode, phase_key,
                        prompt_context_last, prompt_context_save, render_next,
                        sha256_noi_dung, turn_log_append, turn_log_clear,
-                       turn_snapshot)
+                       turn_snapshot, work_kind_hieu_luc)
 
 MAX_LINES = 3
 MAX_CHARS = 240
@@ -233,6 +234,26 @@ def _nhac_worktree(cwd):
                                        "python3 scripts/tdq_team.py sweep", cwd)])
 
 
+def _subagent_anchor_line(cwd, payload, sub):
+    """Build a static <600c recovery anchor for a subagent on compact/resume."""
+    src = str(payload.get("source") or "").strip().lower()
+    if src not in ("compact", "resume"):
+        return ""
+    state = load(cwd, heal=False) or {}
+    req = str(state.get("active_request") or "").strip()
+    if not req:
+        return ""
+    wk = work_kind_hieu_luc(state)
+    pha = effective_phase(state, warn=False)
+    role = sub.get("role") or "subagent"
+    task = sub.get("task") or "none"
+    line = (
+        f"[TDQ:ANCHOR] Subagent {src}: request={req} kind={wk} phase={pha} "
+        f"role={role} task={task} artifacts=docs/tdq/artifacts/{req}/"
+    )
+    return line[:595]
+
+
 def _nhac_gon(cwd, state, payload, session):
     """One pointer line at phase `implement` — never the law body.
 
@@ -247,7 +268,8 @@ def _nhac_gon(cwd, state, payload, session):
     muc = muc_gat_hieu_luc(state)
     if muc == "off" or already_reminded(cwd, payload, MA_GON):
         return
-    dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), MAX_GON_CHARS)
+    tmpl = INVESTIGATE_GON_TEXT if work_kind_hieu_luc(state) == "investigate" else NHAC_GON
+    dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), MAX_GON_CHARS)
     # `so_dong` here is 1, not the body's size: this channel injects the pointer line and
     # nothing else, and the field means "law lines THIS channel put in the context".
     turn_log_append(cwd, "remind", session=session, code=MA_GON,
@@ -348,6 +370,9 @@ def _agy_pre_invocation_hook(payload, cwd):
     sub = detect_subagent(payload, cwd)
     if sub.get("is_subagent"):
         _RUNTIME_STATE["new_user_turn"] = False
+        anc = _subagent_anchor_line(cwd, payload, sub)
+        if anc:
+            emit_context([anc])
         return True, False
     is_new, sig = _detect_new_user_turn(cwd, payload, sid)
     _RUNTIME_STATE["new_user_turn"] = is_new
@@ -359,7 +384,8 @@ def _agy_pre_invocation_hook(payload, cwd):
                 os.remove(shard)
             except OSError:
                 pass
-        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or "")})
+        st_cur = load(cwd, heal=False) or {}
+        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or "")})
     return False, is_new
 
 
@@ -371,13 +397,15 @@ def _agy_phase_anchor(cwd, state, payload, sid):
         return
     meta = read_turn_meta(cwd, sid)
     anchor = f"{req}:{pha}"
-    is_compact = str(payload.get("source") or "").lower() == "compact"
+    is_compact = str(payload.get("source") or "").lower() in ("compact", "resume")
     if not is_compact and meta.get("phase_anchor") == anchor:
         return
     if pha == "implement":
         muc = muc_gat_hieu_luc(state)
         if muc != "off":
-            dong = _truncate(NHAC_GON.format(ma=MA_GON, muc=muc), min(MAX_GON_CHARS, 160))
+            tmpl = INVESTIGATE_GON_TEXT if work_kind_hieu_luc(state) == "investigate" else NHAC_GON
+            cap_lim = MAX_GON_CHARS if work_kind_hieu_luc(state) == "investigate" else min(MAX_GON_CHARS, 160)
+            dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), cap_lim)
             emit_context([dong])
     else:
         emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])
@@ -395,6 +423,13 @@ def main():
         should_stop, is_new_turn = _agy_pre_invocation_hook(payload, cwd)
         if should_stop:
             return
+    else:
+        sub = detect_subagent(payload, cwd)
+        if sub.get("is_subagent"):
+            anc = _subagent_anchor_line(cwd, payload, sub)
+            if anc:
+                emit_context([anc])
+                return
     if not agy_mode or is_new_turn:
         turn_log_clear(cwd, sid)
         turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))

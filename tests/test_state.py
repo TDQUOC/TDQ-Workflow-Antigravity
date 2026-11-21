@@ -5,9 +5,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import helper
 from helper import ROOT, run_state_cli, run_state_cli_in, read_state, write_state
+from archify_artifacts import bind_document, build_manifest
 import tdq_state
 
 
@@ -593,3 +596,328 @@ class ModesJsonTest(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             rows = json.loads(proc.stdout)
             self.assertEqual([r["ma"] for r in rows], list(tdq_state.VALID_MODES))
+
+
+class WorkKindAndInvestigateV2Test(unittest.TestCase):
+    """M1 contracts for work_kind, escalate-to-build, telemetry, Archify waiver, and spec drift."""
+
+    SLUG_NEW = "2026-11-21-0217-inv-v2-demo"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = self._tmp.name
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run_raw(self, *args, log=None):
+        env = dict(os.environ, TDQ_PROJECT_DIR=self.cwd)
+        if log is None:
+            env.pop("TDQ_LOG", None)
+        else:
+            env["TDQ_LOG"] = log
+        return subprocess.run(
+            [sys.executable, os.path.join(ROOT, "scripts", "tdq_state.py"), *args],
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
+            text=True,
+            timeout=60,
+            env=env,
+        )
+
+    def _write_doc(self, rel, text):
+        path = Path(self.cwd) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def _bind_archify(self, doc_rel, man_rel, art_rel):
+        doc_path = Path(self.cwd) / doc_rel
+        man_path = Path(self.cwd) / man_rel
+        art_path = Path(self.cwd) / art_rel
+        art_path.parent.mkdir(parents=True, exist_ok=True)
+        man_path.parent.mkdir(parents=True, exist_ok=True)
+        art_path.write_text("<html>report</html>", encoding="utf-8")
+        cand_path = Path(self.cwd) / "cand.md"
+        cand_path.write_text("candidate", encoding="utf-8")
+        manifest = build_manifest(
+            project=self.cwd,
+            document=doc_path,
+            candidate=cand_path,
+            artifact=art_path,
+            receipt={"ok": True},
+            evidence_kind="planned",
+            request=self.SLUG_NEW,
+            lane="quick",
+            source_paths=[],
+        )
+        man_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        bind_document(doc_path, man_path)
+
+    def test_default_schema_has_work_kind_build_and_schema_6(self):
+        state = tdq_state.default_state()
+        self.assertEqual(state["schema_version"], 6)
+        self.assertEqual(state["work_kind"], "build")
+        self.assertEqual(tdq_state.VALID_WORK_KINDS, ("build", "investigate"))
+        self.assertEqual(tdq_state.WORK_KIND_MAC_DINH, "build")
+
+    def test_normalize_work_kind_aliases_and_fail_closed_warn(self):
+        inv_aliases = (
+            "research", "analysis", "audit", "debug-rca", "rca", "report",
+            "phan-tich", "dieu-tra", "nghien-cuu", "investigate", "  Debug-RCA ",
+        )
+        build_aliases = ("build", "code", "dev", "feature", "  FEATURE ")
+        with mock.patch("tdq_state._warn") as warned:
+            for alias in inv_aliases:
+                with self.subTest(alias=alias):
+                    self.assertEqual(tdq_state.normalize_work_kind(alias), "investigate")
+            for alias in build_aliases:
+                with self.subTest(alias=alias):
+                    self.assertEqual(tdq_state.normalize_work_kind(alias), "build")
+            self.assertFalse(warned.called)
+
+        for bad in ("", "   ", "unknown", None, 42, ["investigate"]):
+            with self.subTest(bad=repr(bad)), mock.patch("tdq_state._warn") as warned:
+                self.assertEqual(tdq_state.normalize_work_kind(bad), "build")
+                self.assertTrue(warned.called, f"expected _warn for {bad!r}")
+
+    def test_work_kind_hieu_luc_legacy_silent_vs_invalid_warns(self):
+        with mock.patch("tdq_state._warn") as warned:
+            self.assertEqual(tdq_state.work_kind_hieu_luc(None), "build")
+            self.assertEqual(tdq_state.work_kind_hieu_luc({}), "build")
+            self.assertEqual(tdq_state.work_kind_hieu_luc({"work_kind": None}), "build")
+            self.assertEqual(tdq_state.work_kind_hieu_luc({"work_kind": "research"}), "investigate")
+            self.assertFalse(warned.called)
+
+        with mock.patch("tdq_state._warn") as warned:
+            self.assertEqual(tdq_state.work_kind_hieu_luc({"work_kind": "invalid"}), "build")
+            self.assertTrue(warned.called)
+
+    def test_cli_init_with_kind_flag_and_invalid_kind(self):
+        rc, _, err = run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "investigate")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(read_state(self.cwd)["work_kind"], "investigate")
+
+        rc, _, err = run_state_cli(self.cwd, "init", self.SLUG_NEW, "quick", "--kind", "debug-rca")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(read_state(self.cwd)["work_kind"], "investigate")
+
+        rc, _, _ = run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "bogus")
+        self.assertEqual(rc, 2)
+
+    def test_set_work_kind_allowed_in_analyze_and_locked_midflight(self):
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full")
+        run_state_cli(self.cwd, "set", "phase=analyze")
+        rc, _, err = run_state_cli(self.cwd, "set", "work_kind=investigate")
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(read_state(self.cwd)["work_kind"], "investigate")
+
+        # Switching investigate -> build during spec/plan/mode/implement/qc via `set` is refused.
+        for phase in ("spec", "plan", "mode", "implement", "qc"):
+            write_state(
+                self.cwd, active_request=self.SLUG_NEW, lane="full",
+                phase=phase, work_kind="investigate",
+            )
+            rc, _, err = run_state_cli(self.cwd, "set", "work_kind=build")
+            self.assertEqual(rc, 2, f"expected refusal in phase={phase}: {err}")
+            self.assertIn("escalate-to-build", err)
+            self.assertEqual(read_state(self.cwd)["work_kind"], "investigate")
+
+        # Also refused in quick/idle once approved, and build -> investigate past analyze.
+        write_state(
+            self.cwd, active_request=self.SLUG_NEW, lane="quick",
+            phase="idle", work_kind="investigate", quick_approved=True,
+        )
+        rc, _, err = run_state_cli(self.cwd, "set", "work_kind=build")
+        self.assertEqual(rc, 2, err)
+        self.assertIn("escalate-to-build", err)
+
+        write_state(
+            self.cwd, active_request=self.SLUG_NEW, lane="full",
+            phase="implement", work_kind="build", spec_approved=True,
+        )
+        rc2, _, _ = run_state_cli(self.cwd, "set", "work_kind=investigate")
+        self.assertEqual(rc2, 2)
+        self.assertEqual(read_state(self.cwd)["work_kind"], "build")
+
+    def test_escalate_to_build_validation_state_and_logging(self):
+        # Fails closed when no active request.
+        rc, _, _ = run_state_cli(self.cwd, "escalate-to-build", "--by", "need code fix")
+        self.assertNotEqual(rc, 0)
+
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "investigate")
+        # Fails closed when --by is missing or blank.
+        self.assertEqual(run_state_cli(self.cwd, "escalate-to-build")[0], 2)
+        self.assertEqual(run_state_cli(self.cwd, "escalate-to-build", "--by", "   ")[0], 2)
+
+        write_state(
+            self.cwd,
+            active_request=self.SLUG_NEW,
+            lane="full",
+            phase="implement",
+            work_kind="investigate",
+            spec_approved=True,
+            plan_approved=True,
+            implement_mode="main",
+        )
+        proc = self._run_raw("escalate-to-build", "--by", "fix root cause in parser", "--json", log="1")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertRegex(proc.stderr, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+        self.assertIn("escalate-to-build:", proc.stderr)
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["work_kind"], "build")
+        self.assertFalse(payload["plan_approved"])
+        self.assertEqual(payload["phase"], "plan")
+        self.assertEqual(payload["phase_history"][-1]["phase"], "plan")
+        self.assertEqual(payload["escalated_from_investigate"]["by"], "fix root cause in parser")
+        self.assertFalse(payload["escalated_from_investigate"]["inline_fix"])
+
+        # --inline-fix preserves plan_approved and stays quiet with TDQ_LOG=0.
+        write_state(
+            self.cwd,
+            active_request=self.SLUG_NEW,
+            lane="full",
+            phase="implement",
+            work_kind="investigate",
+            spec_approved=True,
+            plan_approved=True,
+            implement_mode="main",
+        )
+        proc2 = self._run_raw("escalate-to-build", "--by", "tiny 1-line fix", "--inline-fix", log="0")
+        self.assertEqual(proc2.returncode, 0, proc2.stderr)
+        self.assertEqual(proc2.stderr, "")
+        state2 = read_state(self.cwd)
+        self.assertEqual(state2["work_kind"], "build")
+        self.assertTrue(state2["plan_approved"])
+        self.assertEqual(state2["phase"], "implement")
+        self.assertTrue(state2["escalated_from_investigate"]["inline_fix"])
+
+    def test_cli_approve_records_implement_and_mode_phase_history(self):
+        # 1) approve plan --mode main records implement in phase_history
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full")
+        run_state_cli(self.cwd, "approve", "spec", "--by", "ok", "--bo-qua-archify", "test")
+        run_state_cli(self.cwd, "approve", "plan", "--mode", "main", "--by", "ok plan")
+        hist1 = [m["phase"] for m in read_state(self.cwd)["phase_history"]]
+        self.assertIn("implement", hist1)
+
+        # 2) approve plan without mode records "mode", then settling mode records "implement"
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full")
+        run_state_cli(self.cwd, "approve", "spec", "--by", "ok", "--bo-qua-archify", "test")
+        run_state_cli(self.cwd, "approve", "plan", "--by", "ok plan")
+        hist_mode = [m["phase"] for m in read_state(self.cwd)["phase_history"]]
+        self.assertEqual(hist_mode[-1], "mode")
+        run_state_cli(self.cwd, "approve", "plan", "--mode", "subagent", "--by", "use subagent")
+        hist2 = [m["phase"] for m in read_state(self.cwd)["phase_history"]]
+        self.assertEqual(hist2[-2:], ["mode", "implement"])
+
+        # 3) approve quick records implement in phase_history
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "quick")
+        run_state_cli(self.cwd, "approve", "quick", "--by", "ok", "--bo-qua-archify", "test")
+        hist3 = [m["phase"] for m in read_state(self.cwd)["phase_history"]]
+        self.assertIn("implement", hist3)
+
+    def test_archify_gate_waived_for_investigate_pre_approval_but_idle_enforced(self):
+        spec_rel = f"docs/tdq/spec/{self.SLUG_NEW}.md"
+        self._write_doc(spec_rel, "# Spec\n\n## 1. Goal\nInvestigate.\n")
+
+        # Control: build fails without preview manifest.
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "build")
+        run_state_cli(self.cwd, "set", "phase=spec", f"spec_file={spec_rel}")
+        rc_build, _, _ = run_state_cli(self.cwd, "approve", "spec", "--by", "ok")
+        self.assertNotEqual(rc_build, 0)
+
+        # Investigate passes approve spec without preview manifest, leaves archify_bo_qua None.
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "investigate")
+        run_state_cli(self.cwd, "set", "phase=spec", f"spec_file={spec_rel}")
+        rc_inv, _, err_inv = run_state_cli(self.cwd, "approve", "spec", "--by", "ok")
+        self.assertEqual(rc_inv, 0, err_inv)
+        st = read_state(self.cwd)
+        self.assertTrue(st["spec_approved"])
+        self.assertIsNone(st["archify_bo_qua"])
+
+        # Quick investigate also skips pre-approval flow manifest.
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "quick", "--kind", "investigate")
+        self._write_doc(
+            f"docs/tdq/plan/{self.SLUG_NEW}.md",
+            "# QUICK — inv demo\nLane: quick\n\n- [ ] **T1** check\n",
+        )
+        rc_q, _, err_q = run_state_cli(self.cwd, "approve", "quick", "--by", "ok")
+        self.assertEqual(rc_q, 0, err_q)
+        self.assertTrue(read_state(self.cwd)["quick_approved"])
+
+        # Report gate at idle is NOT bypassed for investigate (express enters report first).
+        run_state_cli(self.cwd, "set", "phase=report")
+        rep_rel = f"docs/tdq/reports/{self.SLUG_NEW}.md"
+        self._write_doc(
+            rep_rel,
+            "# Report\n\n## Before request\nA.\n\n## After request\nB.\n\n"
+            "## What was tested\nC.\n\n## Test result\nPASS.\n",
+        )
+        rc_idle_fail, _, err_idle_fail = run_state_cli(self.cwd, "set", "phase=idle")
+        self.assertNotEqual(rc_idle_fail, 0)
+        self.assertIn("Archify", err_idle_fail)
+
+        self._bind_archify(
+            rep_rel,
+            f"docs/tdq/reports/{self.SLUG_NEW}.manifest.json",
+            f"docs/tdq/reports/{self.SLUG_NEW}.html",
+        )
+        rc_idle_ok, _, err_idle = run_state_cli(self.cwd, "set", "phase=idle")
+        self.assertEqual(rc_idle_ok, 0, err_idle)
+        self.assertEqual(read_state(self.cwd)["phase"], "idle")
+
+    def test_next_headline_and_state_md_show_work_kind(self):
+        inv_state = write_state(
+            self.cwd, active_request=self.SLUG_NEW, lane="full", phase="implement", work_kind="investigate"
+        )
+        head_inv = tdq_state.next_headline(self.cwd, inv_state)
+        self.assertIn("· kind:inv", head_inv)
+        md_inv = tdq_state.render_state_md(self.cwd, inv_state)
+        self.assertIn("| Work kind | investigate |", md_inv)
+        self.assertLessEqual(len(md_inv.splitlines()), 30)
+
+        build_state = write_state(
+            self.cwd, active_request=self.SLUG_NEW, lane="full", phase="implement", work_kind="build"
+        )
+        head_build = tdq_state.next_headline(self.cwd, build_state)
+        self.assertNotIn("kind:inv", head_build)
+        md_build = tdq_state.render_state_md(self.cwd, build_state)
+        self.assertIn("| Work kind | build |", md_build)
+        self.assertLessEqual(len(md_build.splitlines()), 30)
+
+    def test_spec_drifted_and_cong_dang_cho(self):
+        spec_rel = f"docs/tdq/spec/{self.SLUG_NEW}.md"
+        header = "# SPEC\n\nStatus: PENDING\n\n"
+        body = "## 1. Goal\nInvestigate A.\n"
+        spec_path = self._write_doc(spec_rel, header + body)
+
+        run_state_cli(self.cwd, "init", self.SLUG_NEW, "full", "--kind", "investigate")
+        run_state_cli(self.cwd, "set", "phase=spec", f"spec_file={spec_rel}")
+        run_state_cli(self.cwd, "approve", "spec", "--by", "ok")
+        run_state_cli(self.cwd, "approve", "plan", "--mode", "main", "--by", "ok")
+        state = read_state(self.cwd)
+
+        self.assertFalse(tdq_state.spec_drifted(self.cwd, state))
+        self.assertIsNone(tdq_state.cong_dang_cho(state, cwd=self.cwd))
+
+        # Bookkeeping header edit above ## does not trigger drift.
+        spec_path.write_text(header.replace("PENDING", "APPROVED") + body, encoding="utf-8")
+        self.assertFalse(tdq_state.spec_drifted(self.cwd, state))
+        self.assertIsNone(tdq_state.cong_dang_cho(state, cwd=self.cwd))
+
+        # Real body edit triggers drift and surfaces "spec" gate.
+        spec_path.write_text(header + body + "\nAdded requirement.\n", encoding="utf-8")
+        self.assertTrue(tdq_state.spec_drifted(self.cwd, state))
+        self.assertEqual(tdq_state.cong_dang_cho(state, cwd=self.cwd), "spec")
+        self.assertEqual(
+            tdq_state.cong_dang_cho(
+                {"lane": "full", "spec_approved": True, "plan_approved": True, "spec_drifted": True}
+            ),
+            "spec",
+        )
+        # Lane quick has no spec gate.
+        self.assertIsNone(
+            tdq_state.cong_dang_cho(
+                {"lane": "quick", "quick_approved": True, "spec_approved": True, "spec_drifted": True},
+                cwd=self.cwd,
+            )
+        )

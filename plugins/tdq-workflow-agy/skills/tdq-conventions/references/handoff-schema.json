@@ -69,6 +69,10 @@
       "type": "number",
       "minimum": 0,
       "description": "Optional elapsed execution time in seconds"
+    },
+    "worktree_required": {
+      "type": "boolean",
+      "description": "Whether the task uses an isolated git worktree (false for artifact-only shards)"
     }
   },
   "required": [

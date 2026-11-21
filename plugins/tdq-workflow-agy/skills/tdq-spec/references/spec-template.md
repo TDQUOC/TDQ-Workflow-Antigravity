@@ -10,7 +10,7 @@ that does not apply, but say **why** it does not apply.
 ```markdown
 # SPEC — <tên việc>
 
-Ngày: YYYY-MM-DD · Bản: 1.0 · Brief: ../brief/<slug>.md · Lane: full
+Ngày: YYYY-MM-DD · Bản: 1.0 · Brief: ../brief/<slug>.md · Lane: full · Work kind: build | investigate
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Trạng thái: CHỜ DUYỆT
 
@@ -149,8 +149,6 @@ DoD: <liệt kê điều kiện đủ để tuyên bố xong; có tham chiếu t
 
 ## File em
 
-[spec-template-huong-dan.md](spec-template-huong-dan.md) — Hướng dẫn chi tiết các mục spec,
-§6 giữ điều kiện chứ không giữ lệnh, checklist tự soát và fresher accessibility check.
-Đọc khi soát spec trước khi trình.
-For visual & 3-tier scenario checks in §6, follow [vision-test-loop.md](../../tdq-build/references/vision-test-loop.md).
+[spec-template-huong-dan.md](spec-template-huong-dan.md) — Section details, §6 PASS rule & fresher checklist; for `Work kind: investigate` (waiving `§2b` & preview), follow [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md).
+Visual & scenario checks in §6 follow [vision-test-loop.md](../../tdq-build/references/vision-test-loop.md).
 

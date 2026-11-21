@@ -46,8 +46,10 @@ _WRITER_TOOLS: List[str] = [
     "send_message",
 ]
 _STRICT_READONLY_AGENTS = frozenset({
-    "tdq-reviewer.md",
     "tdq-security-reviewer.md",
+})
+_SCOPED_INVESTIGATION_AGENTS = frozenset({
+    "tdq-reviewer.md",
     "tdq-explorer.md",
     "tdq-debugger.md",
 })
@@ -69,8 +71,8 @@ AGENT_FRONTMATTERS: Dict[str, Dict[str, object]] = {
     },
     "tdq-reviewer.md": {
         "name": "tdq-reviewer",
-        "description": "Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering. Read-only - reports findings, never edits.",
-        "tools": _READONLY_TOOLS,
+        "description": "Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering; scoped-write to investigation artifact shards only.",
+        "tools": _WRITER_TOOLS,
         "model": "inherit",
     },
     "tdq-security-reviewer.md": {
@@ -93,14 +95,14 @@ AGENT_FRONTMATTERS: Dict[str, Dict[str, object]] = {
     },
     "tdq-explorer.md": {
         "name": "tdq-explorer",
-        "description": "Read-only 3-tier codebase explorer mapping callers, symbol definitions, and blast radius across LSP, Graphify, and Grep into compact path:line digests.",
-        "tools": _READONLY_TOOLS,
+        "description": "3-tier codebase explorer mapping callers, symbol definitions, and blast radius across LSP, Graphify, and Grep into compact path:line digests and scoped artifact shards.",
+        "tools": _WRITER_TOOLS,
         "model": "inherit",
     },
     "tdq-debugger.md": {
         "name": "tdq-debugger",
-        "description": "Read-only root-cause debugger reproducing failures, isolating faulty state transitions across Python/Rust/hooks, and returning minimal verified fix plans.",
-        "tools": _READONLY_TOOLS,
+        "description": "Adversarial root-cause debugger isolating Point-of-Commitment vs Manifestation with counterfactual falsification tests and scoped artifact shards.",
+        "tools": _WRITER_TOOLS,
         "model": "inherit",
     },
 }
@@ -168,6 +170,13 @@ def transform_agents(plugin_root: Path) -> int:
             body += (
                 "\n> **Host Enforcement:** Write tools are omitted and shell mutations "
                 "are blocked by TDQ `bash_gate.py` (`[TDQ:READONLY]`).\n"
+            )
+        elif md.name in _SCOPED_INVESTIGATION_AGENTS:
+            body += (
+                "\n> **Host Enforcement (`[TDQ:SCOPED-WRITE]`):** Writes are strictly scoped "
+                "to assigned shards under `docs/tdq/artifacts/<active_slug>/` (`.md`/`.json`/`.jsonl`, "
+                "excluding `evidence*`, `trial_*.json`, `rec_*.json`) and flat `docs/tdq/research/<slug>*.md`. "
+                "Source/test/plan/spec/state edits and shell mutations are blocked (`[TDQ:READONLY]`).\n"
             )
         elif md.name == "tdq-qc-tester.md":
             body += (

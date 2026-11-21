@@ -14,6 +14,7 @@ Env: TDQ_LOG=0 turns the log service off (on by default, one ISO-timestamped lin
 """
 import json
 import os
+import posixpath
 import re
 import sys
 from datetime import datetime
@@ -426,7 +427,37 @@ def rule_r9(doc, out):
 # Reads the lane off the header line `... · Lane: full`. Only lane full is bound by this rule —
 # lane quick drops the module-boundary section on purpose, so checking it there is a false alarm.
 LANE_RE = re.compile(r"Lane:\s*(full|quick)", re.IGNORECASE)
+WORK_KIND_RE = re.compile(
+    r"\bWork\s+kind\*{0,2}\s*:\s*\*{0,2}`?(build|investigate)\b", re.IGNORECASE
+)
 R10_HEADING = "2b. ranh giới module"  # i18n-allow
+
+
+def _first_15_with_fences(doc_or_lines):
+    """Yield (line, is_fenced) pairs for the first 15 lines of a Doc, string, or sequence."""
+    if hasattr(doc_or_lines, "lines") and hasattr(doc_or_lines, "in_fence"):
+        return list(zip(doc_or_lines.lines[:15], doc_or_lines.in_fence[:15]))
+    raw = doc_or_lines.splitlines() if isinstance(doc_or_lines, str) else list(doc_or_lines)
+    fenced = False
+    out = []
+    for line in raw[:15]:
+        if FENCE.match(line):
+            fenced = not fenced
+            out.append((line, True))
+        else:
+            out.append((line, fenced))
+    return out
+
+
+def _is_investigate_doc(doc_or_lines):
+    """Return True when the first 15 non-fenced lines declare `Work kind: investigate`."""
+    for line, is_fenced in _first_15_with_fences(doc_or_lines):
+        if is_fenced:
+            continue
+        m = WORK_KIND_RE.search(line)
+        if m:
+            return m.group(1).lower() == "investigate"
+    return False
 
 
 def _lane_cua_spec(doc):
@@ -443,6 +474,8 @@ def rule_r10(doc, out):
     if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "spec":
         return
     if _lane_cua_spec(doc) != "full":
+        return
+    if _is_investigate_doc(doc):
         return
     for line in doc.lines:
         found = ALLOW.search(line)
@@ -531,6 +564,31 @@ EXT_MA_NGUON = (
     ".c", ".cpp", ".cs", ".rb", ".php", ".java",
 )
 EXT_CAU_HINH = (".json", ".yaml", ".yml", ".toml", ".ini", ".cfg")
+_DIAGNOSTIC_PREFIXES = ("docs/tdq/artifacts/", "docs/tdq/bench/")
+
+
+def _normalize_posix_rel(rel: str) -> str:
+    norm = posixpath.normpath(rel.strip().replace("\\", "/"))
+    while norm.startswith("./"):
+        norm = norm[2:]
+    return norm
+
+
+def _is_diagnostic_artifact_path(rel: str) -> bool:
+    if not rel:
+        return False
+    low = _normalize_posix_rel(rel).lower()
+    if low.startswith(_DIAGNOSTIC_PREFIXES):
+        return True
+    is_abs = low.startswith("/") or (len(low) >= 2 and low[1] == ":")
+    return is_abs and any(f"/{prefix}" in low for prefix in _DIAGNOSTIC_PREFIXES)
+
+
+def is_product_source_path(rel: str) -> bool:
+    """Return True when `rel` is a product source file outside `docs/tdq/{artifacts,bench}/`."""
+    if not rel or _is_diagnostic_artifact_path(rel):
+        return False
+    return _normalize_posix_rel(rel).lower().endswith(EXT_MA_NGUON)
 TU_KHOA_LOGIC = ("đặc tả", "logic", "giải thuật", "thuật toán", "pseudo-code")  # i18n-allow
 BANNED_PLACEHOLDERS = (
     "tbd",
@@ -643,7 +701,7 @@ def _legacy_has_code(indented):
     for line in indented:
         low = line.lower()
         if ("chạm:" in low or "cham:" in low) and any(  # i18n-allow
-            p.lower().endswith(EXT_MA_NGUON) for p in _R15_PATH_RE.findall(line)
+            is_product_source_path(p) for p in _R15_PATH_RE.findall(line)
         ):
             return True
     return False
@@ -824,8 +882,11 @@ def _check_task_v2(doc, task, is_quick, out):
     _check_anti2_task(doc, task_idx, header_line, body_items, out)
 
     cham_paths = _cham_paths(body_items)
-    has_code = any(p.lower().endswith(EXT_MA_NGUON) for p in cham_paths)
-    has_config = any(p.lower().endswith(EXT_CAU_HINH) for p in cham_paths)
+    has_code = any(is_product_source_path(p) for p in cham_paths)
+    has_config = any(
+        not _is_diagnostic_artifact_path(p) and p.lower().endswith(EXT_CAU_HINH)
+        for p in cham_paths
+    )
     body_norm = "\n".join(l.replace("**", "") for _, l in body_items).lower()
     full_norm = header_line.replace("**", "").lower() + "\n" + body_norm
     compact_flag = _check_sweep_and_sync_caps(doc, task_idx, full_norm, cham_paths, out) or is_quick
@@ -1141,64 +1202,77 @@ def _r14_cot(header, ten):
     return None
 
 
+def _check_r14_row(line_no, cells, cols):
+    """Validate one `| Qn |` row of spec §6; return error message or None."""
+    c_pass, c_do, c_du = cols
+    if not cells or not re.fullmatch(r"Q\d+", cells[0]):
+        return None
+    if c_pass >= len(cells) or not _r14_nguong(cells[c_pass]):
+        return None
+    if c_do is None or c_du is None:
+        return (f"{cells[0]} states a numeric threshold but the §6 table lacks "
+                "the `Đo trước` / `Dự phòng nếu trượt` columns")  # i18n-allow
+    do = cells[c_do] if c_do < len(cells) else ""
+    du = cells[c_du] if c_du < len(cells) else ""
+    if do in R14_RONG or du in R14_RONG:
+        return (f"{cells[0]} states a numeric threshold but "
+                "`Đo trước` or `Dự phòng nếu trượt` is empty")  # i18n-allow
+    if not re.search(r"\d", do):
+        return (f"{cells[0]}: `Đo trước` holds no number — "  # i18n-allow
+                "a measurement or a sourced estimate is required")
+    return None
+
+
+def _r14_section6_lines(lines):
+    """Yield (1-based line_no, line) inside non-fenced `## 6.` sections."""
+    trong_6 = fenced = False
+    for i, line in enumerate(lines):
+        if FENCE.match(line):
+            fenced = not fenced
+        elif not fenced and re.match(r"^##\s", line):
+            trong_6 = bool(re.match(r"^##\s+6\.", line))
+        elif not fenced and trong_6:
+            yield i + 1, line
+
+
+def _r14_header_cols(line):
+    header = _r14_o(line)
+    c_pass = _r14_cot(header, R14_COT_PASS)
+    return (
+        2 if c_pass is None else c_pass,
+        _r14_cot(header, R14_COT_DO),
+        _r14_cot(header, R14_COT_DU_PHONG),
+    )
+
+
 def r14_loi(text, ten_file):
     """-> [(line_number, message)] for R14. Pure: no I/O, so tdq_state can call it at approval.
 
     Scans the `| Qn |` rows of the `## 6.` section. A row whose PASS condition holds a numeric
     threshold needs a measurement cell with a number in it and a non-empty fallback cell.
-    Only specs whose slug sorts at or after R14_MOC are bound.
+    Only specs whose slug sorts at or after R14_MOC (and not `Work kind: investigate`) are bound.
     """
     ten = os.path.basename(ten_file)
     if not R14_SLUG.match(ten) or ten[:15] < R14_MOC:
         return []
     lines = text.splitlines()
+    if _is_investigate_doc(lines):
+        return []
     loi = []
-    trong_6 = fenced = False
-    # Column indexes depend only on the table header, so they are found once per table.
-    # No header yet → PASS is the 3rd column and the two R14 columns are missing.
-    c_pass, c_do, c_du = 2, None, None
-    for i, line in enumerate(lines):
-        if FENCE.match(line):
-            fenced = not fenced
+    cols = (2, None, None)
+    for line_no, line in _r14_section6_lines(lines):
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            if not stripped:
+                cols = (2, None, None)
             continue
-        if fenced:
-            continue
-        if line.startswith("##") and re.match(r"^##\s", line):
-            trong_6 = bool(re.match(r"^##\s+6\.", line))
-            c_pass, c_do, c_du = 2, None, None
-            continue
-        if not trong_6:
-            continue
-        if not line.strip():
-            c_pass, c_do, c_du = 2, None, None
-            continue
-        if not line.strip().startswith("|"):
-            continue
-        nxt = lines[i + 1] if i + 1 < len(lines) else ""
+        nxt = lines[line_no] if line_no < len(lines) else ""
         if re.match(r"^\s*\|?\s*:?-{3,}", nxt):
-            header = _r14_o(line)
-            c_pass = _r14_cot(header, R14_COT_PASS)
-            c_pass = 2 if c_pass is None else c_pass
-            c_do = _r14_cot(header, R14_COT_DO)
-            c_du = _r14_cot(header, R14_COT_DU_PHONG)
+            cols = _r14_header_cols(line)
             continue
-        cells = _r14_o(line)
-        if not cells or not re.fullmatch(r"Q\d+", cells[0]):
-            continue
-        if c_pass >= len(cells) or not _r14_nguong(cells[c_pass]):
-            continue
-        if c_do is None or c_du is None:
-            loi.append((i + 1, f"{cells[0]} states a numeric threshold but the §6 table lacks "
-                               "the `Đo trước` / `Dự phòng nếu trượt` columns"))  # i18n-allow
-            continue
-        do = cells[c_do] if c_do < len(cells) else ""
-        du = cells[c_du] if c_du < len(cells) else ""
-        if do in R14_RONG or du in R14_RONG:
-            loi.append((i + 1, f"{cells[0]} states a numeric threshold but "
-                               "`Đo trước` or `Dự phòng nếu trượt` is empty"))  # i18n-allow
-        elif not re.search(r"\d", do):
-            loi.append((i + 1, f"{cells[0]}: `Đo trước` holds no number — "  # i18n-allow
-                               "a measurement or a sourced estimate is required"))
+        msg = _check_r14_row(line_no, _r14_o(line), cols)
+        if msg:
+            loi.append((line_no, msg))
     return loi
 
 

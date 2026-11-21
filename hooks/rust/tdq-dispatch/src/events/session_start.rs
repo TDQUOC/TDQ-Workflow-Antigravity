@@ -29,15 +29,22 @@ pub fn handle_session_start(_payload: &HookPayload, workspace_root: &Path) -> Ho
                 "[TDQ:SESSION] Request: {} · Lane: {} · Phase: {} · Level: {}",
                 req, lane, phase, muc_gat
             ));
-            let chung_md_path = workspace_root
-                .join("skills")
-                .join("tdq-build")
-                .join("references")
-                .join("rules")
-                .join("chung.md");
-            if let Ok(rules_content) = fs::read_to_string(&chung_md_path) {
-                let slice = cap_markdown(&rules_content, 1500);
-                context_blocks.push(format!("[TDQ:GON]\n{}", slice.trim()));
+            if state.work_kind.as_deref() == Some("investigate") {
+                context_blocks.push(
+                    "[TDQ:GON] investigate mode: cite file:line or URL+ts per claim; write ONLY inside docs/tdq/artifacts/<slug>/ shards; synthesize via evidence."
+                        .to_string(),
+                );
+            } else {
+                let chung_md_path = workspace_root
+                    .join("skills")
+                    .join("tdq-build")
+                    .join("references")
+                    .join("rules")
+                    .join("chung.md");
+                if let Ok(rules_content) = fs::read_to_string(&chung_md_path) {
+                    let slice = cap_markdown(&rules_content, 1500);
+                    context_blocks.push(format!("[TDQ:GON]\n{}", slice.trim()));
+                }
             }
         }
     } else {
@@ -97,6 +104,17 @@ mod tests {
         let decision = handle_session_start(&payload, &tmp);
         let json_out = decision.to_json_string();
         assert!(json_out.contains("[TDQ:GON]"));
+
+        // Investigate mode swaps TDQ:GON to concise investigation guidance without chung.md ladder
+        fs::write(
+            tmp.join("docs").join("tdq").join("state.json"),
+            r#"{"active_request":"req-inv","phase":"implement","lane":"full","work_kind":"investigate"}"#,
+        )
+        .unwrap();
+        let inv_dec = handle_session_start(&payload, &tmp).to_json_string();
+        assert!(inv_dec.contains("[TDQ:GON]"));
+        assert!(inv_dec.contains("investigate"));
+        assert!(!inv_dec.contains("ệệệ"));
 
         let _ = fs::remove_dir_all(&tmp);
     }

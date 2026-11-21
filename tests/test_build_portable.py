@@ -49,6 +49,8 @@ APPROVED_RELEASE_DOCS = {
     "agents/tdq-explorer.md",
     "agents/tdq-debugger.md",
     "hooks/scripts/subagent_stop.py",
+    # Approved 2026-11-21-0217-trien-khai-investigate-v2
+    "skills/tdq-conventions/references/investigate-mode.md",
 }
 
 

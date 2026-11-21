@@ -72,7 +72,7 @@ This skill owns three phases: `implement` → `qc` → `report`.
   end the turn while one is still running.
 
 ## Part A — Implement (phase `implement`)
-For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md): verify binding before code, refresh Master after source changes/merge.
+For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md). When `work_kind=investigate`, execute Collect->Draft-Report shards, Burden checkpoints & `QC-I1..I4` per [investigate-mode.md](../tdq-conventions/references/investigate-mode.md).
 1. Read `implement_mode` from state and follow it exactly:
    - `main` (label the user sees: "làm trực tiếp (inline implement)"): do EVERYTHING in this <!-- i18n-allow: user-facing mode label -->
      conversation yourself, but in the plan's cluster order, and still record the reason for

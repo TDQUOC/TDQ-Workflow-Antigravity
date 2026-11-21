@@ -26,7 +26,7 @@ translate headings and labels while preserving the shape. <!-- i18n-allow: canon
 - <điều kiện đo được, có lệnh kiểm>
 ```
 
-Going past 40 lines (`<= 80` lines for `R15-Compact` code mini-plans, or `> 4` source files) means this work is no longer quick — say so to the user and propose moving to the deep pipeline.
+Going past 40 lines (`<= 65` lines for `work_kind=investigate` mini-plans, `<= 80` lines for `R15-Compact` code mini-plans, or `> 4` source files) means this work is no longer quick — say so to the user and propose moving to the deep pipeline. Notice `work_kind=investigate` follows Tier 0–3 fan-out & waives pre-approval Archify per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md).
 
 Per [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md), present it with
 all 5 components, the approval block at the end of the message, and no emoji:

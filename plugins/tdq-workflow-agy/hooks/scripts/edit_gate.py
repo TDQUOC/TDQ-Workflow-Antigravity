@@ -95,14 +95,17 @@ def _enforce_agy_readonly_subagent(payload, cwd):
         or tool_input.get("notebook_path")
         or ""
     )
+    import _common
     if "qc-tester" in role:
-        import _common
         qc_check = getattr(_common, "is_qc_report_target", None)
         if callable(qc_check) and qc_check(target, cwd):
             return False
+    scoped_check = getattr(_common, "is_investigation_artifact_target", None)
+    if callable(scoped_check) and scoped_check(target, cwd, role):
+        return False
     if any(r in role for r in ("reviewer", "qc-tester", "browser", "explorer", "debugger")):
         block(cwd, payload, "READONLY", [
-            f"Subagent role `{role}` is read-only (tdq-qc-tester may write only docs/tdq/qc/*.md).",
+            f"Subagent role `{role}` is read-only (artifacts/<slug>/ for explorer|debugger|reviewer; docs/tdq/qc/*.md for qc-tester).",
         ])
         return True
     return False
@@ -114,7 +117,13 @@ def main():
     if _enforce_agy_readonly_subagent(payload, cwd):
         return
     tool_input = payload.get("tool_input") or {}
-    target = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
+    target = (
+        tool_input.get("file_path")
+        or tool_input.get("TargetFile")
+        or tool_input.get("path")
+        or tool_input.get("notebook_path")
+        or ""
+    )
     if not target or not isinstance(target, str):
         return
     abs_target = os.path.realpath(target if os.path.isabs(target) else os.path.join(cwd, target))

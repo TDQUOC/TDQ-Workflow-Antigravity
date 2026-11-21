@@ -27,6 +27,7 @@ user's document language `doc_lang` (deliberate repetition — the original is
    **Mental Model cho Fresher** (§3d — analogy + glossary) ·
    standing requirements (log service ON by default, no placeholder, a test per part) ·
    constraints & risks · QC scope + Definition of Done (visual checks per [vision-test-loop.md](../tdq-build/references/vision-test-loop.md)).
+   When `Work kind: investigate`, keep scoping shallow (omit `§2b` module code boundaries & Archify preview) per [investigate-mode.md](../tdq-conventions/references/investigate-mode.md).
    The "open questions" section MUST be empty — a question left → back to phase `analyze`.
 
    **§2b is built from LSP semantics, not from directory names.** A module boundary comes from

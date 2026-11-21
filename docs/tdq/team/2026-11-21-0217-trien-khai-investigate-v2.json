@@ -1,0 +1,180 @@
+{
+  "slug": "2026-11-21-0217-trien-khai-investigate-v2",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-0217-trien-khai-investigate-v2.md",
+  "plan_sha": "ec837b2919f830ba9bdcfeeca725a99c560527bac615b26b24c7149857bb8af1",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "4f7412e2605a0d9951ccf54d21e4f78d5fefcc8168c5c79f8bc08adee0c13762",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py",
+        "tests/test_state.py",
+        "tests/test_phase_table.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/doc_lint.py",
+        "scripts/tdq_plan_scaffold.py",
+        "scripts/tdq_bench.py",
+        "tests/test_doc_lint.py",
+        "tests/test_plan_v2_linter.py"
+      ],
+      "dot": 4,
+      "worktree_required": false
+    },
+    "T1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-conventions/SKILL.md",
+        "skills/tdq-intake/SKILL.md",
+        "skills/tdq-spec/SKILL.md",
+        "skills/tdq-build/SKILL.md",
+        "skills/tdq-spec/references/spec-template.md",
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/references/team-mode.md",
+        "skills/tdq-intake/references/quick-lane-mini.md",
+        "skills/tdq-intake/references/issue-triage.md",
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_team.py",
+        "scripts/tdq_ten_lenh.py",
+        "skills/tdq-conventions/references/handoff-schema.json",
+        "tests/test_team_packet_v2.py"
+      ],
+      "dot": 5,
+      "worktree_required": false
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/_common.py",
+        "hooks/scripts/edit_gate.py",
+        "hooks/scripts/bash_gate.py",
+        "hooks/scripts/prompt_context.py",
+        "hooks/scripts/session_start.py",
+        "hooks/scripts/subagent_stop.py",
+        "hooks/scripts/read_gate.py",
+        "hooks/hooks.json",
+        "tests/test_bash_gate.py",
+        "tests/test_read_gate.py"
+      ],
+      "dot": 4
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/protocol.rs",
+        "hooks/rust/tdq-dispatch/src/command_parser.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs",
+        "hooks/rust/tdq-dispatch/src/events/session_start.rs",
+        "hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs",
+        "hooks/rust/tdq-dispatch/src/events/stop_streak.rs",
+        "tests/test_rust_lock_safety.py"
+      ],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "agents/tdq-explorer.md",
+        "agents/tdq-debugger.md",
+        "agents/tdq-reviewer.md",
+        "tools/patches/skills_and_agents.py",
+        "tools/patches/agy_hooks.py",
+        "tests/test_agent_frontmatter.py",
+        "docs/tdq/token-budget.json"
+      ],
+      "dot": 6
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_investigate_workflow.py"
+      ],
+      "dot": 7
+    },
+    "QC1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_read_gate.py",
+        "tests/test_investigate_workflow.py"
+      ],
+      "dot": 2
+    },
+    "QC1.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/tdq_team.py",
+        "hooks/scripts/session_start.py",
+        "skills/tdq-conventions/SKILL.md",
+        "skills/tdq-build/references/qc.md",
+        "skills/tdq-build/references/team-mode.md",
+        "skills/tdq-intake/SKILL.md",
+        "docs/tdq/audit/luat-hien-co.md",
+        "docs/tdq/token-budget.json",
+        "tests/test_agent_upgrade_mvp.py",
+        "tests/test_build_portable.py"
+      ],
+      "dot": 3
+    },
+    "Q1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q5": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    },
+    "Q6": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 1
+    }
+  }
+}

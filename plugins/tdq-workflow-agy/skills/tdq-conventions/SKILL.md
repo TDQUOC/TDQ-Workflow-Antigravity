@@ -164,7 +164,7 @@ three sections — verbatim request · understanding & knowledge · Q&A. The hea
 
 - The `description` of every Agent call reads `<model>-<effort>-<task-kebab>` (e.g.
   `sonnet-low-research-doc`) — the name alone tells which model and effort are running.
-- Default model/effort per role plus the override rule: [references/subagent-tuning.md](references/subagent-tuning.md) (read-only sub-agents in any phase). Workflow agents additionally obey the [TDQ Ultracode contract](references/ultracode.md).
+- Default model/effort per role plus the override rule: [references/subagent-tuning.md](references/subagent-tuning.md) (read-only sub-agents in any phase); workflow agents obey [Ultracode](references/ultracode.md), investigation obeys [investigate-mode.md](references/investigate-mode.md).
 
 ## Tool completion loop (tier 1 — quality)
 

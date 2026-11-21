@@ -80,6 +80,24 @@ MODE_ALIASES = {
     "codex": "codex", "codex implement": "codex", "codex-implement": "codex",
 }
 VALID_PHASES = {"idle", "analyze", "spec", "plan", "mode", "implement", "qc", "report"}
+VALID_WORK_KINDS = ("build", "investigate")
+WORK_KIND_MAC_DINH = "build"
+WORK_KIND_ALIASES = {
+    "build": "build",
+    "code": "build",
+    "dev": "build",
+    "feature": "build",
+    "investigate": "investigate",
+    "research": "investigate",
+    "analysis": "investigate",
+    "audit": "investigate",
+    "debug-rca": "investigate",
+    "rca": "investigate",
+    "report": "investigate",
+    "phan-tich": "investigate",
+    "dieu-tra": "investigate",
+    "nghien-cuu": "investigate",
+}
 
 # Phase `diagram` was removed from the workflow on 2026-09-01. A state written
 # before that day may still carry it; `load` lifts such a phase back to the one
@@ -95,10 +113,11 @@ LOI_SO_DO_DA_GO = ("The diagram phase was removed from the workflow on "
 
 USAGE = ("Usage: tdq_state.py next [--brief] | get [key] | "
          "init <slug> [nhanh|express|quick — express mode | chuyen-sau|deep|full — "  # i18n-allow
-         "deep mode] [--lang <code>] [--bo-qua-lsp \"<user's reason>\"] | "
+         "deep mode] [--kind build|investigate] [--lang <code>] [--bo-qua-lsp \"<user's reason>\"] | "
          "set k=v ... | approve <spec|plan|quick (aliases: nhanh|express)> "  # i18n-allow
          "[--mode main|subagent|codex] "
          "[--by \"<user sentence>\"] [--expected-sha <sha256>] [--strict] [--bo-qua-do \"<user's reason>\"] | "
+         "escalate-to-build --by \"<user words>\" [--inline-fix] [--json] | "
          "pause --loai mat-truy-cap|pha-huy|dau-vao-user|tran-qc --ly-do \"<why>\" | resume | "
          "eval-enable --by \"<user words>\" | "
          "lech add --q Qn --nguong \"<..>\" --do \"<..>\" --chon \"<..>\" --ly-do \"<..>\" | "
@@ -212,12 +231,39 @@ def muc_qc_hieu_luc(state):
     return normalize_muc_qc((state or {}).get("muc_qc"))
 
 
+def normalize_work_kind(raw, warn=True):
+    """Normalize work_kind; invalid, empty, or None inputs fail closed to `build`."""
+    if not isinstance(raw, str):
+        if warn:
+            _warn(f"invalid work_kind {raw!r} — falling back to '{WORK_KIND_MAC_DINH}'.")
+        return WORK_KIND_MAC_DINH
+    cleaned = " ".join(raw.strip().lower().split())
+    mapped = WORK_KIND_ALIASES.get(cleaned)
+    if mapped in VALID_WORK_KINDS:
+        return mapped
+    if warn:
+        _warn(f"unknown work_kind {raw!r} — falling back to '{WORK_KIND_MAC_DINH}'.")
+    return WORK_KIND_MAC_DINH
+
+
+def work_kind_hieu_luc(state, warn=True):
+    """Read effective work_kind from state; absent key or None defaults silently to `build`."""
+    if not isinstance(state, dict):
+        return WORK_KIND_MAC_DINH
+    raw = state.get("work_kind")
+    if raw is None:
+        return WORK_KIND_MAC_DINH
+    return normalize_work_kind(raw, warn=warn)
+
+
 def default_state():
     return {
         "schema_version": 6,
         "active_request": None,
         # slug of the request replaced at the last init (trace/log only)
         "previous_request": None,
+        "work_kind": WORK_KIND_MAC_DINH,
+        "escalated_from_investigate": None,
         "lane": None,
         "phase": "idle",
         # Sản phẩm của bước phân tích. Cả hai lane đều đẻ ra brief ngay ở intake, nhưng
@@ -1291,20 +1337,42 @@ CONG_THEO_LANE = {
 }
 
 
-def cong_dang_cho(state):
+def spec_drifted(cwd, state):
+    """Return True when an approved spec's content hash differs from disk.
+
+    Reuses `sha256_noi_dung` so bookkeeping edits above the first `##` do not
+    trigger false drift. Unapproved specs or missing path/hash/cwd return False;
+    an unreadable registered spec file fails closed by returning True.
+    """
+    if not isinstance(state, dict) or not state.get("spec_approved"):
+        return False
+    rel, sha = state.get("spec_file"), state.get("spec_sha256")
+    if not rel or not sha or not cwd:
+        return False
+    path = rel if os.path.isabs(rel) else os.path.join(cwd, rel)
+    try:
+        return sha256_noi_dung(path) != sha
+    except OSError:
+        return True
+
+
+def cong_dang_cho(state, cwd=None):
     """The approval gate still missing for the running lane, or None when all passed.
 
     Why one shared function: `edit_gate` and `stop_gate` both need this answer. Back
     when each wrote its own, `stop_gate` walked a hard-coded list ("spec", "plan",
     "quick") without looking at the lane — lane quick has no `spec` gate at all, so
     `spec_approved` stayed False forever and the hook kept saying "the spec is not
-    approved" even for a closed request. A gate that cries wolf often enough is no
-    longer heard when it is right.
+    approved" even for a closed request. When `cwd` is provided (or `spec_drifted`
+    is set on state), a spec whose content changed after approval also returns `"spec"`.
     """
     lane = effective_lane(state, warn=False)
     for cong in CONG_THEO_LANE.get(lane, CONG_THEO_LANE[None]):
         if not (state or {}).get(f"{cong}_approved"):
             return cong
+        has_drift = (state or {}).get("spec_drifted") or (cwd and spec_drifted(cwd, state))
+        if cong == "spec" and has_drift:
+            return "spec"
     return None
 
 
@@ -1726,6 +1794,103 @@ def kiem_bang_mode(valid_modes, mode_rows):
 kiem_bang_mode(VALID_MODES, MODE_ROWS)
 
 
+# Investigation-mode phase rows kept OUT of PHASE_TABLE so len(PHASE_TABLE) == 11
+# and all build-mode object identities stay invariant. Looked up via phase_row().
+INVESTIGATE_PHASE_ROWS = {
+    "analyze": {
+        "entry": "An investigation request is open, deep mode",
+        "action": "Scope target areas, form hypotheses, ask only if ambiguous",
+        "cmd": "python3 scripts/tdq_state.py set phase=spec",
+        "checklist": [
+            "Skim target entrypoints and list 2-4 hypotheses in docs/tdq/brief/<slug>.md (defer deep dives to implement)",
+            "Run scope round only if target boundaries or decision criteria are ambiguous",
+            "Ask detail questions only when an answer changes the investigation outcome",
+            "No ambiguity left -> run set phase=spec (skip Archify preview)",
+        ],
+        "done_when": "Scoping hypotheses settled, no ambiguous question left",
+        "forbidden": "Running deep evidence gathering in analyze or rendering Archify preview for investigate",
+    },
+    "spec": {
+        "entry": "Scoping finished (investigate, deep mode)",
+        "action": "Write investigation spec (Work kind: investigate, skip 2b & Archify preview), STOP for approval",
+        "cmd": "python3 scripts/tdq_state.py approve spec --by \"<the user's sentence verbatim>\"",
+        "checklist": [
+            "Write docs/tdq/spec/<slug>.md with header Work kind: investigate (section 2b optional, skip Archify preview)",
+            "Define investigation questions, source tiers, and QC-I1..I4 DoD",
+            "Run: python3 scripts/tdq_state.py set spec_file=docs/tdq/spec/<slug>.md",
+            "Present a concise summary (<=35 lines) and STOP for user approval",
+        ],
+        "done_when": "spec_approved = true",
+        "forbidden": "Inventing fake module boundaries in section 2b or rendering Archify preview before approval",
+    },
+    "plan": {
+        "entry": "spec_approved = true (investigate)",
+        "action": "Write investigation plan (Tier 0 SAS or no_worktree shards, ask main|subagent), STOP",
+        "cmd": "python3 scripts/tdq_state.py approve plan --mode <main|subagent> --by \"<verbatim>\"",
+        "checklist": [
+            "Apply Tier 0 Zero-Fanout SAS (<=1 branch or <4 files -> main); else fan out <=4 no_worktree shards",
+            "Assign shard paths docs/tdq/artifacts/<slug>/<task>.md and diagnostic scripts in docs/tdq/bench/<slug>/",
+            "Run: python3 scripts/tdq_state.py set plan_file=docs/tdq/plan/<slug>.md",
+            "Present plan summary asking 1a Subagent | 1b Main (no codex), then STOP",
+        ],
+        "done_when": "plan_approved = true",
+        "forbidden": "Creating git worktrees for artifact-only shards or proposing codex mode",
+    },
+    "implement": {
+        "entry": "plan_approved = true (investigate)",
+        "action": "Investigate via Shard+Merge, checkpoint on Weighted Burden, draft report",
+        "cmd": "python3 scripts/tdq_state.py set phase=qc",
+        "checklist": [
+            "Workers write shard logs docs/tdq/artifacts/<slug>/<task>.md and .ev.jsonl (no worktree needed)",
+            "Record evidence via --claim-file/--excerpt-file and merge at barrier: python3 scripts/tdq_team.py evidence merge",
+            "Flush findings whenever Weighted Burden [TDQ:DOC] triggers so /compact never drops context",
+            "Draft converged findings straight into docs/tdq/reports/<slug>.md; run escalate-to-build --by if product code edits are required",
+            "All tasks [x] -> run set phase=qc",
+        ],
+        "done_when": "All tasks [x], evidence merged, report draft ready",
+        "forbidden": "Editing product files without escalate-to-build --by, or writing evidence.jsonl directly from workers",
+    },
+    "qc": {
+        "entry": "Investigation findings and draft report are ready",
+        "action": "Run QC-I1..I4 evidence audit and verify zero edits outside docs/tdq/",
+        "cmd": "python3 scripts/tdq_state.py set phase=report",
+        "checklist": [
+            "QC-I1: verify 100% [EV-*] tags exist in evidence.jsonl, real path:line citations, zero placeholders",
+            "QC-I2/I3: verify claim vs raw/<ev_id>.txt snapshot (never trust cached summaries) plus counterfactual pass",
+            "QC-I4: label claims Verified | Single-source | Inferred | Unverified; record audit in docs/tdq/qc/<slug>.md",
+            "Failsafe: check git diff --name-only — any modified file outside docs/tdq/ triggers QC-F1 + QC-F4",
+        ],
+        "done_when": "QC-I1..I4 PASS with disk evidence and clean scope",
+        "forbidden": "Running full product test suite when git diff stays inside docs/tdq/, or trusting cached summaries over raw snapshots",
+    },
+    "quick_analyze": {
+        "entry": "lane = quick, work_kind = investigate, phase = analyze",
+        "action": "Record 2-3 hypotheses in brief and write mini-plan (<=65L)",
+        "cmd": "python3 scripts/tdq_state.py approve quick --by \"<the user's sentence verbatim>\"",
+        "checklist": [
+            "Skim surface entrypoints via LSP/grep and record 2-3 hypotheses in docs/tdq/brief/<slug>.md",
+            "Write mini-plan in docs/tdq/plan/<slug>.md (<=65 lines: hypotheses, sources, QC-I1..I4 DoD)",
+            "Proceed directly to approval invite (skip Archify flow preview for investigate)",
+        ],
+        "done_when": "Hypotheses and mini-plan <=65L ready",
+        "forbidden": "Running full deep investigation inside analyze or rendering Archify flow preview",
+    },
+    "quick": {
+        "entry": "lane = quick, work_kind = investigate",
+        "action": "Mini-plan (<=65L) -> approve quick -> investigate & draft -> QC-I1..I4",
+        "cmd": "python3 scripts/tdq_state.py approve quick --by \"<the user's sentence verbatim>\"",
+        "checklist": [
+            "Write mini-plan in docs/tdq/plan/<slug>.md (<=65 lines), ask QC level, STOP for approval (no Archify flow preview)",
+            "After approve quick: append working log, mark [~] -> investigate -> log evidence/raw snapshots -> flip [x]",
+            "Draft directly into docs/tdq/reports/<slug>.md, run QC-I1..I4 (failsafe QC-F1..F4 only if git diff touches outside docs/tdq/)",
+            "QC passes -> set phase=report, render single final Archify HTML, then set phase=idle",
+        ],
+        "done_when": "quick_approved, log, QC-I1..I4 PASS, phase=report",
+        "forbidden": "Rendering Archify flow preview before approval, or touching product files without escalate-to-build --by",
+    },
+}
+
+
 # How the `codex` mode learns whether it is selectable. state.py is the source of
 # truth for the workflow and MUST NOT depend on the Codex layer (tests/test_kien_truc
 # pins that), so the probe runs tdq_codex.py as a SUBPROCESS and is injectable —
@@ -1779,13 +1944,15 @@ def liet_ke_modes(kiem_codex=None, cwd=None):
 def phase_row(state):
     """The PHASE_TABLE row to DISPLAY for the current state.
 
-    Unlike `phase_key`, this function knows the mode. Phase `implement` has one
-    job per mode — the leader working alone (`main`), steering a team
-    (`subagent`), driving Codex (`codex`) — while state records the single word
-    `implement`, so the fork lives here. The fork reads MODE_ROWS; adding a mode
-    never touches this body.
+    Unlike `phase_key`, this function knows `work_kind` and `implement_mode`.
+    When `work_kind` is `investigate`, it looks up `INVESTIGATE_PHASE_ROWS`
+    first without modifying `PHASE_TABLE` or `MODE_ROWS` for `build`.
     """
     key = phase_key(state)
+    if work_kind_hieu_luc(state, warn=False) == "investigate":
+        inv_row = INVESTIGATE_PHASE_ROWS.get(key)
+        if inv_row is not None:
+            return inv_row
     if key == "implement":
         row = MODE_ROWS.get(effective_mode(state or {}, warn=False))
         if row is not None:
@@ -1838,10 +2005,11 @@ def next_headline(cwd, state):
     """Line 1 of `next` — also the entire output of `next --brief`."""
     if not state or not state.get("active_request"):
         return f"[TDQ:NEXT] no request · phase idle · Project: {duong_hien_thi(cwd)}"
+    kind_suffix = " · kind:inv" if work_kind_hieu_luc(state, warn=False) == "investigate" else ""
     # phase_key, not the raw phase: lane quick keeps phase=idle while work is still
     # left — printing "idle" makes the model think it is done (QC1.1).
     return (f"[TDQ:NEXT] {state.get('active_request')} · lane {effective_lane(state, warn=False) or '?'} "
-            f"· phase {phase_key(state)} · Project: {duong_hien_thi(cwd)}")
+            f"· phase {phase_key(state)} · Project: {duong_hien_thi(cwd)}{kind_suffix}")
 
 
 LECH_PHASES = ("qc", "report")   # phases where `next` surfaces pending spec deviations
@@ -1896,6 +2064,7 @@ def render_next(cwd, state, brief=False, compact=False):
     if state and state.get("active_request"):
         effective_lane(state)          # warns (with recovery hints) on a bad enum
         effective_phase(state)
+        work_kind_hieu_luc(state)
     head = next_headline(cwd, state)
     pending = lech_cho(state) if phase_key(state) in LECH_PHASES else []
     short = (f"{len(pending)} pending spec deviation(s) → "
@@ -1948,6 +2117,7 @@ def render_state_md(cwd, state):
         "| Field | Value |",
         "|---|---|",
         f"| Request | {state.get('active_request') or '(none)'} |",
+        f"| Work kind | {work_kind_hieu_luc(state, warn=False)} |",
         f"| Lane | {lane or '(not chosen)'} |",
         f"| Phase | {effective_phase(state, warn=False)} |",
         f"| Spec | {spec} |",
@@ -2251,58 +2421,67 @@ def _archify_bat_buoc(state):
     return slug[:15] >= ARCHIFY_MOC
 
 
+def _archify_paths_and_hint(cwd, state, target):
+    """Return (doc_rel, man_rel, doc_path, man_path, render_cmd) or None if skipped."""
+    slug = state.get("active_request")
+    if target == "spec":
+        doc_rel = state.get("spec_file")
+        if not doc_rel:
+            return None
+        man_rel = os.path.join("docs", "tdq", "spec", f"{slug}-preview.manifest.json")
+        cmd = (
+            f"Render preview command: python3 scripts/tdq_archify.py render --candidate <cand> "
+            f"--out docs/tdq/spec/{slug}-preview.html --document {doc_rel} --type architecture"
+        )
+    else:
+        doc_rel = os.path.join("docs", "tdq", "plan", f"{slug}.md")
+        man_rel = os.path.join("docs", "tdq", "plan", f"{slug}-flow.manifest.json")
+        cmd = (
+            f"Render flow command: python3 scripts/tdq_archify.py render --candidate <cand> "
+            f"--out docs/tdq/plan/{slug}-flow.html --document {doc_rel} --type flow"
+        )
+    doc_path = doc_rel if os.path.isabs(doc_rel) else os.path.join(cwd, doc_rel)
+    man_path = man_rel if os.path.isabs(man_rel) else os.path.join(cwd, man_rel)
+    return doc_rel, man_rel, doc_path, man_path, cmd
+
+
 def _archify_gate(cwd, state, target, bo_qua):
     """Gate Archify cho approve spec (lane full) và approve quick.
 
     Fail-open khi module tdq_archify hỏng hoặc quăng ngoại lệ (như R14).
     """
-    if target == "plan":
-        return
-    if not _archify_bat_buoc(state):
+    if target == "plan" or not _archify_bat_buoc(state):
         return
     if target == "spec" and effective_lane(state) != "full":
         return
-
-    slug = state.get("active_request")
-    if target == "spec":
-        doc_rel = state.get("spec_file")
-        if not doc_rel:
-            return
-        man_rel = os.path.join("docs", "tdq", "spec", f"{slug}-preview.manifest.json")
-    else:  # quick
-        doc_rel = os.path.join("docs", "tdq", "plan", f"{slug}.md")
-        man_rel = os.path.join("docs", "tdq", "plan", f"{slug}-flow.manifest.json")
-
-    doc_path = doc_rel if os.path.isabs(doc_rel) else os.path.join(cwd, doc_rel)
-    man_path = man_rel if os.path.isabs(man_rel) else os.path.join(cwd, man_rel)
-
+    if work_kind_hieu_luc(state) == "investigate" and target in ("spec", "quick"):
+        _info(
+            f"Archify pre-approval preview waived for work_kind=investigate (target={target}); "
+            "final report Archify gate remains active."
+        )
+        return
+    resolved = _archify_paths_and_hint(cwd, state, target)
+    if resolved is None:
+        return
+    doc_rel, man_rel, doc_path, man_path, render_cmd = resolved
     try:
         import tdq_archify
         res = tdq_archify.verify_document_and_manifest(doc_path, man_path, project=cwd)
-        status = res.get("status")
-        reasons = res.get("reasons", [])
+        status, reasons = res.get("status"), res.get("reasons", [])
     except Exception as exc:  # noqa: BLE001 — fail-open như R14
         _warn(f"Archify check skipped — tdq_archify failed ({type(exc).__name__}); approving without it.")
         return
-
     if status == "current":
         return
-
     if bo_qua:
         state["archify_bo_qua"] = {"ly_do": bo_qua, "at": now_iso(), "cong": target}
         _warn(f"Archify gate: {doc_rel} manifest status is {status} — "
               f"approved anyway via --bo-qua-archify (reason: {bo_qua}).")
         return
-
-    # Chặn duyệt
     print(f"Refusal: {doc_rel} Archify preview/flow is missing or not current (status: {status}).", file=sys.stderr)
-    if reasons:
-        for r in reasons:
-            print(f"  - {r}", file=sys.stderr)
-    if target == "spec":
-        print(f"Render preview command: python3 scripts/tdq_archify.py render --candidate <cand> --out docs/tdq/spec/{slug}-preview.html --document {doc_rel} --type architecture", file=sys.stderr)
-    else:
-        print(f"Render flow command: python3 scripts/tdq_archify.py render --candidate <cand> --out docs/tdq/plan/{slug}-flow.html --document {doc_rel} --type flow", file=sys.stderr)
+    for r in reasons:
+        print(f"  - {r}", file=sys.stderr)
+    print(render_cmd, file=sys.stderr)
     print('Or bypass with user confirmation: --bo-qua-archify "<reason>"', file=sys.stderr)
     _warn(f"approve {target} refused by Archify gate ({status}): {man_rel} — approval unchanged.")
     sys.exit(1)
@@ -2327,12 +2506,14 @@ def _cli_approve(cwd, rest):
 
     if state.get(f"{target}_approved") and not _file_changed_since_approval(cwd, state, target):
         print(f"ℹ️ {target} was already approved at {state.get(f'{target}_approved_at')} — not recorded again, move on.")
-        if mode and state.get("implement_mode") != mode:
+        if mode and (state.get("implement_mode") != mode
+                     or (target == "plan" and effective_phase(state, warn=False) == "mode")):
             state["implement_mode"] = mode
             # This is exactly the path where the user answers gate `mode`: the plan was
             # approved earlier, this call only settles the mode → open the way to implement.
             if target == "plan" and effective_phase(state, warn=False) == "mode":
                 state["phase"] = "implement"
+                ghi_moc_phase(state, "implement")
             save(cwd, state, expect_updated_at=stamp)
             print(f"ℹ️ implement_mode updated to {mode}.")
         return
@@ -2415,11 +2596,13 @@ def _cli_approve(cwd, rest):
         # A6: quick never walks the phase table — push implement so that `set phase=idle`
         # at closing time becomes a terminal distinguishable from the idle before approval.
         state["phase"] = "implement"
+        ghi_moc_phase(state, "implement")
     if target == "plan":
         # The mode gate is split from the plan gate: approving the plan without settling the
         # mode stops at phase `mode` (explain + ask). A user who named the mode inside the
         # approval sentence skips that gate and goes straight to implement — never re-ask.
         state["phase"] = "implement" if state.get("implement_mode") else "mode"
+        ghi_moc_phase(state, state["phase"])
     save(cwd, state, expect_updated_at=stamp)
     if not by:
         _warn("Missing --by \"<the user's exact words>\" — record it so who approved what stays checkable.")
@@ -2819,6 +3002,105 @@ def _pop_lang_flag(argv):
     return rest, doc_lang
 
 
+def _pop_kind_flag(argv):
+    """Strip `--kind <build|investigate>` from `init` argv -> (rest, work_kind)."""
+    rest = []
+    work_kind = WORK_KIND_MAC_DINH
+    i = 0
+    while i < len(argv):
+        if argv[i] == "--kind":
+            if i + 1 >= len(argv):
+                _fail("Missing work kind after --kind (expected build|investigate).")
+            raw_kind = argv[i + 1]
+            cleaned = " ".join(raw_kind.strip().lower().split()) if isinstance(raw_kind, str) else ""
+            if cleaned not in WORK_KIND_ALIASES:
+                _fail(f"Invalid --kind: {raw_kind!r} (expected build|investigate).")
+            work_kind = WORK_KIND_ALIASES[cleaned]
+            i += 2
+            continue
+        rest.append(argv[i])
+        i += 1
+    return rest, work_kind
+
+
+_LOCKED_WORK_KIND_PHASES = ("spec", "plan", "mode", "implement", "qc", "report")
+
+
+def _validate_work_kind_set(state, raw_value):
+    """Normalize `set work_kind=...` and block mid-flight switches past analyze."""
+    new_kind = normalize_work_kind(raw_value)
+    old_kind = work_kind_hieu_luc(state, warn=False)
+    if new_kind == old_kind:
+        return new_kind
+    has_active = bool(state.get("active_request"))
+    phase = effective_phase(state, warn=False)
+    approved = any(state.get(k) for k in ("spec_approved", "plan_approved", "quick_approved"))
+    if has_active and (phase in _LOCKED_WORK_KIND_PHASES or approved):
+        if old_kind == "investigate" and new_kind == "build":
+            _fail(
+                "Cannot switch work_kind from 'investigate' to 'build' via `set` mid-flight. "
+                'Use: python3 scripts/tdq_state.py escalate-to-build --by "<user words>" [--inline-fix]'
+            )
+        _fail("Cannot switch work_kind from 'build' to 'investigate' after spec/plan approval or past analyze.")
+    _info(f"work_kind: {old_kind} -> {new_kind}")
+    return new_kind
+
+
+def _parse_escalate_args(rest):
+    """Parse flags for `escalate-to-build` -> (by, inline_fix, want_json)."""
+    rest, want_json = _pop_json_flag(list(rest))
+    by = ""
+    inline_fix = False
+    i = 0
+    usage = 'escalate-to-build --by "<user words>" [--inline-fix] [--json]'
+    while i < len(rest):
+        arg = rest[i]
+        if arg == "--inline-fix":
+            inline_fix = True
+            i += 1
+            continue
+        if arg == "--by":
+            if i + 1 >= len(rest):
+                _fail(f"escalate-to-build: missing value after --by. Use: {usage}")
+            by = rest[i + 1].strip()
+            i += 2
+            continue
+        _fail(f"escalate-to-build: unexpected argument {arg!r}. Use: {usage}")
+    if not by:
+        _fail(f'escalate-to-build requires --by "<the user\'s own words>". Use: {usage}')
+    return by[:BY_MAX], inline_fix, want_json
+
+
+def _cli_escalate_to_build(cwd, rest):
+    """Upgrade an active `investigate` request to `build` with recorded attribution."""
+    by, inline_fix, want_json = _parse_escalate_args(rest)
+    state = load(cwd)
+    if not state or not state.get("active_request"):
+        _fail("No active TDQ request — run init first before escalate-to-build.")
+    stamp = state.get("updated_at")
+    cu = work_kind_hieu_luc(state, warn=False)
+    if cu == "build":
+        _warn("Request is already work_kind='build' — no escalation applied.")
+        _echo_state("escalate-to-build", state, want_json)
+        return
+    state["work_kind"] = "build"
+    state["escalated_from_investigate"] = {
+        "by": by,
+        "at": now_iso(),
+        "inline_fix": inline_fix,
+    }
+    lane = effective_lane(state, warn=False)
+    if not inline_fix and lane == "full":
+        if state.get("plan_approved"):
+            state["plan_approved"] = False
+        if effective_phase(state, warn=False) in ("mode", "implement", "qc"):
+            state["phase"] = "plan"
+            ghi_moc_phase(state, "plan")
+    save(cwd, state, expect_updated_at=stamp)
+    _info(f"escalate-to-build: {cu} -> build (inline_fix={inline_fix}, lane={lane})")
+    _echo_state("escalate-to-build", state, want_json)
+
+
 def _echo_state(cmd, state, want_json):
     """Print the result of a state-writing command: a 1-line summary, or the whole JSON with --json."""
     if want_json:
@@ -3073,6 +3355,7 @@ def cli(argv):
     if cmd == "init":
         argv, want_json = _pop_json_flag(argv)
         argv, doc_lang = _pop_lang_flag(argv)
+        argv, work_kind = _pop_kind_flag(argv)
         argv, bo_qua_lsp = _pop_bo_qua_lsp(argv)
         if len(argv) < 2:
             _fail(f"Missing slug. Formula: {SLUG_FORMULA}")
@@ -3109,6 +3392,7 @@ def cli(argv):
                 _fail("Invalid lane. Accepts: nhanh|express|quick "  # i18n-allow
                       "(express mode) · chuyen-sau|deep|full (deep mode).")
             state["lane"] = lane
+        state["work_kind"] = work_kind
         state["doc_lang"] = doc_lang
         state["lsp_bo_qua"] = lsp_bo_qua
         save(cwd, state)
@@ -3141,6 +3425,8 @@ def cli(argv):
             if key == "muc_gat":
                 # Chuẩn hoá thay vì fail: giá trị lạ về `full`, đúng luật fail-closed.
                 value = normalize_muc_gat(value)
+            if key == "work_kind":
+                value = _validate_work_kind_set(state, value)
             if key == "muc_qc":
                 value = normalize_muc_qc(value)
                 # Logged only when the level actually MOVES, and only for this key: how deep QC
@@ -3183,6 +3469,9 @@ def cli(argv):
 
     if cmd == "eval-enable":
         return _cli_eval_enable(cwd, argv[1:])
+
+    if cmd == "escalate-to-build":
+        return _cli_escalate_to_build(cwd, argv[1:])
 
     if cmd in ("pause", "resume"):
         return _cli_implement_pause(cwd, cmd, argv[1:])
