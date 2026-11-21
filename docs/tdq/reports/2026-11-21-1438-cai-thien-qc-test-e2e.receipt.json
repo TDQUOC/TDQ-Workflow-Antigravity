@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
+    "sha256": "1a568746cccb32686781475f9ce8759b3530a4864422848e181879b8c5debd6f",
+    "bytes": 2860
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.html",
+    "sha256": "4a4d1da190a53ed3e18ce52bc969a98067658edc77a5a20ae8375cc3ca545778",
+    "bytes": 1247087
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 31 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1438-cai-thien-qc-test-e2e\\bao-cao.archify.md",
+        "line": 46,
+        "component": "prose",
+        "panelId": "lo-trinh-kpi"
+      },
+      "evidence": {
+        "reason": "Sentence has 31 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 31,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1438-cai-thien-qc-test-e2e.7b4348615b304e71a767a8e5826c149d.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2362,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

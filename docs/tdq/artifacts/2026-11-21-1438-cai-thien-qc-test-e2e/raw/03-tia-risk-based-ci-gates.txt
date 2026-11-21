@@ -1,0 +1,86 @@
+# RAW EXTRACT 03 - Risk-Based Testing, Test Impact Analysis (TIA) & CI Staged Gates
+# Tool: tdq-workflow-agy_tavily-primary/tavily_search (2026-11-21T15:13:58+07:00)
+# Query: "Test Impact Analysis" OR "risk-based testing" "changed" E2E CI staged gates smoke regression pytest
+
+---
+Title: Medium (Instawork Engineering - Test Impact Analysis: The Secret to Faster pytest Runs)
+ID: 52e3d3-00
+URL: https://engineering.instawork.com/test-impact-analysis-the-secret-to-faster-pytest-runs-e44021306603
+Content: ### Conclusion
+
+Test Impact Analysis (TIA) is a powerful technique to optimize the Test Execution step in CI pipelines. It had a positive impact on our usage of CI resources and developer productivity, making our median test execution time 2x faster. While TIA is standard in other frameworks, it’s still emerging in the pytest ecosystem. Tools like Testmon are bridging this gap, bringing TIA to pytest users. [...] Enter Test Impact Analysis (TIA)—a smart approach that runs only the tests affected by code changes. This technique, embraced by tools like Testmon, has helped us halve our median test execution time, optimizing our CI pipeline. In this blog post, we’ll unravel the magic of TIA and share tips on implementing it.
+
+## TIA: How It Works [...] TIA works by analyzing the code changes in a pull request and identifying the tests that are impacted by these changes. It then runs only these affected tests, skipping the rest of the test suite. Testmon is a tool that implements TIA using coverage data and advanced techniques to map dependencies between code and tests. Here’s a high-level overview of how it works in practice:
+
+For a more detailed understanding of how Testmon determines affected tests, refer to this blog post from Testmon.
+
+---
+Title: Regression Testing Strategy 2026 | Total Shift Left
+ID: 729c9a-01
+URL: https://totalshiftleft.com/blog/regression-testing-strategy-enterprise-guide
+Content: 60-70% of testing effort goes to regression — most of it wasted on low-risk, perpetually-passing tests that haven't caught a defect in 12 months
+ Risk-based selection catches 90% of defects with 30% of the suite — prioritise by business impact, change frequency, and defect history
+ Tiered execution is non-negotiable — smoke tests on every commit, core regression on PR merge, full regression before release candidates [...] Four proven approaches — tiered execution (smoke, core, full suites mapped to pipeline stages), test impact analysis (only run tests affected by the code change), parallel execution (distribute tests across multiple environments), and suite hygiene (remove redundant, obsolete, and perpetually-passing tests that add time without value).
+
+### What is the difference between regression testing and retesting? [...] Effective regression strategy rests on four pillars: risk-based selection, tiered execution, test impact analysis, and suite lifecycle management. Get all four right and you'll cut regression cycle time by 70% while catching more defects, not fewer.
+
+### Pillar 1: Risk-Based Test Selection
+
+---
+Title: Regression testing: Automate it with CI/CD - CircleCI
+ID: ee73c8-02
+URL: https://circleci.com/blog/regression-testing-and-how-to-automate-it-with-ci
+Content: Rather than running the full suite, the team picks a subset based on impact analysis: which modules did this change touch, and which tests cover those modules? Selective regression is the pragmatic choice for time-constrained runs or PRs that affect isolated, well-bounded parts of the codebase. The risk is that if the impact analysis misses a dependency, the test run misses the bug.
+
+### Complete regression testing [...] | Selective | A targeted subset of modules based on impact analysis | Time-constrained runs, isolated module changes | Faster, but depends on accurate impact analysis |
+| Complete | The entire regression suite end to end | Major releases, foundational changes | Highest confidence, but slowest |
+| Unit regression | A single module’s unit tests after changes | First CI gate, every commit | Cheap and fast, but limited to unit-level behavior | [...] Say a team maintains a web application with a checkout flow. The backend is Python, tested with pytest. End-to-end tests run in Cypress. Their CI pipeline on CircleCI uses the gated structure from the previous section.
+
+A developer refactors the pricing calculation logic, consolidating discount code handling that had been duplicated across several files into a single `apply_discount()` function. The change looks clean. The new unit tests pass. The developer pushes to a feature branch.
+
+---
+Title: The Smoke, Sanity, and Regression Testing Triad
+ID: 02f9f9-03
+URL: https://www.cloudbees.com/blog/the-smoke-sanity-and-regression-testing-triad
+Content: Smart Tests uses machine learning to identify which smoke tests have the highest risk of failure, helping teams focus the most critical areas first. By surfacing high-impact tests early, development teams can detect major issues faster and streamline the path to deeper QA.
+
+Sanity Testing: Smart Tests Eliminate Redundant Test Cycles [...] They verify every existing detailed functionality and feature of the application.
+ Regression testing should be well documented.
+
+Regression testing is the final gate before release, ensuring new changes haven’t disrupted existing functionality. It safeguards product integrity across the entire application.
+
+## Combining Smoke, Sanity, and Regression Testing in Your SDLC for Faster, Safer Releases
+
+---
+Title: Smoke Test in Software Explained September 2026 | Minitap
+ID: 675110-04
+URL: https://www.minitap.ai/magazine/smoke-testing-vs-regression-testing
+Content: | Smoke | Regression | Sanity |
+ --- 
+| Question | Build alive? | Still working? | Fix works? |
+| Depth | Shallow | Deep | Narrow |
+| Runtime | Minutes | Hours | Minutes |
+| Role | Gate | Superset | Subset |
+
+## Smoke Testing in Agile and CI/CD
+
+Agile sprints ship in days, and CI/CD pipelines push builds multiple times a day. Manual smoke checks cannot keep pace, so automation becomes the only way the gate survives contact with the release schedule. [...] Smoke and regression testing sit at different depths. Smoke asks if the build is alive, skims a handful of critical paths, and runs in minutes. Regression asks if everything still works after a change, covers the full feature surface, and can take hours. Smoke is a subset of regression, not a rival: if smoke fails, regression is wasted time. The complete regression testing guide covers what regression absorbs, including sanity testing, which just confirms one fix. [...] The smoke suite triggers right after a build compiles, before that build earns a spot in staging or a full regression run. See how to catch build failures with automated smoke testing. One critical failure halts the pipeline and notifies the team immediately, instead of letting a broken build travel further downstream.
+
+---
+Title: smoke test | Software Engineering Glossary – Real Python
+ID: 843f34-05
+URL: https://realpython.com/ref/software-engineering-glossary/smoke-test
+Content: A Python developer typically meets smoke tests in two places. The first is a CI job that runs immediately after every build. The second is a post-deploy job that runs against a staging or production environment right after a release.
+
+The CI form is usually a handful of tests pulled from an existing pytest suite, tagged with a marker so the runner can select them on demand: [...] - Bloat. Smoke suites accrete tests until they take ten minutes to run and lose their fast-feedback value. The discipline is deletion. If a check does not gate the rest of the pipeline, it belongs in the full regression suite, not the smoke suite.
+- Flakiness. A flaky test in the smoke suite is worse than no smoke suite at all, because it trains the team to retry-and-ignore the gate. A check that fails for environmental reasons more than once a month should be moved out or fixed. [...] A GitHub Actions job then runs `pytest -m smoke --tb=short` ahead of the full suite. If those two tests fail, the rest of the suite never starts. The same pattern works in GitLab CI, Jenkins, or any other runner that can scope a job to a marker.
+
+The post-deploy form is often a small standalone script that hits the deployed service and exits non-zero on the first broken critical path. It can be written with only the standard library:
+
+---
+Title: Comparing Smoke Tests to Regression Tests
+ID: f1a4f3-06
+URL: https://www.harness.io/blog/comparing-smoke-tests-to-regression-tests
+Content: ## Key Differences Between the Two
+
+Smoke testing is a quick and focused test to check if the build is stable enough to proceed with further testing, whereas regression testing is a more extensive test to ensure that changes or modifications do not negatively impact the existing functionality of the software. Both types of testing are essential in software development to maintain software quality and minimize the risk of introducing new defects. [...] The overarching purpose of smoke testing is to determine if the software build is stable enough to proceed with further testing activities. By conducting smoke tests, testing teams can quickly assess the stability and reliability of the software, providing immediate feedback on its readiness for additional testing phases. Smoke testing serves as an early indicator of potential issues or defects, enabling development teams to address critical issues promptly before investing time and resources [...] Feature flags, also known as feature toggles or feature gates, are mechanisms used in software development to control the availability and behavior of specific features within an application. Feature flags play a role in both smoke testing and regression testing, depending on which method of testing you choose.

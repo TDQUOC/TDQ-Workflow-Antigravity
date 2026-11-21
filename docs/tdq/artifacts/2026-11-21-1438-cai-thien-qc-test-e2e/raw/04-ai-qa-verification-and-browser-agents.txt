@@ -1,0 +1,314 @@
+# RAW EXTRACT 04 - AI QA Verification & Browser Agents
+# Tool: tdq-workflow-agy_tavily-primary/tavily_extract (2026-11-21T15:14:12+07:00)
+
+Title: GitHub - vercel-labs/agent-browser: Browser automation CLI for AI agents · GitHub
+URL: https://github.com/vercel-labs/agent-browser
+Content: undefined
+Raw Content: [Skip to content](#start-of-content)   
+ 
+ 
+
+## Navigation Menu
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fagent-browser)
+
+[Sign in](/login?return_to=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fagent-browser)
+
+[Sign up](/signup?ref_cta=Sign+up&ref_loc=header+logged+out&ref_page=%2F%3Cuser-name%3E%2F%3Crepo-name%3E&source=header-repo&source_repo=vercel-labs%2Fagent-browser)
+
+Appearance settings
+
+You signed in with another tab or window. Reload to refresh your session. You signed out in another tab or window. Reload to refresh your session. You switched accounts on another tab or window. Reload to refresh your session. Dismiss alert
+
+{{ message }}
+
+## Repository navigation
+
+ 
+
+![vercel-labs](https://avatars.githubusercontent.com/u/108547162?s=60&v=4)
+
+**[agent-browser](/vercel-labs/agent-browser)**
+
+Public
+
+* [Notifications](/login?return_to=%2Fvercel-labs%2Fagent-browser)You must be signed in to change notification settings
+* [Fork3.4k (3.4k)](/login?return_to=%2Fvercel-labs%2Fagent-browser)
+* [Star49.1k (49.1k)](/login?return_to=%2Fvercel-labs%2Fagent-browser)You must be signed in to star a repository
+
+## About
+
+Browser automation CLI for AI agents
+
+[agent-browser.dev](https://agent-browser.dev)
+
+### Resources
+
+[Readme](#readme-ov-file)
+
+[Apache-2.0 license](#Apache-2.0-1-ov-file)
+
+[Activity](/vercel-labs/agent-browser/activity)
+
+[Custom properties](/vercel-labs/agent-browser/custom-properties)
+
+### Stars
+
+**49.1k** stars
+
+### Watchers
+
+**109** watching
+
+### Forks
+
+[**3.4k** forks](/vercel-labs/agent-browser/forks)
+
+[Report repository](/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fagent-browser&report=vercel-labs+%28user%29)
+
+[Branches](/vercel-labs/agent-browser/branches)[Tags](/vercel-labs/agent-browser/tags)
+
+Open more actions menu
+
+## Latest commit
+
+## History
+
+[823 Commits](/vercel-labs/agent-browser/commits/main/)
+
+823 Commits
+
+## Folders and files
+
+| Name | Name | Last commit message | Last commit date |
+| --- | --- | --- | --- |
+| [.agents/skills/technical-writer](/vercel-labs/agent-browser/tree/main/.agents/skills/technical-writer "This path skips through empty directories") | [.agents/skills/technical-writer](/vercel-labs/agent-browser/tree/main/.agents/skills/technical-writer "This path skips through empty directories") |  |  |
+| [.claude-plugin](/vercel-labs/agent-browser/tree/main/.claude-plugin ".claude-plugin") | [.claude-plugin](/vercel-labs/agent-browser/tree/main/.claude-plugin ".claude-plugin") |  |  |
+| [.github](/vercel-labs/agent-browser/tree/main/.github ".github") | [.github](/vercel-labs/agent-browser/tree/main/.github ".github") |  |  |
+| [.husky](/vercel-labs/agent-browser/tree/main/.husky ".husky") | [.husky](/vercel-labs/agent-browser/tree/main/.husky ".husky") |  |  |
+| [benchmarks](/vercel-labs/agent-browser/tree/main/benchmarks "benchmarks") | [benchmarks](/vercel-labs/agent-browser/tree/main/benchmarks "benchmarks") |  |  |
+| [bin](/vercel-labs/agent-browser/tree/main/bin "bin") | [bin](/vercel-labs/agent-browser/tree/main/bin "bin") |  |  |
+| [cli](/vercel-labs/agent-browser/tree/main/cli "cli") | [cli](/vercel-labs/agent-browser/tree/main/cli "cli") |  |  |
+| [docker](/vercel-labs/agent-browser/tree/main/docker "docker") | [docker](/vercel-labs/agent-browser/tree/main/docker "docker") |  |  |
+| [docs](/vercel-labs/agent-browser/tree/main/docs "docs") | [docs](/vercel-labs/agent-browser/tree/main/docs "docs") |  |  |
+| [evals](/vercel-labs/agent-browser/tree/main/evals "evals") | [evals](/vercel-labs/agent-browser/tree/main/evals "evals") |  |  |
+| [examples](/vercel-labs/agent-browser/tree/main/examples "examples") | [examples](/vercel-labs/agent-browser/tree/main/examples "examples") |  |  |
+| [packages](/vercel-labs/agent-browser/tree/main/packages "packages") | [packages](/vercel-labs/agent-browser/tree/main/packages "packages") |  |  |
+| [patches](/vercel-labs/agent-browser/tree/main/patches "patches") | [patches](/vercel-labs/agent-browser/tree/main/patches "patches") |  |  |
+| [scripts](/vercel-labs/agent-browser/tree/main/scripts "scripts") | [scripts](/vercel-labs/agent-browser/tree/main/scripts "scripts") |  |  |
+| [skill-data](/vercel-labs/agent-browser/tree/main/skill-data "skill-data") | [skill-data](/vercel-labs/agent-browser/tree/main/skill-data "skill-data") |  |  |
+| [skills/agent-browser](/vercel-labs/agent-browser/tree/main/skills/agent-browser "This path skips through empty directories") | [skills/agent-browser](/vercel-labs/agent-browser/tree/main/skills/agent-browser "This path skips through empty directories") |  |  |
+| [test](/vercel-labs/agent-browser/tree/main/test "test") | [test](/vercel-labs/agent-browser/tree/main/test "test") |  |  |
+| [.claude](/vercel-labs/agent-browser/blob/main/.claude ".claude") | [.claude](/vercel-labs/agent-browser/blob/main/.claude ".claude") |  |  |
+| [.gitattributes](/vercel-labs/agent-browser/blob/main/.gitattributes ".gitattributes") | [.gitattributes](/vercel-labs/agent-browser/blob/main/.gitattributes ".gitattributes") |  |  |
+| [.gitignore](/vercel-labs/agent-browser/blob/main/.gitignore ".gitignore") | [.gitignore](/vercel-labs/agent-browser/blob/main/.gitignore ".gitignore") |  |  |
+| [.node-version](/vercel-labs/agent-browser/blob/main/.node-version ".node-version") | [.node-version](/vercel-labs/agent-browser/blob/main/.node-version ".node-version") |  |  |
+| [.prettierrc](/vercel-labs/agent-browser/blob/main/.prettierrc ".prettierrc") | [.prettierrc](/vercel-labs/agent-browser/blob/main/.prettierrc ".prettierrc") |  |  |
+| [AGENTS.md](/vercel-labs/agent-browser/blob/main/AGENTS.md "AGENTS.md") | [AGENTS.md](/vercel-labs/agent-browser/blob/main/AGENTS.md "AGENTS.md") |  |  |
+| [CHANGELOG.md](/vercel-labs/agent-browser/blob/main/CHANGELOG.md "CHANGELOG.md") | [CHANGELOG.md](/vercel-labs/agent-browser/blob/main/CHANGELOG.md "CHANGELOG.md") |  |  |
+| [LICENSE](/vercel-labs/agent-browser/blob/main/LICENSE "LICENSE") | [LICENSE](/vercel-labs/agent-browser/blob/main/LICENSE "LICENSE") |  |  |
+| [README.md](/vercel-labs/agent-browser/blob/main/README.md "README.md") | [README.md](/vercel-labs/agent-browser/blob/main/README.md "README.md") |  |  |
+| [agent-browser.schema.json](/vercel-labs/agent-browser/blob/main/agent-browser.schema.json "agent-browser.schema.json") | [agent-browser.schema.json](/vercel-labs/agent-browser/blob/main/agent-browser.schema.json "agent-browser.schema.json") |  |  |
+| [package.json](/vercel-labs/agent-browser/blob/main/package.json "package.json") | [package.json](/vercel-labs/agent-browser/blob/main/package.json "package.json") |  |  |
+| [pnpm-lock.yaml](/vercel-labs/agent-browser/blob/main/pnpm-lock.yaml "pnpm-lock.yaml") | [pnpm-lock.yaml](/vercel-labs/agent-browser/blob/main/pnpm-lock.yaml "pnpm-lock.yaml") |  |  |
+| [pnpm-workspace.yaml](/vercel-labs/agent-browser/blob/main/pnpm-workspace.yaml "pnpm-workspace.yaml") | [pnpm-workspace.yaml](/vercel-labs/agent-browser/blob/main/pnpm-workspace.yaml "pnpm-workspace.yaml") |  |  |
+|  |
+
+## Repository files navigation
+
+# agent-browser
+
+Browser automation for AI agents: open pages, read them as an accessibility tree, and act on elements from the shell.
+
+[![Vercel Labs Product](https://camo.githubusercontent.com/3cac7b7cc616c818251f5d3807a88b9c0824c0a79261dace371230107e766ae1/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4c4142532d50524f445543542d3061306130612e7376673f7374796c653d666f722d7468652d6261646765266c6f676f3d56657263656c266c6162656c436f6c6f723d303030303030)](https://vercel.com/labs#labs-products) [![npm version: agent-browser](https://camo.githubusercontent.com/0b0f331fb1f6d65fa57e56ffeed641de8c918f69d1b5211639b8f4c9dac781e4/68747470733a2f2f696d672e736869656c64732e696f2f6e706d2f762f6167656e742d62726f777365722e7376673f7374796c653d666f722d7468652d6261646765266c6162656c436f6c6f723d303030303030)](https://www.npmjs.com/package/agent-browser) [![License: Apache-2.0](https://camo.githubusercontent.com/2cbf32f91db96844ac78ba4c990bebb53c0136f287afd3cced356a27b824f705/68747470733a2f2f696d672e736869656c64732e696f2f6769746875622f6c6963656e73652f76657263656c2d6c6162732f6167656e742d62726f777365722e7376673f7374796c653d666f722d7468652d6261646765266c6162656c436f6c6f723d303030303030)](https://github.com/vercel-labs/agent-browser/blob/main/LICENSE) [![npm downloads per month: agent-browser](https://camo.githubusercontent.com/23f780ac97d7c388e7da2dbf98c485d04b1490244308f6a8eae79457b87e358c/68747470733a2f2f696d672e736869656c64732e696f2f6e706d2f646d2f6167656e742d62726f777365722e7376673f7374796c653d666f722d7468652d6261646765266c6162656c436f6c6f723d303030303030266c6162656c3d6e706d253230646f776e6c6f616473)](https://www.npmjs.com/package/agent-browser) [![skills.sh](https://camo.githubusercontent.com/fc21074329e5748931d75017fe5bdba63a7526ad3f1104d44d394753bdaf0cb0/68747470733a2f2f736b696c6c732e73682f622f76657263656c2d6c6162732f6167656e742d62726f777365723f7374796c653d666f722d7468652d6261646765)](https://skills.sh/vercel-labs/agent-browser)
+
+agent-browser is a native Rust CLI that gives an AI agent a browser it can drive one command at a time. `snapshot` returns the page as compact text with a ref such as `@e1` for each element. The agent acts on a ref, reads the page again to check the result, and repeats. The browser stays open between commands, so each step is one short shell call.
+
+## Install
+
+```
+# download Chrome for Testing (first time only) #
+```
+
+* **Homebrew:** `brew install agent-browser`, then `agent-browser install`.
+* **Linux:** `agent-browser install --with-deps` also installs the browser's system libraries.
+* **No install:** `npx agent-browser open example.com`.
+
+Project installs, building from source, `upgrade`, and `doctor` are covered in [Installation](https://agent-browser.dev/installation).
+
+## Quick start
+
+```
+# interactive elements, each with a ref # # act on a ref from that snapshot # # check the result #
+```
+
+The snapshot for `example.com`:
+
+```
+- link "Learn more" [ref=e1] 
+```
+
+* Refs describe the page at the time of the snapshot. After navigation or a DOM change, take a new snapshot before using refs again.
+* CSS selectors, text, XPath, and semantic locators also work, for example `agent-browser find role button click --name "Submit"`. See [Selectors](https://agent-browser.dev/selectors).
+* A click fails, instead of reporting success, when the target is hidden, disabled, outside the viewport, or covered by another element such as a consent banner. Dismiss the covering element, take a new snapshot, and retry.
+
+The full walkthrough is in the [quick start](https://agent-browser.dev/quick-start).
+
+## How it works
+
+The CLI sends each command to a background daemon that starts on the first command and controls the browser over the Chrome DevTools Protocol. Each `--session` gets its own daemon and browser. By default, the daemon closes a headless browser and exits after one hour without commands, saving state first when [session persistence](https://agent-browser.dev/sessions) is configured.
+
+Chrome for Testing is the default browser. You can also attach to a running Chrome with `--cdp` or `--auto-connect` ([CDP mode](https://agent-browser.dev/cdp-mode)), select the [Lightpanda](https://agent-browser.dev/engines/lightpanda) or [Obscura](https://agent-browser.dev/engines/obscura) engine with `--engine`, drive Mobile Safari in the [iOS Simulator](https://agent-browser.dev/ios), or use a cloud browser provider such as [Browserbase](https://agent-browser.dev/providers/browserbase), [Browserless](https://agent-browser.dev/providers/browserless), [Browser Use](https://agent-browser.dev/providers/browser-use), [Kernel](https://agent-browser.dev/providers/kernel), or [AgentCore](https://agent-browser.dev/providers/agentcore).
+
+## For AI agents
+
+The CLI ships skills that match its version:
+
+```
+# the core loop, refs, waiting, and common workflows ## one reference, such as the full command list # # adds the full command reference and templates ## specialized skills: electron, slack, dogfood, and more #
+```
+
+Install the discovery skill into an agent harness from [skills.sh](https://skills.sh/vercel-labs/agent-browser):
+
+```
+npx skills add vercel-labs/agent-browser
+```
+
+The installed skill is a thin stub that tells the agent to load `agent-browser skills get core`, so its instructions always match the installed CLI. Or add this to your `AGENTS.md`:
+
+```
+`agent-browser ` `agent-browser skills get core `
+```
+
+For MCP clients, `agent-browser mcp` starts an MCP server over stdio. See [MCP server](https://agent-browser.dev/commands#mcp-server).
+
+Run `agent-browser --help` for the full list, or `agent-browser  --help` for one command.
+
+| Group | Commands | Docs |
+| --- | --- | --- |
+| Navigate and read | `open`, `back`, `forward`, `reload`, `read`, `snapshot`, `get`, `is` | [Core](https://agent-browser.dev/commands#core), [Snapshots](https://agent-browser.dev/snapshots) |
+| Interact | `click`, `dblclick`, `fill`, `type`, `press`, `keyboard`, `hover`, `focus`, `select`, `check`, `uncheck`, `scroll`, `drag`, `upload`, `mouse`, `find` | [Core](https://agent-browser.dev/commands#core), [Find elements](https://agent-browser.dev/commands#find-elements) |
+| Wait | `wait` | [Wait](https://agent-browser.dev/commands#wait) |
+| Capture | `screenshot`, `pdf`, `record`, `download`, `diff` | [Recording](https://agent-browser.dev/recording), [Diffing](https://agent-browser.dev/diffing), [Files](https://agent-browser.dev/files) |
+| Page and network state | `cookies`, `storage`, `network`, `set`, `clipboard`, `eval`, `pushstate` | [Network](https://agent-browser.dev/network), [Settings](https://agent-browser.dev/commands#settings) |
+| Tabs, frames, and dialogs | `tab`, `frame`, `dialog` | [Tabs and frames](https://agent-browser.dev/commands#tabs-frames) |
+| Debug and performance | `console`, `errors`, `highlight`, `inspect`, `trace`, `profiler`, `vitals`, `react`, `a11y` | [Debugging](https://agent-browser.dev/debugging), [Profiler](https://agent-browser.dev/profiler), [React](https://agent-browser.dev/react) |
+| Sessions and auth | `session`, `state`, `auth`, `profiles`, `confirm`, `deny` | [Sessions](https://agent-browser.dev/sessions), [Security](https://agent-browser.dev/security) |
+| Agents and integrations | `skills`, `mcp`, `webmcp`, `flow`, `chat`, `batch`, `plugin` | [Skills](https://agent-browser.dev/skills), [WebMCP](https://agent-browser.dev/webmcp), [Plugins](https://agent-browser.dev/plugins) |
+| Observe | `stream`, `dashboard` | [Streaming](https://agent-browser.dev/streaming), [Dashboard](https://agent-browser.dev/dashboard) |
+| Setup | `install`, `upgrade`, `doctor`, `connect`, `close` | [Installation](https://agent-browser.dev/installation) |
+
+Flags, environment variables, and `agent-browser.json` are documented in [Configuration](https://agent-browser.dev/configuration).
+
+Native binaries ship for macOS (ARM64, x64), Linux (ARM64, x64, glibc and musl), and Windows (x64). The npm package picks the right binary for the host.
+
+Building from source requires Node.js 24 or later, pnpm 11 or later, and Rust:
+
+```
+# builds the dashboard and the native CLI #
+```
+
+Run the Rust checks from `cli/`:
+
+```
+test test # launches real headless Chrome #
+```
+
+[AGENTS.md](/vercel-labs/agent-browser/blob/main/AGENTS.md) lists the files to update with each change, the docs checks, and the release process.
+
+* [agent-browser.dev](https://agent-browser.dev): introduction, guides, and reference
+* [Commands](https://agent-browser.dev/commands) and [Configuration](https://agent-browser.dev/configuration)
+* [Security](https://agent-browser.dev/security): the auth vault, domain allowlists, action policies, and content boundaries
+* [Next.js and Vercel](https://agent-browser.dev/next) and [eve](https://agent-browser.dev/eve): running agent-browser in Vercel Sandbox and eve agents
+* [Changelog](/vercel-labs/agent-browser/blob/main/CHANGELOG.md)
+
+## About
+
+Browser automation CLI for AI agents
+
+[agent-browser.dev](https://agent-browser.dev)
+
+### Resources
+
+[Readme](#readme-ov-file)
+
+[Apache-2.0 license](#Apache-2.0-1-ov-file)
+
+[Activity](/vercel-labs/agent-browser/activity)
+
+[Custom properties](/vercel-labs/agent-browser/custom-properties)
+
+### Stars
+
+**49.1k** stars
+
+### Watchers
+
+**109** watching
+
+### Forks
+
+[**3.4k** forks](/vercel-labs/agent-browser/forks)
+
+[Report repository](/contact/report-content?content_url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fagent-browser&report=vercel-labs+%28user%29)
+
+## Used by
+
+You can’t perform that action at this time.
+
+ 
+
+---
+# Tool: search_web fallback (2026-11-21T15:14:15+07:00 - 15:15:45+07:00)
+# Queries: obra/superpowers verification-before-completion, browserbase/stagehand, browser-use/browser-use
+
+1. obra/superpowers — verification-before-completion/SKILL.md
+URL: https://github.com/obra/superpowers/blob/main/skills/verification-before-completion/SKILL.md
+Core verbatim rules extracted via search_web:
+- Overview: "Core principle: Evidence before claims, always. Violating the letter of this rule is violating the spirit of this rule."
+- The Iron Law:
+  "NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE"
+  "If you haven't run the verification command in this message, you cannot claim it passes."
+- The Gate Function:
+  "BEFORE claiming any status or expressing satisfaction:
+  1. IDENTIFY: What command proves this claim?
+  2. RUN: Execute the FULL command (fresh, complete)
+  3. READ: Full output, check exit code, count failures
+  4. VERIFY: Does output confirm the claim?
+     - If NO: State actual status with evidence
+     - If YES: State claim WITH evidence
+  5. ONLY THEN: Make the claim
+  Skip any step = lying, not verifying"
+- Common Failures Matrix:
+  * Tests pass -> Requires: Test command output: 0 failures | Not Sufficient: Previous run, "should pass"
+  * Linter clean -> Requires: Linter output: 0 errors | Not Sufficient: Partial check, extrapolation
+  * Build succeeds -> Requires: Build command: exit 0 | Not Sufficient: Linter passing, logs look good
+  * Bug fixed -> Requires: Test original symptom: passes | Not Sufficient: Code changed, assumed fixed
+  * Regression test works -> Requires: Red-green cycle verified | Not Sufficient: Test passes once
+  * Agent completed -> Requires: VCS diff shows changes | Not Sufficient: Agent reports "success"
+  * Requirements met -> Requires: Line-by-line checklist | Not Sufficient: Tests passing
+- Red Flags - STOP:
+  * Using "should", "probably", "seems to"
+  * Expressing satisfaction before verification ("Great!", "Perfect!", "Done!", etc.)
+  * About to commit/push/PR without verification
+  * Trusting agent success reports
+  * Relying on partial verification
+  * Thinking "just this once" / Tired and wanting work over
+  * ANY wording implying success without having run verification
+
+2. Stagehand (browserbase/stagehand)
+URL: https://github.com/browserbase/stagehand
+- Hybrid SDK combining deterministic Playwright-style code with 3 surgical AI primitives:
+  * act({ instruction }): plain-English DOM action interpretation.
+  * extract({ instruction, schema }): scrapes and validates output against strict Zod (TS) or Pydantic (Python) schema.
+  * observe({ instruction }): inspects current page context and returns actionable elements for next deterministic/AI step.
+- Self-Healing Selectors: detects broken recorded locators when UI changes and re-infers element path at runtime.
+- Action Caching: caches act(), observe(), extract() outcomes when page content & instructions match -> zero token costs and near-instant replay.
+
+3. Browser Use (browser-use/browser-use)
+- Autonomous Python browser agent framework executing multi-step tasks via CDP (`BrowserSession`, `DomService`, watchdogs).
+- Combines 3 perception channels:
+  * CDP DOM serialization (`SimplifiedNode`, bounding boxes via `DOM.getBoxModel`, JS `buildDomTree.js`).
+  * Accessibility Tree (`Accessibility.getFullAXTree`) for semantic roles/names/states.
+  * Visual Screenshots (`Page.captureScreenshot`) with action highlighting overlays.
+- Companion `browser-harness` lets coding agents (Claude Code, Cursor, Codex) drive a logged-in local Chrome instance via persistent REPL/CDP.
