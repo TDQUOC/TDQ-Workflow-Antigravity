@@ -4134,10 +4134,18 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-0015dac9eafc5e30/invoked.timestamp",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-0015dac9eafc5e30/lib-tdq_dispatch",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-0015dac9eafc5e30/lib-tdq_dispatch.json",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-1d61a1fedf2dca8e/dep-lib-tdq_dispatch",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-1d61a1fedf2dca8e/invoked.timestamp",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-1d61a1fedf2dca8e/lib-tdq_dispatch",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-1d61a1fedf2dca8e/lib-tdq_dispatch.json",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-3d1195df5b3cbbe1/dep-lib-tdq_dispatch",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-3d1195df5b3cbbe1/invoked.timestamp",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-3d1195df5b3cbbe1/lib-tdq_dispatch",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-3d1195df5b3cbbe1/lib-tdq_dispatch.json",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-46ffad47cd2dbdfe/bin-tdq-dispatch",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-46ffad47cd2dbdfe/bin-tdq-dispatch.json",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-46ffad47cd2dbdfe/dep-bin-tdq-dispatch",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-46ffad47cd2dbdfe/invoked.timestamp",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-8c9957cc04beeb9d/bin-tdq-dispatch",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-8c9957cc04beeb9d/bin-tdq-dispatch.json",
     "Source file added: hooks/rust/tdq-dispatch/target/release/.fingerprint/tdq-dispatch-8c9957cc04beeb9d/dep-bin-tdq-dispatch",
@@ -4302,6 +4310,8 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libsyn-7369c4921da3172e.rmeta",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-0015dac9eafc5e30.rlib",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-0015dac9eafc5e30.rmeta",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-1d61a1fedf2dca8e.rlib",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-1d61a1fedf2dca8e.rmeta",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-3d1195df5b3cbbe1.rlib",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-3d1195df5b3cbbe1.rmeta",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/libtdq_dispatch-aa284cc0daeb0903.rlib",
@@ -4334,6 +4344,7 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/sha2-5e5f85d00d9d55c7.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/syn-7369c4921da3172e.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch-0015dac9eafc5e30.d",
+    "Source file added: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch-1d61a1fedf2dca8e.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch-3d1195df5b3cbbe1.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch-aa284cc0daeb0903.d",
     "Source file added: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch-af787f8d25b9d593.d",
@@ -4360,5 +4371,5 @@
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-21T09:57:23Z"
+  "checked_at": "2026-11-21T10:37:39Z"
 }

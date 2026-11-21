@@ -1,10 +1,10 @@
 # QC — quality control
 <!-- muc-luc-dong:
   Table of contents=12-23 · The QC level — what each level runs=24-49 ·
-  The three execution steps=50-78 · What to run=79-94 ·
-  The 120-second cap on smoke and runtime checks=95-112 ·
-  Investigation Evidence QC (`work_kind=investigate`)=113-115 · Recording the result=116-152 ·
-  Explicit Anti-Patterns=153-159 · When it FAILs=160
+  The three execution steps=50-78 · What to run=79-100 ·
+  The 120-second cap on smoke and runtime checks=101-108 ·
+  Investigation Evidence QC (`work_kind=investigate`)=109-111 · Recording the result=112-148 ·
+  Explicit Anti-Patterns=149-155 · When it FAILs=156
 -->
 
 QC means running things for real and pasting the evidence. There is no "probably fine".
@@ -85,30 +85,26 @@ fix that line to be measurable before doing QC. The four fixed items always run,
 the DoD:
 
 - QC-F1 — run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_meta_gate.py"` (`Auto Meta-Gate`, 1-line PASS/FAIL) and `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_test.py" smoke-e2e --changed` at `full`/`ultra`. Then run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_test.py" tron-bo --workers auto --fresh --reuse off` once after the last source edit (`lite`: touched area only). Record real output, `tdq_test.py so` (runs, radius misses), and executed/reused/joined counts; keep long logs on disk and quote failures.
-- QC-F2 — touched-area regression: for every `Chạm:` line in the plan, run tests for the <!-- i18n-allow: canonical field name of the plan -->
-  module holding the affected node. No test → write `KHÔNG CÓ TEST: <node>` as technical debt (not PASS). <!-- i18n-allow: canonical marker written into the qc file -->
-- QC-F3 — architectural constraints: verify every line of "Ràng buộc kiến trúc phải giữ" in spec §5 still holds. <!-- i18n-allow: canonical section name of the spec -->
-- QC-F4 — clean code: if source changed, apply the 5 SOLID questions in `skills/tdq-conventions/references/clean-code.md` ONLY when adding/editing classes or architectural layers; for procedural/script edits check 3 items: fail-closed errors, no duplicated logic, and functions <= 50 lines. Any "no" → fix code and record fix. No source edit → `KHÔNG ÁP DỤNG — không sửa file code`. <!-- i18n-allow: canonical marker written into the qc file -->
+- QC-F2 — touched-area regression: for every `Chạm:` line in the plan, run the tests of the <!-- i18n-allow: canonical field name of the plan -->
+  module holding the affected node. A node with no test → write `KHÔNG CÓ TEST: <node>` into the <!-- i18n-allow: canonical marker written into the qc file -->
+  QC file; that is technical debt to raise in the report and must not count as PASS.
+- QC-F3 — architectural constraints: every line of the "Ràng buộc kiến trúc phải giữ" block in <!-- i18n-allow: canonical section name of the spec -->
+  spec §5 is one check that the change did not break that line.
+- QC-F4 — clean code: if source changed, check the 5 SOLID questions in `skills/tdq-conventions/references/clean-code.md` ONLY when adding/editing classes or architectural layers (procedural edits check fail-closed errors, no duplicate logic, <= 50 lines/fn) and record every answer. No source file touched → write `KHÔNG ÁP DỤNG — không sửa file code`. <!-- i18n-allow: canonical marker written into the qc file -->
 
-Add no item outside DoD + `QC-F1..F4` ([ultracode](../../tdq-conventions/references/ultracode.md)). Only when DoD reaches them, check: edges/errors, `TDQ_LOG=1/0` + [vision-test-loop.md](vision-test-loop.md) (`take_snapshot` default), no placeholders ([skill eval](skill-eval.md)), and every `Dùng:` block's `Kiểm` + `Ra` artifact (missing artifact → set spec §3b `KHÔNG` + rerun `doc_lint.py --pair` + `approve spec`). <!-- i18n-allow: canonical field names of the plan -->
+Beyond the items above, add no item that is not in the DoD. Ultracode: [contract](../../tdq-conventions/references/ultracode.md). Run below only when DoD reaches them:
+- Edges/errors; [vision-test-loop.md](vision-test-loop.md) (`take_snapshot` default); no placeholders ([skill eval](skill-eval.md)).
+- Log service: on by default, timestamped, switchable off/down through config; verify `TDQ_LOG=1/0`.
+- Skill contract: for EVERY `Dùng:` block in the plan, run the command in its `Kiểm` field; the <!-- i18n-allow: canonical field names of the plan -->
+  artifact in its `Ra` field must exist. No artifact → change that spec §3b line to `KHÔNG`, rerun `doc_lint.py --pair` + `approve spec`. <!-- i18n-allow: canonical field names of the plan -->
 
 ## The 120-second cap on smoke and runtime checks
 
-Every smoke or runtime check at `ultra` runs under a **120-second cap per check**. Set it on the
-command itself (`timeout=120` in `subprocess.run`, or `timeout 120 <command>` in a shell), never
-by watching the clock yourself.
+Run every `ultra` smoke/runtime check under a **120-second cap per check** (`timeout=120` in `subprocess.run` or `timeout 120 <cmd>`). Hitting the cap:
 
-Hitting the cap:
-
-1. Kill the process. A check left running is a turn that never ends — this is the failure mode
-   the cap exists for, measured on this repo before the cap existed.
-2. Write it up as **FAIL**, with the command, the 120-second cap, and the tail of the output.
-   A timeout is never a silent skip and never a PASS.
-3. Then work out WHY it hung, and say which of the two it was: a real defect (a deadlock, a
-   process waiting on input nobody sends, an infinite loop) or a check that genuinely needs
-   longer than two minutes.
-
-**Never raise the cap on your own.** Only when step 3 shows the second case may you ask the user (naming check, measured duration, and proposed cap). Fix hangs; do not widen timeouts.
+1. Kill the process so the turn never hangs.
+2. Record **FAIL** with the command, 120-second cap, and tail (never silent skip/PASS).
+3. Diagnose hang vs slow check. **Never raise the cap on your own**: ask the user with measured duration first. Fix hangs; do not widen timeouts.
 
 ## Investigation Evidence QC (`work_kind=investigate`)
 When `work_kind=investigate`, keep the `lite/full/ultra` table above unchanged for scope depth and run `QC-I1..I4` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md); any diff outside `docs/tdq/` re-enables `QC-F1` + `QC-F4`.

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d2602554-d143-4964-a925-941da82226c8",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1536-nang-cap-qc-tester-e2e\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1536-nang-cap-qc-tester-e2e.1a725af99e3349bbb9559aa167482b42.html",
+  "specification": {
+    "sha256": "986ad72fa696f1056553326114f5d8bc0c6aa53ac0ce3247748a8259317a08bc",
+    "bytes": 3083
+  },
+  "artifact": {
+    "sha256": "2e3ad65a8621c188ed28db480a29e1274aaa654a348b3838c9d1deb04b168c6b",
+    "bytes": 1261875
+  },
+  "explainer": {
+    "preparedSha256": "50f0907d476bf722d382b98589ed65d238c29e3333d902e6b782792782088bf4",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-before-after",
+        "inline": true,
+        "sha256": "92409b73ff3966aeaf83c3548f89e5a75a2eacd65d87bdffc9f13444510933ea",
+        "bytes": 1356
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-verified",
+        "inline": true,
+        "sha256": "bf5d1bf48df61d58744b8a80333f7237b87715b825f8db51c96644a3854bce6d",
+        "bytes": 1421
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-release",
+        "inline": true,
+        "sha256": "dfdb65b7e6cfa9a787757fb73383059e08a4f32c646192cab6abed4ef0e66f6d",
+        "bytes": 1487
+      }
+    ]
+  }
+}

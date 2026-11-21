@@ -61,4 +61,4 @@ When Chrome DevTools MCP returns connection refused:
 - **Visual Diff / Bug Board**: skipped or `tdq_vision_diff.py` metrics + Bug Board status (`reproduced`/`verified`/`remaining`).
 
 Done when: Layer 1, 3, and 4 pass fail-closed cleanly (plus conditional Layer 2/5 when applicable) and findings are recorded.
-Next step: write QC evidence into `docs/tdq/qc/<slug>.md` or report blockers.
+Next step: the phase does not change — write QC evidence into `docs/tdq/qc/<slug>.md` or report blockers.

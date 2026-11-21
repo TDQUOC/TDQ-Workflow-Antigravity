@@ -1,4 +1,8 @@
 {
+  "skills/tdq-browser-test/references/scenario-template.md": {
+    "sha256": "216cbb0f5fc0bdb61046a330e0ac36978c3bba244833e5b4bd0b2d37195db0df",
+    "token": 729
+  },
   "skills/tdq-build/references/archify-lifecycle.md": {
     "sha256": "b70238037beefd2f7f36274427d2fedcd4d3ed6545a4ea20f9fc02ef9ca5e8b9",
     "token": 876
@@ -12,12 +16,12 @@
     "token": 475
   },
   "skills/tdq-build/references/qc.md": {
-    "sha256": "70d9dd00f9d945ecddfb9d0394cb4f3339e36e1a11f3462aa1a5ab3d981784d2",
-    "token": 3172
+    "sha256": "f3fe9902877695986bb069568c41e6a044ac6d117150166237114da4043d541c",
+    "token": 2986
   },
   "skills/tdq-build/references/report-template.md": {
-    "sha256": "89593645aba217d73f1916c8f9f11c46b41999e204e74f67a321c276a70a84d4",
-    "token": 2866
+    "sha256": "f9eb2f1fc8be052e1bb8c2be112d22e3c9f1c7660cb8b2198e04062e35202fe5",
+    "token": 2908
   },
   "skills/tdq-build/references/rules/chung.md": {
     "sha256": "7b474c108e68519c70bd0c69e2661f9ba657c00b3410a36ef97fd292310e3000",
@@ -84,8 +88,8 @@
     "token": 3138
   },
   "skills/tdq-build/references/vision-test-loop.md": {
-    "sha256": "8a508fb6cba3872d02d2a79d58015ac59973ff587e02f43583cbfd500fbbd1d3",
-    "token": 3198
+    "sha256": "38be4c529f31dfd429217d7592021c66aeb58ccd5f1c27758a9e963334e423b0",
+    "token": 2731
   },
   "skills/tdq-check-status/references/bang-lech.md": {
     "sha256": "a95ea851dc95e35322212ead7afd0bcd591fe1b39c94205425092b898f408476",

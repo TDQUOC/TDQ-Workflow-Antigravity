@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "73417036-198c-41b1-99dd-865b496b2a5d",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1536-nang-cap-qc-tester-e2e\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-21-1536-nang-cap-qc-tester-e2e-preview.040783b1f4e24e0b8dcf02a96aee3ef4.html",
+  "specification": {
+    "sha256": "0426a9f5865b3d640d0fef67535e2a4bd262b558c7c8e5514ff76f98af9e348b",
+    "bytes": 2752
+  },
+  "artifact": {
+    "sha256": "d28970c8e77266cf3eb017dfa6716f6504d07df7240214f1731369a659f48c00",
+    "bytes": 1256876
+  },
+  "explainer": {
+    "preparedSha256": "20509aee8455595d9f37d44c3dd3b2737dec7ea2529eab1bcd460d84fca2c3a9",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-truoc",
+        "inline": true,
+        "sha256": "8e059acc0d4ebcdfbc1e07b28ad7d36d0472630eb6af02611fb3b4b8380c4853",
+        "bytes": 1234
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sau",
+        "inline": true,
+        "sha256": "62b940ae36383e9938a683ab433494a6a60a24f93fb2b81740baec806d53b1c6",
+        "bytes": 1523
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-modules",
+        "inline": true,
+        "sha256": "fb735dd8efb54e756030420a87c0201369ade461210bea5f0a6ab159c76efd59",
+        "bytes": 1607
+      }
+    ]
+  }
+}

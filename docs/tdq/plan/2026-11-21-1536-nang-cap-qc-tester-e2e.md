@@ -3,7 +3,7 @@
 Ngày: 2026-11-21 · Spec: ../spec/2026-11-21-1536-nang-cap-qc-tester-e2e.md (bản 1.0, ĐÃ DUYỆT) · Lane: full
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: subagent — Winner: đội (gap 13.2 minutes: subagent 9.2p vs main 22.4p với hệ số 1.5x qua 11 task / 3 wave theo tdq_bench.py simulate) (ĐÃ CHỐT)
-Trạng thái plan: ĐANG CHẠY
+Trạng thái plan: HOÀN THÀNH
 
 > **Tóm tắt dễ hiểu:** Chia việc thành `4` đợt tuần tự từ nền tới phát hành: Wave 1 (`T1.1`–`T1.3`) vá `tdq_test.py` (`--workers auto`, `.html`, `.ruff_cache`, `smoke-e2e`), ẩn cột `[unavailable]` ở `tdq_timing.py`, và dựng `tdq_meta_gate.py`; Wave 2 (`T2.1`–`T2.3`) gắn marker `@pytest.mark.smoke`/`e2e` cho `15+` module test lõi kèm khóa lỗi `v0.103.0`; Wave 3 (`T3.1`–`T3.2`) cập nhật bộ luật QC (`full` mở `smoke`, `Dev Behavior QC Card`, Accessibility Snapshot); Wave 4 (`T4.1`–`T4.2`) bump `0.104.0`, khóa `token-budget.json` và build lại `plugins/tdq-workflow-agy/`.
 
@@ -178,7 +178,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P4 — Wave 4: Version Bump `0.104.0`, Token Budget & AGY Plugin Build
 
-- [~] **T4.1** (e8m) Uniform Mechanical Sweep: bump phiên bản `0.103.1` → `0.104.0` đồng bộ trong `6` tệp cấu hình, manifest và công cụ build (`Cargo.toml`, `.claude-plugin`, `.codex-plugin`, `tools/`) — Test: `py -3 -X utf8 -c "from pathlib import Path; files=['.claude-plugin/plugin.json','.codex-plugin/plugin.json','hooks/rust/tdq-dispatch/Cargo.toml','tools/patches/agy_manifests.py','tools/patches/__init__.py','tools/build_agy_plugin.py']; texts=[Path(f).read_text(encoding='utf-8') for f in files]; assert all('0.104.0' in t and '0.103.1' not in t for t in texts)"`
+- [x] **T4.1** (e8m) Uniform Mechanical Sweep: bump phiên bản `0.103.1` → `0.104.0` đồng bộ trong `6` tệp cấu hình, manifest và công cụ build (`Cargo.toml`, `.claude-plugin`, `.codex-plugin`, `tools/`) — Test: `py -3 -X utf8 -c "from pathlib import Path; files=['.claude-plugin/plugin.json','.codex-plugin/plugin.json','hooks/rust/tdq-dispatch/Cargo.toml','tools/patches/agy_manifests.py','tools/patches/__init__.py','tools/build_agy_plugin.py']; texts=[Path(f).read_text(encoding='utf-8') for f in files]; assert all('0.104.0' in t and '0.103.1' not in t for t in texts)"`
   - Req: `§2#7, Q7` · Ngoài phạm vi: `GIỮ NGUYÊN` code `.rs` và binary Rust đã biên dịch (`v0.103.1` runtime protocol không đổi); `Cargo.toml` chỉ nâng trường `version`
   - Chạm: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `hooks/rust/tdq-dispatch/Cargo.toml`, `tools/patches/agy_manifests.py`, `tools/patches/__init__.py`, `tools/build_agy_plugin.py`
   - Cần: `T2.1`, `T2.2`, `T2.3`, `T3.1`, `T3.2`
@@ -189,7 +189,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: cập nhật đồng bộ trường version ở manifest JSON, `Cargo.toml` dòng 3 và `tools/patches`
   - Ca góc hiểm & Assert: kiểm parse JSON hợp lệ trên `.claude-plugin/plugin.json` và `.codex-plugin/plugin.json`
 
-- [ ] **T4.2** (e12m) Cập nhật `README.md`, `UPSTREAM-TRACE.md`, `CHANGELOG.md` (`<= 500` dòng), đồng bộ `docs/tdq/token-budget.json`, biên dịch lại `plugins/tdq-workflow-agy/` và kiểm `agy.EXE plugin validate --strict` — Test: `py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_token_budget_lock.py tests/test_agy_plugin_validate.py -q`
+- [x] **T4.2** (e12m) Cập nhật `README.md`, `UPSTREAM-TRACE.md`, `CHANGELOG.md` (`<= 500` dòng), đồng bộ `docs/tdq/token-budget.json`, biên dịch lại `plugins/tdq-workflow-agy/` và kiểm `agy.EXE plugin validate --strict` — Test: `py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_token_budget_lock.py tests/test_agy_plugin_validate.py -q`
   - Req: `§2#7, §2#8, Q7` · Ngoài phạm vi: KHÔNG cài đè ra `~/.gemini/config/plugins/` và KHÔNG chạy `build_portable.py --sinh-main` hay `git push`
   - Chạm: `README.md`, `UPSTREAM-TRACE.md`, `CHANGELOG.md`, `docs/archive/`, `docs/tdq/token-budget.json`, `plugins/tdq-workflow-agy/`
   - Cần: `T4.1`
@@ -227,11 +227,11 @@ Không có file nóng nào nằm chồng lấn giữa các task trong cùng mộ
 
 ## Definition of Done
 
-- [ ] Q1 Wave 1 runner fixes (`--workers auto`, `.html` ở `DATA_EXTS`, `.ruff_cache` ở `EXCLUDED_DIRS`) pass — `py -3 -X utf8 -m pytest tests/test_tdq_test.py tests/test_tdq_test_receipt.py tests/test_smoke_e2e_routing.py -q`
-- [ ] Q2 `tdq_timing.py` ẩn `5` cột `[unavailable]` & giữ JSON v2 — `py -3 -X utf8 -m pytest tests/test_timing.py tests/test_phase1_contract.py -q`
-- [ ] Q3 Wave 2 `Changed-Flow E2E Smoke` (`>= 15` file marker `smoke`/`e2e`, `< 60s`, bắt lỗi `v0.103.0`) pass — `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
-- [ ] Q4 Wave 2 `Auto Meta-Gate` (`<= 15s`, `1` dòng `PASS`) & `doc_lint.py` kiểm cờ CLI Bug Board pass — `py -3 -X utf8 scripts/tdq_meta_gate.py --files docs/tdq/spec/2026-11-21-1536-nang-cap-qc-tester-e2e.md`
-- [ ] Q5 Wave 1–3 `skills/` & `agents/` hợp đồng + `i18n_check` pass — `py -3 -X utf8 scripts/i18n_check.py; py -3 -X utf8 -m pytest tests/test_muc_qc_qc_md.py tests/test_dev_qc_card_rules.py tests/test_clean_code_rule.py tests/test_vision_test_loop_doc.py -q`
-- [ ] Q6 Wave 3 Accessibility Tree Snapshot E2E (`take_snapshot` + `0` console errors trên Archify HTML preview) pass — `py -3 -X utf8 -m pytest tests/test_vision_test_loop_doc.py tests/test_devtool_mcp_integration.py -q` (+ kiểm MCP `chrome-devtools` trong phiên)
-- [ ] Q7 Version `0.104.0` đồng bộ (`CHANGELOG.md <= 500` dòng), `token-budget.json` & `agy plugin validate --strict` (`0` findings) pass — `py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_token_budget_lock.py tests/test_agy_plugin_validate.py -q`
-- [ ] Q8 `QC-F1`: `tron-bo --workers auto --fresh --reuse off` (`<= 420s`, `0` failed, `0` `INCOMPLETE`, `bo_sot=0`) & `TDQ_LOG=1/0` pass — `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers auto --fresh --reuse off`
+- [x] Q1 Wave 1 runner fixes (`--workers auto`, `.html` ở `DATA_EXTS`, `.ruff_cache` ở `EXCLUDED_DIRS`) pass — `py -3 -X utf8 -m pytest tests/test_tdq_test.py tests/test_tdq_test_receipt.py tests/test_smoke_e2e_routing.py -q`
+- [x] Q2 `tdq_timing.py` ẩn `5` cột `[unavailable]` & giữ JSON v2 — `py -3 -X utf8 -m pytest tests/test_timing.py tests/test_phase1_contract.py -q`
+- [x] Q3 Wave 2 `Changed-Flow E2E Smoke` (`>= 15` file marker `smoke`/`e2e`, `< 60s`, bắt lỗi `v0.103.0`) pass — `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
+- [x] Q4 Wave 2 `Auto Meta-Gate` (`<= 15s`, `1` dòng `PASS`) & `doc_lint.py` kiểm cờ CLI Bug Board pass — `py -3 -X utf8 scripts/tdq_meta_gate.py --files docs/tdq/spec/2026-11-21-1536-nang-cap-qc-tester-e2e.md`
+- [x] Q5 Wave 1–3 `skills/` & `agents/` hợp đồng + `i18n_check` pass — `py -3 -X utf8 scripts/i18n_check.py; py -3 -X utf8 -m pytest tests/test_muc_qc_qc_md.py tests/test_dev_qc_card_rules.py tests/test_clean_code_rule.py tests/test_vision_test_loop_doc.py -q`
+- [x] Q6 Wave 3 Accessibility Tree Snapshot E2E (`take_snapshot` + `0` console errors trên Archify HTML preview) pass — `py -3 -X utf8 -m pytest tests/test_vision_test_loop_doc.py tests/test_devtool_mcp_integration.py -q` (+ kiểm MCP `chrome-devtools` trong phiên)
+- [x] Q7 Version `0.104.0` đồng bộ (`CHANGELOG.md <= 500` dòng), `token-budget.json` & `agy plugin validate --strict` (`0` findings) pass — `py -3 -X utf8 -m pytest tests/test_token_budget.py tests/test_token_budget_lock.py tests/test_agy_plugin_validate.py -q`
+- [x] Q8 `QC-F1`: `tron-bo --workers auto --fresh --reuse off` (`<= 420s`, `0` failed, `0` `INCOMPLETE`, `bo_sot=0`) & `TDQ_LOG=1/0` pass — `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers auto --fresh --reuse off`

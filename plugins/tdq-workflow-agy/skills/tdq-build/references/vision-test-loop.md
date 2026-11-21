@@ -1,10 +1,10 @@
 # User-Scenario-Driven Testing and the Vision Test Loop
 <!-- muc-luc-dong:
-  Table of contents=13-23 · Trigger decision table=24-37 · Three-tier scenario framework=38-50 ·
-  Six banned test anti-patterns (ANTI-1 to ANTI-6)=51-77 ·
-  The 6 steps of the Vision Test Loop=78-114 · Bounding box to CSS mapping table=115-126 ·
-  Loop caps and Reviewer Sub-agent=127-132 · Human-in-the-loop escalations=133-145 ·
-  Self-check=146
+  Table of contents=13-23 · Trigger decision table=24-36 · Three-tier scenario framework=37-49 ·
+  Six banned test anti-patterns (ANTI-1 to ANTI-6)=50-76 ·
+  The 6 steps of the Vision Test Loop=77-97 · Bounding box to CSS mapping table=98-109 ·
+  Loop caps and Reviewer Sub-agent=110-114 · Human-in-the-loop escalations=115-125 ·
+  Self-check=126
 -->
 
 Soul: chất lượng > runtime > context cost · luật gốc: ../../tdq-conventions/references/soul.md <!-- i18n-allow: canonical Soul line -->
@@ -23,17 +23,16 @@ This reference gives a mechanical, step-by-step runbook so every model tier exec
 
 ## Trigger decision table
 
-Do not guess whether the Vision Test Loop applies; match the request against this table before coding.
-Every visual task with a reference artifact must run the loop so the user does not have to give multi-round feedback.
+Default UI mode: verify every web flow first via **Accessibility Tree Snapshot** (`take_snapshot`, `uid`-based `click`/`fill` fail-closed if hidden/disabled, and fail-closed `list_console_messages`). Treat `tdq_vision_diff.py` pixel comparison as **conditional** — run only when a visual reference or CSS layout change applies.
 
-| Reference artifact provided or mentioned | Loop required? | CLI flag to pass to `tdq_vision_diff.py` | Action when the artifact is missing or locked |
+| Reference artifact provided or mentioned | Pixel Loop required? | CLI flag / Action | When artifact is missing or locked |
 |---|---|---|---|
-| Local mockup image (`.png`, `.jpg`, `.webp`) | YES — MANDATORY | `--source <path/to/mockup.png>` | Run `pause --loai dau-vao-user` and ask for the file path | <!-- i18n-allow: canonical pause kind -->
-| Wireframe or layout sketch image | YES — MANDATORY | `--source <path/to/wireframe.png> --threshold 0.05` | Run `pause --loai dau-vao-user` and ask for the wireframe | <!-- i18n-allow: canonical pause kind -->
-| Reference screenshot or baseline UI capture | YES — MANDATORY | `--source <path/to/screenshot.png>` | Run `pause --loai dau-vao-user` and ask for the baseline image | <!-- i18n-allow: canonical pause kind -->
-| HTML/web prototype or live reference URL | YES — MANDATORY | Capture reference to `source.png`, then pass `--source source.png` | Run `pause --loai dau-vao-user` if the prototype URL is unreachable | <!-- i18n-allow: canonical pause kind -->
-| Figma link (`https://www.figma.com/...`) | YES — MANDATORY | `--figma-url "<url>"` (reads `FIGMA_TOKEN` from env) | Exit code `3` → run `pause --loai dau-vao-user` and ask for `FIGMA_TOKEN` or a local export | <!-- i18n-allow: canonical pause kind -->
-| Pure backend, CLI, or UI without any visual reference | NO — SKIP LOOP | Do not run `tdq_vision_diff.py` | Select risk-relevant scenarios using the three-tier checklist |
+| Local mockup image (`.png`, `.jpg`, `.webp`) | YES — CONDITIONAL | `tdq_vision_diff.py --source <path/to/mockup.png>` | Run `pause --loai dau-vao-user` for path | <!-- i18n-allow: canonical pause kind -->
+| Wireframe or layout sketch image | YES — CONDITIONAL | `--source <path/to/wireframe.png> --threshold 0.05` | Run `pause --loai dau-vao-user` for wireframe | <!-- i18n-allow: canonical pause kind -->
+| Reference screenshot or baseline UI capture | YES — CONDITIONAL | `--source <path/to/screenshot.png>` | Run `pause --loai dau-vao-user` for baseline | <!-- i18n-allow: canonical pause kind -->
+| HTML/web prototype or live reference URL | YES — CONDITIONAL | Capture `source.png`, then `--source source.png` | Run `pause --loai dau-vao-user` if unreachable | <!-- i18n-allow: canonical pause kind -->
+| Figma link (`https://www.figma.com/...`) | YES — CONDITIONAL | `--figma-url "<url>"` (`FIGMA_TOKEN` from env) | Exit `3` → `pause --loai dau-vao-user` for export | <!-- i18n-allow: canonical pause kind -->
+| Functional UI / CSS-unchanged / CLI / backend | NO — SKIP PIXEL DIFF | Use `take_snapshot` + `list_console_messages` default | Select scenarios via [scenario-template](../../tdq-browser-test/references/scenario-template.md) |
 
 ## Three-tier scenario framework
 
@@ -59,7 +58,7 @@ Never write a test that matches any of the six patterns below; `tdq-qc-tester` r
 | `ANTI-3` | Happy-Path-Only Bias | Ignoring reachable malformed or missing inputs with distinct risk | Test relevant Tier 2/Tier 3 risks or cite existing coverage; do not add cases solely to fill tiers |
 | `ANTI-4` | Source-String / Regex Scraping | Reading `.py` or `.html` source text with `in` or regex instead of executing the code | Import and run the function, CLI, or DOM render and check runtime behavior |
 | `ANTI-5` | Implementation-Coupled Spying | Asserting internal private helper call counts instead of public outputs | Assert only on the public return value, files written, or observable side effects |
-| `ANTI-6` | Blind Visual / DOM-Only UI Check | Checking only that `<div class="card">` exists without pixel comparison against the reference design | Render the page in a headless browser and run `tdq_vision_diff.py` |
+| `ANTI-6` | Blind Visual / DOM-Only UI Check | Checking `<div class="card">` text without browser snapshot or conditional diff | Default to Accessibility Tree (`take_snapshot` + `uid` fail-closed + console `0` errors); add `tdq_vision_diff.py` conditionally for visual/CSS diffs |
 
 ```python
 # WRONG (ANTI-1 + ANTI-2 + ANTI-4) — mocks the unit under test and checks only not-None:
@@ -77,76 +76,56 @@ def test_real_report_and_missing_token(tmp_path):
 
 ## The 6 steps of the Vision Test Loop
 
-When the Trigger decision table says **YES**, execute these 6 numbered steps in exact order without skipping any step:
+When visual parity is required (conditional Layer 2), execute steps 1–6 after passing default Layer 1 (`take_snapshot` + `list_console_messages`):
 
-1. Prepare the reference image (`source.png`) and the rendered build screenshot (`dist.png`) at the same viewport width and height.
-   If the reference is a prototype HTML/URL, open it in `cloudcli-browser`, capture `source.png`, then capture the built UI to `dist.png`.
-
-2. Run `scripts/tdq_vision_diff.py` to normalize the canvas, mask dynamic zones, compute pixel diff, draw numbered red bounding boxes `[1]`, `[2]`, and emit the dual `.md` + `.html` reports:
+1. Capture `source.png` and rendered `dist.png` at matching width and height.
+2. Run `scripts/tdq_vision_diff.py` to normalize, mask dynamic boxes, draw `[1]`, `[2]`, and emit `.md` + `.html` reports:
    ```bash
    python3 "${PLUGIN_ROOT}/scripts/tdq_vision_diff.py" \
-     --source "<path/to/source.png>" \
-     --dist "<path/to/dist.png>" \
-     --out-dir "docs/tdq/reports/vision-<slug>" \
-     --slug "<slug>" \
-     --threshold 0.02 \
-     --color-tolerance 12 \
-     --ignore-boxes "0,0,0,0" \
-     --round 1
+     --source "<path/to/source.png>" --dist "<path/to/dist.png>" \
+     --out-dir "docs/tdq/reports/vision-<slug>" --slug "<slug>" \
+     --threshold 0.02 --color-tolerance 12 --ignore-boxes "0,0,0,0" --round 1
    ```
-   For a self-contained single-file HTML report, append `--embed-base64`.
-
-3. Inspect the exit code and `docs/tdq/reports/vision-<slug>/metrics.json`:
-   - Exit code `0` (`passed: true`, `mismatch_rate <= threshold`): proceed to Step 5 (Reviewer Sub-agent check).
-   - Exit code `1` (`passed: false`, `mismatch_rate > threshold`): proceed to Step 4 (Self-healing CSS/HTML fix).
-   - Exit code `3` (missing `FIGMA_TOKEN` or inaccessible reference URL): stop immediately and run the `dau-vao-user` pause command in the escalation section below. <!-- i18n-allow: canonical pause kind -->
-
-4. Fix every numbered red bounding box `[1]`, `[2]` in `diff_highlight.png` and `<slug>.md`:
-   - Read the `(x, y, w, h)` coordinates of each box `[1]`, `[2]` in `<slug>.md` or `metrics.json`.
-   - Map each box to the DOM element at that position using the Bounding box to CSS mapping table below.
-   - Edit the CSS/HTML to fix all boxes in a single batch, recapture `dist.png`, increment `--round`, and rerun Step 2.
-
-5. Dispatch `tdq-qc-tester` (`tdq-reviewer`/`tdq-security-reviewer` only if needed) with `source.png`, `dist.png`, `diff_highlight.png`, and `<slug>.md`:
-   - The Reviewer Sub-agent checks semantic fidelity (text truncation, broken icons, overlapping labels, contrast) that pixel ratios can miss.
-   - The Reviewer Sub-agent is capped at **at most 1 feedback round** per task to prevent ping-pong loops.
-
-6. Link both generated reports (`docs/tdq/reports/vision-<slug>/<slug>.md` and `<slug>.html`) in the QC file and final Report so the user can open the interactive slider, onion-skin overlay, and bounding box explorer immediately.
+   Append `--embed-base64` for a self-contained single-file HTML report.
+3. Check exit code and `docs/tdq/reports/vision-<slug>/metrics.json`:
+   - `0` (`passed: true`, `mismatch_rate <= threshold`): go to Step 5.
+   - `1` (`passed: false`, `mismatch_rate > threshold`): go to Step 4.
+   - `3` (`FIGMA_TOKEN` missing or URL locked): run `dau-vao-user` pause below. <!-- i18n-allow: canonical pause kind -->
+4. Fix every `[1]`, `[2]` in `diff_highlight.png` + `<slug>.md` via `(x, y, w, h)` and the CSS table below, recapture `dist.png`, bump `--round`, rerun Step 2.
+5. Dispatch `tdq-qc-tester` (max **1 feedback round**) for semantic checks (truncation, icons, overlap, contrast).
+6. Link `docs/tdq/reports/vision-<slug>/<slug>.md` and `<slug>.html` in QC and Report.
 
 ## Bounding box to CSS mapping table
 
-Low-tier models must use this lookup table to translate each red box `[N]` on `diff_highlight.png` into a concrete code edit:
+Map each red box `[N]` on `diff_highlight.png` to a DOM/CSS fix:
 
-| Visual symptom inside red box `[N]` | Root cause in DOM / CSS | Exact CSS / HTML property to adjust |
+| Visual symptom inside `[N]` | Root cause | CSS / HTML property |
 |---|---|---|
-| Red outline forms a thin shifted border around a card or button | Element position or spacing is offset by a few pixels | Check `margin`, `padding`, `gap`, `top`, `left`, and `box-sizing: border-box` |
-| Red block covers a heading or paragraph width | Font size, weight, or line wrap differs from the reference | Check `font-size`, `font-weight`, `line-height`, `letter-spacing`, and `max-width` |
-| Solid red fill across a container background or badge | Background color, gradient, or border radius does not match | Check `background-color`, `background-image`, `border-radius`, and `border-color` |
-| Multiple boxes `[1]`, `[2]`, `[3]` shifted in the same direction | A parent flex/grid container has the wrong alignment or gap | Fix the parent container's `display`, `justify-content`, `align-items`, or `grid-template-columns` first |
-| Red box sits over a live clock, random avatar, or ad banner | Dynamic content changed between captures | Add the region's `x,y,w,h` to `--ignore-boxes` instead of changing CSS |
+| Thin shifted outline on card/button | Offset spacing or size | `margin`, `padding`, `gap`, `top`, `left`, `box-sizing` |
+| Block covers heading/paragraph width | Typography mismatch | `font-size`, `font-weight`, `line-height`, `max-width` |
+| Solid red container or badge fill | Surface styling diff | `background-color`, `background-image`, `border-radius`, `border-color` |
+| Boxes `[1]`, `[2]`, `[3]` shift together | Parent layout alignment | `display`, `justify-content`, `align-items`, `grid-template-columns` |
+| Box covers clock, avatar, or banner | Dynamic region diff | Pass `x,y,w,h` to `--ignore-boxes` |
 
 ## Loop caps and Reviewer Sub-agent
 
-- **Hard cap of 3 rounds**: never run more than 3 rounds (`--round 1`, `2`, `3`) of automated visual fixing on a single task.
-- **Early stop on plateau**: if Round `N` improves `mismatch_rate` by less than `0.002` (`0.2%`) compared to Round `N-1`, stop the loop immediately instead of burning tokens on Round `N+1`.
-- **Single Reviewer Sub-agent turn**: the Reviewer Sub-agent may return at most 1 consolidated feedback list; apply it in one pass and do not re-loop with the reviewer.
+- **3 rounds max**: stop after `--round 3`; **early plateau**: stop if improvement `< 0.002` (`0.2%`).
+- **1 Reviewer turn**: apply feedback in one pass without re-looping.
 
 ## Human-in-the-loop escalations
 
-When the loop cannot proceed automatically, run the exact pause command below and report to the user in chat:
-
-- Missing reference file, unreachable prototype, or exit code `3` (`FIGMA_TOKEN` missing/denied):
+- Missing reference, locked URL, or exit `3`:
   ```bash
   python3 "${PLUGIN_ROOT}/scripts/tdq_state.py" pause --loai dau-vao-user --ly-do "Missing visual reference or FIGMA_TOKEN for Vision Test Loop"
   ```
-- `mismatch_rate` still exceeds `--threshold` after 3 rounds or hits an early-stop plateau:
+- Still above `--threshold` after 3 rounds or plateau:
   ```bash
   python3 "${PLUGIN_ROOT}/scripts/tdq_state.py" pause --loai tran-qc --ly-do "Vision Test Loop reached 3-round cap; see <slug>.html and diff_highlight.png"
   ```
 
 ## Self-check
 
-- [ ] Checked the Trigger decision table for every mockup, wireframe, screenshot, prototype, or Figma reference
-- [ ] Selected feature/risk scenarios across Tier 1, Tier 2 and Tier 3 using `Given - When - Then`; documented why any tier needs no new case and kept reachable negatives
-- [ ] Confirmed zero `ANTI-1` through `ANTI-6` patterns exist in the test suite
-- [ ] Ran `tdq_vision_diff.py` and verified `metrics.json`, `diff_highlight.png`, `<slug>.md`, and `<slug>.html` exist
-- [ ] Resolved all red bounding boxes `[1]`, `[2]` within ≤ 3 rounds and ≤ 1 Reviewer Sub-agent turn
+- [ ] Checked Trigger table and [scenario-template](../../tdq-browser-test/references/scenario-template.md) (`e2e_adapter` default `none`)
+- [ ] Executed Layer 1 `take_snapshot` + `uid` fail-closed checks + `list_console_messages` (`0` errors) first
+- [ ] Selected Tier 1–3 `Given - When - Then` scenarios with zero `ANTI-1..ANTI-6` violations
+- [ ] When conditional pixel diff ran: verified `metrics.json`, `diff_highlight.png`, `<slug>.md`, `<slug>.html`, and `[1]`, `[2]` fixed within cap

@@ -12,13 +12,17 @@ Prints `file:line: [RULE] description`; exit 1 on violations, 0 when clean, 2 on
 Silence one rule for one line: put `<!-- doc-lint: allow R4 -->` on the line RIGHT ABOVE it.
 Env: TDQ_LOG=0 turns the log service off (on by default, one ISO-timestamped line to stderr).
 """
+import ast
 import json
 import os
 import posixpath
 import re
+import shlex
+import subprocess
 import sys
 from datetime import datetime
-import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
+
+import utf8_io  # noqa: F401 — imported for its side effect: stdout/stderr become UTF-8
 
 EXIT_SYNTAX = 2
 
@@ -138,7 +142,7 @@ ALLOW = re.compile(r"<!--\s*doc-lint:\s*allow\s+(R\d+)[^>]*-->")
 INLINE_CODE = re.compile(r"`[^`]*`")
 # An HTML comment is not prose: it is a note for whoever edits the file, and no reader
 # parses it as a sentence. Counting it under R5 would add ~8 words per i18n-allow label.
-HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
+HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 TEMPLATE_LINK = re.compile(r"references/[^)\s]*template[^)\s]*\.md")
 # `·` and `;` separate items in these docs — each item reads on its own
 SENTENCE_SPLIT = re.compile(r"(?<=[.!?…])\s+|\s*[·;]\s*")
@@ -989,8 +993,225 @@ def rule_r15(doc, out):
     out.extend(r15_loi(doc, check_dir=True))
 
 
+# --------------------- R16: scenario & Bug Board CLI flag / length checks
+
+CLI_DOC_SCENARIO_MAX_LINES = 40
+_CLI_SCRIPT_RE = re.compile(
+    r"(?:^|[\s`\"'(|])(?:\./)?scripts/([A-Za-z0-9_.-]+\.py)\b(.*)"
+)
+_CLI_FLAG_RE = re.compile(r"^(--[A-Za-z0-9][A-Za-z0-9-]*)(?:=.*)?$")
+_CLI_FLAG_SCAN_RE = re.compile(r"--[A-Za-z0-9][A-Za-z0-9-]*")
+_CLI_SHELL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||[;|#])\s*")
+_SCRIPT_FLAGS_CACHE: dict[tuple[str, int, int, str | None], set[str]] = {}
+
+
+def _cli_doc_scope(path: str) -> tuple[str | None, str | None]:
+    """Return ('scenarios'|'bugs', repo_root) when path sits under docs/tdq/{scenarios,bugs}/."""
+    norm = os.path.abspath(path).replace("\\", "/")
+    for kind in ("scenarios", "bugs"):
+        marker = f"/docs/tdq/{kind}/"
+        if marker in norm:
+            root = norm[:norm.index(marker)] or os.path.sep
+            return kind, root
+    return None, None
+
+
+def _resolve_cli_script(script_name: str, repo_root: str | None) -> str | None:
+    """Locate `scripts/<script_name>` in `repo_root` (fallback to TDQ scripts when absent)."""
+    if ".." in script_name or "/" in script_name or "\\" in script_name:
+        return None
+    if repo_root is not None:
+        scripts_dir = os.path.join(repo_root, "scripts")
+        if os.path.isdir(scripts_dir):
+            cand = os.path.join(scripts_dir, script_name)
+            return cand if os.path.isfile(cand) else None
+    fallback = os.path.join(os.path.dirname(os.path.abspath(__file__)), script_name)
+    return fallback if os.path.isfile(fallback) else None
+
+
+def _docstring_node_ids(tree: ast.AST) -> set[int]:
+    """Return object ids of leading docstring Constant nodes across module/class/function bodies."""
+    ids: set[int] = set()
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            ids.add(id(first.value))
+    return ids
+
+
+def _add_argument_flags(call: ast.Call) -> set[str]:
+    """Extract `--flag` strings (plus `--no-...` for BooleanOptionalAction) from one Call node."""
+    found: set[str] = set()
+    for arg in call.args:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value.startswith("--"):
+            found.add(arg.value)
+    has_bool_opt = any(
+        kw.arg == "action" and "BooleanOptionalAction" in ast.dump(kw.value)
+        for kw in call.keywords
+    )
+    if has_bool_opt:
+        found.update(f"--no-{flag[2:]}" for flag in list(found))
+    return found
+
+
+def _parse_script_flags(source: str) -> tuple[set[str], set[str], bool]:
+    """Return (argparse_flags, string_literal_flags, supports_help) from Python source."""
+    supports_help = any(tok in source for tok in ("argparse", "ArgumentParser", "--help"))
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set(), set(_CLI_FLAG_SCAN_RE.findall(source)), supports_help
+    doc_ids = _docstring_node_ids(tree)
+    ap_flags: set[str] = set()
+    str_flags: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
+            if name == "add_argument":
+                ap_flags.update(_add_argument_flags(node))
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in doc_ids:
+            str_flags.update(_CLI_FLAG_SCAN_RE.findall(node.value))
+    return ap_flags, str_flags, supports_help
+
+
+def _help_cli_flags(script_path: str, subcommand: str | None) -> set[str]:
+    """Probe `<script> [subcommand] --help` safely to catch dynamic argparse options."""
+    cmd = [sys.executable, script_path]
+    if subcommand:
+        cmd.append(subcommand)
+    cmd.append("--help")
+    env = dict(os.environ, TDQ_LOG="0")
+    try:
+        proc = subprocess.run(cmd, check=False, capture_output=True, encoding="utf-8",
+                              errors="replace", text=True, timeout=3, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return set(_CLI_FLAG_SCAN_RE.findall(proc.stdout + "\n" + proc.stderr))
+
+
+def _valid_script_flags(script_path: str, subcommand: str | None) -> tuple[set[str], bool]:
+    """Return (declared_flags, has_argparse) for `script_path`, caching by file stat."""
+    try:
+        st = os.stat(script_path)
+    except OSError:
+        return set(), False
+    key = (os.path.abspath(script_path), st.st_mtime_ns, st.st_size, subcommand)
+    cached = _SCRIPT_FLAGS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        with open(script_path, encoding="utf-8", errors="ignore") as fh:
+            source = fh.read()
+    except OSError:
+        return set(), False
+    ap_flags, str_flags, supports_help = _parse_script_flags(source)
+    flags = (ap_flags | {"--help"}) if ap_flags else (str_flags | ({"--help"} if supports_help else set()))
+    result = (flags, "argparse" in source)
+    _SCRIPT_FLAGS_CACHE[key] = result
+    return result
+
+
+def _tokenize_cli_tail(raw_tail: str) -> tuple[str | None, list[str]]:
+    """Return (optional_subcommand, [--flags]) from the argument tail of one command."""
+    cmd_part = _CLI_SHELL_SPLIT_RE.split(raw_tail, maxsplit=1)[0]
+    try:
+        tokens = shlex.split(cmd_part)
+    except ValueError:
+        tokens = cmd_part.split()
+    subcommand = None
+    flags: list[str] = []
+    for tok in tokens:
+        if "scripts/" in tok and tok.endswith(".py"):
+            break
+        m = _CLI_FLAG_RE.match(tok)
+        if m:
+            flags.append(m.group(1))
+        elif subcommand is None and not flags and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", tok):
+            subcommand = tok
+    return subcommand, flags
+
+
+def _extract_cli_invocations(line: str, is_fenced: bool) -> list[tuple[str, str | None, list[str]]]:
+    """Extract (script_name, subcommand, [--flags]) invocations from one markdown line."""
+    segments = [line] if is_fenced else [
+        *[m.group(0)[1:-1] for m in INLINE_CODE.finditer(line)],
+        INLINE_CODE.sub(" ", line),
+    ]
+    found: list[tuple[str, str | None, list[str]]] = []
+    for seg in segments:
+        match = _CLI_SCRIPT_RE.search(seg)
+        if not match:
+            continue
+        subcommand, flags = _tokenize_cli_tail(match.group(2))
+        found.append((match.group(1), subcommand, flags))
+    return found
+
+
+def _check_cli_invocation(doc: Doc, idx: int, invocation: tuple[str, str | None, list[str]],
+                          effective_root: str | None, out: list[str]) -> None:
+    """Validate one extracted `scripts/<name>.py` invocation against `effective_root`."""
+    script_name, subcommand, flags = invocation
+    script_path = _resolve_cli_script(script_name, effective_root)
+    if not script_path:
+        _report(out, doc, idx, "R16", f"referenced script `scripts/{script_name}` does not exist")
+        return
+    valid, has_argparse = _valid_script_flags(script_path, subcommand)
+    help_probed = False
+    for flag in flags:
+        if flag in valid:
+            continue
+        if has_argparse and not help_probed:
+            valid.update(_help_cli_flags(script_path, subcommand))
+            help_probed = True
+        if flag not in valid:
+            _report(out, doc, idx, "R16", f"unknown CLI flag `{flag}` for `scripts/{script_name}`")
+
+
+def validate_cli_flags(doc: Doc, repo_root: str | None = None) -> list[str]:
+    """Validate `scripts/<name>.py` existence and `--flag` tokens in a scenario or Bug Board Doc."""
+    _, inferred_root = _cli_doc_scope(doc.path)
+    effective_root = repo_root if repo_root is not None else inferred_root
+    out: list[str] = []
+    for idx, line in enumerate(doc.lines):
+        for invocation in _extract_cli_invocations(line, doc.in_fence[idx]):
+            _check_cli_invocation(doc, idx, invocation, effective_root, out)
+    return out
+
+
+def _scenario_exempt_first_line(doc: Doc) -> bool:
+    """Return True when line 1 explicitly exempts the doc from R16."""
+    if not doc.lines:
+        return False
+    found = ALLOW.search(doc.lines[0])
+    return bool(found) and found.group(1) == "R16"
+
+
+def rule_cli_docs(doc, out):
+    """Validate scenario line cap (<= 40) and script/flag names under docs/tdq/{scenarios,bugs}/."""
+    kind, repo_root = _cli_doc_scope(doc.path)
+    if kind is None or not any(line.strip() for line in doc.lines):
+        return
+    if kind == "scenarios" and not _scenario_exempt_first_line(doc):
+        base = os.path.basename(doc.path).lower()
+        has_markers = any(k in "\n".join(doc.lines).lower() for k in ("goal", "act", "assert"))
+        if (base not in ("readme.md", "index.md") or has_markers) and len(doc.lines) > CLI_DOC_SCENARIO_MAX_LINES:
+            out.append(
+                f"{doc.path}:1: [R16] scenario has {len(doc.lines)} lines "
+                f"(> {CLI_DOC_SCENARIO_MAX_LINES}) — keep E2E scenarios concise"
+            )
+    out.extend(validate_cli_flags(doc, repo_root=repo_root))
+
+
 RULES = [rule_r1, rule_r2, rule_r3, rule_r4, rule_r5, rule_r6, rule_r7, rule_r8,
-         rule_r9, rule_r10, rule_r11, rule_r15]
+         rule_r9, rule_r10, rule_r11, rule_r15, rule_cli_docs]
 
 # Directories holding records / machine-generated files — bound by R8 only, see lint_file().
 OUTPUT_DIRS = (os.path.join("docs", "tdq"), os.path.join("docs", "workinglog"),
@@ -1184,9 +1405,7 @@ def _r14_nguong(cell):
 
 def _r14_o(line):
     """Split a table row into stripped cells; `\\|` is a literal pipe, not a separator."""
-    body = line.strip()
-    if body.startswith("|"):
-        body = body[1:]
+    body = line.strip().removeprefix("|")
     if body.endswith("|") and not body.endswith("\\|"):
         body = body[:-1]
     return [c.strip() for c in re.split(r"(?<!\\)\|", body)]
@@ -1296,7 +1515,7 @@ def lint_file(path):
     abs_path = os.path.abspath(path)
     is_output = any(f"{os.sep}{d}{os.sep}" in abs_path for d in OUTPUT_DIRS)
     if is_output:
-        for rule in (rule_r8, rule_r10, rule_r11, rule_r12, rule_r14, rule_r15):
+        for rule in (rule_r8, rule_r10, rule_r11, rule_r12, rule_r14, rule_r15, rule_cli_docs):
             rule(doc, out)
     else:
         for rule in RULES:
