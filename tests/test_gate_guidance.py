@@ -1,6 +1,7 @@
 """Unit tests for tools/patches/gate_guidance.py (4-part AGY guidance dictionary and formatters)."""
 import importlib.util
 import io
+import json
 import os
 import sys
 import unittest
@@ -104,6 +105,37 @@ class TestGateGuidanceConstants(unittest.TestCase):
                 text = entry[field]
                 for ch in BANNED_CHARS:
                     self.assertNotIn(ch, text, f"{code}.{field} contains banned char {ch}")
+
+    def test_git_guidance_contract_covers_turn_approval_and_hard_bans(self):
+        """Verify GIT card documents turn-scoped chat grants and immutable hard bans."""
+        json_path = ROOT / "tools" / "patches" / "gate_guidance.json"
+        raw = json.loads(json_path.read_text(encoding="utf-8"))
+        self.assertEqual(len(raw["all_agy_codes"]), 23)
+        self.assertEqual(len(gate_guidance.ALL_AGY_CODES), 23)
+        self.assertIn("GIT", raw["guidance_codes"])
+
+        entry = raw["guidance_codes"]["GIT"]
+        self.assertEqual(gate_guidance.GUIDANCE_TABLE["GIT"], entry)
+        self.assertIn("duyệt", entry["chuyen_gi"])  # i18n-allow
+        self.assertIn("duyệt", entry["lam_gi"])  # i18n-allow
+        self.assertIn("chat", entry["lam_gi"])
+        for token in ("push thường", "reset", "clean", "force-push", "Co-Authored-By:"):  # i18n-allow
+            self.assertIn(token, entry["bo_qua"])
+        for field in ("chuyen_gi", "vi_sao", "lam_gi", "bo_qua"):
+            for ch in BANNED_CHARS:
+                self.assertNotIn(ch, entry[field])
+
+        hint = entry["model_hint"]
+        self.assertTrue(hint.isascii())
+        self.assertLessEqual(len(f"[TDQ:GIT] {hint}"), 160)
+        self.assertIn("force-push", hint)
+        self.assertIn("Co-Authored-By", hint)
+
+        rendered = gate_guidance.format_deny_4part("GIT", detail="git push needs approval")
+        self.assertIn("[TDQ:GIT]", rendered)
+        self.assertLessEqual(len(rendered), 1200)
+        for label in FOUR_PART_LABELS:
+            self.assertIn(label, rendered)
 
 
 class TestNormalizeAndFormatters(unittest.TestCase):

@@ -72,11 +72,11 @@
       "model_hint": "Wait for explicit user approval in chat, then record via tdq_state.py approve; never guess ambiguous replies."
     },
     "GIT": {
-      "chuyen_gi": "Tên nhánh/worktree mở đầu bằng tên AI hoặc commit mang trailer AI.",
-      "vi_sao": "Lịch sử Git phải thuần kỹ thuật và theo quy ước `<loại>/<mô-tả>`.",
-      "lam_gi": "Đổi tên nhánh theo công việc và bỏ `Co-Authored-By:` khỏi commit.",
-      "bo_qua": "Không có ngoại lệ cho tiền tố AI ở đầu nhánh hoặc trailer AI.",
-      "model_hint": "Rename branch/worktree away from AI prefixes (claude/antigravity/gemini/codex) and strip AI trailers from commits."
+      "chuyen_gi": "Thao tác git được bảo vệ (chưa có duyệt lượt hiện tại) hoặc nhánh/commit mang dấu vết AI.",
+      "vi_sao": "Giữ lịch sử Git thuần kỹ thuật và chặn lệnh đẩy, xóa ngoài ý muốn của người dùng.",
+      "lam_gi": "Xin người dùng duyệt rõ trong chat (với push/reset/clean) hoặc bỏ tiền tố nhánh và trailer AI.",
+      "bo_qua": "Chỉ mở push thường, reset --hard, clean -f trong lượt được duyệt; luôn chặn force-push, nhánh AI và Co-Authored-By:.",
+      "model_hint": "Ask user approval in chat for push/reset/clean; never force-push, use AI branch prefixes, or add Co-Authored-By."
     },
     "TEAM": {
       "chuyen_gi": "Thao tác sửa file sai vùng phân công nhóm hoặc trước pha `implement`.",
