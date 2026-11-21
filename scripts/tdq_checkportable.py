@@ -33,6 +33,7 @@ import json
 import os
 import shutil
 import sys
+import sysconfig
 import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
 
 MANIFEST_NAME = "manifest.json"
@@ -505,10 +506,112 @@ def them_thu_muc_user_path_windows(thu_muc):
             if thu_muc.lower() not in [p.lower() for p in muc_list]:
                 moi = thu_muc + (os.pathsep + cu if cu else "")
                 winreg.SetValueEx(key, "Path", 0, kieu, moi)
+                _broadcast_env_change_windows()
                 return True
     except Exception:  # noqa: BLE001
         return False
     return False
+
+
+def _broadcast_env_change_windows():
+    """Notify Windows shells best-effort after HKCU Environment updates."""
+    try:
+        import ctypes
+        hwnd_broadcast = 0xFFFF
+        wm_settingchange = 0x001A
+        smto_abortifhung = 0x0002
+        ctypes.windll.user32.SendMessageTimeoutW(
+            hwnd_broadcast, wm_settingchange, 0, "Environment", smto_abortifhung, 500, None
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _thu_muc_user_scripts_mac_dinh(nen_tang=None):
+    """Return deduplicated user-level Scripts/bin directories outside Store stub."""
+    he = nen_tang or sys.platform
+    candidates = []
+    if he.startswith("win"):
+        for scheme in ("nt_user", None):
+            try:
+                path = sysconfig.get_path("scripts", scheme) if scheme else sysconfig.get_path("scripts")
+            except Exception:  # noqa: BLE001
+                path = None
+            if path:
+                candidates.append(path)
+    else:
+        candidates.append(os.path.join(os.path.expanduser("~"), ".local", "bin"))
+    seen, out = set(), []
+    for path in candidates:
+        norm = os.path.normcase(os.path.abspath(path))
+        if norm not in seen:
+            seen.add(norm)
+            out.append(path)
+    return out
+
+
+def _co_binary_thuc_thi(thu_muc, nen_tang):
+    """True when directory contains at least one executable command/binary."""
+    if not os.path.isdir(thu_muc):
+        return False
+    exts = (".exe", ".cmd", ".bat")
+    try:
+        entries = os.listdir(thu_muc)
+    except OSError:
+        return False
+    for name in entries:
+        full = os.path.join(thu_muc, name)
+        if not os.path.isfile(full):
+            continue
+        if nen_tang.startswith("win"):
+            if name.lower().endswith(exts):
+                return True
+        elif os.access(full, os.X_OK):
+            return True
+    return False
+
+
+def _co_nam_trong_path(thu_muc, chuoi_path, nen_tang):
+    parts = [p for p in chuoi_path.split(os.pathsep) if p]
+    if nen_tang.startswith("win"):
+        target = os.path.normcase(os.path.normpath(thu_muc))
+        return any(os.path.normcase(os.path.normpath(p)) == target for p in parts)
+    target = os.path.normpath(thu_muc)
+    return any(os.path.normpath(p) == target for p in parts)
+
+
+def _la_thu_muc_bo_qua(thu_muc):
+    """Skip Store stub and per-shell multishell or leaf temp directories."""
+    parts = [p.lower() for p in os.path.normpath(thu_muc).replace("\\", "/").split("/") if p]
+    if not parts:
+        return True
+    if STUB_DIR in parts or any(p in ("fnm_multishells", "nvm_multishells") for p in parts):
+        return True
+    return parts[-1] in ("temp", "tmp")
+
+
+def dam_bao_user_scripts_tren_path(
+    nen_tang=None, thu_muc_list=None, chuoi_path=None, them_path_fn=None, env=None
+):
+    """Expose existing user Scripts/bin directories carrying tools on PATH without installing."""
+    he = nen_tang or sys.platform
+    target_env = os.environ if env is None else env
+    cur_path = target_env.get("PATH", "") if chuoi_path is None else chuoi_path
+    dirs = _thu_muc_user_scripts_mac_dinh(he) if thu_muc_list is None else thu_muc_list
+    add_fn = them_path_fn or (them_thu_muc_user_path_windows if he.startswith("win") else None)
+    da_lam, ghi_chu = [], []
+    for muc in dirs:
+        if not muc or _la_thu_muc_bo_qua(muc) or not _co_binary_thuc_thi(muc, he):
+            continue
+        if _co_nam_trong_path(muc, cur_path, he):
+            continue
+        cur_path = muc + (os.pathsep + cur_path if cur_path else "")
+        target_env["PATH"] = cur_path
+        log(f"added user scripts dir to PATH: {muc}")
+        da_lam.append(f"exposed user scripts dir on PATH: {muc}")
+        if add_fn is not None and add_fn(muc):
+            ghi_chu.append(f"added {muc} to User PATH")
+    return da_lam, ghi_chu
 
 
 def cai_shim_python3(nen_tang=None, chuoi_path=None, ghi_duoc=None, ghi_file=None,

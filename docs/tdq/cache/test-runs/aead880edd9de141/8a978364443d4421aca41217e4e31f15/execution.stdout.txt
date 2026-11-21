@@ -1,0 +1,17 @@
+..................................................... [ 32%]
+............................................................ [ 70%]
+.........................................F......                          [100%]
+================================== FAILURES ===================================
+E   AssertionError: 1 != 0 : doc_lint failed:
+    docs\tdq\token-budget.json:1: [R13] skills/tdq-build/references/report-template.md: the token measurement is stale (sha256 differs) — run `token_budget.py`
+    docs\tdq\token-budget.json:1: [R13] skills/tdq-conventions/references/user-facing-block-vi-du.md: the token measurement is stale (sha256 differs) — run `token_budget.py`
+    docs\tdq\token-budget.json:1: [R13] skills/tdq-conventions/references/user-facing-block.md: the token measurement is stale (sha256 differs) — run `token_budget.py`
+    docs\tdq\token-budget.json:1: [R13] skills/tdq-spec/references/spec-template-huong-dan.md: the token measurement is stale (sha256 differs) — run `token_budget.py`
+    docs\tdq\token-budget.json:1: [R13] skills/tdq-spec/references/spec-template.md: the token measurement is stale (sha256 differs) — run `token_budget.py`
+    
+    [2026-11-21T09:51:12] doc_lint: lint 1 file: vision-test-loop.md
+    [2026-11-21T09:51:12] doc_lint: done — 5 violation(s) total, exit 1
+C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\unittest\case.py:900: AssertionError: 1 != 0 : doc_lint failed:
+=========================== short test summary info ===========================
+FAILED tests/test_vision_test_loop_doc.py::TestVisionTestLoopDoc::test_doc_lint_and_i18n_clean
+1 failed, 160 passed, 246 subtests passed in 7.21s

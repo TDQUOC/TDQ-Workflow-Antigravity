@@ -20,6 +20,7 @@
     "Source file modified: scripts/tdq_archify.py",
     "Source file modified: scripts/tdq_bench.py",
     "Source file modified: scripts/tdq_ccr.py",
+    "Source file modified: scripts/tdq_checkportable.py",
     "Source file modified: scripts/tdq_eval.py",
     "Source file modified: scripts/tdq_setup.py",
     "Source file modified: scripts/tdq_state.py",
@@ -5582,5 +5583,5 @@
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-21T16:13:36Z"
+  "checked_at": "2026-11-21T16:54:50Z"
 }

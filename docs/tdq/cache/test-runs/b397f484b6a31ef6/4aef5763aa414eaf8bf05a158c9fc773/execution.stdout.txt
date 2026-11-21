@@ -1,0 +1,12 @@
+bringing up nodes...
+bringing up nodes...
+
+.................................u.........u............................ [ 18%]
+........uuuuuuuuuuuuuuuuuuuuuuuuu...........u..u...uu...u..u.uu......... [ 28%]
+..uu.u.uuuu.u...uu.u............................u.uuu.u................. [ 42%]
+..............................uuuuuu.uuuu...uuuuu......u...uu........u.u [ 56%]
+u.uu........u...........u..u..............uu...uuuu..uuuuuuuuuuuuuuu.... [ 67%]
+...........uuuuuuuuuuuuuuuu.uuuuuuuu.uuu.uuuuu.uuuuuuuu..uuu...uuuuuuuu. [ 73%]
+uuuuuuuu................................................................ [ 89%]
+...uuu.........................uu...........                             [100%]
+386 passed, 162 subtests passed in 75.30s (0:01:15)

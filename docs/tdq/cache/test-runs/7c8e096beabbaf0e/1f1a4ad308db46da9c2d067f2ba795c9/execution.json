@@ -1,0 +1,2763 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "schema_version": 1,
+    "backend": "pytest",
+    "selectors": [
+      "tests/test_agent_frontmatter.py",
+      "tests/test_agy_plugin_validate.py",
+      "tests/test_v01030_regression_smoke.py",
+      "tests/test_build_portable.py"
+    ],
+    "scope": "selected",
+    "case_ids": [
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_all_eight_agents_exist_in_both_trees_with_model_inherit",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_built_agy_agents_forbid_unregistered_tools",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_built_agy_agents_tools_and_readonly_notices",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_every_agent_declares_model_and_effort",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_handoff_schema_sha256_parity",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_quality_agents_are_not_throttled",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_skills_and_agents_tool_lists_forbid_unregistered_tools",
+      "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_tuning_reference_exists_and_lists_every_agent",
+      "tests/test_agent_frontmatter.py::AgentDigestLimitTest::test_moi_agent_cam_dan_output_tool_tho",
+      "tests/test_agent_frontmatter.py::AgentDigestLimitTest::test_moi_agent_neu_nguong_digest",
+      "tests/test_agy_plugin_validate.py::test_v1_agy_plugin_validate_strict_json",
+      "tests/test_agy_plugin_validate.py::test_v1_hooks_json_windows_cmd_c_no_quotes_and_protojson",
+      "tests/test_agy_plugin_validate.py::test_v1_install_dry_run_and_staged_validate",
+      "tests/test_agy_plugin_validate.py::test_v2_python_ast_and_md_budgets_and_no_traps",
+      "tests/test_agy_plugin_validate.py::test_v2_multiplatform_binary_magic_bytes",
+      "tests/test_agy_plugin_validate.py::test_v2_build_verify_binary_magic_and_stage_guard",
+      "tests/test_agy_plugin_validate.py::test_v2_plain_language_presentation_synced_in_plugin",
+      "tests/test_agy_plugin_validate.py::test_v2_version_synced_with_claude_plugin",
+      "tests/test_v01030_regression_smoke.py::test_source_and_compiled_transform_agents_pass_v01030_guard",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[call_mcp_tool]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[grep_search]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[find_by_name]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[list_dir]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Bash]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Read]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Write]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Edit]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Grep]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Glob]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Task]",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_v01030_combo_and_enforcement_regressions",
+      "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_missing_frontmatter_and_empty_tools",
+      "tests/test_build_portable.py::TestCLI::test_dest_la_chinh_repo_bi_tu_choi",
+      "tests/test_build_portable.py::TestCLI::test_help_co_du_ba_co",
+      "tests/test_build_portable.py::TestCLI::test_khong_co_hanh_dong_thi_thoat_2_va_khong_ghi_gi",
+      "tests/test_build_portable.py::TestCLI::test_log_tat_duoc_bang_bien_moi_truong",
+      "tests/test_build_portable.py::TestManifest::test_manifest_du_5_khoi",
+      "tests/test_build_portable.py::TestManifest::test_manifest_khong_tu_liet_ke_chinh_no",
+      "tests/test_build_portable.py::TestManifest::test_sha256_khop_file_that",
+      "tests/test_build_portable.py::TestDoiBien::test_doi_bien_dem_dung_so_lan",
+      "tests/test_build_portable.py::TestDoiBien::test_khong_co_bien_thi_khong_doi_gi",
+      "tests/test_build_portable.py::TestCopyLoc::test_bo_do_khong_di_theo_ban_sinh",
+      "tests/test_build_portable.py::TestCopyLoc::test_copy_khong_mang_rac",
+      "tests/test_build_portable.py::TestCopyLoc::test_giu_quyen_thuc_thi",
+      "tests/test_build_portable.py::TestBanAntigravity::test_checkportable_xac_nhan_ban_sach",
+      "tests/test_build_portable.py::TestBanAntigravity::test_du_skill_theo_dung_thu_tu_va_frontmatter_hop_le",
+      "tests/test_build_portable.py::TestBanAntigravity::test_hooks_json_dung_2_event_va_command_tro_path_co_dinh",
+      "tests/test_build_portable.py::TestBanAntigravity::test_khong_con_bien_plugin_hay_duong_dan_tuong_doi_tran",
+      "tests/test_build_portable.py::TestBanAntigravity::test_khong_ship_settings_json",
+      "tests/test_build_portable.py::TestBanAntigravity::test_manifest_liet_ke_du_file_moi",
+      "tests/test_build_portable.py::TestBanAntigravity::test_mcp_config_du_2_server_va_khong_lo_khoa",
+      "tests/test_build_portable.py::TestBanAntigravity::test_moi_hook_khai_trong_hooks_json_deu_co_file_that",
+      "tests/test_build_portable.py::TestBanAntigravity::test_phu_thuoc_chung_cua_hook_cung_duoc_chep",
+      "tests/test_build_portable.py::TestBanAntigravity::test_plugin_json_dung_khuon_agy",
+      "tests/test_build_portable.py::TestBanAntigravity::test_readme_du_3_cum_bat_buoc",
+      "tests/test_build_portable.py::TestBanAntigravity::test_skill_giu_duoc_references_di_kem",
+      "tests/test_build_portable.py::TestTachPatch::test_ba_dang_lenh_patch",
+      "tests/test_build_portable.py::TestTachPatch::test_khong_co_gi_thi_tra_chuoi_rong",
+      "tests/test_build_portable.py::TestTachPatch::test_lay_file_dau_tien_khi_patch_nhieu_file",
+      "tests/test_build_portable.py::TestAdapterLaFileThat::test_build_portable_doc_file_chu_khong_import",
+      "tests/test_build_portable.py::TestAdapterLaFileThat::test_file_nguon_ton_tai_va_chay_duoc",
+      "tests/test_build_portable.py::TestAdapterLaFileThat::test_khong_con_chuoi_adapter_trong_build_portable",
+      "tests/test_build_portable.py::TestKhongConTenChet::test_bo_do_bat_duoc_hang_chet_theo_chuoi",
+      "tests/test_build_portable.py::TestKhongConTenChet::test_khong_con_ten_chet",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_head_report_import_requires_kept_module",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_bao_dong_import_35_script_runtime",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_budget_excludes_only_approved_runtime_modules",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_cli_sinh_main_va_log_service",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_loai_bo_docs_tests_va_12_script_dev",
+      "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_sinh_nhanh_main_tren_repo_tam_idempotent_va_dry_run"
+    ],
+    "diagnostics": [],
+    "fingerprint": null,
+    "complete": true
+  },
+  "outcomes": [
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_all_eight_agents_exist_in_both_trees_with_model_inherit",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00039339999784715474
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00987639999948442
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018819999240804464
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'root'",
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tree": "'agy'",
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_built_agy_agents_forbid_unregistered_tools",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021869999181944877
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0025252000050386414
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016369999502785504
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_built_agy_agents_tools_and_readonly_notices",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020140000560786575
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00298250000923872
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001539999939268455
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_every_agent_declares_model_and_effort",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019779999274760485
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.002503899988369085
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000185800003237091
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_handoff_schema_sha256_parity",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021159999596420676
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00044319999869912863
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014209999062586576
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_quality_agents_are_not_throttled",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018930000078398734
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0011155000102007762
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015300000086426735
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_skills_and_agents_tool_lists_forbid_unregistered_tools",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000195699991309084
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.01499389999662526
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019269999756943434
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentFrontmatterTest::test_tuning_reference_exists_and_lists_every_agent",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023520000104326755
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0004498999915085733
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001610000035725534
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentDigestLimitTest::test_moi_agent_cam_dan_output_tool_tho",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027129999944008887
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003177599995979108
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015490000077988952
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agent_frontmatter.py::AgentDigestLimitTest::test_moi_agent_neu_nguong_digest",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002525000018067658
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0022948999976506457
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015600000915583223
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-build-resolver.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-debugger.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-explorer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-implementer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-qc-tester.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-refactor-cleaner.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-reviewer.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "agent": "'tdq-security-reviewer.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v1_agy_plugin_validate_strict_json",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013299999409355223
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.20638949998829048
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018600000475998968
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v1_hooks_json_windows_cmd_c_no_quotes_and_protojson",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013559999933931977
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 1.1314176999876508
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018709999858401716
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v1_install_dry_run_and_staged_validate",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0023707999935140833
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.9208763000060571
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027660001069307327
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v2_python_ast_and_md_budgets_and_no_traps",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001340999879175797
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.9016166999936104
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00022529999841935933
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v2_multiplatform_binary_magic_bytes",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017189999925903976
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004226499993819743
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002310999989276752
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v2_build_verify_binary_magic_and_stage_guard",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.002176599999074824
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.01740720000816509
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001871999993454665
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v2_plain_language_presentation_synced_in_plugin",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012900000729132444
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0007554999901913106
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016480000340379775
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_agy_plugin_validate.py::test_v2_version_synced_with_claude_plugin",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013050000416114926
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0006458999996539205
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012930000957567245
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_source_and_compiled_transform_agents_pass_v01030_guard",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001300999996601604
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.012523700002930127
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017729999672155827
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[call_mcp_tool]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0011831000010715798
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.013403000004473142
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002624999906402081
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[grep_search]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0013649000029545277
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.01248999999370426
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027039999258704484
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[find_by_name]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0016509999986737967
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.016226399995503016
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002801999944495037
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[list_dir]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001724000001559034
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.012829500003135763
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020640000002458692
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Bash]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0012930999946547672
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.012067799994838424
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001740000006975606
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Read]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0014362999936565757
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.012452700000721961
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025949999690055847
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Write]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0019991999870399013
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.01557459999457933
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023629999486729503
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Edit]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0016207000007852912
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.014193800001521595
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00026670000806916505
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Grep]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0015796000079717487
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.011693399996147491
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018039999122265726
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Glob]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0011876999924425036
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.011245100002270192
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00026250000519212335
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_injected_banned_tool[Task]",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0016931999998632818
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.018839800002751872
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027459999546408653
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_v01030_combo_and_enforcement_regressions",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0018793000053847209
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.013673699999344535
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017899999511428177
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_v01030_regression_smoke.py::test_negative_validator_rejects_missing_frontmatter_and_empty_tools",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001569899992318824
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.012444500011042692
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017639998986851424
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCLI::test_dest_la_chinh_repo_bi_tu_choi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002623000036692247
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.08206869999412447
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002851000026566908
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCLI::test_help_co_du_ba_co",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000269199998001568
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.08004570000048261
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001731999946059659
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCLI::test_khong_co_hanh_dong_thi_thoat_2_va_khong_ghi_gi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002035000070463866
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0772578999894904
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001711000077193603
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCLI::test_log_tat_duoc_bang_bien_moi_truong",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00035289999505039304
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.629170600004727
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002641000028233975
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestManifest::test_manifest_du_5_khoi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003268000000389293
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0019728000042960048
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013899999612476677
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestManifest::test_manifest_khong_tu_liet_ke_chinh_no",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021469999046530575
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001041000010445714
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001272999943466857
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestManifest::test_sha256_khop_file_that",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001674999948590994
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0010860000038519502
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014869999722577631
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestDoiBien::test_doi_bien_dem_dung_so_lan",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003004999889526516
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002173000102629885
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012390001211315393
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestDoiBien::test_khong_co_bien_thi_khong_doi_gi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016539999342057854
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014630000805482268
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001357000001007691
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCopyLoc::test_bo_do_khong_di_theo_ban_sinh",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020589999621734023
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003627400001278147
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016589999722782522
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCopyLoc::test_copy_khong_mang_rac",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001736999984132126
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.008154600000125356
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002182000025641173
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestCopyLoc::test_giu_quyen_thuc_thi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00026849999267142266
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0027357999933883548
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015589999384246767
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_checkportable_xac_nhan_ban_sach",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002300000051036477
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.34555869999167044
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002545000024838373
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_du_skill_theo_dung_thu_tu_va_frontmatter_hop_le",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002060999977402389
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.32198439999774564
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025179999647662044
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_hooks_json_dung_2_event_va_command_tro_path_co_dinh",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00029460000223480165
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.32494069999665953
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00036079999699722975
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_khong_con_bien_plugin_hay_duong_dan_tuong_doi_tran",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00041989999590441585
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.34111930000653956
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018599999020807445
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_khong_ship_settings_json",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002148000057786703
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.27116790000582114
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017899999511428177
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_manifest_liet_ke_du_file_moi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002043999993475154
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2634479999978794
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021600000036414713
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_mcp_config_du_2_server_va_khong_lo_khoa",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027770000451710075
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.233265399991069
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00024310000299010426
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_moi_hook_khai_trong_hooks_json_deu_co_file_that",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00024169999232981354
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2351219999982277
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00022729999909643084
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_phu_thuoc_chung_cua_hook_cung_duoc_chep",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00022149999858811498
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.23025229999620933
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021660000493284315
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_plugin_json_dung_khuon_agy",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003156000020680949
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.23656600000686012
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000301499996567145
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_readme_du_3_cum_bat_buoc",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00034779999987222254
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.23292829999991227
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002445999998599291
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestBanAntigravity::test_skill_giu_duoc_references_di_kem",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002803000097628683
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2724415999982739
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019859999883919954
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestTachPatch::test_ba_dang_lenh_patch",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0012795999937225133
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018230000569019467
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012759999663103372
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestTachPatch::test_khong_co_gi_thi_tra_chuoi_rong",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002668999950401485
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015530000382568687
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012599999899975955
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestTachPatch::test_lay_file_dau_tien_khi_patch_nhieu_file",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016759999562054873
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014659999578725547
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013899999612476677
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestAdapterLaFileThat::test_build_portable_doc_file_chu_khong_import",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021739999647252262
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.008622599998489022
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014350000128615648
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestAdapterLaFileThat::test_file_nguon_ton_tai_va_chay_duoc",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001790999958757311
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021670000569429249
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012360000982880592
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestAdapterLaFileThat::test_khong_con_chuoi_adapter_trong_build_portable",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000179000009666197
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003318000090075657
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013509999553207308
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestKhongConTenChet::test_bo_do_bat_duoc_hang_chet_theo_chuoi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002023999986704439
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0028393999964464456
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003074999985983595
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestKhongConTenChet::test_khong_con_ten_chet",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019100001372862607
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.20898850000230595
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000192299994523637
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_head_report_import_requires_kept_module",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002572000084910542
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0034977000032085925
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012480000441428274
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "scenario": "'legacy-head'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "scenario": "'missing-report'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "scenario": "'filtered-report'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "scenario": "'complete-head'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_bao_dong_import_35_script_runtime",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025749999622348696
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 1.3048956999991788
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016459998732898384
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_budget_excludes_only_approved_runtime_modules",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001959000073838979
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.13450960000045598
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002415999915683642
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_cli_sinh_main_va_log_service",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002759000053629279
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 1.122150099996361
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017389999993611127
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_loai_bo_docs_tests_va_12_script_dev",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020170000789221376
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005929000035393983
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00035429999115876853
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_build_portable.py::TestSinhNhanhRelease::test_release_sinh_nhanh_main_tren_repo_tam_idempotent_va_dry_run",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017420000222045928
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 2.005500300001586
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003127999952994287
+        }
+      ],
+      "subtests": []
+    }
+  ],
+  "completed": true,
+  "exit_code": 0
+}

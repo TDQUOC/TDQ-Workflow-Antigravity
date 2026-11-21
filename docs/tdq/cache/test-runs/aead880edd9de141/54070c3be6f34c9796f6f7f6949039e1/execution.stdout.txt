@@ -1,0 +1,11 @@
+.................................................................................................. [ 89%]
+...........            [100%]
+================================== FAILURES ===================================
+E   AssertionError: [] is not true : spec/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md thiếu dòng `Soul:` trong 6 dòng đầu
+C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\unittest\case.py:744: AssertionError: [] is not true : spec/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md thiếu dòng `Soul:` trong 6 dòng đầu
+E   AssertionError: [] is not true : plan/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md thiếu dòng `Soul:` trong 6 dòng đầu
+C:\Users\admin\AppData\Local\Programs\Python\Python313\Lib\unittest\case.py:744: AssertionError: [] is not true : plan/2026-11-21-0917-mac-dinh-trinh-bay-ngan.md thiếu dòng `Soul:` trong 6 dòng đầu
+=========================== short test summary info ===========================
+SUBFAILED(kind='spec') tests/test_soul_rules.py::SoulRequestDangMo::test_soul_request_dang_mo
+SUBFAILED(kind='plan') tests/test_soul_rules.py::SoulRequestDangMo::test_soul_request_dang_mo
+2 failed, 109 passed, 94 subtests passed in 5.99s
