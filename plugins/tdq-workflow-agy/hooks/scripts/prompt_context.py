@@ -30,7 +30,7 @@ from _common import (INVESTIGATE_GON_TEXT, _RUNTIME_STATE, _shard_turn_path,
                      session_id, write_turn_meta)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
-from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
+from tdq_state import (MODE_ALIASES, _info, effective_lane,  # noqa: E402
                        effective_mode, effective_phase, lenh_cho_project, liet_ke_modes, load,
                        muc_gat_hieu_luc, normalize_mode, phase_key,
                        prompt_context_last, prompt_context_save, render_next,
@@ -119,6 +119,60 @@ def _tach_prompt_thuc(prompt):
 QUOTED_SPEECH_RE = re.compile(
     r"""(?i)(?:the user said|claude asked|trích dẫn|người dùng nói)\s*:\s*["'“]"""
 )
+
+_GIT_GRANT_META_RE = re.compile(
+    r"(?i)(?:\bmở\s+request\b|\bopen\s+request\b|"  # i18n-allow
+    r"\b(?:update|cập\s*nhật|sửa|chỉnh)\b[^\n]{0,30}\bhook\b|"  # i18n-allow
+    r"\b(?:viết|duyệt|lập|sửa)\b[^\n]{0,20}\b(?:spec|plan|brief)\b|"  # i18n-allow
+    r"\btest\b[^\n]{0,20}\bhook\b)"
+)
+_GIT_GRANT_NEG_RE = re.compile(
+    r"(?i)\b(?:không|khong|ko|chưa|chua|đừng|not|don'?t|do\s+not|"  # i18n-allow
+    r"never|cancel|wait|hold\s+on|maybe|nope|no)\b"
+)
+_GIT_GRANT_PUSH_RE = re.compile(
+    r"(?i)(?:\bgit\s+push\b|"
+    r"\bpush\b[^\n]{0,40}\b(?:lên|len|origin|upstream|remote|dev|main|nhánh|nhanh|branch|code|đi|di|now|it|changes|này|nay)\b|"  # i18n-allow
+    r"\b(?:duyệt|duyet|cho\s*phép|cho\s*phep|allow|approve[sd]?|ok|okay|oke|đồng\s*ý|dong\s*y|chốt|chot|chạy|chay|run|thực\s*hiện|thuc\s*hien|giúp|giup|hãy|hay)\b[^\n]{0,40}\bpush\b|"  # i18n-allow
+    r"\bđẩy\b[^\n]{0,24}\b(?:code|lên|nhánh|origin|upstream|remote)\b)"  # i18n-allow
+)
+_GIT_GRANT_RESET_RE = re.compile(r"(?i)\b(?:git\s+)?reset\s+(?:--hard|hard)\b")
+_GIT_GRANT_CLEAN_RE = re.compile(
+    r"(?i)\b(?:git\s+)?clean\b[^\n]{0,24}(?:--force\b|-[a-z]*f[a-z]*\b)"
+)
+
+
+def _has_prompt_grant_blockers(trimmed):
+    """Reject quoted, system, question, negation, and meta-hook prompts before granting git."""
+    if not trimmed or "?" in trimmed:
+        return True
+    if len(trimmed) >= 2 and (
+        (trimmed[0] == '"' and trimmed[-1] == '"')
+        or (trimmed[0] == "'" and trimmed[-1] == "'")
+        or (trimmed[0] == "\u201c" and trimmed[-1] == "\u201d")
+    ):
+        return True
+    return bool(
+        NON_HUMAN_RE.search(trimmed)
+        or QUOTED_SPEECH_RE.search(trimmed)
+        or _GIT_GRANT_META_RE.search(trimmed)
+        or _GIT_GRANT_NEG_RE.search(trimmed)
+    )
+
+
+def extract_git_grants(prompt):
+    """Extract verified single-turn git grants (`clean_f`, `push`, `reset_hard`)."""
+    trimmed = _tach_prompt_thuc(prompt)
+    if _has_prompt_grant_blockers(trimmed):
+        return []
+    grants = []
+    if _GIT_GRANT_CLEAN_RE.search(trimmed):
+        grants.append("clean_f")
+    if _GIT_GRANT_PUSH_RE.search(trimmed):
+        grants.append("push")
+    if _GIT_GRANT_RESET_RE.search(trimmed):
+        grants.append("reset_hard")
+    return grants
 
 
 def _an_toan_by(prompt):
@@ -282,41 +336,69 @@ _TAIL_BYTES = 65536
 
 
 def _prompt_sha(payload):
-    text = str((payload or {}).get("prompt") or (payload or {}).get("lastUserInput") or "")
+    text = str(
+        (payload or {}).get("prompt")
+        or (payload or {}).get("user_message")
+        or (payload or {}).get("lastUserInput")
+        or ""
+    )
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16] if text else ""
 
 
-def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
-    """Read <= 64 KB tail of transcriptPath in O(1) for the last USER_INPUT signature."""
-    if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
+def _is_human_user_input(rec):
+    """True when rec is a human USER_INPUT entry (blank or USER_EXPLICIT source)."""
+    if not isinstance(rec, dict) or rec.get("type") != "USER_INPUT":
+        return False
+    src = str(rec.get("source") or "").strip().lower()
+    return src in ("", "user_explicit")
+
+
+def _parse_human_user_line(raw_line):
+    text = raw_line.decode("utf-8", "replace").strip()
+    if not text:
         return None
+    try:
+        rec = json.loads(text)
+    except ValueError:
+        return None
+    return rec if _is_human_user_input(rec) else None
+
+
+def _read_last_human_user_record(tpath):
+    """Read <= 64 KB tail of transcriptPath in O(1) and return (last_human_rec, last_end)."""
+    if not isinstance(tpath, str) or not tpath or not os.path.isfile(tpath):
+        return None, 0
     try:
         with open(tpath, "rb") as fh:
             fh.seek(0, os.SEEK_END)
-            size = fh.tell()
-            start = max(0, size - _TAIL_BYTES)
+            start = max(0, fh.tell() - _TAIL_BYTES)
             fh.seek(start)
             if start > 0:
                 fh.readline()
-            last_rec = None
-            last_end = start
+            last_rec, last_end = None, start
             while True:
                 raw_line = fh.readline()
                 if not raw_line:
                     break
-                cur_end = fh.tell()
-                text = raw_line.decode("utf-8", "replace").strip()
-                if not text:
-                    continue
-                try:
-                    rec = json.loads(text)
-                except ValueError:
-                    continue
-                if isinstance(rec, dict) and rec.get("type") == "USER_INPUT":
-                    last_rec = rec
-                    last_end = cur_end
+                rec = _parse_human_user_line(raw_line)
+                if rec is not None:
+                    last_rec, last_end = rec, fh.tell()
     except OSError:
-        return None
+        return None, 0
+    return last_rec, last_end
+
+
+def _extract_transcript_human_prompt(tpath):
+    """Return text content of the last human USER_INPUT record from <= 64 KB tail."""
+    last_rec, _ = _read_last_human_user_record(tpath)
+    if last_rec is None:
+        return ""
+    return str(last_rec.get("content") or "")
+
+
+def _extract_transcript_user_sig(tpath, prev_meta, prompt_sha=""):
+    """Read <= 64 KB tail of transcriptPath in O(1) for the last human USER_INPUT signature."""
+    last_rec, last_end = _read_last_human_user_record(tpath)
     if last_rec is not None:
         step_idx = last_rec.get("step_index")
         created = last_rec.get("created_at") or last_rec.get("timestamp") or ""
@@ -360,6 +442,24 @@ def _detect_new_user_turn(cwd, payload, sid):
     return False, sig
 
 
+def _mint_agy_turn_meta(cwd, payload, sid, sig):
+    prev_meta = read_turn_meta(cwd, sid)
+    shard = _shard_turn_path(cwd, sid)
+    if os.path.isfile(shard):
+        try:
+            os.remove(shard)
+        except OSError:
+            pass
+    st_cur = load(cwd, heal=False) or {}
+    raw_prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")
+    if not raw_prompt.strip():
+        raw_prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))
+    grants = extract_git_grants(raw_prompt)
+    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})
+    if grants:
+        _info(f"prompt_context: git_grant minted sid={sid} grants={grants}")
+
+
 def _agy_pre_invocation_hook(payload, cwd):
     sid = session_id(payload)
     model_text, user_md = flush_pending_channels(cwd, sid)
@@ -377,15 +477,7 @@ def _agy_pre_invocation_hook(payload, cwd):
     is_new, sig = _detect_new_user_turn(cwd, payload, sid)
     _RUNTIME_STATE["new_user_turn"] = is_new
     if is_new:
-        prev_meta = read_turn_meta(cwd, sid)
-        shard = _shard_turn_path(cwd, sid)
-        if os.path.isfile(shard):
-            try:
-                os.remove(shard)
-            except OSError:
-                pass
-        st_cur = load(cwd, heal=False) or {}
-        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or "")})
+        _mint_agy_turn_meta(cwd, payload, sid, sig)
     return False, is_new
 
 
@@ -437,14 +529,22 @@ def main():
             if anc:
                 emit_context([anc])
                 return
+    prompt = str(payload.get("prompt") or payload.get("user_message") or payload.get("lastUserInput") or "")
+    if agy_mode and not prompt.strip():
+        prompt = _extract_transcript_human_prompt(payload.get("transcriptPath") or payload.get("transcript_path"))
     if not agy_mode or is_new_turn:
         turn_log_clear(cwd, sid)
         turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
+        git_grants = extract_git_grants(prompt)
+        if git_grants:
+            turn_log_append(cwd, "signal", session=sid, event="git_grant",
+                            target="git_grant", grants=git_grants)
+            if not agy_mode:
+                _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")
         _nhac_worktree(cwd)
 
     # No OPEN request (open = active_request exists AND phase != idle) → point at intake.
     # The INTAKE line comes FIRST so _truncate (which cuts from the tail) never clips it.
-    prompt = payload.get("prompt") or ""
     if RE_DIRECT.search(prompt):
         intake = (
             "[TDQ:INTAKE] Yêu cầu chứa '_tdq_direct' → chạy chế độ direct: "  # i18n-allow

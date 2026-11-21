@@ -694,13 +694,14 @@ def write_turn_meta(cwd, conv_id, meta):
 
 
 def mark_turn_closed(cwd, conv_id):
-    """Set turn_closed=True in turn-meta-<sid>.json so the next prompt starts a fresh turn."""
+    """Set turn_closed=True and clear git_grants in turn-meta-<sid>.json."""
     if not conv_id:
         return
     meta = read_turn_meta(cwd, conv_id)
-    if meta.get("turn_closed") is True:
+    if meta.get("turn_closed") is True and not meta.get("git_grants"):
         return
     meta["turn_closed"] = True
+    meta["git_grants"] = []
     write_turn_meta(cwd, conv_id, meta)
 
 
