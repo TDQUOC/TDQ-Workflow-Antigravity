@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-21T03:26:00.836Z",
+  "startedAt": "2026-11-21T03:30:31.195Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-0917-mac-dinh-trinh-bay-ngan\\bao-cao.archify.md",
     "sha256": "d8ca771b584790fb591f88d154fe6ff0448174ce9c4e2087fba8bb4884a03cc3",
     "bytes": 5412
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
     "sha256": "e0d73302cf343da88eef78b1e567210cce13faa66f9b427b71891fe5158bdbd6",
     "bytes": 1615922
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5708_1795231559142\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28184_1795231829566\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-0917-mac-dinh-trinh-bay-ngan\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1378,
+      "durationMs": 1339,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5708_1795231559142\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28184_1795231829566\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-0917-mac-dinh-trinh-bay-ngan\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "04f93046-c67d-432d-bb44-f4a702a50c3c",
+        "receiptId": "5e16cd0b-03a3-4f43-86fb-a6fa5b40951c",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-0917-mac-dinh-trinh-bay-ngan\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
         "explainer": {
-          "preparedSha256": "963019367c19875c77c20e63f68eb2cc7dc38e4ee5dabffdf58b6cdd385bc052",
+          "preparedSha256": "f0aca663e72fce682a38df9be89d4b003917980adfa6eaa7d452d0f2515db199",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -295,17 +295,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 718,
+      "durationMs": 724,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\5708_1795231559142\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\28184_1795231829566\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
         "family": "explainer",
         "artifact": {
           "sha256": "e0d73302cf343da88eef78b1e567210cce13faa66f9b427b71891fe5158bdbd6",
@@ -356,7 +356,7 @@
               "id": "bao-cao-truoc",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-VcBLm0\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-w7XeQu\\child.html",
                 "artifact": {
                   "sha256": "129381f13e56e4736105a0c1dbfcc72962ca26e869e174ad36a324f4ad847a78",
                   "bytes": 809486
@@ -481,7 +481,7 @@
               "id": "bao-cao-sau",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-CYxWUG\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-YMZdtl\\child.html",
                 "artifact": {
                   "sha256": "fa2a01404a082dd9ee14b40ea8d150a104a3a778ad8c2199a2b375bd92bc570b",
                   "bytes": 809922
@@ -606,7 +606,7 @@
               "id": "bao-cao-kiem-tra",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-SSRoWp\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-JSLlpV\\child.html",
                 "artifact": {
                   "sha256": "4b83bf651805e3bfbce151144f8831e2ad5527bb1958f5ad662bef63c7da412d",
                   "bytes": 809750
@@ -731,7 +731,7 @@
               "id": "bao-cao-ket-qua",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-YZBnGX\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-VNp7ev\\child.html",
                 "artifact": {
                   "sha256": "e2be699327f6801f526fd2afe9905eaa3a5989692471be0351a0c3d432665c7a",
                   "bytes": 809626
@@ -856,7 +856,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "04f93046-c67d-432d-bb44-f4a702a50c3c"
+        "deliveryReceiptId": "5e16cd0b-03a3-4f43-86fb-a6fa5b40951c"
       }
     }
   },
@@ -1012,12 +1012,12 @@
     }
   ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-21T03:26:03.457Z",
-  "durationMs": 2621,
+  "finishedAt": "2026-11-21T03:30:33.786Z",
+  "durationMs": 2591,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

@@ -35,7 +35,7 @@ Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conve
 
 **Lệch spec chờ duyệt:** không có
 
-**Git:** Nhánh làm việc `feature/mac-dinh-trinh-bay-ngan` (nhánh gốc `dev`), chưa commit, chưa merge.
+**Git:** Đã commit `86eb30ba` trên nhánh `feature/mac-dinh-trinh-bay-ngan`, merge `--no-ff` vào `dev` (`ae3e0ddf`), đã xóa nhánh tạm `feature/mac-dinh-trinh-bay-ngan`, chưa push.
 
 ## Thời gian
 
@@ -84,5 +84,5 @@ Transcript attribution: project_window. Complete covers selected supported obser
 ```
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-21-0917-mac-dinh-trinh-bay-ngan.manifest.json -->
-<!-- manifest_digest: 411480db75c412ac47438e78a0175e895fe493d38070b905bf6371006caa9f28 -->
+<!-- manifest_digest: ce189cefbf4687c21b9afdcbd6abae8afcceaa4916385a65c36673f685ee41b1 -->
 <!-- tdq-archify-binding:end -->

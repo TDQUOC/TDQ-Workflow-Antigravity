@@ -11,7 +11,7 @@
     "bytes": 5412
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.html",
     "sha256": "e0d73302cf343da88eef78b1e567210cce13faa66f9b427b71891fe5158bdbd6",
     "bytes": 1615922
   },
@@ -174,11 +174,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.0491df19122d4887bef5061f56dcdfd7.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0917-mac-dinh-trinh-bay-ngan.7c09604b12bc4870bb2b340fef96d91f.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2621,
+  "durationMs": 2591,
   "browserCheck": {
     "requested": false,
     "ran": false
