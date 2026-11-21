@@ -626,7 +626,7 @@ class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
 
         self.assertEqual(self.mod.inspect_git_command_safety('echo "@\'\n$(git push --force origin dev)\n\'@"'), "force_push_forbidden")
         self.assertEqual(self.mod.inspect_git_command_safety('@"\n$(git push origin dev)\n"@'), "push_needs_approval")
-        self.assertIsNone(self.mod.inspect_git_command_safety("@'\ngit push --force origin dev\n'@\n"))
+        self.assertIsNone(self.mod.inspect_git_command_safety("$note = @'\ngit push --force origin dev\n'@\nWrite-Host $note"))
 
         enc = base64.b64encode("git push origin dev".encode("utf-16-le")).decode("ascii")
         for wrapped in (
@@ -645,6 +645,27 @@ class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
                 self.assertEqual(self.mod.inspect_git_command_safety(wrapped), "push_needs_approval")
         self.assertEqual(self.mod.inspect_git_command_safety('git push -o "" --force origin dev'), "force_push_forbidden")
         self.assertEqual(self.mod.has_banned_ai_branch("git -C repo switch -c claude-a"), "claude-a")
+
+    def test_qc2_fd_redirect_cd_runtime_and_herestring_guards(self):
+        for mut_cmd in (
+            "1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}",
+            "echo {} 1>> docs/tdq/state.json",
+            "cd docs/tdq/.tdq-runtime && echo {} > sessions.json",
+            "cd docs/tdq/.tdq-runtime && rm turns-1.jsonl",
+            "cd docs/tdq && echo {} > checkpoint-1.json",
+        ):
+            with self.subTest(mut_cmd=mut_cmd):
+                self.assertTrue(self.mod.mutates_tdq_state(mut_cmd))
+        for safe_cmd in ("cd docs/tdq/.tdq-runtime && cat sessions.json", "Get-ChildItem 2>$null", "cargo test 2>&1"):
+            self.assertFalse(self.mod.mutates_tdq_state(safe_cmd))
+        for hs_bypass in (
+            "@'\n'@; git push --force origin dev; @'\nx\n'@",
+            "$x = @'\n'@; git push --force origin dev; @'\nx\n'@",
+            "echo @'\n' && git push --force origin dev && echo '\n'@",
+            "$x = @'\n' ; git push --force origin dev ; echo '\n'@",
+        ):
+            with self.subTest(hs_bypass=hs_bypass):
+                self.assertEqual(self.mod.inspect_git_command_safety(hs_bypass), "force_push_forbidden")
 
 
 if __name__ == "__main__":

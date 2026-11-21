@@ -145,7 +145,7 @@ def main():
     state_md_norm = os.path.normcase(os.path.normpath(state_md))
     in_runtime = within(abs_target, runtime_dir)
     is_protected_state = abs_norm in (state_norm, state_md_norm) or in_runtime
-    if is_protected_state and payload.get("agent_id"):
+    if is_protected_state and (payload.get("agent_id") or payload.get("agentId")):
         block(cwd, payload, "TDQ:STATE", [
             "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",
             "Return structured output to the TDQ leader; only tdq_state.py writes state.",
@@ -172,7 +172,8 @@ def main():
     # implement: it reports into docs/, the main agent alone changes the project before then.
     # ponytail: Edit/Write only, a sub-agent writing through Bash/PowerShell slips past — widen to
     # bash_gate once a real case is measured.
-    if isinstance(payload.get("agent_id"), str) and payload["agent_id"] \
+    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \
+            or (isinstance(payload.get("agentId"), str) and payload["agentId"])) \
             and within(abs_target, os.path.realpath(cwd)) \
             and effective_phase(state, warn=False) not in ("implement", "qc"):
         block(cwd, payload, "TDQ:TEAM", [

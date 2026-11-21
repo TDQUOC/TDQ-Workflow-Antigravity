@@ -89,7 +89,7 @@ _SHELL_WRAPPER_RE = re.compile(
     r"(?:^|\s)(?:(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)|cmd(?:\.exe)?\b[^\n]*?\s+/[ck])\s+",
     re.IGNORECASE,
 )
-STDOUT_WRITE = re.compile(r"(?<![<=!-])(?<!\d)(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
+STDOUT_WRITE = re.compile(r"(?<![<=!-])(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
 DOCS_ARTIFACT = re.compile(r"docs[\\/]tdq[\\/]artifacts[\\/]", re.IGNORECASE)
 
 
@@ -343,7 +343,7 @@ def _part_stdout_targets(part, _depth=0):
     """Find non-null stdout redirect targets outside quotes, recursing into nested shells."""
     targets = [
         t for t in STDOUT_WRITE.findall(_mask_quoted_shell_ops(part))
-        if t.lower() not in ("/dev/null", "$null", "nul")
+        if not t.startswith(("&", "=")) and t.strip("'\"").lower() not in ("/dev/null", "$null", "nul")
     ]
     if _depth < 4:
         for sub in _extract_shell_subcommands(part):
@@ -375,9 +375,33 @@ _BRANCH_TAIL_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 _INTAKE_BRANCH_KINDS = frozenset({"feature", "bugfix", "hotfix", "chore", "docs"})
 
 
+_PS_HERESTRING_CTX_RE = re.compile(
+    r"(?:^|[\s;|&(])(?:[^\s;|&\"']*[/\\])?(?:powershell|pwsh)(?:\.exe)?\b"
+    r"|\$[A-Za-z_][A-Za-z0-9_]*"
+    r"|\b(?:Set|Get|Add|Out|Write|Copy|Move|Remove|New|Clear|Invoke|Select)-[A-Za-z]+\b",
+    re.IGNORECASE,
+)
+
+
+def _has_ps_herestring_context(cmd):
+    return bool(_PS_HERESTRING_CTX_RE.search(cmd))
+
+
+def _herestring_body_safe_for_strip(body, quote):
+    if quote == '"':
+        return '"' not in body and "$(" not in body and "`" not in body
+    out_of_quote = False
+    for ch in body:
+        if ch == "'":
+            out_of_quote = not out_of_quote
+        elif out_of_quote and not (("a" <= ch <= "z") or ("A" <= ch <= "Z") or ("0" <= ch <= "9") or ch in "_./:-"):
+            return False
+    return not out_of_quote
+
+
 def _ps_herestring_end(cmd, body_start, quote):
     term = "\n" + quote + "@"
-    idx = cmd.find(term, body_start)
+    idx = cmd.find(term, max(0, body_start - 1))
     while idx != -1:
         after = idx + len(term)
         if after == len(cmd) or cmd[after] in "\r\n \t;|&)":
@@ -387,7 +411,9 @@ def _ps_herestring_end(cmd, body_start, quote):
 
 
 def _strip_powershell_herestrings(cmd):
-    """Strip unquoted static PowerShell here-strings while keeping quoted strings intact."""
+    """Strip unquoted static PowerShell here-strings while keeping quoted/non-PS commands intact."""
+    if not _has_ps_herestring_context(cmd):
+        return cmd
     out, i, n = [], 0, len(cmd)
     in_s = in_d = esc = False
     while i < n:
@@ -397,8 +423,8 @@ def _strip_powershell_herestrings(cmd):
             if step:
                 after = _ps_herestring_end(cmd, i + step, q)
                 if after != -1:
-                    body = cmd[i + step:after - 2]
-                    if q == "'" or ("$(" not in body and "`" not in body):
+                    body = cmd[i + step:max(i + step, after - 3)]
+                    if _herestring_body_safe_for_strip(body, q):
                         out.append(" ")
                         i = after
                         continue
@@ -645,12 +671,19 @@ def _collapse_cmd_paths(raw):
     return "".join(out)
 
 
-def _is_state_or_runtime_text(low, seen_cd_tdq):
+def _is_state_or_runtime_text(low, seen_cd_tdq, seen_cd_runtime):
     return (
-        "docs/tdq/state.json" in low
+        seen_cd_runtime
+        or "docs/tdq/state.json" in low
         or "docs/tdq/state.md" in low
         or ".tdq-runtime" in low
-        or (seen_cd_tdq and any(k in low for k in ("state.json", "state.md", "turn-meta-")))
+        or (
+            seen_cd_tdq
+            and any(k in low for k in (
+                "state.json", "state.md", "turn-meta-",
+                "sessions.json", "turns-", "checkpoint-",
+            ))
+        )
     )
 
 
@@ -670,31 +703,35 @@ _STATE_PY_NODE_RE = re.compile(
 )
 
 
-def _mutates_tdq_state_depth(raw_cmd, depth, seen_cd_tdq):
+def _mutates_tdq_state_depth(raw_cmd, depth, seen_cd_tdq, seen_cd_runtime=False):
     for raw_seg in _split_shell_segments(raw_cmd):
         col = _collapse_cmd_paths(raw_seg)
         low = col.lower()
         cmd_toks = _skip_command_wrappers(_tokenize_command(col))
         base = _cmd_basename_no_exe(cmd_toks[0]) if cmd_toks else ""
-        if base in ("cd", "chdir", "set-location", "sl", "pushd") and ("docs/tdq" in low or ".tdq-runtime" in low):
-            seen_cd_tdq = True
+        if base in ("cd", "chdir", "set-location", "sl", "pushd"):
+            if ".tdq-runtime" in low:
+                seen_cd_tdq = True
+                seen_cd_runtime = True
+            elif "docs/tdq" in low:
+                seen_cd_tdq = True
         redir_hit = any(
-            _is_state_or_runtime_text(_collapse_path_token(t).lower(), seen_cd_tdq)
+            _is_state_or_runtime_text(_collapse_path_token(t).lower(), seen_cd_tdq, seen_cd_runtime)
             for t in _part_stdout_targets(col, 0)
         )
         op_hit = base not in _NON_STATE_WRITER_CMDS and bool(
             _STATE_POS_PS_RE.search(low) or _STATE_PY_NODE_RE.search(low)
         )
-        if redir_hit or (_is_state_or_runtime_text(low, seen_cd_tdq) and op_hit):
+        if redir_hit or (_is_state_or_runtime_text(low, seen_cd_tdq, seen_cd_runtime) and op_hit):
             return True
-        if depth < 4 and any(_mutates_tdq_state_depth(sub, depth + 1, seen_cd_tdq) for sub in _extract_shell_subcommands(raw_seg)):
+        if depth < 4 and any(_mutates_tdq_state_depth(sub, depth + 1, seen_cd_tdq, seen_cd_runtime) for sub in _extract_shell_subcommands(raw_seg)):
             return True
     return False
 
 
 def mutates_tdq_state(raw_cmd):
     """Detect direct or wrapped shell writes to docs/tdq/state.json, STATE.md, or .tdq-runtime/."""
-    return _mutates_tdq_state_depth(_strip_powershell_herestrings(raw_cmd), 0, False)
+    return _mutates_tdq_state_depth(_strip_powershell_herestrings(raw_cmd), 0, False, False)
 
 
 def _branch_candidates_from_git(args):
@@ -854,7 +891,7 @@ def eval_bash(payload, suppress_output_remind=False):
             for target in _part_stdout_targets(part)
         )
         for part in parts)
-    if payload.get("agent_id") and state.get("active_request") \
+    if (payload.get("agent_id") or payload.get("agentId")) and state.get("active_request") \
             and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
         block(cwd, payload, "TDQ:TEAM", [
             "A sub-agent may not mutate the project through Bash/PowerShell before implement.",

@@ -1301,3 +1301,28 @@ def test_qc1_security_stale_sig_and_camel_agent_parity(tmp_path: Path) -> None:
     _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p), "source": "resume"})
     _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev")
 
+
+def test_qc2_fd_redirect_cd_runtime_and_herestring_parity(tmp_path: Path) -> None:
+    """Verify QC2 round-2 fd-redirect, cd .tdq-runtime, and herestring guards across both engines."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "qc2", "2026-11-22-0301-qc2sec")
+    for state_cmd in (
+        "1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}",
+        "echo {} 1>> docs/tdq/state.json",
+        "cd docs/tdq/.tdq-runtime && echo {} > sessions.json",
+    ):
+        r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r, c=state_cmd: _cmd_payload(r, "c-qc2-st", c))
+        assert_full_json_parity(r_out, p_out, expected_code="STATE")
+        assert r_out["decision"] == "deny"
+
+    r_ok, p_ok = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc2-ok", "cd docs/tdq/.tdq-runtime && cat sessions.json"))
+    assert_full_json_parity(r_ok, p_ok)
+    assert r_ok == {"decision": "allow"}
+
+    for hs_cmd in (
+        "@'\n'@; git push --force origin dev; @'\nx\n'@",
+        "echo @'\n' && git push --force origin dev && echo '\n'@",
+        "$x = @'\n' ; git push --force origin dev ; echo '\n'@",
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-qc2-hs", hs_cmd)
+
+

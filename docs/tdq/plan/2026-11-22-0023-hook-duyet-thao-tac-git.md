@@ -210,6 +210,40 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic: Add adversarial test vectors across `test_bash_gate.py`, `test_agy_hooks.py`, and `test_rust_dispatch_parity.py` covering Findings #1-#5 and run the 6 core test suites plus `cargo test`.
   - Tiêu chí & Assert: All 5 core modules pass `0 fail`, `tdq-security-reviewer` re-audit clears CRITICAL/HIGH, `i18n_check` delta `+0`
 
+## QC vòng 2 — fix
+
+- [x] **QC2.1** (e10m) Close QC2 Rust security findings (#1 fd-redirect and cd-runtime, #2 empty herestring and PS-context/quote-breakout guard) — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+  - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`
+  - Cần: Không
+  - Neo & Công cụ: `edit_file` on `command_parser.rs` (`ps_herestring_end`, `strip_powershell_herestrings`, `part_stdout_targets_depth`, `is_state_or_runtime_text`, `mutates_tdq_state_depth`)
+  - Trước → Sau: Naive digit-redirect skip (`1>`), partial `.tdq-runtime` `cd` match, off-by-one empty herestring end, and depth-0 non-PS herestring strip → Standalone fd redirects captured, all writes inside `.tdq-runtime` blocked after `cd`, search from `i + step - 1`, and PS-context + safe-body gating
+  - Logic: Add `has_ps_herestring_context` and `herestring_body_safe_for_strip`, search herestring terminators from `i + step - 1`, allow digit-fd redirects in `part_stdout_targets_depth` (keeping `&`/null filters), and track `seen_cd_runtime` for full `.tdq-runtime` coverage.
+  - Tiêu chí & Assert: `cargo test` passes `0 fail`, catching `1>` state redirects, `cd docs/tdq/.tdq-runtime` mutations, empty herestring splice, and non-PS echo splice while keeping `2>$null` and `2>&1` allowed
+
+- [x] **QC2.2** (e12m) Mirror QC2 security fixes and LOW residuals in Python hooks and `tools/patches/agy_hooks.py` — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q`
+  - Chạm: `hooks/scripts/bash_gate.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/agy_pretooluse_gate.py`, `tools/patches/agy_hooks.py`
+  - Cần: `QC2.1`
+  - Neo & Công cụ: `edit_file` on `hooks/scripts/{bash_gate,edit_gate,agy_pretooluse_gate}.py` and `tools/patches/agy_hooks.py`
+  - Trước → Sau: Unmatched `1>` redirects, partial `cd .tdq-runtime` checks, non-PS herestring stripping, missing `-B`/`-C` branch flags, and missing `agentId` camelCase on upstream gates → 1-1 Python parity with `QC2.1`, full `-B`/`-C` branch flags, and consistent `agentId` handling
+  - Logic: Update `STDOUT_WRITE`, `_strip_powershell_herestrings`, and `_mutates_tdq_state_depth` in `bash_gate.py`; add `_extract_agy_redir_targets`, `seen_cd_runtime`, and `-B`/`-C` regexes in `agy_pretooluse_gate.py`; sync `agentId` across `edit_gate.py`, `bash_gate.py`, and `agy_hooks.py`.
+  - Tiêu chí & Assert: `pytest tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q` exits `0`, `i18n_check` delta `+0`, `ruff` delta `+0`
+
+- [x] **QC2.3** (e8m) Rebuild release `tdq-dispatch.exe` and repackage `plugins/tdq-workflow-agy/` in-repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
+  - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`, `plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/_common.py`, `plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py`, `plugins/tdq-workflow-agy/manifest.json`
+  - Cần: `QC2.1`, `QC2.2`
+  - Neo & Công cụ: `cargo build --release` + `tools/build_agy_plugin.py --upstream .` + `agy plugin validate --strict --json`
+  - Trước → Sau: Staged binary & bundle from round 1 → Rebuilt release binary with matching SHA-256 and cleanly patched in-repo plugin bundle passing strict validation
+  - Logic: Build release `tdq-dispatch.exe`, run `tools/build_agy_plugin.py --upstream .`, verify binary SHA-256 match and `agy plugin validate --strict --json` zero findings without touching host install or `main`.
+  - Tiêu chí & Assert: `build_agy_plugin.py` exits `0`, `agy plugin validate --strict` returns `"findings": []`, SHA-256 matches `target/release/tdq-dispatch.exe`
+
+- [x] **QC2.4** (e10m) Add QC2 adversarial regression and parity tests and verify 6 core pytest suites plus cargo test — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py tests/test_agy_plugin_validate.py -q`
+  - Chạm: `tests/test_bash_gate.py`, `tests/test_agy_hooks.py`, `tests/test_rust_dispatch_parity.py`
+  - Cần: `QC2.3`
+  - Neo & Công cụ: `edit_file` adding QC2 regression & parity test vectors in the 3 test modules
+  - Trước → Sau: QC1 test suites lacked `1>`/`cd .tdq-runtime`/empty-herestring/non-PS-echo/`-C`/`agentId` vectors → Full round-2 adversarial matrix running against live binary and fallback Python
+  - Logic: Add unit, hook, and real-binary parity tests covering all 4 CRITICAL/HIGH blocking issues and 3 LOW residuals; run all 6 core pytest suites, `cargo test`, `i18n_check`, and `ruff`.
+  - Tiêu chí & Assert: All 6 core pytest suites and `cargo test` exit `0` with `0 fail`, `i18n_check` and `ruff` delta `+0`
+
 ## Cụm song song
 
 Phân tích đồ thị phụ thuộc (`Cần:`) cho thấy 7 task có tập `Chạm:` hoàn toàn tách rời nhau (0 file trùng), xếp thành 5 đợt:

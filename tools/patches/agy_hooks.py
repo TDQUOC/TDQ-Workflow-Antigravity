@@ -1491,6 +1491,7 @@ def _record_spawn_metadata(cwd, payload, tinput, prompt, role):
         or tinput.get("agentId")
         or tinput.get("agent_id")
         or payload.get("agent_id")
+        or payload.get("agentId")
         or ""
     ).strip()
     if role and target_sid:
@@ -1983,7 +1984,7 @@ def _enforce_agy_bash_guards(payload, cwd):
         write_utf8(bash_path, txt_b)
     replace_exact(
         bash_path,
-        '    if payload.get("agent_id") and state.get("active_request") \\',
+        '    if (payload.get("agent_id") or payload.get("agentId")) and state.get("active_request") \\',
         '    if (payload.get("agent_id") or payload.get("agentId") or (is_agy() and detect_subagent(payload, cwd).get("is_subagent"))) and state.get("active_request") \\',
         label="bash_gate_agy_team_guard",
         sentinel="is_agy() and detect_subagent(payload, cwd)",
@@ -2083,7 +2084,7 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     )
     replace_exact(
         edit_path,
-        '    if is_protected_state and payload.get("agent_id"):',
+        '    if is_protected_state and (payload.get("agent_id") or payload.get("agentId")):',
         '    if is_protected_state and (payload.get("agent_id") or payload.get("agentId") or is_agy()):',
         label="edit_gate_agy_state_block",
         sentinel='or payload.get("agentId") or is_agy())',
@@ -2117,7 +2118,8 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     )
     replace_exact(
         edit_path,
-        '    if isinstance(payload.get("agent_id"), str) and payload["agent_id"] \\\n'
+        '    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \\\n'
+        '            or (isinstance(payload.get("agentId"), str) and payload["agentId"])) \\\n'
         '            and within(abs_target, os.path.realpath(cwd)) \\',
         '    if ((isinstance(payload.get("agent_id"), str) and payload["agent_id"]) \\\n'
         '            or (isinstance(payload.get("agentId"), str) and payload["agentId"]) \\\n'

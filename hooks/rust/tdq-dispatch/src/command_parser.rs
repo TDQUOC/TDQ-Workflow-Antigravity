@@ -12,7 +12,7 @@ fn compiled_regex(cell: &'static OnceLock<Regex>, pattern: &str) -> &'static Reg
 }
 
 fn ps_herestring_end(bytes: &[u8], body_start: usize, quote: u8) -> Option<usize> {
-    let mut j = body_start;
+    let mut j = body_start.saturating_sub(1);
     while j + 2 < bytes.len() {
         if bytes[j] == b'\n' && bytes[j + 1] == quote && bytes[j + 2] == b'@' {
             let after = j + 3;
@@ -27,8 +27,36 @@ fn ps_herestring_end(bytes: &[u8], body_start: usize, quote: u8) -> Option<usize
     None
 }
 
-/// Clean unquoted static PowerShell here-strings (`@'...'@` / safe `@"..."@`) outside quotes.
+fn has_ps_herestring_context(cmd: &str) -> bool {
+    static RE_PS_BIN: OnceLock<Regex> = OnceLock::new();
+    static RE_PS_VAR: OnceLock<Regex> = OnceLock::new();
+    static RE_PS_CMD: OnceLock<Regex> = OnceLock::new();
+    let ps_bin = compiled_regex(&RE_PS_BIN, r#"(?i)(?:^|[\s;|&(])(?:[^\s;|&"']*[/\\])?(?:powershell|pwsh)(?:\.exe)?\b"#);
+    let ps_var = compiled_regex(&RE_PS_VAR, r"\$[A-Za-z_][A-Za-z0-9_]*");
+    let ps_cmd = compiled_regex(&RE_PS_CMD, r"(?i)\b(?:Set|Get|Add|Out|Write|Copy|Move|Remove|New|Clear|Invoke|Select)-[A-Za-z]+\b");
+    ps_bin.is_match(cmd) || ps_var.is_match(cmd) || ps_cmd.is_match(cmd)
+}
+
+fn herestring_body_safe_for_strip(body: &str, quote: u8) -> bool {
+    if quote == b'"' {
+        return !body.contains('"') && !body.contains("$(") && !body.contains('`');
+    }
+    let mut out_of_quote = false;
+    for b in body.bytes() {
+        if b == b'\'' {
+            out_of_quote = !out_of_quote;
+        } else if out_of_quote && !(b.is_ascii_alphanumeric() || matches!(b, b'_' | b'.' | b'/' | b':' | b'-')) {
+            return false;
+        }
+    }
+    !out_of_quote
+}
+
+/// Clean unquoted static PowerShell here-strings (`@'...'@` / safe `@"..."@`) in PS context only.
 pub fn strip_powershell_herestrings(cmd: &str) -> String {
+    if !has_ps_herestring_context(cmd) {
+        return cmd.to_string();
+    }
     let bytes = cmd.as_bytes();
     let mut out = String::with_capacity(cmd.len());
     let (mut i, mut in_s, mut in_d, mut esc) = (0, false, false, false);
@@ -38,8 +66,8 @@ pub fn strip_powershell_herestrings(cmd: &str) -> String {
             let step = if bytes[i + 2] == b'\n' { 3 } else if bytes[i + 2] == b'\r' && bytes.get(i + 3) == Some(&b'\n') { 4 } else { 0 };
             if step > 0 {
                 if let Some(after) = ps_herestring_end(bytes, i + step, q) {
-                    let body = &cmd[i + step..after - 2];
-                    if q == b'\'' || (!body.contains("$(") && !body.contains('`')) {
+                    let body_end = after.saturating_sub(3).max(i + step);
+                    if herestring_body_safe_for_strip(&cmd[i + step..body_end], q) {
                         out.push(' ');
                         i = after;
                         continue;
@@ -771,7 +799,7 @@ fn part_stdout_targets_depth(part: &str, depth: usize) -> Vec<String> {
             let prev = op.start().checked_sub(1).and_then(|i| bytes.get(i).copied());
             let next_raw = bytes.get(op.end()).copied();
             if op.as_str() == ">"
-                && (matches!(prev, Some(b'0'..=b'9' | b'=' | b'-' | b'<' | b'>'))
+                && (matches!(prev, Some(b'=' | b'-' | b'<' | b'>'))
                     || matches!(next_raw, Some(b'=' | b'&')))
             {
                 return None;
@@ -872,11 +900,18 @@ fn collapse_cmd_paths(raw: &str) -> String {
     out
 }
 
-fn is_state_or_runtime_text(low: &str, seen_cd_tdq: bool) -> bool {
-    low.contains("docs/tdq/state.json")
+fn is_state_or_runtime_text(low: &str, seen_cd_tdq: bool, seen_cd_runtime: bool) -> bool {
+    seen_cd_runtime
+        || low.contains("docs/tdq/state.json")
         || low.contains("docs/tdq/state.md")
         || low.contains(".tdq-runtime")
-        || (seen_cd_tdq && (low.contains("state.json") || low.contains("state.md") || low.contains("turn-meta-")))
+        || (seen_cd_tdq
+            && (low.contains("state.json")
+                || low.contains("state.md")
+                || low.contains("turn-meta-")
+                || low.contains("sessions.json")
+                || low.contains("turns-")
+                || low.contains("checkpoint-")))
 }
 
 fn seg_has_state_write_op(collapsed_low: &str, cmd_toks: &[String]) -> bool {
@@ -894,26 +929,29 @@ fn seg_has_state_write_op(collapsed_low: &str, cmd_toks: &[String]) -> bool {
     py_node.is_match(collapsed_low)
 }
 
-fn mutates_tdq_state_depth(raw_cmd: &str, depth: usize, seen_cd_tdq: &mut bool) -> bool {
+fn mutates_tdq_state_depth(raw_cmd: &str, depth: usize, cd_flags: &mut (bool, bool)) -> bool {
     for raw_seg in split_shell_segments(raw_cmd, true) {
         let collapsed = collapse_cmd_paths(&raw_seg);
         let low = collapsed.to_ascii_lowercase();
         let toks = tokenize_command(&collapsed);
         let cmd_toks = skip_command_wrappers(&toks);
         let base = cmd_toks.first().map(|t| cmd_basename_no_exe(t)).unwrap_or_default();
-        if matches!(base.as_str(), "cd" | "chdir" | "set-location" | "sl" | "pushd")
-            && (low.contains("docs/tdq") || low.contains(".tdq-runtime"))
-        {
-            *seen_cd_tdq = true;
+        if matches!(base.as_str(), "cd" | "chdir" | "set-location" | "sl" | "pushd") {
+            if low.contains(".tdq-runtime") {
+                cd_flags.0 = true;
+                cd_flags.1 = true;
+            } else if low.contains("docs/tdq") {
+                cd_flags.0 = true;
+            }
         }
         let redir_hit = part_stdout_targets_depth(&collapsed, 0)
             .iter()
-            .any(|t| is_state_or_runtime_text(&collapse_path_token(t).to_ascii_lowercase(), *seen_cd_tdq));
-        if redir_hit || (is_state_or_runtime_text(&low, *seen_cd_tdq) && seg_has_state_write_op(&low, cmd_toks)) {
+            .any(|t| is_state_or_runtime_text(&collapse_path_token(t).to_ascii_lowercase(), cd_flags.0, cd_flags.1));
+        if redir_hit || (is_state_or_runtime_text(&low, cd_flags.0, cd_flags.1) && seg_has_state_write_op(&low, cmd_toks)) {
             return true;
         }
         if depth < 4 && extract_shell_subcommands(&raw_seg).iter().any(|sub| {
-            let mut inner_cd = *seen_cd_tdq;
+            let mut inner_cd = *cd_flags;
             mutates_tdq_state_depth(sub, depth + 1, &mut inner_cd)
         }) {
             return true;
@@ -925,8 +963,8 @@ fn mutates_tdq_state_depth(raw_cmd: &str, depth: usize, seen_cd_tdq: &mut bool) 
 /// Detect direct shell writes targeting `docs/tdq/state.json`, `STATE.md`, or `.tdq-runtime/`.
 pub fn mutates_tdq_state(raw_cmd: &str) -> bool {
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    let mut seen_cd_tdq = false;
-    mutates_tdq_state_depth(&cleaned, 0, &mut seen_cd_tdq)
+    let mut cd_flags = (false, false);
+    mutates_tdq_state_depth(&cleaned, 0, &mut cd_flags)
 }
 
 fn branch_candidates_from_git(args: &[String]) -> Vec<String> {
@@ -1355,6 +1393,55 @@ mod tests {
         assert_eq!(
             has_banned_ai_branch(r#"bash -c "git -C repo checkout -b gemini-x""#).as_deref(),
             Some("gemini-x")
+        );
+    }
+
+    #[test]
+    fn test_qc2_fd_redirect_cd_runtime_and_herestring_guards() {
+        for blocked_state in &[
+            "1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}",
+            "echo {} 1>> docs/tdq/state.json",
+            "2> docs/tdq/.tdq-runtime/sessions.json ls",
+            "cd docs/tdq/.tdq-runtime && echo {} > sessions.json",
+            "cd docs/tdq/.tdq-runtime && rm turns-1.jsonl",
+            "cd docs/tdq && echo {} > checkpoint-1.json",
+        ] {
+            assert!(
+                mutates_tdq_state(blocked_state),
+                "QC2 expected state block for {}",
+                blocked_state
+            );
+        }
+        for safe_cmd in &[
+            "cd docs/tdq/.tdq-runtime && cat sessions.json",
+            "Get-ChildItem 2>$null",
+            "cargo test 2>&1",
+        ] {
+            assert!(
+                !mutates_tdq_state(safe_cmd),
+                "QC2 unexpected state block for {}",
+                safe_cmd
+            );
+        }
+
+        for bypass_hs in &[
+            "@'\n'@; git push --force origin dev; @'\nx\n'@",
+            "$x = @'\n'@; git push --force origin dev; @'\nx\n'@",
+            "echo @'\n' && git push --force origin dev && echo '\n'@",
+            "$x = @'\n' ; git push --force origin dev ; echo '\n'@",
+            "powershell -Command @'\n' ; git push --force origin dev ; echo '\n'@",
+            "$x = @\"\n\" ; git push --force origin dev ; echo \"\n\"@",
+        ] {
+            assert_eq!(
+                inspect_git_policy(bypass_hs),
+                Some(GitPolicyViolation::ForcePushForbidden),
+                "QC2 expected herestring splice caught for {}",
+                bypass_hs
+            );
+        }
+        assert_eq!(
+            inspect_git_policy("$note = @'\ngit push --force origin dev\n'@\nWrite-Host $note"),
+            None
         );
     }
 }

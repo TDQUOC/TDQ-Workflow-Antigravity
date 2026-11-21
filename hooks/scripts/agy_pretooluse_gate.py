@@ -36,11 +36,11 @@ import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stder
 
 BAN = re.compile(r"^(claude|antigravity|gemini|codex)", re.IGNORECASE)
 BRANCH_PATTERNS = [
-    re.compile(r"git\s+checkout\s+-b\s+(\S+)"),
-    re.compile(r"git\s+switch\s+(?:-c|--create)\s+(\S+)"),
+    re.compile(r"git\s+checkout\s+-[bB]\s+(\S+)"),
+    re.compile(r"git\s+switch\s+(?:-[cC]|--create|--force-create)\s+(\S+)"),
     re.compile(r"git\s+branch\s+(?!-)(\S+)"),
 ]
-WORKTREE = re.compile(r"git\s+worktree\s+add\s+(?:-b\s+(\S+)\s+)?(\S+)")
+WORKTREE = re.compile(r"git\s+worktree\s+add\s+(?:-[bB]\s+(\S+)\s+)?(\S+)")
 
 STATE = r"docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/[^\s'\";&|<>()]*)?)"
 STATE_WRITES = [
@@ -247,9 +247,50 @@ def _agy_extract_subs(part):
     return subs
 
 
+_AGY_REDIR_RE = re.compile(r"(?<![<=!-])(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
+
+
+def _mask_agy_quoted_ops(part):
+    out, in_s, in_d, esc = [], False, False, False
+    for ch in part:
+        if esc:
+            out.append("_" if (in_s or in_d) and ch in ";|&><\n" else ch)
+            esc = False
+            continue
+        if ch == "\\" and not in_s:
+            esc = True
+            out.append(ch)
+            continue
+        if ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        elif (in_s or in_d) and ch in ";|&><\n":
+            out.append("_")
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
+def _has_agy_state_redir(col, seen_cd_tdq, seen_cd_runtime):
+    for tgt in _AGY_REDIR_RE.findall(_mask_agy_quoted_ops(col)):
+        clean_t = _collapse_path_token(tgt.strip("'\"")).lower()
+        if clean_t.startswith(("&", "=")) or clean_t in ("/dev/null", "$null", "nul"):
+            continue
+        if seen_cd_runtime or "docs/tdq/state.json" in clean_t or "docs/tdq/state.md" in clean_t or ".tdq-runtime" in clean_t:
+            return True
+        if seen_cd_tdq and any(k in clean_t for k in ("state.json", "state.md", "turn-meta-", "sessions.json", "turns-", "checkpoint-")):
+            return True
+    return False
+
+
 def _branch_names(cmd, _depth=0):
     names = []
-    norm = re.sub(r"\bgit\b(?:\s+-(?:C|c|git-dir|work-tree)\s+(?:\"[^\"]*\"|'[^']*'|\S+))+", "git", cmd)
+    norm = re.sub(
+        r"\bgit\b(?:\s+(?:-(?:[Cc]|git-dir|work-tree)\s+(?:\"[^\"]*\"|'[^']*'|\S+)|--(?:git-dir|work-tree)=\S+))+",
+        "git",
+        cmd,
+    )
     for target in (cmd, norm):
         for pattern in BRANCH_PATTERNS:
             names += [_clean(m) for m in pattern.findall(target)]
@@ -264,25 +305,33 @@ def _branch_names(cmd, _depth=0):
     return names
 
 
-def _writes_state_depth(cmd, depth, seen_cd):
+def _writes_state_depth(cmd, depth, seen_cd, seen_cd_runtime=False):
     for seg in _split_agy_segments(cmd):
         col = _collapse_cmd_paths(seg)
         low = col.lower()
         first = low.split(None, 1)[0].rsplit("/", 1)[-1].removesuffix(".exe") if low else ""
-        if first in ("cd", "chdir", "set-location", "sl", "pushd") and ("docs/tdq" in low or ".tdq-runtime" in low):
-            seen_cd = True
-        has_tgt = ("docs/tdq/state.json" in low or "docs/tdq/state.md" in low or ".tdq-runtime" in low
-                   or (seen_cd and any(k in low for k in ("state.json", "state.md", "turn-meta-"))))
-        has_redir = bool(re.search(r"(?<![0-9=<>-])>{1,2}\s*\S*(?:docs/tdq/(?:state\.json|state\.md)|\.tdq-runtime|turn-meta-|state\.json|state\.md)", col, re.IGNORECASE))
-        if has_tgt and (has_redir or (first not in _AGY_NON_WRITERS and _AGY_WRITE_OP_RE.search(col))):
+        if first in ("cd", "chdir", "set-location", "sl", "pushd"):
+            if ".tdq-runtime" in low:
+                seen_cd = True
+                seen_cd_runtime = True
+            elif "docs/tdq" in low:
+                seen_cd = True
+        has_tgt = (
+            seen_cd_runtime
+            or "docs/tdq/state.json" in low
+            or "docs/tdq/state.md" in low
+            or ".tdq-runtime" in low
+            or (seen_cd and any(k in low for k in ("state.json", "state.md", "turn-meta-", "sessions.json", "turns-", "checkpoint-")))
+        )
+        if _has_agy_state_redir(col, seen_cd, seen_cd_runtime) or (has_tgt and first not in _AGY_NON_WRITERS and _AGY_WRITE_OP_RE.search(col)):
             return True
-        if depth < 4 and any(_writes_state_depth(sub, depth + 1, seen_cd) for sub in _agy_extract_subs(seg)):
+        if depth < 4 and any(_writes_state_depth(sub, depth + 1, seen_cd, seen_cd_runtime) for sub in _agy_extract_subs(seg)):
             return True
     return False
 
 
 def _writes_state(cmd):
-    return _writes_state_depth(cmd, 0, False)
+    return _writes_state_depth(cmd, 0, False, False)
 
 
 def _log(msg):

@@ -651,6 +651,28 @@ class TestAgySmartHardeningStaged(unittest.TestCase):
         res_st = self._run_staged("PreToolUse", {"tool_name": "edit_file", "tool_input": {"TargetFile": str(self.project / "DOCS" / "TDQ" / "STATE.JSON")}})
         self.assertEqual(res_st.get("decision"), "deny")
 
+    def test_qc2_agy_pretooluse_fd_cd_branch_and_unpatched_edit_agentid(self):
+        for cmd, code in (
+            ("1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}", "TDQ:STATE"),
+            ("cd docs/tdq/.tdq-runtime && echo {} > sessions.json", "TDQ:STATE"),
+            ("git switch -C claude-x", "TDQ:GIT"),
+            ("git checkout -B gemini-x", "TDQ:GIT"),
+        ):
+            with self.subTest(cmd=cmd):
+                rc, out, _ = agy("agy_pretooluse_gate.py", {"tool_input": {"command": cmd}})
+                self.assertEqual(rc, 0)
+                self.assertEqual(parsed(out).get("decision"), "deny")
+                self.assertIn(code, parsed(out).get("reason", ""))
+
+        rc_ed, out_ed, _ = agy("edit_gate.py", {
+            "cwd": str(self.project),
+            "agentId": "sub-raw-1",
+            "tool_input": {"file_path": str(self.project / "docs" / "tdq" / "state.json")},
+        })
+        self.assertEqual(rc_ed, 0)
+        self.assertEqual(parsed(out_ed).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+        self.assertIn("TDQ:STATE", out_ed)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,10 +1,10 @@
 {
   "slug": "2026-11-22-0023-hook-duyet-thao-tac-git",
   "plan_file": "docs\\tdq\\plan\\2026-11-22-0023-hook-duyet-thao-tac-git.md",
-  "plan_sha": "7def2464a030e82c023fb9a176651be9a36d79fc6e7d38c33b8506d80c01a4fe",
+  "plan_sha": "1fba02c58106d4a83b926ef2043733976d5949630c49f7e572aa340a9af9bb38",
   "projection_version": "v1",
   "projection_mode": "explicit",
-  "plan_assignment_sha": "6c4980a41152b32a011d8a53579e91115570bf0ed1b869a493d0d1722d5057d6",
+  "plan_assignment_sha": "e7ac749fe4a7c69fc236c2316ccf57df9e1eedc2f3afd66815300aea0700b6cc",
   "tasks": {
     "T1.1": {
       "quyet_dinh": "tu_lam",
@@ -51,7 +51,7 @@
       "vung_file": [
         "tools/patches/agy_hooks.py"
       ],
-      "dot": 4
+      "dot": 5
     },
     "T4.1": {
       "quyet_dinh": "giao",
@@ -65,7 +65,7 @@
         "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json",
         "plugins/tdq-workflow-agy/manifest.json"
       ],
-      "dot": 5
+      "dot": 7
     },
     "T4.2": {
       "quyet_dinh": "giao",
@@ -76,7 +76,7 @@
         "tests/test_agy_hooks.py",
         "tests/test_hooks_dual_protocol.py"
       ],
-      "dot": 7
+      "dot": 10
     },
     "QC1.1": {
       "quyet_dinh": "tu_lam",
@@ -116,7 +116,7 @@
         "plugins/tdq-workflow-agy/hooks/scripts/_common.py",
         "plugins/tdq-workflow-agy/manifest.json"
       ],
-      "dot": 4
+      "dot": 5
     },
     "QC1.5": {
       "quyet_dinh": "giao",
@@ -126,7 +126,49 @@
         "tests/test_bash_gate.py",
         "tests/test_agy_hooks.py"
       ],
+      "dot": 8
+    },
+    "QC2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/command_parser.rs"
+      ],
+      "dot": 3
+    },
+    "QC2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/bash_gate.py",
+        "hooks/scripts/edit_gate.py",
+        "hooks/scripts/agy_pretooluse_gate.py",
+        "tools/patches/agy_hooks.py"
+      ],
+      "dot": 4
+    },
+    "QC2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe",
+        "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/_common.py",
+        "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py",
+        "plugins/tdq-workflow-agy/manifest.json"
+      ],
       "dot": 6
+    },
+    "QC2.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_bash_gate.py",
+        "tests/test_agy_hooks.py",
+        "tests/test_rust_dispatch_parity.py"
+      ],
+      "dot": 9
     }
   }
 }
