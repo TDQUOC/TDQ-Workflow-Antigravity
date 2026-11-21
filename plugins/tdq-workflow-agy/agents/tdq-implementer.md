@@ -1,7 +1,7 @@
 ---
 name: tdq-implementer
 description: Implements one assigned task of an approved TDQ plan in an isolated git worktree, red-green, and reports structured handoff data.
-tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]
 model: inherit
 ---
 

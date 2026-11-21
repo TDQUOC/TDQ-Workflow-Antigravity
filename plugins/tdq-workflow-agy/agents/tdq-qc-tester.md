@@ -1,7 +1,7 @@
 ---
 name: tdq-qc-tester
 description: Independently verifies an implemented TDQ plan against its Definition of Done - reruns tests, probes edge cases and logging, reports PASS/FAIL with evidence.
-tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]
 model: inherit
 ---
 
