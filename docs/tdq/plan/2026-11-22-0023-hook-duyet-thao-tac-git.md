@@ -153,7 +153,7 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic cốt lõi: Biên dịch bản tối ưu release của `tdq-dispatch`, đồng bộ binary vào `plugins/tdq-workflow-agy/bin/`, chạy `build_agy_plugin.py --upstream .` cập nhật toàn bộ script và manifest, kiểm chứng bằng `agy plugin validate --strict --json`.
   - Ca góc hiểm & Assert: `json.loads(validate_stdout)["findings"] == []`; phiên bản trong `~/.gemini/config/plugins/tdq-workflow-agy/plugin.json` giữ nguyên không đổi
 
-- [ ] **T4.2** (e18m) Bổ sung kiểm thử log service (`TDQ_LOG=1/0`) và ma trận parity Rust ↔ Python trên bản build thật — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py -q`
+- [>] **T4.2** (e18m) Bổ sung kiểm thử log service (`TDQ_LOG=1/0`) và ma trận parity Rust ↔ Python trên bản build thật — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py -q`
   - Req: `§2 #4, §4, §6 Q1-Q2 & Q6` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ 137 test hiện hành và không dùng mock che mất hệ thống đang kiểm (`ANTI-1`)
   - Chạm: `tests/test_rust_dispatch_parity.py`, `tests/test_bash_gate.py`, `tests/test_agy_hooks.py`, `tests/test_hooks_dual_protocol.py`
   - Cần: `T4.1`
