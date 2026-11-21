@@ -41,7 +41,7 @@ BAD_MSG = [
     re.compile(r"được\s+tạo\s+(?:cùng|với|bởi).{0,40}?(claude|gemini|codex|antigravity)", re.IGNORECASE | re.DOTALL),  # i18n-allow
     re.compile(r"co-authored-by:.{0,60}?(claude|gemini|codex|antigravity)", re.IGNORECASE),
 ]
-STATE = r"docs/tdq/(?:state\.json|STATE\.md)"
+STATE = r"docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/[^\s'\";&|<>()]*)?)"
 STATE_WRITES = [
     re.compile(r">{1,2}\s*['\"]?\S*" + STATE),
     re.compile(r"\btee\b[^|;&]*" + STATE),
@@ -250,6 +250,207 @@ def _is_shell_write(cmd, _depth=0):
     return False
 
 
+_PS_HS_SINGLE_RE = re.compile(r"@'\r?\n.*?\r?\n'@", re.DOTALL)
+_PS_HS_DOUBLE_RE = re.compile(r'@"\r?\n.*?\r?\n"@', re.DOTALL)
+_GIT_VALUE_FLAGS = frozenset({
+    "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env",
+})
+_PUSH_VALUE_FLAGS = frozenset({
+    "--repo", "-o", "--push-option", "--receive-pack", "--exec", "--upload-pack",
+})
+_BRANCH_TAIL_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+_INTAKE_BRANCH_KINDS = frozenset({"feature", "bugfix", "hotfix", "chore", "docs"})
+
+
+def _strip_powershell_herestrings(cmd):
+    intermediate = _PS_HS_SINGLE_RE.sub(" ", cmd)
+    return _PS_HS_DOUBLE_RE.sub(" ", intermediate)
+
+
+def _tokenize_command(cmd):
+    """Tokenize shell command honoring quotes and double-quote escapes."""
+    tokens, current = [], []
+    in_single = in_double = False
+    i, n = 0, len(cmd)
+    while i < n:
+        ch = cmd[i]
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        elif ch == "\\" and in_double and i + 1 < n and cmd[i + 1] in ('"', "\\"):
+            i += 1
+            current.append(cmd[i])
+        elif ch.isspace() and not in_single and not in_double:
+            if current:
+                tokens.append("".join(current))
+                current = []
+        else:
+            current.append(ch)
+        i += 1
+    if current:
+        tokens.append("".join(current))
+    return tokens
+
+
+def _is_env_assignment(tok):
+    if "=" not in tok:
+        return False
+    lhs, _ = tok.split("=", 1)
+    return bool(lhs) and not lhs.startswith("-") and all(
+        c.isascii() and (c.isalnum() or c in "_:") for c in lhs
+    )
+
+
+def _cmd_basename_no_exe(tok):
+    base = tok.replace("\\", "/").rsplit("/", 1)[-1].strip().lower()
+    return base.removesuffix(".exe")
+
+
+def _skip_command_wrappers(tokens):
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if _is_env_assignment(tok):
+            i += 1
+            continue
+        base = _cmd_basename_no_exe(tok)
+        if base == "env":
+            i += 1
+            while i < len(tokens) and (
+                _is_env_assignment(tokens[i]) or tokens[i] in ("-i", "--ignore-environment")
+            ):
+                i += 1
+        elif base in ("command", "time", "nohup"):
+            i += 1
+        elif base == "rtk":
+            i += 1
+            if i < len(tokens) and tokens[i].lower() == "bypass":
+                i += 1
+        else:
+            break
+    return tokens[i:]
+
+
+def _parse_git_subcommand(args):
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if not tok.startswith("-") or tok == "--":
+            break
+        i += 2 if tok in _GIT_VALUE_FLAGS else 1
+    if i >= len(args) or args[i].startswith("-"):
+        return None, []
+    return args[i], args[i + 1:]
+
+
+def _has_ai_trailer(args):
+    return any(
+        "co-authored-by:" in arg.lower() or any(p.search(arg) for p in BAD_MSG)
+        for arg in args
+    )
+
+
+def _is_force_push_args(args):
+    after_dd = skip_val = False
+    for arg in args:
+        if skip_val:
+            skip_val = False
+            continue
+        if arg == "--":
+            after_dd = True
+            continue
+        if not after_dd and arg in _PUSH_VALUE_FLAGS:
+            skip_val = True
+            continue
+        low = arg.lower()
+        flag_force = not after_dd and (
+            low in ("-f", "--force", "--force-with-lease", "--force-if-includes")
+            or low.startswith("--force-with-lease=")
+            or (low.startswith("-") and not low.startswith("--") and "f" in low[1:])
+        )
+        if flag_force or (not low.startswith("-") and low.startswith("+")):
+            return True
+    return False
+
+
+def _classify_git_tokens(args):
+    subcmd, rest = _parse_git_subcommand(args)
+    if not subcmd:
+        return None
+    if _has_ai_trailer(rest):
+        return "co_authored_trailer"
+    sub = subcmd.lower()
+    if sub == "push":
+        return "force_push_forbidden" if _is_force_push_args(rest) else "push_needs_approval"
+    before_dd = []
+    for a in rest:
+        if a == "--":
+            break
+        before_dd.append(a)
+    if sub == "reset" and "--hard" in before_dd:
+        return "reset_hard_needs_approval"
+    if sub == "clean" and any(
+        a == "--force" or (a.startswith("-") and not a.startswith("--") and "f" in a[1:])
+        for a in before_dd
+    ):
+        return "clean_force_needs_approval"
+    return None
+
+
+def _collect_git_violations_depth(part, depth, out):
+    toks = _tokenize_command(part)
+    cmd_toks = _skip_command_wrappers(toks)
+    if cmd_toks and _cmd_basename_no_exe(cmd_toks[0]) == "git":
+        v = _classify_git_tokens(cmd_toks[1:])
+        if v and v not in out:
+            out.append(v)
+    if depth < 2:
+        for sub in _extract_shell_subcommands(part):
+            for seg in _split_shell_segments(sub):
+                _collect_git_violations_depth(seg, depth + 1, out)
+
+
+def collect_git_policy_violations(raw_cmd):
+    """Collect git policy violations across shell segments and nested shells."""
+    cleaned = _strip_powershell_herestrings(raw_cmd)
+    out = []
+    for seg in _split_shell_segments(cleaned):
+        _collect_git_violations_depth(seg, 0, out)
+    return out
+
+
+def inspect_git_command_safety(raw_cmd):
+    """Return the highest-priority git policy violation string, or None."""
+    violations = collect_git_policy_violations(raw_cmd)
+    for hard in ("co_authored_trailer", "force_push_forbidden"):
+        if hard in violations:
+            return hard
+    return violations[0] if violations else None
+
+
+def is_pure_intake_branch_create(raw_cmd):
+    """True only for single-segment Step-3b branch creation under allowed kinds."""
+    cleaned = _strip_powershell_herestrings(raw_cmd)
+    segments = _split_shell_segments(cleaned)
+    if len(segments) != 1:
+        return False
+    seg = segments[0]
+    if _extract_shell_subcommands(seg) or _part_stdout_targets(seg, 0):
+        return False
+    toks = _tokenize_command(seg)
+    if len(toks) != 4 or _cmd_basename_no_exe(toks[0]) != "git":
+        return False
+    sub, flag, branch = toks[1].lower(), toks[2], toks[3]
+    ok_verb = (sub == "switch" and flag in ("-c", "--create")) or (
+        sub == "checkout" and flag == "-b"
+    )
+    if not ok_verb or BAN.match(branch) or "/" not in branch:
+        return False
+    kind, tail = branch.split("/", 1)
+    return kind in _INTAKE_BRANCH_KINDS and bool(_BRANCH_TAIL_RE.match(tail))
+
+
 def _enforce_agy_bash_guards(payload, cwd):
     info = detect_subagent(payload, cwd)
     agy = is_agy()
@@ -263,6 +464,13 @@ def _enforce_agy_bash_guards(payload, cwd):
     norm_cmd = cmd.replace("\\", "/")
     if agy and _PS_WRITE_PATTERN.search(cmd) and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd):
         block(cwd, payload, "GATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])
+        return True
+    is_runtime_write = (
+        re.search(r"docs/tdq/\.tdq-runtime(?:/|\b|$)", norm_cmd, re.IGNORECASE)
+        and (_PS_WRITE_PATTERN.search(cmd) or any(p.search(norm_cmd) for p in STATE_WRITES))
+    )
+    if agy and is_runtime_write:
+        block(cwd, payload, "STATE", ["Direct mutation of docs/tdq/.tdq-runtime/ is prohibited."])
         return True
     if agy and re.search(r"git\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch)\s+['\"]?(?:claude|antigravity|gemini|codex)[-_]", cmd, re.IGNORECASE):
         block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])
@@ -322,9 +530,10 @@ def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind
             echo_line("TDQ:OUTPUT", "limited the output, or confirmed the whole is needed"),
         ], rows=rows)
 
-    if re.search(STATE, cmd):
+    norm_cmd = cmd.replace("\\", "/")
+    if re.search(STATE, norm_cmd):
         for pattern in STATE_WRITES:
-            if pattern.search(cmd):
+            if pattern.search(norm_cmd):
                 remind(cwd, payload, "TDQ:STATE", [
                     "Do not write the state file straight through the shell.",
                     "How: python3 scripts/tdq_state.py set|approve|init|reset.",

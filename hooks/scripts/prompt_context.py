@@ -21,7 +21,7 @@ from _common import (INVESTIGATE_GON_TEXT, _shard_turn_path,
                      is_agy, payload_cwd, plan_mode, read_payload, session_id)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
-from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
+from tdq_state import (MODE_ALIASES, _info, effective_lane,  # noqa: E402
                        effective_mode, effective_phase, lenh_cho_project, liet_ke_modes, load,
                        muc_gat_hieu_luc, normalize_mode, phase_key,
                        prompt_context_last, prompt_context_save, render_next,
@@ -110,6 +110,60 @@ def _tach_prompt_thuc(prompt):
 QUOTED_SPEECH_RE = re.compile(
     r"""(?i)(?:the user said|claude asked|trích dẫn|người dùng nói)\s*:\s*["'“]"""
 )
+
+_GIT_GRANT_META_RE = re.compile(
+    r"(?i)(?:\bmở\s+request\b|\bopen\s+request\b|"  # i18n-allow
+    r"\b(?:update|cập\s*nhật|sửa|chỉnh)\b[^\n]{0,30}\bhook\b|"  # i18n-allow
+    r"\b(?:viết|duyệt|lập|sửa)\b[^\n]{0,20}\b(?:spec|plan|brief)\b|"  # i18n-allow
+    r"\btest\b[^\n]{0,20}\bhook\b)"
+)
+_GIT_GRANT_NEG_RE = re.compile(
+    r"(?i)\b(?:không|khong|ko|chưa|chua|đừng|not|don'?t|do\s+not|"  # i18n-allow
+    r"never|cancel|wait|hold\s+on|maybe|nope|no)\b"
+)
+_GIT_GRANT_PUSH_RE = re.compile(
+    r"(?i)(?:\bgit\s+push\b|"
+    r"\bpush\b[^\n]{0,40}\b(?:lên|len|origin|upstream|remote|dev|main|nhánh|nhanh|branch|code|đi|di|now|it|changes|này|nay)\b|"  # i18n-allow
+    r"\b(?:duyệt|duyet|cho\s*phép|cho\s*phep|allow|approve[sd]?|ok|okay|oke|đồng\s*ý|dong\s*y|chốt|chot|chạy|chay|run|thực\s*hiện|thuc\s*hien|giúp|giup|hãy|hay)\b[^\n]{0,40}\bpush\b|"  # i18n-allow
+    r"\bđẩy\b[^\n]{0,24}\b(?:code|lên|nhánh|origin|upstream|remote)\b)"  # i18n-allow
+)
+_GIT_GRANT_RESET_RE = re.compile(r"(?i)\b(?:git\s+)?reset\s+(?:--hard|hard)\b")
+_GIT_GRANT_CLEAN_RE = re.compile(
+    r"(?i)\b(?:git\s+)?clean\b[^\n]{0,24}(?:--force\b|-[a-z]*f[a-z]*\b)"
+)
+
+
+def _has_prompt_grant_blockers(trimmed):
+    """Reject quoted, system, question, negation, and meta-hook prompts before granting git."""
+    if not trimmed or "?" in trimmed:
+        return True
+    if len(trimmed) >= 2 and (
+        (trimmed[0] == '"' and trimmed[-1] == '"')
+        or (trimmed[0] == "'" and trimmed[-1] == "'")
+        or (trimmed[0] == "\u201c" and trimmed[-1] == "\u201d")
+    ):
+        return True
+    return bool(
+        NON_HUMAN_RE.search(trimmed)
+        or QUOTED_SPEECH_RE.search(trimmed)
+        or _GIT_GRANT_META_RE.search(trimmed)
+        or _GIT_GRANT_NEG_RE.search(trimmed)
+    )
+
+
+def extract_git_grants(prompt):
+    """Extract verified single-turn git grants (`clean_f`, `push`, `reset_hard`)."""
+    trimmed = _tach_prompt_thuc(prompt)
+    if _has_prompt_grant_blockers(trimmed):
+        return []
+    grants = []
+    if _GIT_GRANT_CLEAN_RE.search(trimmed):
+        grants.append("clean_f")
+    if _GIT_GRANT_PUSH_RE.search(trimmed):
+        grants.append("push")
+    if _GIT_GRANT_RESET_RE.search(trimmed):
+        grants.append("reset_hard")
+    return grants
 
 
 def _an_toan_by(prompt):
@@ -310,11 +364,16 @@ def main():
     # even when the change went through the shell (the turn ledger only sees Edit/Write).
     # Written to the ledger, NOT printed into context → costs the model no tokens.
     turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
+    prompt = payload.get("prompt") or payload.get("user_message") or ""
+    git_grants = extract_git_grants(prompt)
+    if git_grants:
+        turn_log_append(cwd, "signal", session=sid, event="git_grant",
+                        target="git_grant", grants=git_grants)
+        _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")
     _nhac_worktree(cwd)
 
     # No OPEN request (open = active_request exists AND phase != idle) → point at intake.
     # The INTAKE line comes FIRST so _truncate (which cuts from the tail) never clips it.
-    prompt = payload.get("prompt") or ""
     if RE_DIRECT.search(prompt):
         intake = (
             "[TDQ:INTAKE] Yêu cầu chứa '_tdq_direct' → chạy chế độ direct: "  # i18n-allow

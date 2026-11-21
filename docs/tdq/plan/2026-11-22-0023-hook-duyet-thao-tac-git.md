@@ -77,7 +77,7 @@ Trạng thái plan: CHỜ DUYỆT
     3. Thêm `extract_git_grants` (lọc ngoặc kép, thẻ hệ thống, trích dẫn, dấu `?`, phủ định Việt/Anh, thảo luận meta về hook/spec), `is_pure_intake_branch_create` (1 phân đoạn `git switch -c`/`checkout -b` đúng 5 tiền tố loại request, không nhánh AI, không redirect) và mở rộng `mutates_tdq_state` chặn ghi `docs/tdq/.tdq-runtime/`.
   - Ca góc hiểm & Assert: `inspect_command_safety("py -3 scripts/skill_inventory.py --loc \"hook git push\"") == None`; `inspect_command_safety("bash -c \"git -C repo push --force origin dev\"") == Some(GitForcePushForbidden)`; `inspect_command_safety("git commit -m \"feat: x\" -m \"Co-Authored-By: Claude\"") == Some(CoAuthoredTrailer)`; `extract_git_grants("không push nhé") == Vec::<String>::new()`; `extract_git_grants("mở request update hook cho phép git push") == Vec::<String>::new()`; `extract_git_grants("ok push lên origin đi") == vec!["push"]`; `mutates_tdq_state("echo {} > docs\\tdq\\.tdq-runtime\\turn-meta-1.json") == true`; `is_pure_intake_branch_create("git switch -c feature/abc; echo x > src/a.py") == false`
 
-- [>] **T1.2** (e10m) Cập nhật nội dung thẻ `GIT` trong `gate_guidance.json` (giữ đúng 23 mã) và kiểm thử hợp đồng guidance — Test: `py -3 -X utf8 -m pytest tests/test_gate_guidance.py -q`
+- [x] **T1.2** (e10m) Cập nhật nội dung thẻ `GIT` trong `gate_guidance.json` (giữ đúng 23 mã) và kiểm thử hợp đồng guidance — Test: `py -3 -X utf8 -m pytest tests/test_gate_guidance.py -q`
   - Req: `§1, §2 #3, §5` · Ngoài phạm vi: `GIỮ NGUYÊN` danh sách 23 mã (`9` hard deny, `2` overwrite, `13` guidance) và toàn bộ 22 mã khác ngoài `GIT`
   - Chạm: `tools/patches/gate_guidance.json`, `tests/test_gate_guidance.py`
   - Cần: Không
@@ -92,7 +92,7 @@ Trạng thái plan: CHỜ DUYỆT
 
 ## P2 — Cổng sự kiện Rust & lưu trữ vé duyệt
 
-- [ ] **T2.1** (e20m) Mở rộng `TurnMeta` (`git_grants`) và nối cơ chế vé single-turn, khóa `.tdq-runtime/`, miễn trừ bước 3b cùng log `TDQ_LOG` trên tầng sự kiện Rust — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+- [x] **T2.1** (e20m) Mở rộng `TurnMeta` (`git_grants`) và nối cơ chế vé single-turn, khóa `.tdq-runtime/`, miễn trừ bước 3b cùng log `TDQ_LOG` trên tầng sự kiện Rust — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
   - Req: `§1, §2 #1-2, §3c Bước 1 & 3, §4` · Ngoài phạm vi: `GIỮ NGUYÊN` cổng `READONLY`, `VUNG`, `ZERO-POPUP`, `SUBAGENT`, `UNFINISHED` và hành vi chặn mặc định khi không có vé
   - Chạm: `hooks/rust/tdq-dispatch/src/storage.rs`, `hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs`, `hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs`, `hooks/rust/tdq-dispatch/src/events/pre_invocation.rs`
   - Cần: `T1.1`, `T1.2`
@@ -110,7 +110,7 @@ Trạng thái plan: CHỜ DUYỆT
 
 ## P3 — Đồng bộ tầng hook Python & patch Antigravity
 
-- [ ] **T3.1** (e18m) Đồng bộ trích xuất vé `git_grants`, bộ phân tích lệnh git theo token và khóa `.tdq-runtime/` trong `hooks/scripts/` — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_hooks_dual_protocol.py -q`
+- [x] **T3.1** (e18m) Đồng bộ trích xuất vé `git_grants`, bộ phân tích lệnh git theo token và khóa `.tdq-runtime/` trong `hooks/scripts/` — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_hooks_dual_protocol.py -q`
   - Req: `§1, §2 #3, §3c Bước 1-3, §4, §5` · Ngoài phạm vi: `GIỮ NGUYÊN` luật gọi `hooks/ → scripts/`, không để `scripts/` import `hooks/`, không tăng lỗi `i18n_check.py` so với `dev`
   - Chạm: `hooks/scripts/prompt_context.py`, `hooks/scripts/bash_gate.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/agy_pretooluse_gate.py`
   - Cần: `T1.1`

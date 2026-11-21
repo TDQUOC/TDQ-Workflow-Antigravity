@@ -146,6 +146,8 @@ pub struct TurnMeta {
     pub phase_anchor: String,
     #[serde(default)]
     pub mode: String,
+    #[serde(default)]
+    pub git_grants: Vec<String>,
 }
 
 /// Per-session weighted burden checkpoint (`checkpoint-<sid>.json`).
@@ -350,10 +352,11 @@ pub fn mark_turn_closed(workspace_root: &Path, sid: &str) {
         return;
     }
     let mut meta = read_turn_meta(workspace_root, sid).unwrap_or_default();
-    if meta.turn_closed {
+    if meta.turn_closed && meta.git_grants.is_empty() {
         return;
     }
     meta.turn_closed = true;
+    meta.git_grants.clear();
     let _ = write_turn_meta(workspace_root, sid, &meta);
 }
 
@@ -845,6 +848,46 @@ mod tests {
         assert_eq!(record_stop_streak(&tmp, "sha2"), 1);
         reset_stop_streak(&tmp);
         assert_eq!(record_stop_streak(&tmp, "sha1"), 1);
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_turn_meta_git_grants_lifecycle_and_default() {
+        let tmp = std::env::temp_dir().join(format!("tdq_turn_grants_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::create_dir_all(get_runtime_dir(&tmp));
+
+        let legacy_json = r#"{"last_user_sig":"ui:1","turn_closed":false,"prompt_sha":"abc","phase_anchor":"implement","mode":"subagent"}"#;
+        let legacy: TurnMeta = serde_json::from_str(legacy_json).unwrap();
+        assert!(legacy.git_grants.is_empty());
+
+        let granted = TurnMeta {
+            last_user_sig: "ui:2".to_string(),
+            turn_closed: false,
+            prompt_sha: "def".to_string(),
+            git_grants: vec!["push".to_string(), "reset_hard".to_string()],
+            ..Default::default()
+        };
+        assert!(write_turn_meta(&tmp, "s_grants", &granted).is_ok());
+        let loaded = read_turn_meta(&tmp, "s_grants").unwrap();
+        assert_eq!(loaded.git_grants, vec!["push", "reset_hard"]);
+
+        mark_turn_closed(&tmp, "s_grants");
+        let closed = read_turn_meta(&tmp, "s_grants").unwrap();
+        assert!(closed.turn_closed);
+        assert!(closed.git_grants.is_empty());
+
+        let stale = TurnMeta {
+            turn_closed: true,
+            git_grants: vec!["clean_f".to_string()],
+            ..Default::default()
+        };
+        assert!(write_turn_meta(&tmp, "s_stale", &stale).is_ok());
+        mark_turn_closed(&tmp, "s_stale");
+        let cleaned = read_turn_meta(&tmp, "s_stale").unwrap();
+        assert!(cleaned.turn_closed);
+        assert!(cleaned.git_grants.is_empty());
 
         let _ = fs::remove_dir_all(&tmp);
     }

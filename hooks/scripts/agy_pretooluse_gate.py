@@ -41,7 +41,7 @@ BRANCH_PATTERNS = [
 ]
 WORKTREE = re.compile(r"git\s+worktree\s+add\s+(?:-b\s+(\S+)\s+)?(\S+)")
 
-STATE = r"docs/tdq/(?:state\.json|STATE\.md)"
+STATE = r"docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/[^\s'\";&|<>()]*)?)"
 STATE_WRITES = [
     re.compile(r">{1,2}\s*['\"]?\S*" + STATE),
     re.compile(r"\btee\b[^|;&]*" + STATE),

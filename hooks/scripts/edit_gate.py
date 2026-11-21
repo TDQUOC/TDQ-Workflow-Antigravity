@@ -137,10 +137,18 @@ def main():
     # (2) remind
     state_file = os.path.realpath(state_path(cwd))
     state_md = os.path.realpath(state_md_path(cwd))
-    if abs_target in (state_file, state_md) and payload.get("agent_id"):
+    runtime_dir = os.path.realpath(os.path.join(cwd, "docs", "tdq", ".tdq-runtime"))
+    in_runtime = abs_target == runtime_dir or within(abs_target, runtime_dir)
+    is_protected_state = abs_target in (state_file, state_md) or in_runtime
+    if is_protected_state and payload.get("agent_id"):
         block(cwd, payload, "TDQ:STATE", [
-            "A sub-agent may not write TDQ state or its generated mirror.",
+            "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",
             "Return structured output to the TDQ leader; only tdq_state.py writes state.",
+        ])
+    if in_runtime:
+        block(cwd, payload, "TDQ:STATE", [
+            "Direct edit of docs/tdq/.tdq-runtime/ is prohibited.",
+            "Only verified TDQ hooks manage single-turn runtime files.",
         ])
     if abs_target in (state_file, state_md):
         remind(cwd, payload, "TDQ:STATE", [

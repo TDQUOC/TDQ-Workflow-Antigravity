@@ -30,22 +30,22 @@
     "semantic_hash": "95e822ed64626af8354685732d466c11"
   },
   "hooks/scripts/bash_gate.py": {
-    "mtime": 1795227491.4635007,
-    "seen": 1795229840.9462423,
-    "ast_hash": "30fac7b2093b51758e8d10ab5101a43e",
-    "semantic_hash": "30fac7b2093b51758e8d10ab5101a43e"
+    "mtime": 1795285535.79189,
+    "seen": 1795285621.906733,
+    "ast_hash": "2b3982e4f83f36e904198940438b8c3a",
+    "semantic_hash": "2b3982e4f83f36e904198940438b8c3a"
   },
   "hooks/scripts/edit_gate.py": {
-    "mtime": 1795227491.4640243,
-    "seen": 1795229840.9466326,
-    "ast_hash": "2440d65dc3e1dd8aaaf2310cd6a8b675",
-    "semantic_hash": "2440d65dc3e1dd8aaaf2310cd6a8b675"
+    "mtime": 1795285334.4366682,
+    "seen": 1795285621.9071126,
+    "ast_hash": "e07972aa59749297b14e32b033d09537",
+    "semantic_hash": "e07972aa59749297b14e32b033d09537"
   },
   "hooks/scripts/prompt_context.py": {
-    "mtime": 1795277880.9975927,
-    "seen": 1795280099.2383463,
-    "ast_hash": "e6875eb6507572997a673fba5d884684",
-    "semantic_hash": "e6875eb6507572997a673fba5d884684"
+    "mtime": 1795285436.048733,
+    "seen": 1795285621.90736,
+    "ast_hash": "19209b716290331508b34905133ed85a",
+    "semantic_hash": "19209b716290331508b34905133ed85a"
   },
   "hooks/scripts/session_start.py": {
     "mtime": 1795227491.4655993,
@@ -349,10 +349,10 @@
     "semantic_hash": "19f070c504aa43d421ff937498dae145"
   },
   "hooks/scripts/agy_pretooluse_gate.py": {
-    "mtime": 1794604402.023962,
-    "seen": 1794767258.32113,
-    "ast_hash": "59c486cb943889d747fb5df61fa80d71",
-    "semantic_hash": "59c486cb943889d747fb5df61fa80d71"
+    "mtime": 1795285338.4332397,
+    "seen": 1795285621.9064796,
+    "ast_hash": "679fd688f928e5f14639c9832868b9af",
+    "semantic_hash": "679fd688f928e5f14639c9832868b9af"
   },
   "hooks/scripts/agy_stop_gate.py": {
     "mtime": 1794604409.8279521,
@@ -1417,16 +1417,16 @@
     "semantic_hash": "4984d170a4e28d8e69efefaf8ca4a72e"
   },
   "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs": {
-    "mtime": 1795227491.4574077,
-    "seen": 1795229840.9454165,
-    "ast_hash": "5391a92aaedf086f69ed3a3d53e89e26",
-    "semantic_hash": "5391a92aaedf086f69ed3a3d53e89e26"
+    "mtime": 1795285164.1859164,
+    "seen": 1795285621.9055336,
+    "ast_hash": "a934c995a942ee9d52736f60267976fa",
+    "semantic_hash": "a934c995a942ee9d52736f60267976fa"
   },
   "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs": {
-    "mtime": 1795227491.458721,
-    "seen": 1795229840.9454186,
-    "ast_hash": "baf5a3fdf93b21e0bb8c65b12a0326ce",
-    "semantic_hash": "baf5a3fdf93b21e0bb8c65b12a0326ce"
+    "mtime": 1795285208.9639504,
+    "seen": 1795285621.9055371,
+    "ast_hash": "4e70cd213fbcbdf99b86da739743c94f",
+    "semantic_hash": "4e70cd213fbcbdf99b86da739743c94f"
   },
   "hooks/rust/tdq-dispatch/src/events/session_start.rs": {
     "mtime": 1795227491.459285,
@@ -1441,10 +1441,10 @@
     "semantic_hash": "0d14bf4faa9275c05c9cb80c8f587e79"
   },
   "hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs": {
-    "mtime": 1795227491.4603498,
-    "seen": 1795229840.945424,
-    "ast_hash": "9bac9093682bba7514fe023f2fb8a65d",
-    "semantic_hash": "9bac9093682bba7514fe023f2fb8a65d"
+    "mtime": 1795285167.8702223,
+    "seen": 1795285621.9058053,
+    "ast_hash": "151f7a952c42655558f6a04e31dc8108",
+    "semantic_hash": "151f7a952c42655558f6a04e31dc8108"
   },
   "hooks/rust/tdq-dispatch/src/lib.rs": {
     "mtime": 1795100827.285307,
@@ -1471,10 +1471,10 @@
     "semantic_hash": "aa65cee22e9e1747298a8d9945218393"
   },
   "hooks/rust/tdq-dispatch/src/storage.rs": {
-    "mtime": 1795227491.4619176,
-    "seen": 1795229840.9458494,
-    "ast_hash": "01982ee91b25ef0ffbf8abd087738f3c",
-    "semantic_hash": "01982ee91b25ef0ffbf8abd087738f3c"
+    "mtime": 1795285083.920469,
+    "seen": 1795285621.9063435,
+    "ast_hash": "0e0f3ffa2ed8991d3936849d4ee7d55d",
+    "semantic_hash": "0e0f3ffa2ed8991d3936849d4ee7d55d"
   },
   "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json": {
     "mtime": 1795279771.1642647,
@@ -1483,10 +1483,10 @@
     "semantic_hash": "aa8923bd47f116409bc887353f2c5553"
   },
   "tools/patches/gate_guidance.json": {
-    "mtime": 1795277881.0494256,
-    "seen": 1795280099.2569268,
-    "ast_hash": "f935deeec98ab422597ee32419f3b5f5",
-    "semantic_hash": "f935deeec98ab422597ee32419f3b5f5"
+    "mtime": 1795284492.6027925,
+    "seen": 1795285621.9317324,
+    "ast_hash": "00ab7c483287358f7cc86c25a40518f5",
+    "semantic_hash": "00ab7c483287358f7cc86c25a40518f5"
   },
   "scripts/tdq_plan_scaffold.py": {
     "mtime": 1795227491.5078723,

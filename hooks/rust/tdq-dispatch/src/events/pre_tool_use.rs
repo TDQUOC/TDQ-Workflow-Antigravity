@@ -3,9 +3,10 @@
 //! handles `start_lsp` overwrite and concept ledger writes, and delegates Cold-path edge cases.
 
 use crate::command_parser::{
-    has_banned_ai_branch, inspect_command_safety, is_graphify_shell_query, is_shell_mutator,
-    mutates_outside_docs, mutates_outside_docs_any, mutates_tdq_state, needs_python_command_gate,
-    CommandSafetyViolation,
+    collect_git_policy_violations, has_banned_ai_branch, inspect_command_safety,
+    is_graphify_shell_query, is_pure_intake_branch_create, is_shell_mutator, mutates_outside_docs,
+    mutates_outside_docs_any, mutates_tdq_state, needs_python_command_gate, CommandSafetyViolation,
+    GitPolicyViolation,
 };
 use crate::events::post_tool_use::extract_concept_label;
 use crate::protocol::{GuidanceRepo, HookDecision, HookPayload, NormalizedToolCall};
@@ -13,8 +14,8 @@ use crate::storage::{
     already_reminded, append_jsonl_record, append_turn_row, cong_dang_cho,
     count_code_edits_for_sha, effective_phase, khoa_hien_tai, maybe_bump_burden, now_iso_utc,
     queue_pending_reminder, read_plan_tick_state, read_sessions_role, read_tdq_state,
-    reset_burden_checkpoint, search_ledger_path, today_log_rel_for_state, unix_timestamp_f64,
-    TdqState,
+    read_turn_meta, reset_burden_checkpoint, search_ledger_path, today_log_rel_for_state,
+    unix_timestamp_f64, TdqState,
 };
 use crate::RouteOutcome;
 use std::fs::{self, File};
@@ -259,9 +260,124 @@ fn is_qc_report_target(raw_target: &str, workspace_root: &Path) -> bool {
     low.starts_with("docs/tdq/qc/") && low.ends_with(".md")
 }
 
-fn is_state_target(raw_target: &str) -> bool {
-    let norm = raw_target.replace('\\', "/");
-    norm.ends_with("docs/tdq/state.json") || norm.ends_with("docs/tdq/STATE.md")
+fn is_protected_state_norm(norm_low: &str) -> bool {
+    norm_low == "docs/tdq/state.json"
+        || norm_low.ends_with("/docs/tdq/state.json")
+        || norm_low == "docs/tdq/state.md"
+        || norm_low.ends_with("/docs/tdq/state.md")
+        || norm_low == "docs/tdq/.tdq-runtime"
+        || norm_low.ends_with("/docs/tdq/.tdq-runtime")
+        || norm_low.starts_with("docs/tdq/.tdq-runtime/")
+        || norm_low.contains("/docs/tdq/.tdq-runtime/")
+}
+
+fn is_state_target(raw_target: &str, workspace_root: &Path) -> bool {
+    let raw_low = raw_target.replace('\\', "/").to_ascii_lowercase();
+    let abs_raw = if Path::new(raw_target).is_absolute() {
+        PathBuf::from(raw_target)
+    } else {
+        workspace_root.join(raw_target)
+    };
+    let lex = normalize_lexical(&abs_raw);
+    let lex_low = lex.to_string_lossy().replace('\\', "/").to_ascii_lowercase();
+    if is_protected_state_norm(&lex_low) || (!raw_low.contains("..") && is_protected_state_norm(&raw_low)) {
+        return true;
+    }
+    resolve_rel_in_project(&lex.to_string_lossy(), workspace_root)
+        .is_some_and(|rel| is_protected_state_norm(&rel.to_ascii_lowercase()))
+}
+
+fn tdq_log_enabled() -> bool {
+    std::env::var("TDQ_LOG").as_deref() != Ok("0")
+}
+
+fn collect_required_git_grants(violations: &[GitPolicyViolation]) -> Vec<&'static str> {
+    let mut keys = Vec::new();
+    for v in violations {
+        if let Some(k) = v.required_grant() {
+            if !keys.contains(&k) {
+                keys.push(k);
+            }
+        }
+    }
+    keys
+}
+
+fn verify_turn_git_grants(workspace_root: &Path, sid: &str, needed: &[&str]) -> Option<RouteOutcome> {
+    let Some(meta) = read_turn_meta(workspace_root, sid) else {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            &format!("git `{}` requires explicit user approval in this turn before running.", needed[0]),
+        ));
+    };
+    if meta.turn_closed {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            &format!("Turn is closed; ask the user again in a new turn to approve git `{}`.", needed[0]),
+        ));
+    }
+    if let Some(missing) = needed.iter().find(|k| !meta.git_grants.iter().any(|g| g == *k)) {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            &format!("git `{}` requires explicit user approval in this turn before running.", missing),
+        ));
+    }
+    if tdq_log_enabled() {
+        eprintln!("[{}] tdq-dispatch: git_grant allowed sid={} grants={:?}", now_iso_utc(), sid, needed);
+    }
+    append_turn_row(
+        workspace_root,
+        sid,
+        &serde_json::json!({ "ts": now_iso_utc(), "kind": "observe", "event": "git_grant_used", "session": sid, "grants": needed }),
+    );
+    None
+}
+
+fn check_git_command_gate(
+    workspace_root: &Path,
+    sid: &str,
+    role_opt: Option<&str>,
+    cmd: &str,
+) -> Option<RouteOutcome> {
+    let violations = collect_git_policy_violations(cmd);
+    if violations.is_empty() {
+        return None;
+    }
+    if violations.contains(&GitPolicyViolation::ForcePushForbidden) {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            "Force-push (--force/-f/--force-with-lease/+refspec) is strictly forbidden.",
+        ));
+    }
+    if violations.contains(&GitPolicyViolation::CoAuthoredTrailer) {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            "AI co-author trailers are banned in commits.",
+        ));
+    }
+    let needed = collect_required_git_grants(&violations);
+    if needed.is_empty() {
+        return None;
+    }
+    if role_opt.is_some() {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "GIT",
+            "Subagents cannot execute protected git commands even with user turn grant.",
+        ));
+    }
+    verify_turn_git_grants(workspace_root, sid, &needed)
 }
 
 fn check_tick_gates(
@@ -400,7 +516,7 @@ fn handle_edit_tool(
             );
         }
     }
-    if is_state_target(raw_target) {
+    if is_state_target(raw_target, workspace_root) {
         return deny_with_block(
             workspace_root,
             sid,
@@ -481,25 +597,30 @@ fn handle_command_tool(
             "Do not mutate TDQ state via shell; use tdq_state.py.",
         );
     }
+    if let Some(outcome) = check_git_command_gate(workspace_root, sid, role_opt, &cmd) {
+        return outcome;
+    }
     if let Some(violation) = inspect_command_safety(&cmd) {
-        let (code, msg) = match violation {
-            CommandSafetyViolation::GitPushForbidden => {
-                ("GIT", "git push is forbidden unless explicitly asked.")
-            }
-            CommandSafetyViolation::GitDestructiveReset => {
-                ("GIT", "Destructive git reset/clean is prohibited.")
-            }
-            CommandSafetyViolation::CoAuthoredTrailer => {
-                ("GIT", "AI co-author trailers are banned in commits.")
-            }
-            CommandSafetyViolation::RemoteScriptExecution => {
-                ("VUNG", "Piping remote downloads to shell is forbidden.")
-            }
-            CommandSafetyViolation::ExecutionPolicyBypass => {
-                ("VUNG", "PowerShell ExecutionPolicy bypass is blocked.")
-            }
+        let outcome = match violation {
+            CommandSafetyViolation::RemoteScriptExecution => Some(deny_with_block(
+                workspace_root,
+                sid,
+                "VUNG",
+                "Piping remote downloads to shell is forbidden.",
+            )),
+            CommandSafetyViolation::ExecutionPolicyBypass => Some(deny_with_block(
+                workspace_root,
+                sid,
+                "VUNG",
+                "PowerShell ExecutionPolicy bypass is blocked.",
+            )),
+            CommandSafetyViolation::GitPushForbidden
+            | CommandSafetyViolation::GitDestructiveReset
+            | CommandSafetyViolation::CoAuthoredTrailer => None,
         };
-        return deny_with_block(workspace_root, sid, code, msg);
+        if let Some(deny) = outcome {
+            return deny;
+        }
     }
     if let Some(bad_branch) = has_banned_ai_branch(&cmd) {
         return deny_with_block(
@@ -523,7 +644,9 @@ fn handle_command_tool(
             {
                 return RouteOutcome::DelegatePython;
             }
-            if role_opt.is_none() && mutates_outside_docs_any(&cmd) {
+            let step3b_exempt = is_pure_intake_branch_create(&cmd)
+                && matches!(effective_phase(&state), "analyze" | "idle");
+            if role_opt.is_none() && mutates_outside_docs_any(&cmd) && !step3b_exempt {
                 if let Some(gate) = cong_dang_cho(&state) {
                     return deny_with_block(
                         workspace_root,
@@ -923,6 +1046,137 @@ mod tests {
         assert!(matches!(handle_pre_tool_use(&allow_shard, &tmp), RouteOutcome::Decided(d) if d.decision == DecisionKind::Allow));
         let cp_a_after = fs::read_to_string(crate::storage::get_runtime_dir(&tmp).join("checkpoint-worker-a.json")).unwrap_or_default();
         assert!(cp_a_after.contains(":0"));
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_git_turn_grants_runtime_lock_and_step3b_exemption() {
+        let tmp = std::env::temp_dir().join(format!("tdq_git_grant_gate_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::create_dir_all(crate::storage::get_runtime_dir(&tmp));
+        let _ = fs::create_dir_all(tmp.join("docs").join("tdq").join("spec"));
+
+        let rt = crate::storage::get_runtime_dir(&tmp);
+        fs::write(
+            rt.join("turn-meta-g1.json"),
+            r#"{"turn_closed":false,"git_grants":["push"]}"#,
+        )
+        .unwrap();
+
+        let allow_push = HookPayload {
+            conversation_id: Some("g1".to_string()),
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "git push origin dev" })),
+            ..Default::default()
+        };
+        assert!(!matches!(
+            handle_pre_tool_use(&allow_push, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
+        assert!(crate::storage::read_turn_rows(&tmp, "g1").iter().any(|r| {
+            r.get("kind").and_then(|v| v.as_str()) == Some("observe")
+                && r.get("event").and_then(|v| v.as_str()) == Some("git_grant_used")
+        }));
+
+        for (cmd, needle) in [
+            ("git reset --hard HEAD~1", "reset_hard"),
+            ("git push --force origin dev", "Force-push"),
+            ("git push origin dev && git reset --hard HEAD~1", "[TDQ:GIT]"),
+            (r#"git commit -m "feat: x" -m "Co-Authored-By: Claude""#, "[TDQ:GIT]"),
+        ] {
+            let p = HookPayload {
+                conversation_id: Some("g1".to_string()),
+                tool_name: Some("run_command".to_string()),
+                arguments: Some(json!({ "CommandLine": cmd })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&p, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:GIT]") && d.reason.as_deref().unwrap_or("").contains(needle)),
+                "Expected deny containing [TDQ:GIT] and {} for cmd={}",
+                needle,
+                cmd
+            );
+        }
+
+        let sub_push = HookPayload {
+            conversation_id: Some("g1".to_string()),
+            agent_type: Some("tdq-implementer".to_string()),
+            ..allow_push.clone()
+        };
+        assert!(
+            matches!(handle_pre_tool_use(&sub_push, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:GIT]"))
+        );
+
+        fs::write(rt.join("turn-meta-g_closed.json"), r#"{"turn_closed":true,"git_grants":["push"]}"#).unwrap();
+        fs::write(rt.join("turn-meta-g_corrupt.json"), "{corrupt-json").unwrap();
+        for sid in ["g_closed", "g_corrupt"] {
+            let p = HookPayload {
+                conversation_id: Some(sid.to_string()),
+                ..allow_push.clone()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&p, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:GIT]"))
+            );
+        }
+
+        for (tool, key, target) in [
+            ("write_to_file", "TargetFile", "docs/tdq/.tdq-runtime/turn-meta-1.json"),
+            ("edit_file", "TargetFile", r"docs\tdq\.tdq-runtime\turn-meta-1.json"),
+            ("write_to_file", "TargetFile", "docs/tdq/spec/../.tdq-runtime/turn-meta-1.json"),
+        ] {
+            let p = HookPayload {
+                tool_name: Some(tool.to_string()),
+                tool_input: Some(json!({ key: target })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&p, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:STATE]")),
+                "Expected [TDQ:STATE] deny for {}",
+                target
+            );
+        }
+
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"req1","phase":"analyze","spec_approved":false,"plan_approved":false}"#,
+        )
+        .unwrap();
+        let step3b_ok = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "git switch -c feature/demo" })),
+            ..Default::default()
+        };
+        assert!(!matches!(
+            handle_pre_tool_use(&step3b_ok, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
+
+        for (cmd, code) in [
+            ("git switch -c feature/demo; echo a > src/x.py", "[TDQ:APPROVE]"),
+            ("git switch -c claude-bad", "[TDQ:GIT]"),
+        ] {
+            let p = HookPayload {
+                tool_name: Some("run_command".to_string()),
+                arguments: Some(json!({ "CommandLine": cmd })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(handle_pre_tool_use(&p, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains(code)),
+                "Expected {} for {}",
+                code,
+                cmd
+            );
+        }
+
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"req1","phase":"spec","spec_file":"docs/tdq/spec/x.md","spec_approved":false,"plan_approved":false}"#,
+        )
+        .unwrap();
+        assert!(
+            matches!(handle_pre_tool_use(&step3b_ok, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:APPROVE]"))
+        );
 
         let _ = fs::remove_dir_all(&tmp);
     }
