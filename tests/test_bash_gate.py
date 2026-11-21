@@ -9,7 +9,11 @@ import tempfile
 import unittest
 from unittest import mock
 
+import pytest
+
 from helper import HOOKS, decision, load_fixture, run_hook, tdq_state, write_state
+
+pytestmark = [pytest.mark.smoke, pytest.mark.e2e]
 
 
 class TestBashGate(unittest.TestCase):

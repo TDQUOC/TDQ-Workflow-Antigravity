@@ -13,10 +13,14 @@ import sys
 import tempfile
 import unittest
 
+import pytest
+
 from helper import ROOT, run_state_cli, write_state  # noqa: F401
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import tdq_state  # noqa: E402
+
+pytestmark = [pytest.mark.smoke, pytest.mark.e2e]
 
 
 class ChuanHoaTest(unittest.TestCase):
