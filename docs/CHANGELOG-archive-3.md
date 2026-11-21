@@ -1,6 +1,34 @@
 # Changelog — bản lưu trữ 3
 
-Bản 0.59.0 đến 0.57.0, tách khỏi `CHANGELOG.md` để giữ file chính dưới trần R6 500 dòng (`docs/CHANGELOG-archive-2.md` đã chạm 496 dòng). Mới nhất trên cùng, chữ nghĩa copy nguyên văn.
+Bản 0.61.0 đến 0.57.0, tách khỏi `CHANGELOG.md` để giữ file chính dưới trần R6 500 dòng (`docs/CHANGELOG-archive-2.md` đã chạm 496 dòng). Mới nhất trên cùng, chữ nghĩa copy nguyên văn.
+
+## 0.61.0 — 2026-10-11
+
+Hợp thức hóa các câu lệnh hành động dứt khoát tự nhiên ("làm đi", "tiến hành đi", "triển đi",
+"go ahead"...) thành câu duyệt hợp lệ cho các cổng `spec` và `plan`. Tuyệt đối cấm ở cổng `mode`
+hoặc cổng `quick` (nơi còn câu hỏi mode hoặc mức QC đang chờ), và chặn câu hành động khi có câu hỏi
+hoặc điều kiện/confirm đi kèm. Kế hoạch: `docs/tdq/plan/2026-10-11-0159-hop-thuc-hoa-duyet-tu-nhien.md`.
+
+- **Cụm hành động tự nhiên (`ACTION_APPROVAL`).** Trong `hooks/scripts/prompt_context.py`, nhận diện
+  các câu dứt khoát ("làm đi", "tiến hành đi", "triển đi"...) là duyệt khi đang chờ `spec` hoặc `plan`.
+- **Chặn khi có câu hỏi hoặc điều kiện.** Chặn câu hành động trần ở cổng `mode` và `quick` (bắt buộc
+  chọn mode/QC); chặn khi câu nói chứa nghi vấn, điều kiện hoặc confirm (`nhưng`, `confirm`, `xác nhận`, `nếu`, `?`...).
+- **Cập nhật quy định.** `skills/tdq-conventions/references/approval.md` ghi rõ nguyên tắc duyệt tự nhiên
+  theo ngữ cảnh và các ngoại lệ bắt buộc hỏi lại. Bảo toàn các điểm neo luật trong `docs/tdq/audit/luat-hien-co.md`.
+
+## 0.60.0 — 2026-10-10
+
+Bổ sung chỉ dẫn rõ ràng vào các phase: user trả lời và duyệt trực tiếp trong chat (dạng `1a 2b 3c`,
+"duyệt spec", "duyệt plan", "duyệt nhanh"), tuyệt đối cấm mở popup tool / dialog câu hỏi chọn
+(`AskUserQuestion`). Kế hoạch: `docs/tdq/plan/2026-10-09-1948-luat-hoi-duyet-trong-chat.md`.
+
+- **Cấm `AskUserQuestion` và popup tool.** Bổ sung quy định chat-only tại 6 file:
+  `skills/tdq-conventions/references/user-facing-block.md`,
+  `skills/tdq-conventions/references/approval.md`, `skills/tdq-conventions/SKILL.md`,
+  `skills/tdq-intake/references/interview.md`, `skills/tdq-spec/SKILL.md`, `skills/tdq-plan/SKILL.md`.
+- **Khối trả lời chuẩn.** Hướng dẫn rõ ràng định dạng trả lời `1a 2b 3c` hoặc câu tự nhiên, kết
+  lượt chờ user nhắn trong chat thay vì gọi tool popup.
+- **Giữ nguyên điểm neo luật.** Bảo toàn số dòng của các quy tắc trong `docs/tdq/audit/luat-hien-co.md`.
 
 ## 0.59.0 — 2026-10-08
 

@@ -239,3 +239,17 @@ def test_v2_plain_language_presentation_synced_in_plugin():
         PLUGIN_DIR / "skills" / "tdq-spec" / "references" / "spec-template.md"
     ).read_text(encoding="utf-8")
     assert "Tóm tắt dễ hiểu:" in spec_md
+
+
+def test_v2_version_synced_with_claude_plugin():
+    """Verify compiled AGY plugin version matches .claude-plugin/plugin.json."""
+    claude_ver = json.loads(
+        (WORKSPACE / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
+    )["version"]
+    pjson = json.loads((PLUGIN_DIR / "plugin.json").read_text(encoding="utf-8"))
+    mjson = json.loads((PLUGIN_DIR / "manifest.json").read_text(encoding="utf-8"))
+    assert pjson["version"] == claude_ver
+    assert mjson["version"] == claude_ver
+    assert (PLUGIN_DIR / "README.md").read_text(encoding="utf-8").startswith(
+        f"# TDQ Workflow (`tdq-workflow-agy`) — Google Antigravity Native Plugin (`v{claude_ver}`)"
+    )
