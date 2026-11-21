@@ -1,7 +1,7 @@
 # TDQ-Workflow — Hệ Điều Hành Spec-Driven & Kiến Trúc Tương Tác Cho AI Coding Agents
 
-![Version](https://img.shields.io/badge/version-0.100.0-2563eb?style=for-the-badge)
-![Tests](https://img.shields.io/badge/tests-4399%20passed-16a34a?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.103.0-2563eb?style=for-the-badge)
+![Tests](https://img.shields.io/badge/tests-4602%20passed-16a34a?style=for-the-badge)
 ![Search](https://img.shields.io/badge/search-3--tier%20LSP%20%C2%B7%20Graphify%20%C2%B7%20Grep-0d9488?style=for-the-badge)
 ![Visual BA](https://img.shields.io/badge/archify-2--tier%20Personal%20BA%20%26%20Master%20Map-7c3aed?style=for-the-badge)
 ![Hosts](https://img.shields.io/badge/hosts-Claude%20%C2%B7%20Codex%20%C2%B7%20OpenCode%20%C2%B7%20Antigravity-ea580c?style=for-the-badge)
@@ -141,7 +141,7 @@ Mọi nền tảng đều đọc **cùng một thư mục `skills/` duy nhất**
 | **Claude Code** | `.claude-plugin/` | `/plugin marketplace add TDQUOC/TDQ-Workflow` rồi `/plugin install tdq-workflow@tdq-local` |
 | **Codex** | `.agents/plugins/marketplace.json` + `.codex-plugin/plugin.json` | `codex plugin marketplace add TDQUOC/TDQ-Workflow` rồi `codex plugin add tdq-workflow@tdq-local` |
 | **OpenCode** | `.opencode/plugins/tdq-workflow.js` | Khai báo trong `opencode.json` (xem chi tiết tại [`.opencode/INSTALL.md`](.opencode/INSTALL.md)) |
-| **Antigravity** | `plugins/tdq-workflow-agy/` (Native `tdq-workflow-agy` v0.100.0, 0 findings `agy plugin validate`) | `python install.py` (User-Level) hoặc `python3 scripts/build_portable.py --sinh-agy` (xem hướng dẫn chi tiết bên dưới) |
+| **Antigravity** | `plugins/tdq-workflow-agy/` (Native `tdq-workflow-agy` v0.103.0, 0 findings `agy plugin validate`) | `python install.py` (User-Level) hoặc `python3 scripts/build_portable.py --sinh-agy` (xem hướng dẫn chi tiết bên dưới) |
 
 ### Cài Đặt Bản Phát Hành User-Level Cho Google Antigravity Trên Máy Khác
 
@@ -229,12 +229,12 @@ Hệ thống gồm 13 hooks lắng nghe trên 6 sự kiện vòng đời, kết 
 | Thư mục | Vai trò & Thành phần |
 |---|---|
 | `skills/` (11) | `tdq-intake`, `tdq-spec`, `tdq-plan`, `tdq-build`, `tdq-lean`, `tdq-status`, `tdq-check-status`, `tdq-conventions`, `tdq-setup`, `tdq-browser-research`, `tdq-browser-test` |
-| `agents/` (6) | `tdq-reviewer`, `tdq-implementer`, `tdq-qc-tester`, `tdq-refactor-cleaner`, `tdq-security-reviewer`, `tdq-build-resolver` |
-| `hooks/` (14 trên 7 sự kiện) | `session_start`, `subagent_start`, `prompt_context`, `search_observe` (3 sự kiện), `edit_gate`, `bash_gate`, `read_gate`, `search_gate`, `lsp_gate`, `ask_gate`, `stop_gate` |
-| `scripts/` (43) | Tầng CLI lõi: `tdq_state.py`, `tdq_finish.py`, `tdq_test.py`, `tdq_team.py`, `tdq_archify.py`, `archify_delivery.py`, `archify_model.py`, `archify_artifacts.py`, `tdq_lsp.py`, `tdq_setup.py`, `doc_lint.py`, `token_budget.py`, `build_portable.py`... |
+| `agents/` (8) | `tdq-reviewer`, `tdq-implementer`, `tdq-qc-tester`, `tdq-refactor-cleaner`, `tdq-security-reviewer`, `tdq-build-resolver`, `tdq-explorer`, `tdq-debugger` |
+| `hooks/` (17 trên 8 sự kiện) | `session_start`, `subagent_start`, `subagent_stop`, `prompt_context`, `search_observe` (3 sự kiện), `edit_gate`, `bash_gate`, `read_gate`, `search_gate`, `lsp_gate`, `ask_gate`, `stop_gate` |
+| `scripts/` (73) | Tầng CLI lõi: `tdq_state.py`, `tdq_finish.py`, `tdq_test.py`, `tdq_team.py`, `tdq_archify.py`, `archify_delivery.py`, `archify_model.py`, `archify_artifacts.py`, `tdq_lsp.py`, `tdq_setup.py`, `doc_lint.py`, `token_budget.py`, `build_portable.py`... |
 | `docs/architecture/` | Cổng thông tin **Master Map** (`index.html`, 4 bản đồ tương tác `.html` và `manifest.json`) |
 | `docs/tdq/` | Hồ sơ theo từng request (`brief/`, `spec/`, `plan/`, `qc/`, `reports/`, `state.json`, `token-budget.json`) |
-| `tests/` | Hơn 2.970 bài kiểm tự động khóa toàn bộ hợp đồng CLI, Hooks, Archify, Đa nền tảng và Luật ngôn ngữ |
+| `tests/` | Hơn 4.600 bài kiểm tự động (`4.602 passed`) khóa toàn bộ hợp đồng CLI, Hooks, Archify, Đa nền tảng và Luật ngôn ngữ |
 
 ---
 

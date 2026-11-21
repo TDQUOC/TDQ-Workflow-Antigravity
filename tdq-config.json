@@ -1,0 +1,64 @@
+{
+  "qc": {
+    "ultra_max_subagents": 5,
+    "full_light_qc": true,
+    "allow_unlimited_keywords": [
+      "0",
+      "unlimited",
+      "none",
+      "khong-gioi-han"
+    ]
+  },
+  "agents": {
+    "default_model": "inherit",
+    "auto_escalate_retries": 2,
+    "model_ladder": [
+      {
+        "tier": 1,
+        "family": "gemini-3.8-flash",
+        "invoke_model": "flash",
+        "swarm_models": [
+          "gemini-3.8-flash-low",
+          "gemini-3.8-flash-medium",
+          "gemini-3.8-flash-high"
+        ],
+        "use_for": "trinh-sat-don-gian"
+      },
+      {
+        "tier": 2,
+        "family": "gemini-4-hydrogen",
+        "invoke_model": "inherit",
+        "swarm_models": [
+          "gemini-4-hydrogen-low",
+          "gemini-4-hydrogen-medium",
+          "gemini-4-hydrogen-high",
+          "gemini-4-hydrogen-xhigh"
+        ],
+        "use_for": "code-chuan"
+      },
+      {
+        "tier": 3,
+        "family": "gemini-4-neon",
+        "invoke_model": "inherit",
+        "swarm_models": [
+          "gemini-4-neon-low",
+          "gemini-4-neon-medium",
+          "gemini-4-neon-high",
+          "gemini-4-neon-xhigh"
+        ],
+        "use_for": "suy-luan-sau-qc-rust"
+      },
+      {
+        "tier": 4,
+        "family": "gemini-4-carbon",
+        "invoke_model": "pro",
+        "swarm_models": [
+          "gemini-4-carbon-low",
+          "gemini-4-carbon-medium",
+          "gemini-4-carbon-high"
+        ],
+        "use_for": "bao-mat-va-leo-thang"
+      }
+    ]
+  }
+}

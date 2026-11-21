@@ -259,8 +259,22 @@ def _chan_chua_xong(cwd, state, payload=None):
     return True
 
 
+def _maybe_subagent_stop(payload):
+    if str(payload.get("terminationReason") or "") in TERMINAL_STOP_REASONS:
+        return False
+    cwd = payload_cwd(payload)
+    in_worktree_dir = (os.sep + ".tdq-worktrees" + os.sep) in (os.path.realpath(cwd) + os.sep)
+    if _common.detect_subagent(payload, cwd).get("is_subagent") or in_worktree_dir:
+        import subagent_stop
+        subagent_stop.handle_subagent_stop(payload, cwd, allow_stop_block=True)
+        return True
+    return False
+
+
 def main():
     payload = read_payload()
+    if _maybe_subagent_stop(payload):
+        return
     if str(payload.get("terminationReason") or "") in TERMINAL_STOP_REASONS:
         return
     # Claude Code sets this flag after a block, as loop protection. The two older gates

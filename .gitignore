@@ -83,3 +83,8 @@ docs/tdq/.tdq-*.lock
 *.local.json
 *.corrupt-*
 .pytest_tmp*/
+
+# Rust build artifacts
+hooks/rust/*/target/
+**/target/
+Cargo.lock

@@ -106,7 +106,7 @@ When the Trigger decision table says **YES**, execute these 6 numbered steps in 
    - Map each box to the DOM element at that position using the Bounding box to CSS mapping table below.
    - Edit the CSS/HTML to fix all boxes in a single batch, recapture `dist.png`, increment `--round`, and rerun Step 2.
 
-5. Dispatch the independent Reviewer Sub-agent (`tdq-reviewer` or `tdq-qc-tester`) with `source.png`, `dist.png`, `diff_highlight.png`, and `<slug>.md`:
+5. Dispatch `tdq-qc-tester` (`tdq-reviewer`/`tdq-security-reviewer` only if needed) with `source.png`, `dist.png`, `diff_highlight.png`, and `<slug>.md`:
    - The Reviewer Sub-agent checks semantic fidelity (text truncation, broken icons, overlapping labels, contrast) that pixel ratios can miss.
    - The Reviewer Sub-agent is capped at **at most 1 feedback round** per task to prevent ping-pong loops.
 

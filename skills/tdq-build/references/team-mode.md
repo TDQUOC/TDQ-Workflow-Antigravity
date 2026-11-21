@@ -1,13 +1,13 @@
 # Team mode — the leader assigns the whole plan, sub-agents run in parallel
 <!-- muc-luc-dong:
-  Table of contents=18-24 · When it applies=25-43 · What to do=44-45 ·
-  Step 0 — assign the WHOLE plan before typing the first line of code=46-63 ·
-  Decision table — default GIAO, keeping a task must match exactly one row=64-78 ·
-  Workflow implement ownership=79-83 · The wave loop=84-97 ·
-  What the machine checks for you, so you do not have to=98-122 ·
-  The delegation prompt template — all 9 fields, none left out=123-141 ·
-  RIGHT/WRONG examples=142-150 · Explicit Anti-Patterns=151-158 · Self-check=159-173 ·
-  Sổ worktree=174
+  Table of contents=18-25 · When it applies=26-44 · What to do=45-46 ·
+  Step 0 — assign the WHOLE plan before typing the first line of code=47-64 ·
+  Decision table — default GIAO, keeping a task must match exactly one row=65-79 ·
+  Workflow implement ownership=80-84 · The wave loop=85-98 ·
+  What the machine checks for you, so you do not have to=99-123 ·
+  The delegation prompt template — all 9 fields, none left out=124-142 ·
+  RIGHT/WRONG examples=143-152 · Explicit Anti-Patterns=153-160 · Self-check=161-175 ·
+  Investigation `no_worktree` & Shards=176
 -->
 
 Soul: chất lượng > runtime > context cost · luật gốc: ../../tdq-conventions/references/soul.md <!-- i18n-allow: canonical Soul line -->
@@ -21,6 +21,7 @@ yourself needs a reason from the lookup table below, and that reason is machine-
 - What to do
 - The worktree ledger
 - Self-check
+- Investigation `no_worktree` & Shards
 
 ## When it applies
 
@@ -145,8 +146,9 @@ Include spec and plan paths in prompt body. Subagent cannot read this conversati
 2. Rhythm: RIGHT: dispatch 4 tasks of the same wave concurrently · WRONG: call 1 agent, wait for it, then next.
 3. Merging: RIGHT: check clean -> merge -> tick [x] right away · WRONG: merge straight through with no check.
 4. Shared contracts: RIGHT: finish constant first, then dispatch · WRONG: dispatch in parallel before contract is merged.
+5. Specialist triggers: 2+ fails → `tdq-build-resolver` / `tdq-debugger`; wide trace → `tdq-explorer`; auth/hooks → `tdq-security-reviewer`; dead code → `tdq-refactor-cleaner`.
 
-Full cases & model tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
+Full cases, `tdq_team.py packet` (Symbol-Span + `CONTRACT-DELTA:`), & tier routing: [team-mode-tra-cuu.md](team-mode-tra-cuu.md).
 
 ## Explicit Anti-Patterns
 
@@ -171,7 +173,5 @@ grep -c '^- \[x\]' docs/tdq/plan/<slug>.md   # equals the total task count
 
 Question to answer with a number: **how many delegated / how many in total?** That number must appear in the report. A low delegation ratio with no lookup table reason violates team mode.
 
-## Sổ worktree
-
-Phần tra cứu, tách sang [team-mode-tra-cuu.md](team-mode-tra-cuu.md): chỉ mở khi cần soi sổ, không
-cần lúc chia đợt hay lúc phát task.
+## Investigation `no_worktree` & Shards
+Workers with `worktree_required: false` write disjoint `<task>.md`/`.ev.jsonl` shards (`scoped-write`) without opening worktrees; merge via `evidence merge` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md).

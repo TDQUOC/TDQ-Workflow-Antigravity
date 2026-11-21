@@ -36,8 +36,7 @@ result, not a failure to find something.
 3. Close with the net removable line count.
 
 Done when: every finding carries a tag and a replacement, or the output is `Lean already. Ship.`
-Next step: hand the list to whoever owns the diff — this skill never edits code, so the phase
-does not change.
+Next step: hand the list to the diff owner (or `tdq-refactor-cleaner` after leader approval). This skill never edits code, so the phase does not change.
 
 ## Mode `audit` — the whole tree
 

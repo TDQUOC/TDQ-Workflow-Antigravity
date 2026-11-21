@@ -13,6 +13,8 @@ them before EVERY shell command.
   -> deny; window of `cua_so` searches since the last concept query used up and guess-list shape
   -> deny; otherwise allow.
 """
+from __future__ import annotations
+
 import json
 import re
 import shlex

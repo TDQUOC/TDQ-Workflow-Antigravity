@@ -1,9 +1,10 @@
 # QC — quality control
 <!-- muc-luc-dong:
-  Table of contents=11-21 · The QC level — what each level runs=22-57 ·
-  The three execution steps=58-88 · What to run=89-126 ·
-  The 120-second cap on smoke and runtime checks=127-147 · Recording the result=148-178 ·
-  Explicit Anti-Patterns=179-185 · When it FAILs=186
+  Table of contents=12-23 · The QC level — what each level runs=24-59 ·
+  The three execution steps=60-90 · What to run=91-124 ·
+  The 120-second cap on smoke and runtime checks=125-142 ·
+  Investigation Evidence QC (`work_kind=investigate`)=143-145 · Recording the result=146-176 ·
+  Explicit Anti-Patterns=177-183 · When it FAILs=184
 -->
 
 QC means running things for real and pasting the evidence. There is no "probably fine".
@@ -14,6 +15,7 @@ QC means running things for real and pasting the evidence. There is no "probably
 - The three execution steps
 - What to run
 - The 120-second cap on smoke and runtime checks
+- Investigation Evidence QC (`work_kind=investigate`)
 - Recording the result
 - Evidence
 - Verdict
@@ -67,8 +69,8 @@ before running the first item; working from memory is banned.
    that is not in the DoD.
    Details: section `## What to run` in this file. Which of those items actually run comes from
    `muc_qc` — the table in `## The QC level` above. The `tdq-qc-tester` agent runs at `ultra`
-   and only there; it used to hang on "large or high-risk work", a threshold nobody could
-   measure, so in practice it never ran.
+   up to `qc.ultra_max_subagents` parallel shards per `tdq-config.json` (default `5`; `0`/`"unlimited"`
+   = unbounded); at `full`, call lightweight `tdq-security-reviewer` / `tdq-reviewer` on risky diffs.
 
 5. Write `docs/tdq/qc/<slug>.md`: each DoD item → PASS/FAIL with **evidence** (the command plus
    its real output). Assert nothing you have not run. (File template in section
@@ -118,11 +120,7 @@ The things below run only when the DoD reaches them:
   `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/doc_lint.py" --pair <spec> <plan>` until it exits 0.
   Editing §3b edits the spec's CONTENT, so the sha still shifts and the hook still demands
   re-approval — by design: changing a capability verdict changes intent, so the user must be
-  asked. Present exactly the one-line diff and ask for re-approval (`approve spec`) inside the
-  QC turn itself. Conversely, editing the bookkeeping lines at the top of the file (Ngày, Bản, <!-- i18n-allow: canonical header field names -->
-  Trạng thái) has NOT shifted <!-- i18n-allow: canonical header field names --> the sha since 2026-08-19. And §6 no longer holds check commands
-  whose names could go stale. Both sources of "re-approval for a harmless reason" are cut at the
-  root.
+  asked. Present the one-line diff and ask `approve spec` inside QC. Header lines do not shift sha, and §6 holds conditions rather than commands.
 
 ## The 120-second cap on smoke and runtime checks
 
@@ -140,10 +138,10 @@ Hitting the cap:
    process waiting on input nobody sends, an infinite loop) or a check that genuinely needs
    longer than two minutes.
 
-**Never raise the cap on your own.** Only when step 3 shows the second case may you propose
-raising it. Then ask the user: one line naming the check, its measured duration, and the cap
-you propose. Raising it because the check is red is turning a red light green by
-unscrewing the bulb. A defect stays a defect: fix the hang, do not widen the window.
+**Never raise the cap on your own.** Only when step 3 shows the second case may you ask the user (naming check, measured duration, and proposed cap). Fix hangs; do not widen timeouts.
+
+## Investigation Evidence QC (`work_kind=investigate`)
+When `work_kind=investigate`, keep the `lite/full/ultra` table above unchanged for scope depth and run `QC-I1..I4` per [investigate-mode.md](../../tdq-conventions/references/investigate-mode.md); any diff outside `docs/tdq/` re-enables `QC-F1` + `QC-F4`.
 
 ## Recording the result
 
@@ -185,11 +183,8 @@ approve or reject it, which happens in the report.
 
 ## When it FAILs
 
-1. Add fix tasks to the **approved plan**, under `## QC vòng N — fix`: <!-- i18n-allow: canonical section name of the plan -->
-   `- [ ] **QCn.1** <the work> — Test: <check>`. No user re-approval needed.
-2. Work them under the implement rules: red → green, tick `[x]` immediately.
-3. Rerun the failed item, plus any item the fix could have broken, plus `tdq_test.py vung-cham`.
-   Do not rerun unrelated items. After the LAST round only: `tdq_test.py tron-bo` once.
+Add `R15-Compact` `- [ ] **QCn.1**` tasks under `## QC vòng N — fix` per [qc-vong-fix.md](qc-vong-fix.md), fix red → green, re-run failed items + `tdq_test.py vung-cham` (`tron-bo` after last round): <!-- i18n-allow -->
+
 4. Repeat until every item PASSes. **Cap of 3 rounds** — over the cap, STOP and tell the user.
 
 Never ask mid-run. A spec threshold the fix cannot reach → `lech add`, mark the item "PASS (lệch, chờ duyệt)", and the report asks the user.

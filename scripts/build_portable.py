@@ -644,6 +644,8 @@ def la_duong_dan_release(rel_path):
         return False
     if parts[-1] in RELEASE_EXCLUDE_FILES:
         return False
+    if parts[0] == "hooks" and len(parts) > 2 and parts[1] == "rust":
+        return False
     if parts[0] == "scripts":
         if len(parts) > 2 and parts[1] == "samples":
             return False

@@ -6,7 +6,7 @@ description: Run an approved TDQ plan end to end in one turn, QC it against the 
 # TDQ Build — Implement → QC → Report
 <!-- muc-luc-dong:
   Hard rules (all three phases)=15-73 · Part A — Implement (phase `implement`)=74-141 ·
-  Part B — QC (phase `qc`)=142-158 · Part C — Report (phase `report`)=159
+  Part B — QC (phase `qc`)=142-159 · Part C — Report (phase `report`)=160
 -->
 
 Load [tdq-conventions](../tdq-conventions/SKILL.md). Requires `plan_approved = true`.
@@ -72,7 +72,7 @@ This skill owns three phases: `implement` → `qc` → `report`.
   end the turn while one is still running.
 
 ## Part A — Implement (phase `implement`)
-For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md): verify binding before code, refresh Master after source changes/merge.
+For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md). When `work_kind=investigate`, execute Collect->Draft-Report shards, Burden checkpoints & `QC-I1..I4` per [investigate-mode.md](../tdq-conventions/references/investigate-mode.md).
 1. Read `implement_mode` from state and follow it exactly:
    - `main` (label the user sees: "làm trực tiếp (inline implement)"): do EVERYTHING in this <!-- i18n-allow: user-facing mode label -->
      conversation yourself, but in the plan's cluster order, and still record the reason for
@@ -86,7 +86,7 @@ For Archify previews, load [artifact lifecycle](references/archify-lifecycle.md)
      Call `tdq-implementer` for EVERY task of the wave IN ONE response — several Task calls in
      one response means they run concurrently. Mark the tasks you just handed out `[>]`.
      On receiving a report, run `check` then `merge` (which cleans up the task's worktree), tick `[x]` IMMEDIATELY, then back to <!-- i18n-allow -->
-     `wave`. The default is DELEGATE. You may keep a task only when it matches exactly one group <!-- i18n-allow -->
+     `wave`. Retry fails >2x → `tdq-build-resolver`/`tdq-debugger`; risky diffs → `tdq-security-reviewer`; cleanup → `tdq-refactor-cleaner`. The default is DELEGATE. You may keep a task only when it matches exactly one group <!-- i18n-allow -->
      in the closed reason set (lookup table in `team-mode.md`); inventing a group outside that
      set makes `audit` exit non-zero. While a wave is running, the leader works the `tu_lam`
      tasks of that same wave.
@@ -148,6 +148,7 @@ needs the user's yes, never your own call.
 
 The three execution steps — from counting DoD items to the fix loop on a FAIL — live in
 [references/qc.md](references/qc.md) under `## The three execution steps` — read THAT section
+and [references/qc-vong-fix.md](references/qc-vong-fix.md) when `QC FAIL` triggers `QCn.x` repairs.
 before running the first item, through the line index at the top of the file; working from memory
 is banned. The same file also carries the qc file template and the 3-fix-round cap, each its own
 section in that index, so nothing here needs the whole file in context at once.

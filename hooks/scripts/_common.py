@@ -284,6 +284,35 @@ def _extract_raw_tool_container(payload, tool_call):
     return None, False
 
 
+def _normalize_tool_aliases(tname, tinput):
+    """Normalize Antigravity/Claude tool argument aliases (paths, commands, read ranges)."""
+    out = dict(tinput) if isinstance(tinput, dict) else {}
+    if "file_path" not in out:
+        for alias in ("TargetFile", "Path", "AbsolutePath", "path", "target_file"):
+            if isinstance(out.get(alias), str) and out[alias].strip():
+                out["file_path"] = out[alias]
+                break
+    if "command" not in out:
+        for alias in ("CommandLine", "cmd"):
+            if isinstance(out.get(alias), str) and out[alias].strip():
+                out["command"] = out[alias]
+                break
+    if tname in ("read_file", "view_file", "Read") or any(k in out for k in ("StartLine", "EndLine", "ByteOffset")):
+        if "offset" not in out and "StartLine" in out:
+            out["offset"] = out.get("StartLine")
+        if "limit" not in out and "StartLine" in out and "EndLine" in out:
+            try:
+                sl = int(out["StartLine"])
+                el = int(out["EndLine"])
+                if el >= sl:
+                    out["limit"] = (el - sl) + 1
+            except (TypeError, ValueError):
+                pass
+        if "limit" not in out and "ByteOffset" in out and "EndLine" not in out:
+            out["limit"] = 150
+    return out
+
+
 def normalize_payload(raw):
     """Normalize Antigravity 2.0 and Claude Code hook payloads into one canonical dict."""
     event = _parse_event_flag()
@@ -314,30 +343,7 @@ def normalize_payload(raw):
         has_args = bool(has_container and args_present)
         if orig_tname != "call_mcp_tool" and tname != orig_tname:
             payload["original_tool_name"] = orig_tname
-        tinput = dict(tinput) if isinstance(tinput, dict) else {}
-        if "file_path" not in tinput:
-            for alias in ("TargetFile", "Path", "AbsolutePath", "path", "target_file"):
-                if isinstance(tinput.get(alias), str) and tinput[alias].strip():
-                    tinput["file_path"] = tinput[alias]
-                    break
-        if "command" not in tinput:
-            for alias in ("CommandLine", "cmd"):
-                if isinstance(tinput.get(alias), str) and tinput[alias].strip():
-                    tinput["command"] = tinput[alias]
-                    break
-        if tname in ("read_file", "view_file", "Read"):
-            if "offset" not in tinput and "StartLine" in tinput:
-                tinput["offset"] = tinput.get("StartLine")
-            if "limit" not in tinput and "StartLine" in tinput and "EndLine" in tinput:
-                try:
-                    sl = int(tinput["StartLine"])
-                    el = int(tinput["EndLine"])
-                    if el >= sl:
-                        tinput["limit"] = (el - sl) + 1
-                except (TypeError, ValueError):
-                    pass
-            if "limit" not in tinput and "ByteOffset" in tinput and "EndLine" not in tinput:
-                tinput["limit"] = 150
+        tinput = _normalize_tool_aliases(tname, tinput)
         if "tool_name" in payload or "toolName" in payload or tname:
             payload["tool_name"] = tname
         if any(k in payload for k in ("tool_input", "toolInput", "toolCall", "arguments", "input")) or tinput:
@@ -815,7 +821,123 @@ def stop_block(cwd, payload, reason, code="STOP", stop_hook_active=None):
     print(json.dumps(out, ensure_ascii=False))
 
 
-def register_subagent_role(cwd, conv_id, role, target_task=""):
+def is_qc_report_target(target_path, cwd):
+    """Allow tdq-qc-tester writes ONLY to markdown files strictly inside docs/tdq/qc/."""
+    if not isinstance(target_path, str) or not target_path.strip():
+        return False
+    base = cwd or "."
+    qc_root = os.path.realpath(os.path.join(base, "docs", "tdq", "qc"))
+    abs_target = os.path.realpath(target_path if os.path.isabs(target_path) else os.path.join(base, target_path))
+    try:
+        common = os.path.commonpath([abs_target, qc_root])
+    except ValueError:
+        return False
+    if common != qc_root or abs_target == qc_root:
+        return False
+    return abs_target.lower().endswith(".md")
+
+
+_SCOPED_ARTIFACT_ROLES = frozenset({
+    "tdq-explorer", "explorer", "tdq-debugger", "debugger", "tdq-reviewer", "reviewer",
+})
+_SCOPED_ARTIFACT_EXTS = frozenset({".md", ".json", ".jsonl"})
+_SCOPED_SLUG_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+INVESTIGATE_GON_TEXT = (
+    "[{ma}] muc_gat={muc} · investigate mode: cite file:line or URL+ts per claim.\n"
+    "Write ONLY inside assigned artifact shard; never edit source files.\n"
+    "Synthesize via evidence shards."
+)
+
+
+def _canonicalize_with_tail(abs_path):
+    """Walk ancestors up to deepest existing dir, canonicalize, and re-append normalized tail."""
+    cur = os.path.normpath(abs_path)
+    tail = []
+    while cur and not os.path.exists(cur):
+        parent, seg = os.path.split(cur)
+        if parent == cur or not seg:
+            return None
+        if seg == "..":
+            return None
+        tail.append(seg)
+        cur = parent
+    if not cur:
+        return None
+    real_base = os.path.realpath(cur)
+    return os.path.join(real_base, *reversed(tail)) if tail else real_base
+
+
+def is_investigation_artifact_target(target_path, cwd, role=None, state=None):
+    """5-layer scoped-write check for investigation artifact shards."""
+    if not isinstance(target_path, str) or not target_path.strip() or "\x00" in target_path:
+        return False
+    after_drive = target_path[2:] if len(target_path) >= 2 and target_path[1] == ":" else target_path
+    if ":" in after_drive or ".." in [seg for seg in re.split(r"[\\/]+", target_path) if seg]:
+        return False
+    r_low = str(role or "").strip().lower()
+    if any(b in r_low for b in ("security-reviewer", "browser", "qc-tester")) or r_low not in _SCOPED_ARTIFACT_ROLES:
+        return False
+    if state is None:
+        state = tdq_state.load(cwd, heal=False) or {}
+    slug = str(state.get("active_request") or "").strip() if isinstance(state, dict) else ""
+    if not slug or not _SCOPED_SLUG_RE.match(slug) or ".." in slug:
+        return False
+    base = cwd or "."
+    root_real = os.path.realpath(base)
+    raw_abs = target_path if os.path.isabs(target_path) else os.path.join(root_real, target_path)
+    resolved = _canonicalize_with_tail(raw_abs)
+    if not resolved:
+        return False
+    try:
+        if os.path.commonpath([resolved, root_real]) != root_real or resolved == root_real:
+            return False
+    except ValueError:
+        return False
+    rel_posix = os.path.relpath(resolved, root_real).replace("\\", "/")
+    fname = os.path.basename(rel_posix).lower()
+    ext = os.path.splitext(fname)[1]
+    if ext not in _SCOPED_ARTIFACT_EXTS:
+        return False
+    if fname.startswith("evidence") or ((fname.startswith("trial_") or fname.startswith("rec_")) and ext == ".json"):
+        return False
+    rel_cmp = rel_posix.lower() if sys.platform == "win32" else rel_posix
+    slug_cmp = slug.lower() if sys.platform == "win32" else slug
+    art_prefix = f"docs/tdq/artifacts/{slug_cmp}/"
+    if rel_cmp.startswith(art_prefix) and len(rel_cmp) > len(art_prefix):
+        return True
+    res_prefix = "docs/tdq/research/"
+    if rel_cmp.startswith(res_prefix):
+        tail = rel_cmp[len(res_prefix):]
+        if "/" not in tail and (tail == f"{slug_cmp}.md" or (tail.startswith(f"{slug_cmp}-") and ext == ".md" and len(tail) > len(slug_cmp) + 4)):
+            return True
+    return False
+
+
+def append_agent_telemetry(cwd, record):
+    """Append one per-role execution telemetry record to docs/tdq/.tdq-agent-telemetry.jsonl."""
+    base = cwd or "."
+    path = os.path.join(base, "docs", "tdq", ".tdq-agent-telemetry.jsonl")
+    row = {
+        "ts": record.get("ts") or tdq_state.now_iso(),
+        "session": str(record.get("session") or ""),
+        "role": str(record.get("role") or "unknown"),
+        "task_id": str(record.get("task_id") or ""),
+        "status": str(record.get("status") or "done"),
+        "model": str(record.get("model") or ""),
+        "effort": str(record.get("effort") or ""),
+        "elapsed_s": record.get("elapsed_s"),
+        "attempt": int(record.get("attempt") or 1),
+        "files_count": int(record.get("files_count") or 0),
+        "first_pass": bool(record.get("first_pass", True)),
+        "outcome": str(record.get("outcome") or record.get("status") or "done"),
+        "handoff_valid": bool(record.get("handoff_valid", False)),
+    }
+    _lock_and_append_jsonl(path, row)
+    tdq_state._info(f"telemetry: role={row['role']} task={row['task_id']} status={row['status']}")
+    return path
+
+
+def register_subagent_role(cwd, conv_id, role, target_task="", model="", effort=""):
     """Persist dispatched subagent role under .tdq-runtime/sessions.json for role-aware gates."""
     path = os.path.join(_runtime_dir(cwd), "sessions.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -829,7 +951,12 @@ def register_subagent_role(cwd, conv_id, role, target_task=""):
                 data = {}
         if not isinstance(data, dict):
             data = {}
-        data[str(conv_id)] = {"role": role, "task": target_task, "at": time.time()}
+        entry = {"role": role, "task": target_task, "at": time.time()}
+        if model:
+            entry["model"] = str(model)
+        if effort:
+            entry["effort"] = str(effort)
+        data[str(conv_id)] = entry
         try:
             with open(path, "w", encoding="utf-8") as fh:
                 json.dump(data, fh, indent=2, ensure_ascii=False)
@@ -847,11 +974,19 @@ def detect_subagent(payload, cwd):
                 reg = json.load(fh)
             if isinstance(reg, dict) and sid in reg:
                 rec = reg[sid]
-                return {"is_subagent": True, "role": rec.get("role"), "task": rec.get("task")}
+                return {
+                    "is_subagent": True,
+                    "role": rec.get("role"),
+                    "task": rec.get("task", ""),
+                    "model": rec.get("model", ""),
+                    "effort": rec.get("effort", ""),
+                }
         except (OSError, ValueError):
             pass
-    if isinstance(payload, dict) and payload.get("agent_type"):
-        return {"is_subagent": True, "role": str(payload.get("agent_type")), "task": ""}
+    if isinstance(payload, dict):
+        explicit_role = payload.get("agent_type") or payload.get("agentType")
+        if explicit_role:
+            return {"is_subagent": True, "role": str(explicit_role), "task": ""}
     tpath = (payload or {}).get("transcriptPath") if isinstance(payload, dict) else None
     if isinstance(tpath, str) and os.path.isfile(tpath):
         try:
@@ -863,6 +998,7 @@ def detect_subagent(payload, cwd):
                 for role_name in (
                     "tdq-security-reviewer", "tdq-reviewer", "tdq-qc-tester",
                     "tdq-implementer", "tdq-build-resolver", "tdq-refactor-cleaner",
+                    "tdq-explorer", "tdq-debugger",
                 ):
                     if role_name in txt:
                         register_subagent_role(cwd, sid, role_name)
