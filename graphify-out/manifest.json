@@ -30,16 +30,16 @@
     "semantic_hash": "95e822ed64626af8354685732d466c11"
   },
   "hooks/scripts/bash_gate.py": {
-    "mtime": 1795285535.79189,
-    "seen": 1795285621.906733,
-    "ast_hash": "2b3982e4f83f36e904198940438b8c3a",
-    "semantic_hash": "2b3982e4f83f36e904198940438b8c3a"
+    "mtime": 1795289451.6853473,
+    "seen": 1795289631.873234,
+    "ast_hash": "573e27e07ea4d69181ee9494cb8b4d81",
+    "semantic_hash": "573e27e07ea4d69181ee9494cb8b4d81"
   },
   "hooks/scripts/edit_gate.py": {
-    "mtime": 1795285334.4366682,
-    "seen": 1795285621.9071126,
-    "ast_hash": "e07972aa59749297b14e32b033d09537",
-    "semantic_hash": "e07972aa59749297b14e32b033d09537"
+    "mtime": 1795289289.1271987,
+    "seen": 1795289631.8736436,
+    "ast_hash": "4bb2905d02dca996995ad6c0365c2c50",
+    "semantic_hash": "4bb2905d02dca996995ad6c0365c2c50"
   },
   "hooks/scripts/prompt_context.py": {
     "mtime": 1795285436.048733,
@@ -349,10 +349,10 @@
     "semantic_hash": "19f070c504aa43d421ff937498dae145"
   },
   "hooks/scripts/agy_pretooluse_gate.py": {
-    "mtime": 1795285338.4332397,
-    "seen": 1795285621.9064796,
-    "ast_hash": "679fd688f928e5f14639c9832868b9af",
-    "semantic_hash": "679fd688f928e5f14639c9832868b9af"
+    "mtime": 1795289366.9428463,
+    "seen": 1795289631.8729582,
+    "ast_hash": "4eda88a2111d6576c6ea6ea9255710d8",
+    "semantic_hash": "4eda88a2111d6576c6ea6ea9255710d8"
   },
   "hooks/scripts/agy_stop_gate.py": {
     "mtime": 1794604409.8279521,
@@ -1387,10 +1387,10 @@
     "semantic_hash": "298a8fbce961e31cec078ded6f4ea933"
   },
   "hooks/rust/tdq-dispatch/src/command_parser.rs": {
-    "mtime": 1795284361.6577098,
-    "seen": 1795284433.1296554,
-    "ast_hash": "c88f5f9415a9beac777b3f8fee81e038",
-    "semantic_hash": "c88f5f9415a9beac777b3f8fee81e038"
+    "mtime": 1795289219.8563013,
+    "seen": 1795289631.8708673,
+    "ast_hash": "d1bf5ddbc8389f996c6c71c6bb7c82bc",
+    "semantic_hash": "d1bf5ddbc8389f996c6c71c6bb7c82bc"
   },
   "hooks/rust/tdq-dispatch/src/events/mod.rs": {
     "mtime": 1795100827.278332,
@@ -1465,10 +1465,10 @@
     "semantic_hash": "c4c280396542d2dd1b88456874a3e5c2"
   },
   "hooks/rust/tdq-dispatch/src/protocol.rs": {
-    "mtime": 1795227491.4614065,
-    "seen": 1795229840.9458473,
-    "ast_hash": "aa65cee22e9e1747298a8d9945218393",
-    "semantic_hash": "aa65cee22e9e1747298a8d9945218393"
+    "mtime": 1795289095.748773,
+    "seen": 1795289631.8726625,
+    "ast_hash": "bdf35bc0c7a1f6ef179cc37364f21069",
+    "semantic_hash": "bdf35bc0c7a1f6ef179cc37364f21069"
   },
   "hooks/rust/tdq-dispatch/src/storage.rs": {
     "mtime": 1795285083.920469,

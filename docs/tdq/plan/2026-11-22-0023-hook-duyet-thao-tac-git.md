@@ -168,6 +168,48 @@ Trạng thái plan: CHỜ DUYỆT
 
 **Xong P4 khi**: `cargo test` và 5 module `pytest` cốt lõi đạt 0 fail, log `TDQ_LOG=1/0` được xác minh bằng assert thật và `agy plugin validate --strict` trả 0 findings.
 
+## QC vòng 1 — fix
+
+- [x] **QC1.1** (e12m) Harden Rust `command_parser.rs` and `protocol.rs` against security findings #1, #2, #3, #5 — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+  - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`, `hooks/rust/tdq-dispatch/src/protocol.rs`
+  - Cần: Không
+  - Neo & Công cụ: `edit_file` on `command_parser.rs` (`strip_powershell_herestrings`, `tokenize_command`, `skip_command_wrappers`, `extract_shell_subcommands`, `mutates_tdq_state`, `has_banned_ai_branch`) and `protocol.rs` (`HookPayload`)
+  - Trước → Sau: Naive herestring stripping, empty-quote drops, depth-2 wrappers, missing `../`/`cd`/PS-alias/Py `.tdq-runtime` lock and missing camelCase `agentType`/`agentId` aliases → Quote-aware herestrings, depth-4 balanced `$()`/`{}`/`-enc` decoding, normalized path/alias state protection, tokenized recursive branch guard, camelCase aliases
+  - Logic: Parse quotes around PowerShell herestrings, keep empty tokens during quoting, unwrap shell wrappers and encoded/nested commands to depth 4, normalize paths/aliases in state protection, check branches recursively, and alias camelCase agent fields.
+  - Tiêu chí & Assert: Adversarial tests cover every Finding #1, #2, #3, #5 bypass while keeping reads and clean builds green; all new/edited fns `<= 50` lines
+
+- [x] **QC1.2** (e12m) Mirror security fixes #1, #2, #3, #5 in Python `bash_gate.py`, `edit_gate.py`, and `agy_pretooluse_gate.py` — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_hooks_dual_protocol.py -q`
+  - Chạm: `hooks/scripts/bash_gate.py`, `hooks/scripts/edit_gate.py`, `hooks/scripts/agy_pretooluse_gate.py`
+  - Cần: Không
+  - Neo & Công cụ: `edit_file` on `hooks/scripts/{bash_gate,edit_gate,agy_pretooluse_gate}.py`
+  - Trước → Sau: Unquoted/quoted herestring bugs, missing depth-4 wrappers/`-enc`/`$()`, missing normalized state & alias checks, case-sensitive Windows `within()` → 1-1 Python parity with `QC1.1` + `os.path.normcase` Windows path checks
+  - Logic: Mirror `QC1.1` herestring, tokenizer, depth-4 wrapper/command substitution, normalized path/alias state guards, and recursive branch checks across Python hooks, plus `os.path.normcase` in `within()`.
+  - Tiêu chí & Assert: Existing hook tests pass `0 fail`, adversarial probe catches all bypass vectors, `i18n_check` and `ruff` delta `+0`
+
+- [ ] **QC1.3** (e10m) Fix stale-sig `git_grants` re-mint (#4) and sync hardened helpers/anchors in `tools/patches/agy_hooks.py` — Test: `py -3 -X utf8 -m pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q`
+  - Chạm: `tools/patches/agy_hooks.py`
+  - Cần: `QC1.1`, `QC1.2`
+  - Neo & Công cụ: `edit_file` on `tools/patches/agy_hooks.py` (`_patch_prompt_context`, `_patch_bash_gate`, `_patch_edit_gate`)
+  - Trước → Sau: Stale `sig == last_user_sig` could re-open/re-mint old `git_grants` on `SYSTEM`/`resume`, and patch used local duplicate helpers → Fail-closed empty `git_grants` when stale/non-human sig and reuse `QC1.2` hardened `mutates_tdq_state`/`has_banned_ai_branch`
+  - Logic: Reject stale closed-turn or `compact`/`resume`/`system` turns from minting `git_grants`, keep `turn_closed` preserved on stale ticks, add `agentId` camelCase checks, and delegate branch/herestring guards to `QC1.2` helpers.
+  - Tiêu chí & Assert: `pytest tests/test_agy_hooks.py tests/test_gate_guidance.py -q` passes `0 fail`, stale-sig probe never re-mints grants, `i18n`/`ruff` delta `+0`
+
+- [ ] **QC1.4** (e10m) Rebuild release `tdq-dispatch.exe` and repackage `plugins/tdq-workflow-agy/` cleanly in-repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
+  - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`, `plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py`, `plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py`, `plugins/tdq-workflow-agy/hooks/scripts/_common.py`, `plugins/tdq-workflow-agy/manifest.json`
+  - Cần: `QC1.1`, `QC1.2`, `QC1.3`
+  - Neo & Công cụ: `cargo build --release` + `tools/build_agy_plugin.py --upstream .` + `agy plugin validate --strict --json`
+  - Trước → Sau: Previous release binary & bundle lacked `QC1.1`–`QC1.3` security fixes → Clean in-repo rebuild with matching release SHA-256 and `0` strict validation findings
+  - Logic: Compile release `tdq-dispatch.exe`, rebuild `plugins/tdq-workflow-agy/` via `tools/build_agy_plugin.py --upstream .`, and verify SHA-256 parity and `agy plugin validate --strict` with zero host changes.
+  - Tiêu chí & Assert: `agy plugin validate plugins/tdq-workflow-agy --strict --json` returns exit `0`, `"findings": []`; `~/.gemini/config/plugins/` untouched
+
+- [ ] **QC1.5** (e10m) Add adversarial regression & parity tests for all 5 QC1 security findings — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py -q`
+  - Chạm: `tests/test_rust_dispatch_parity.py`, `tests/test_bash_gate.py`, `tests/test_agy_hooks.py`
+  - Cần: `QC1.4`
+  - Neo & Công cụ: `edit_file` on the 3 test modules targeting newly hardened Rust & Python paths
+  - Trước → Sau: Test suites did not exercise Finding #1–#5 exploit strings against real binary & fallback Python → Full adversarial parity suite running real `tdq-dispatch.exe` and `dispatch.py`
+  - Logic: Add adversarial test vectors across `test_bash_gate.py`, `test_agy_hooks.py`, and `test_rust_dispatch_parity.py` covering Findings #1-#5 and run the 6 core test suites plus `cargo test`.
+  - Tiêu chí & Assert: All 5 core modules pass `0 fail`, `tdq-security-reviewer` re-audit clears CRITICAL/HIGH, `i18n_check` delta `+0`
+
 ## Cụm song song
 
 Phân tích đồ thị phụ thuộc (`Cần:`) cho thấy 7 task có tập `Chạm:` hoàn toàn tách rời nhau (0 file trùng), xếp thành 5 đợt:

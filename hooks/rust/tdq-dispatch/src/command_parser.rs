@@ -11,27 +11,71 @@ fn compiled_regex(cell: &'static OnceLock<Regex>, pattern: &str) -> &'static Reg
     })
 }
 
-/// Clean PowerShell here-strings (@'...'@ and @"..."@) to prevent false-positives.
-pub fn strip_powershell_herestrings(cmd: &str) -> String {
-    static RE_SINGLE: OnceLock<Regex> = OnceLock::new();
-    static RE_DOUBLE: OnceLock<Regex> = OnceLock::new();
-    let r1 = compiled_regex(&RE_SINGLE, r"(?s)@'\r?\n.*?\r?\n'@");
-    let intermediate = r1.replace_all(cmd, " ");
-    let r2 = compiled_regex(&RE_DOUBLE, r#"(?s)@"\r?\n.*?\r?\n"@"#);
-    r2.replace_all(&intermediate, " ").to_string()
+fn ps_herestring_end(bytes: &[u8], body_start: usize, quote: u8) -> Option<usize> {
+    let mut j = body_start;
+    while j + 2 < bytes.len() {
+        if bytes[j] == b'\n' && bytes[j + 1] == quote && bytes[j + 2] == b'@' {
+            let after = j + 3;
+            let end_ok = after == bytes.len()
+                || matches!(bytes[after], b'\r' | b'\n' | b' ' | b'\t' | b';' | b'|' | b'&' | b')');
+            if end_ok {
+                return Some(after);
+            }
+        }
+        j += 1;
+    }
+    None
 }
 
-/// Tokenize command string into basic whitespace-separated arguments, honoring quotes.
+/// Clean unquoted static PowerShell here-strings (`@'...'@` / safe `@"..."@`) outside quotes.
+pub fn strip_powershell_herestrings(cmd: &str) -> String {
+    let bytes = cmd.as_bytes();
+    let mut out = String::with_capacity(cmd.len());
+    let (mut i, mut in_s, mut in_d, mut esc) = (0, false, false, false);
+    while i < bytes.len() {
+        if !in_s && !in_d && i + 2 < bytes.len() && bytes[i] == b'@' && matches!(bytes[i + 1], b'\'' | b'"') {
+            let q = bytes[i + 1];
+            let step = if bytes[i + 2] == b'\n' { 3 } else if bytes[i + 2] == b'\r' && bytes.get(i + 3) == Some(&b'\n') { 4 } else { 0 };
+            if step > 0 {
+                if let Some(after) = ps_herestring_end(bytes, i + step, q) {
+                    let body = &cmd[i + step..after - 2];
+                    if q == b'\'' || (!body.contains("$(") && !body.contains('`')) {
+                        out.push(' ');
+                        i = after;
+                        continue;
+                    }
+                }
+            }
+        }
+        let ch = cmd[i..].chars().next().unwrap_or('\0');
+        if esc { esc = false; }
+        else if ch == '\\' && !in_s && in_d { esc = true; }
+        else if ch == '\'' && !in_d { in_s = !in_s; }
+        else if ch == '"' && !in_s { in_d = !in_d; }
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
+}
+
+/// Tokenize command string into arguments, preserving empty quoted strings (`""`, `''`).
 pub fn tokenize_command(cmd: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
-    let (mut in_single, mut in_double) = (false, false);
+    let (mut in_single, mut in_double, mut had_token) = (false, false, false);
     let mut chars = cmd.chars().peekable();
     while let Some(c) = chars.next() {
         match c {
-            '\'' if !in_double => in_single = !in_single,
-            '"' if !in_single => in_double = !in_double,
+            '\'' if !in_double => {
+                in_single = !in_single;
+                had_token = true;
+            }
+            '"' if !in_single => {
+                in_double = !in_double;
+                had_token = true;
+            }
             '\\' if in_double => {
+                had_token = true;
                 if matches!(chars.peek(), Some('"') | Some('\\')) {
                     if let Some(esc) = chars.next() {
                         current.push(esc);
@@ -41,14 +85,18 @@ pub fn tokenize_command(cmd: &str) -> Vec<String> {
                 current.push(c);
             }
             c if c.is_whitespace() && !in_single && !in_double => {
-                if !current.is_empty() {
+                if had_token || !current.is_empty() {
                     tokens.push(std::mem::take(&mut current));
+                    had_token = false;
                 }
             }
-            _ => current.push(c),
+            _ => {
+                had_token = true;
+                current.push(c);
+            }
         }
     }
-    if !current.is_empty() {
+    if had_token || !current.is_empty() {
         tokens.push(current);
     }
     tokens
@@ -114,14 +162,28 @@ fn skip_command_wrappers(tokens: &[String]) -> &[String] {
         match cmd_basename_no_exe(tok).as_str() {
             "env" => {
                 i += 1;
-                while i < tokens.len()
-                    && (is_env_assignment(&tokens[i])
-                        || matches!(tokens[i].as_str(), "-i" | "--ignore-environment"))
-                {
-                    i += 1;
+                while i < tokens.len() {
+                    let t = tokens[i].as_str();
+                    if is_env_assignment(t)
+                        || matches!(t, "-i" | "--ignore-environment" | "-0" | "--null")
+                    {
+                        i += 1;
+                    } else if matches!(
+                        t,
+                        "-u" | "--unset" | "-C" | "--chdir" | "-S" | "--split-string"
+                    ) {
+                        i = (i + 2).min(tokens.len());
+                    } else if t.starts_with("--unset=")
+                        || t.starts_with("--chdir=")
+                        || t.starts_with("--split-string=")
+                    {
+                        i += 1;
+                    } else {
+                        break;
+                    }
                 }
             }
-            "command" | "time" | "nohup" => i += 1,
+            "command" | "time" | "nohup" | "exec" => i += 1,
             "rtk" => {
                 i += 1;
                 if tokens.get(i).is_some_and(|t| t.eq_ignore_ascii_case("bypass")) {
@@ -251,7 +313,7 @@ fn collect_git_violations_depth(part: &str, depth: usize, out: &mut Vec<GitPolic
             }
         }
     }
-    if depth < 2 {
+    if depth < 4 {
         for sub in extract_shell_subcommands(part) {
             for seg in split_shell_segments(&sub, true) {
                 collect_git_violations_depth(&seg, depth + 1, out);
@@ -483,39 +545,187 @@ fn mask_quoted_shell_ops(part: &str) -> String {
     out
 }
 
-fn extract_shell_subcommands(part: &str) -> Vec<String> {
-    static RE_WRAPPER: OnceLock<Regex> = OnceLock::new();
-    let wrap = compiled_regex(
-        &RE_WRAPPER,
-        r"(?i)(?:^|\s)(?:(?:bash|sh|zsh|dash|ksh|pwsh|powershell(?:\.exe)?)\b[^\n]*?\s-(?:[a-z]*c|Command)|cmd(?:\.exe)?\b[^\n]*?\s+/[ck])\s+",
-    );
-    let mut subs = Vec::new();
-    for m in wrap.find_iter(part) {
-        let rest = part.get(m.end()..).unwrap_or("").trim_start();
-        let mut chars = rest.chars();
-        let Some(quote) = chars.next() else {
-            continue;
-        };
-        if quote != '\'' && quote != '"' {
-            if !rest.is_empty() {
-                subs.push(rest.to_string());
+fn scan_paren_body(part: &str, start_inner: usize) -> Option<(String, usize)> {
+    let (mut depth, mut idx) = (1usize, start_inner);
+    let (mut in_s, mut in_d, mut esc) = (false, false, false);
+    while idx < part.len() {
+        let ch = part[idx..].chars().next()?;
+        let next = idx + ch.len_utf8();
+        if esc {
+            esc = false;
+        } else if ch == '\\' && !in_s {
+            esc = true;
+        } else if ch == '\'' && !in_d {
+            in_s = !in_s;
+        } else if ch == '"' && !in_s {
+            in_d = !in_d;
+        } else if !in_s && !in_d {
+            if ch == '(' {
+                depth += 1;
+            } else if ch == ')' {
+                depth -= 1;
+                if depth == 0 {
+                    return Some((part[start_inner..idx].to_string(), next));
+                }
             }
+        }
+        idx = next;
+    }
+    None
+}
+
+fn extract_command_substitutions(part: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let (mut idx, mut in_s, mut in_d, mut esc) = (0usize, false, false, false);
+    while idx < part.len() {
+        let ch = part[idx..].chars().next().unwrap_or('\0');
+        let next = idx + ch.len_utf8();
+        if esc {
+            esc = false;
+        } else if ch == '\\' && !in_s {
+            esc = true;
+        } else if !in_s && ch == '$' && part.get(idx..idx + 2) == Some("$(") {
+            if let Some((body, end_idx)) = scan_paren_body(part, idx + 2) {
+                out.push(body);
+                idx = end_idx;
+                continue;
+            }
+        } else if !in_s && ch == '`' {
+            if let Some(rel) = part[next..].find('`') {
+                out.push(part[next..next + rel].to_string());
+                idx = next + rel + 1;
+                continue;
+            }
+        } else if ch == '\'' && !in_d {
+            in_s = !in_s;
+        } else if ch == '"' && !in_s {
+            in_d = !in_d;
+        }
+        idx = next;
+    }
+    out
+}
+
+fn decode_ps_encoded_command(raw: &str) -> Option<String> {
+    let trimmed = raw.trim().trim_matches(|c| c == '\'' || c == '"');
+    if trimmed.is_empty() {
+        return None;
+    }
+    let mut vals = Vec::with_capacity(trimmed.len());
+    for b in trimmed.bytes() {
+        if b == b'=' || b.is_ascii_whitespace() {
             continue;
         }
-        let mut buf = String::new();
-        let mut escaped = false;
-        for ch in chars {
-            if escaped {
-                buf.push(ch);
-                escaped = false;
-            } else if ch == '\\' && quote == '"' {
-                escaped = true;
-            } else if ch == quote {
-                subs.push(buf);
-                break;
-            } else {
-                buf.push(ch);
+        let v = match b {
+            b'A'..=b'Z' => b - b'A',
+            b'a'..=b'z' => b - b'a' + 26,
+            b'0'..=b'9' => b - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => return None,
+        };
+        vals.push(v);
+    }
+    let mut bytes = Vec::with_capacity(vals.len() * 3 / 4);
+    for c in vals.chunks(4) {
+        if c.len() < 2 {
+            break;
+        }
+        bytes.push((c[0] << 2) | (c[1] >> 4));
+        if c.len() > 2 {
+            bytes.push((c[1] << 4) | (c[2] >> 2));
+        }
+        if c.len() > 3 {
+            bytes.push((c[2] << 6) | c[3]);
+        }
+    }
+    let units: Vec<u16> = bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+    if units.is_empty() { None } else { String::from_utf16(&units).ok() }
+}
+
+fn extract_brace_body(rest: &str) -> Option<String> {
+    let mut depth = 0usize;
+    let (mut in_s, mut in_d, mut esc) = (false, false, false);
+    for (idx, ch) in rest.char_indices() {
+        if esc {
+            esc = false;
+            continue;
+        }
+        if ch == '\\' && !in_s {
+            esc = true;
+        } else if ch == '\'' && !in_d {
+            in_s = !in_s;
+        } else if ch == '"' && !in_s {
+            in_d = !in_d;
+        } else if !in_s && !in_d {
+            if ch == '{' {
+                depth += 1;
+            } else if ch == '}' {
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    return Some(rest[1..idx].to_string());
+                }
             }
+        }
+    }
+    None
+}
+
+fn extract_wrapper_body_arg(raw_rest: &str) -> Option<String> {
+    let rest = raw_rest.trim_start();
+    let quote = rest.chars().next()?;
+    if quote == '{' {
+        return extract_brace_body(rest);
+    }
+    if quote != '\'' && quote != '"' {
+        return if rest.is_empty() { None } else { Some(rest.to_string()) };
+    }
+    let mut buf = String::new();
+    let mut escaped = false;
+    for ch in rest.chars().skip(1) {
+        if escaped {
+            buf.push(ch);
+            escaped = false;
+        } else if ch == '\\' && quote == '"' {
+            escaped = true;
+        } else if ch == quote {
+            return Some(buf);
+        } else {
+            buf.push(ch);
+        }
+    }
+    None
+}
+
+fn extract_shell_subcommands(part: &str) -> Vec<String> {
+    static RE_SH: OnceLock<Regex> = OnceLock::new();
+    static RE_CMD: OnceLock<Regex> = OnceLock::new();
+    static RE_PS: OnceLock<Regex> = OnceLock::new();
+    static RE_ENC: OnceLock<Regex> = OnceLock::new();
+    let sh_w = compiled_regex(&RE_SH, r#"(?i)(?:^|[\s;|&])(?:[^\s;|&"'`]*[/\\])?(?:bash|sh|zsh|dash|ksh)\b[^\n;|&]*?\s-(?:[a-z]*c[a-z]*)\b\s*"#);
+    let cmd_w = compiled_regex(&RE_CMD, r#"(?i)(?:^|[\s;|&])(?:[^\s;|&"'`]*[/\\])?cmd(?:\.exe)?\b[^\n;|&]*?\s+/[ck]"#);
+    let ps_w = compiled_regex(&RE_PS, r#"(?i)(?:^|[\s;|&])(?:[^\s;|&"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:c|co|com|comm|comma|comman|command)\b\s*"#);
+    let enc_w = compiled_regex(&RE_ENC, r#"(?i)(?:^|[\s;|&])(?:[^\s;|&"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:e|en|enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\b\s*([^\s;|&]+)"#);
+
+    let mut subs = extract_command_substitutions(part);
+    for re in [sh_w, ps_w] {
+        for m in re.find_iter(part) {
+            if let Some(arg) = extract_wrapper_body_arg(&part[m.end()..]) {
+                subs.push(arg);
+            }
+        }
+    }
+    for m in cmd_w.find_iter(part) {
+        let rest = &part[m.end()..];
+        if rest.starts_with([' ', '\t', '\'', '"']) {
+            if let Some(arg) = extract_wrapper_body_arg(rest) {
+                subs.push(arg);
+            }
+        }
+    }
+    for cap in enc_w.captures_iter(part) {
+        if let Some(decoded) = cap.get(1).and_then(|m| decode_ps_encoded_command(m.as_str())) {
+            subs.push(decoded);
         }
     }
     subs
@@ -535,7 +745,7 @@ fn part_has_shell_mutator_depth(part: &str, depth: usize) -> bool {
     if ps.is_match(part) || sh.is_match(part) {
         return true;
     }
-    if depth < 2 {
+    if depth < 4 {
         for sub in extract_shell_subcommands(part) {
             if split_shell_segments(&sub, true)
                 .iter()
@@ -566,22 +776,11 @@ fn part_stdout_targets_depth(part: &str, depth: usize) -> Vec<String> {
             {
                 return None;
             }
-            Some(
-                tgt.as_str()
-                    .trim_matches(|ch| ch == '\'' || ch == '"')
-                    .to_string(),
-            )
+            Some(tgt.as_str().trim_matches(|ch| ch == '\'' || ch == '"').to_string())
         })
-        .filter(|t| {
-            !t.starts_with('&')
-                && !t.starts_with('=')
-                && !matches!(
-                    t.to_ascii_lowercase().as_str(),
-                    "/dev/null" | "$null" | "nul"
-                )
-        })
+        .filter(|t| !t.starts_with('&') && !t.starts_with('=') && !matches!(t.to_ascii_lowercase().as_str(), "/dev/null" | "$null" | "nul"))
         .collect();
-    if depth < 2 {
+    if depth < 4 {
         for sub in extract_shell_subcommands(part) {
             for seg in split_shell_segments(&sub, true) {
                 targets.extend(part_stdout_targets_depth(&seg, depth + 1));
@@ -610,89 +809,193 @@ pub fn mutates_outside_docs(raw_cmd: &str) -> bool {
     let art = compiled_regex(&RE_ART, r"(?i)docs[\\/]tdq[\\/]artifacts[\\/]");
     let cleaned = strip_powershell_herestrings(raw_cmd);
     split_shell_segments(&cleaned, false).iter().any(|part| {
-        (part_has_shell_mutator_depth(part, 0) && !art.is_match(part))
+        (part_has_shell_mutator_depth(part, 0) && (!art.is_match(part) || part.contains("..")))
             || part_stdout_targets_depth(part, 0)
                 .iter()
-                .any(|t| !art.is_match(t))
+                .any(|t| !art.is_match(t) || t.contains(".."))
     })
 }
 
 /// Detect shell writes outside `docs/` completely (for `TDQ:APPROVE` guard).
 pub fn mutates_outside_docs_any(raw_cmd: &str) -> bool {
     static RE_DOCS: OnceLock<Regex> = OnceLock::new();
-    let docs = compiled_regex(&RE_DOCS, r#"(?i)(?:^|[\s'"=])docs[\\/]"#);
+    let docs = compiled_regex(&RE_DOCS, r#"(?i)(?:^|[\s'"=])(?:\.[\\/])?docs[\\/]"#);
     let cleaned = strip_powershell_herestrings(raw_cmd);
     split_shell_segments(&cleaned, false).iter().any(|part| {
-        (part_has_shell_mutator_depth(part, 0) && !docs.is_match(part))
+        (part_has_shell_mutator_depth(part, 0) && (!docs.is_match(part) || part.contains("..")))
             || part_stdout_targets_depth(part, 0).iter().any(|t| {
-                let norm = t.replace('\\', "/");
-                !norm.to_ascii_lowercase().starts_with("docs/")
-                    && !norm.to_ascii_lowercase().starts_with("./docs/")
+                let norm = collapse_path_token(t).to_ascii_lowercase();
+                !norm.starts_with("docs/")
             })
     })
 }
 
-/// Detect direct shell writes targeting `docs/tdq/state.json`, `STATE.md`, or `.tdq-runtime/`.
-pub fn mutates_tdq_state(raw_cmd: &str) -> bool {
-    let cleaned = strip_powershell_herestrings(raw_cmd).replace('\\', "/");
-    let low = cleaned.to_ascii_lowercase();
-    if !low.contains("docs/tdq/state.json")
-        && !low.contains("docs/tdq/state.md")
-        && !low.contains("docs/tdq/.tdq-runtime")
-    {
+fn collapse_path_token(tok: &str) -> String {
+    if !tok.contains('/') && !tok.contains('\\') {
+        return tok.to_string();
+    }
+    let norm = tok.replace('\\', "/");
+    let mut stack: Vec<&str> = Vec::new();
+    for seg in norm.split('/') {
+        match seg {
+            "" | "." => {}
+            ".." => {
+                if stack.last().is_some_and(|&s| s != "..") {
+                    stack.pop();
+                } else {
+                    stack.push("..");
+                }
+            }
+            s => stack.push(s),
+        }
+    }
+    if norm.starts_with('/') { format!("/{}", stack.join("/")) } else { stack.join("/") }
+}
+
+fn collapse_cmd_paths(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut cur = String::new();
+    for ch in raw.chars() {
+        if ch.is_whitespace() || matches!(ch, '\'' | '"' | ';' | '&' | '|' | '>' | '<' | '(' | ')' | '{' | '}' | ',' | '=') {
+            if !cur.is_empty() {
+                out.push_str(&collapse_path_token(&cur));
+                cur.clear();
+            }
+            out.push(ch);
+        } else {
+            cur.push(ch);
+        }
+    }
+    if !cur.is_empty() {
+        out.push_str(&collapse_path_token(&cur));
+    }
+    out
+}
+
+fn is_state_or_runtime_text(low: &str, seen_cd_tdq: bool) -> bool {
+    low.contains("docs/tdq/state.json")
+        || low.contains("docs/tdq/state.md")
+        || low.contains(".tdq-runtime")
+        || (seen_cd_tdq && (low.contains("state.json") || low.contains("state.md") || low.contains("turn-meta-")))
+}
+
+fn seg_has_state_write_op(collapsed_low: &str, cmd_toks: &[String]) -> bool {
+    static RE_POS_PS: OnceLock<Regex> = OnceLock::new();
+    static RE_PY_NODE: OnceLock<Regex> = OnceLock::new();
+    let skip_base = cmd_toks.first().map(|t| cmd_basename_no_exe(t)).unwrap_or_default();
+    if matches!(skip_base.as_str(), "git" | "pytest" | "cargo" | "rg" | "grep" | "egrep" | "fgrep" | "findstr" | "jq" | "cat" | "head" | "tail" | "type" | "get-content" | "gc") {
         return false;
     }
-    static RE_WRITE: OnceLock<Regex> = OnceLock::new();
-    let wr = compiled_regex(
-        &RE_WRITE,
-        r#"(?is)(?:>{1,2}\s*['"]?\S*docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?)|\b(?:tee|sed[^;|&]*\s-i|mv|cp|truncate|rm|del|erase|rmdir|Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item)\b[^;|&]*docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?)|\[(?:System\.)?IO\.File\]::[^;|&]*docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?)|\bopen\([^)]*docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?)[^)]*['"](?:w|a|x)|docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?)[^;\n]*(?:write_text|write_bytes|unlink|rmtree|writeFile|rmSync|unlinkSync)|(?:write_text|write_bytes|unlink|rmtree|writeFile|rmSync|unlinkSync)[^;\n]*docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/\S*)?))"#,
-    );
-    wr.is_match(&cleaned)
+    let pos_ps = compiled_regex(&RE_POS_PS, r"(?is)(?:\b(?:tee|mv|cp|truncate|rm|del|erase|rmdir|rd|copy|move|dd|install|ln|mklink|set-content|add-content|out-file|copy-item|move-item|remove-item|new-item|set-item|clear-content|sc|ac|cpi|mi|ri|ni|si|clc)\b|\bsed\b[^;|&]*\s-i\b|\[(?:system\.)?io\.file\]::)");
+    if pos_ps.is_match(collapsed_low) {
+        return true;
+    }
+    let py_node = compiled_regex(&RE_PY_NODE, r#"(?is)(?:\bopen\([^)]*['"](?:w|a|x|r\+|w\+)|write_text\b|write_bytes\b|\.unlink\b|\.rmdir\b|\bos\.(?:remove|unlink|replace|rename)\b|\bshutil\.(?:copy|copy2|copyfile|move|rmtree)\b|\bjson\.dump\b|writefile|writefilesync|appendfile|rmsync|unlinksync|createwritestream)"#);
+    py_node.is_match(collapsed_low)
+}
+
+fn mutates_tdq_state_depth(raw_cmd: &str, depth: usize, seen_cd_tdq: &mut bool) -> bool {
+    for raw_seg in split_shell_segments(raw_cmd, true) {
+        let collapsed = collapse_cmd_paths(&raw_seg);
+        let low = collapsed.to_ascii_lowercase();
+        let toks = tokenize_command(&collapsed);
+        let cmd_toks = skip_command_wrappers(&toks);
+        let base = cmd_toks.first().map(|t| cmd_basename_no_exe(t)).unwrap_or_default();
+        if matches!(base.as_str(), "cd" | "chdir" | "set-location" | "sl" | "pushd")
+            && (low.contains("docs/tdq") || low.contains(".tdq-runtime"))
+        {
+            *seen_cd_tdq = true;
+        }
+        let redir_hit = part_stdout_targets_depth(&collapsed, 0)
+            .iter()
+            .any(|t| is_state_or_runtime_text(&collapse_path_token(t).to_ascii_lowercase(), *seen_cd_tdq));
+        if redir_hit || (is_state_or_runtime_text(&low, *seen_cd_tdq) && seg_has_state_write_op(&low, cmd_toks)) {
+            return true;
+        }
+        if depth < 4 && extract_shell_subcommands(&raw_seg).iter().any(|sub| {
+            let mut inner_cd = *seen_cd_tdq;
+            mutates_tdq_state_depth(sub, depth + 1, &mut inner_cd)
+        }) {
+            return true;
+        }
+    }
+    false
+}
+
+/// Detect direct shell writes targeting `docs/tdq/state.json`, `STATE.md`, or `.tdq-runtime/`.
+pub fn mutates_tdq_state(raw_cmd: &str) -> bool {
+    let cleaned = strip_powershell_herestrings(raw_cmd);
+    let mut seen_cd_tdq = false;
+    mutates_tdq_state_depth(&cleaned, 0, &mut seen_cd_tdq)
+}
+
+fn branch_candidates_from_git(args: &[String]) -> Vec<String> {
+    let Some((subcmd, rest)) = parse_git_subcommand(args) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let sub = subcmd.to_ascii_lowercase();
+    let mut i = 0usize;
+    match sub.as_str() {
+        "checkout" | "switch" => {
+            while i < rest.len() {
+                if matches!(rest[i].as_str(), "-b" | "-B" | "-c" | "-C" | "--create" | "--force-create" | "--orphan") {
+                    if let Some(n) = rest.get(i + 1) { out.push(n.clone()); }
+                    i += 2;
+                } else { i += 1; }
+            }
+        }
+        "branch" => {
+            if let Some(first) = rest.iter().find(|a| !a.starts_with('-')) { out.push(first.clone()); }
+        }
+        "worktree" if rest.first().is_some_and(|a| a.eq_ignore_ascii_case("add")) => {
+            i = 1;
+            while i < rest.len() {
+                if matches!(rest[i].as_str(), "-b" | "-B") {
+                    if let Some(n) = rest.get(i + 1) { out.push(n.clone()); }
+                    i += 2;
+                } else {
+                    if !rest[i].starts_with('-') {
+                        let norm = rest[i].replace('\\', "/");
+                        if let Some(base) = Path::new(norm.trim_end_matches('/')).file_name().and_then(|s| s.to_str()) {
+                            out.push(base.to_string());
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        _ => {}
+    }
+    out
+}
+
+fn collect_banned_branch_depth(cmd: &str, depth: usize, ban: &Regex) -> Option<String> {
+    for seg in split_shell_segments(cmd, true) {
+        let toks = tokenize_command(&seg);
+        let cmd_toks = skip_command_wrappers(&toks);
+        if cmd_toks.first().is_some_and(|t| cmd_basename_no_exe(t) == "git") {
+            if let Some(hit) = branch_candidates_from_git(&cmd_toks[1..]).into_iter().find(|n| ban.is_match(n)) {
+                return Some(hit);
+            }
+        }
+        if depth < 4 {
+            for sub in extract_shell_subcommands(&seg) {
+                if let Some(hit) = collect_banned_branch_depth(&sub, depth + 1, ban) {
+                    return Some(hit);
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Return banned AI-prefixed branch or worktree basename if present.
 pub fn has_banned_ai_branch(raw_cmd: &str) -> Option<String> {
-    static RE_BR: OnceLock<Regex> = OnceLock::new();
-    static RE_WT: OnceLock<Regex> = OnceLock::new();
     static RE_BAN: OnceLock<Regex> = OnceLock::new();
-    let br = compiled_regex(
-        &RE_BR,
-        r"(?i)git\s+(?:checkout\s+-[bB]|switch\s+(?:-c|--create)|branch)\s+(\S+)",
-    );
-    let wt = compiled_regex(&RE_WT, r"git\s+worktree\s+add\s+(?:-b\s+(\S+)\s+)?(\S+)");
     let ban = compiled_regex(&RE_BAN, r"(?i)^(?:claude|antigravity|gemini|codex)");
     let cleaned = strip_powershell_herestrings(raw_cmd);
-    let mut names = Vec::new();
-    for cap in br.captures_iter(&cleaned) {
-        if let Some(m) = cap.get(1) {
-            let trimmed = m.as_str().trim_matches(|c| c == '\'' || c == '"');
-            if !trimmed.starts_with('-') {
-                names.push(trimmed.to_string());
-            }
-        }
-    }
-    for cap in wt.captures_iter(&cleaned) {
-        if let Some(m) = cap.get(1) {
-            names.push(
-                m.as_str()
-                    .trim_matches(|c| c == '\'' || c == '"')
-                    .to_string(),
-            );
-        }
-        if let Some(m) = cap.get(2) {
-            let clean_w = m
-                .as_str()
-                .trim_matches(|c| c == '\'' || c == '"')
-                .replace('\\', "/");
-            if let Some(base) = Path::new(clean_w.trim_end_matches('/'))
-                .file_name()
-                .and_then(|s| s.to_str())
-            {
-                names.push(base.to_string());
-            }
-        }
-    }
-    names.into_iter().find(|n| ban.is_match(n))
+    collect_banned_branch_depth(&cleaned, 0, ban)
 }
 
 /// Detect direct or wrapped `graphify`/`tdq_graphify.py` query commands.
@@ -976,5 +1279,82 @@ mod tests {
         assert!(mutates_tdq_state("Remove-Item docs/tdq/.tdq-runtime/turn-meta-1.json"));
         assert!(mutates_tdq_state(r#"py -3 -c "open('docs/tdq/.tdq-runtime/turns-1.jsonl','w')""#));
         assert!(!mutates_tdq_state("cat docs/tdq/.tdq-runtime/turn-meta-1.json"));
+    }
+
+    #[test]
+    fn test_security_hardening_herestrings_wrappers_state_and_branches() {
+        for bypass_state in &[
+            "echo {} > docs/tdq/spec/../.tdq-runtime/turn-meta-1.json",
+            "echo {} > ../.tdq-runtime/turn-meta-1.json",
+            "cd docs/tdq && sc .tdq-runtime/turn-meta-1.json '{}'",
+            "cd docs/tdq/.tdq-runtime && echo {} > turn-meta-1.json",
+            r#"py -3 -c "import shutil; shutil.copy('a','docs/tdq/.tdq-runtime/turn-meta-1.json')""#,
+            r#"py -3 -c "import os; os.replace('a','docs/tdq/state.json')""#,
+            r#"bash -c "echo {} > .tdq-runtime/turn-meta-1.json""#,
+        ] {
+            assert!(
+                mutates_tdq_state(bypass_state),
+                "expected state mutation block for {}",
+                bypass_state
+            );
+        }
+        for safe_read in &[
+            "cat docs/tdq/state.json",
+            "cat docs/tdq/.tdq-runtime/turn-meta-1.json",
+            "Get-Content docs/tdq/state.json",
+        ] {
+            assert!(
+                !mutates_tdq_state(safe_read),
+                "unexpected state block for read cmd {}",
+                safe_read
+            );
+        }
+
+        assert_eq!(
+            inspect_git_policy("bash -c \"echo @'\n'; git push origin dev; echo '\n'@\""),
+            Some(GitPolicyViolation::PushNeedsApproval)
+        );
+        assert_eq!(
+            inspect_git_policy("@\"\n$(git push origin dev)\n\"@"),
+            Some(GitPolicyViolation::PushNeedsApproval)
+        );
+
+        for (cmd, expected) in &[
+            (r#"git push -o "" --force origin dev"#, GitPolicyViolation::ForcePushForbidden),
+            ("$(git push origin dev)", GitPolicyViolation::PushNeedsApproval),
+            ("`git push origin dev`", GitPolicyViolation::PushNeedsApproval),
+            (r#"/bin/bash -ce "git push --force origin dev""#, GitPolicyViolation::ForcePushForbidden),
+            ("pwsh -Com { git push origin dev }", GitPolicyViolation::PushNeedsApproval),
+            (
+                "pwsh -enc ZwBpAHQAIABwAHUAcwBoACAALQAtAGYAbwByAGMAZQAgAG8AcgBpAGcAaQBuACAAZABlAHYA",
+                GitPolicyViolation::ForcePushForbidden,
+            ),
+            (r#"cmd /c"git push origin dev""#, GitPolicyViolation::PushNeedsApproval),
+            (
+                r#"bash -c "sh -c \"bash -c 'git push origin dev'\"""#,
+                GitPolicyViolation::PushNeedsApproval,
+            ),
+            (
+                "env -u FOO exec git push --force origin dev",
+                GitPolicyViolation::ForcePushForbidden,
+            ),
+        ] {
+            assert_eq!(
+                inspect_git_policy(cmd),
+                Some(*expected),
+                "expected {:?} for {}",
+                expected,
+                cmd
+            );
+        }
+
+        assert_eq!(
+            has_banned_ai_branch("git -C repo switch -c claude-a").as_deref(),
+            Some("claude-a")
+        );
+        assert_eq!(
+            has_banned_ai_branch(r#"bash -c "git -C repo checkout -b gemini-x""#).as_deref(),
+            Some("gemini-x")
+        );
     }
 }

@@ -72,7 +72,9 @@ def goi_y_mode():
 
 
 def within(child, parent):
-    return child == parent or child.startswith(parent + os.sep)
+    c = os.path.normcase(os.path.normpath(child))
+    p = os.path.normcase(os.path.normpath(parent))
+    return c == p or c.startswith(p + os.sep)
 
 
 def _enforce_agy_readonly_subagent(payload, cwd):
@@ -138,8 +140,11 @@ def main():
     state_file = os.path.realpath(state_path(cwd))
     state_md = os.path.realpath(state_md_path(cwd))
     runtime_dir = os.path.realpath(os.path.join(cwd, "docs", "tdq", ".tdq-runtime"))
-    in_runtime = abs_target == runtime_dir or within(abs_target, runtime_dir)
-    is_protected_state = abs_target in (state_file, state_md) or in_runtime
+    abs_norm = os.path.normcase(os.path.normpath(abs_target))
+    state_norm = os.path.normcase(os.path.normpath(state_file))
+    state_md_norm = os.path.normcase(os.path.normpath(state_md))
+    in_runtime = within(abs_target, runtime_dir)
+    is_protected_state = abs_norm in (state_norm, state_md_norm) or in_runtime
     if is_protected_state and payload.get("agent_id"):
         block(cwd, payload, "TDQ:STATE", [
             "A sub-agent may not write TDQ state, runtime files, or generated mirrors.",
@@ -150,7 +155,7 @@ def main():
             "Direct edit of docs/tdq/.tdq-runtime/ is prohibited.",
             "Only verified TDQ hooks manage single-turn runtime files.",
         ])
-    if abs_target in (state_file, state_md):
+    if abs_norm in (state_norm, state_md_norm):
         remind(cwd, payload, "TDQ:STATE", [
             "Do not hand-edit the state file — write it through the CLI.",
             "How: python3 scripts/tdq_state.py set <key>=<value> (or approve/init/reset).",

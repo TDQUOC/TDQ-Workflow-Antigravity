@@ -11,6 +11,7 @@
                tee, sed -i, mv/cp, truncate, inline python).
    TDQ:OUTPUT— a command dumping a whole file/history into context with no line limit.
 """
+import base64
 import os
 import re
 
@@ -191,36 +192,150 @@ def _mask_quoted_shell_ops(part):
     return "".join(out)
 
 
-def _extract_shell_subcommands(part):
-    """Extract quoted payload passed to nested shells like `bash -c \"...\"` or `pwsh -Command '...'`."""
-    subs = []
-    for match in _SHELL_WRAPPER_RE.finditer(part):
-        idx = match.end()
-        while idx < len(part) and part[idx].isspace():
-            idx += 1
-        if idx >= len(part):
-            continue
-        if part[idx] not in ("'", '"'):
-            rem = part[idx:].strip()
-            if rem:
-                subs.append(rem)
-            continue
-        quote = part[idx]
+def _scan_paren_body(part, start_inner):
+    depth, idx, n = 1, start_inner, len(part)
+    in_s = in_d = esc = False
+    while idx < n:
+        ch = part[idx]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        elif not in_s and not in_d:
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+                if depth == 0:
+                    return part[start_inner:idx], idx + 1
         idx += 1
-        buf, escaped = [], False
-        while idx < len(part):
-            ch = part[idx]
-            if escaped:
-                buf.append(ch)
-                escaped = False
-            elif ch == "\\" and quote == '"':
-                escaped = True
-            elif ch == quote:
-                subs.append("".join(buf))
-                break
-            else:
-                buf.append(ch)
-            idx += 1
+    return None, -1
+
+
+def _extract_command_substitutions(part):
+    out, idx, n = [], 0, len(part)
+    in_s = in_d = esc = False
+    while idx < n:
+        ch = part[idx]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s:
+            esc = True
+        elif not in_s and ch == "$" and part[idx:idx + 2] == "$(":
+            body, end_idx = _scan_paren_body(part, idx + 2)
+            if body is not None:
+                out.append(body)
+                idx = end_idx
+                continue
+        elif not in_s and ch == "`":
+            end_bt = part.find("`", idx + 1)
+            if end_bt != -1:
+                out.append(part[idx + 1:end_bt])
+                idx = end_bt + 1
+                continue
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        idx += 1
+    return out
+
+
+def _decode_ps_encoded_command(raw):
+    trimmed = raw.strip().strip("'\"")
+    if not trimmed:
+        return None
+    try:
+        raw_bytes = base64.b64decode(trimmed, validate=True)
+    except ValueError:
+        try:
+            padded = trimmed + ("=" * (-len(trimmed) % 4))
+            raw_bytes = base64.b64decode(padded, validate=True)
+        except ValueError:
+            return None
+    if len(raw_bytes) < 2:
+        return None
+    even = raw_bytes[:len(raw_bytes) - (len(raw_bytes) % 2)]
+    try:
+        return even.decode("utf-16-le")
+    except UnicodeDecodeError:
+        return None
+
+
+def _extract_brace_body(rest):
+    depth = 0
+    in_s = in_d = esc = False
+    for idx, ch in enumerate(rest):
+        if esc:
+            esc = False
+            continue
+        if ch == "\\" and not in_s:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        elif not in_s and not in_d:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth = max(0, depth - 1)
+                if depth == 0:
+                    return rest[1:idx]
+    return None
+
+
+def _extract_wrapper_body_arg(raw_rest):
+    rest = raw_rest.lstrip()
+    if not rest:
+        return None
+    quote = rest[0]
+    if quote == "{":
+        return _extract_brace_body(rest)
+    if quote not in ("'", '"'):
+        return rest
+    buf, escaped = [], False
+    for ch in rest[1:]:
+        if escaped:
+            buf.append(ch)
+            escaped = False
+        elif ch == "\\" and quote == '"':
+            escaped = True
+        elif ch == quote:
+            return "".join(buf)
+        else:
+            buf.append(ch)
+    return None
+
+
+_SH_WRAP_RE = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:bash|sh|zsh|dash|ksh)\b[^\n;|&]*?\s-(?:[a-z]*c[a-z]*)\b\s*", re.IGNORECASE)
+_CMD_WRAP_RE = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?cmd(?:\.exe)?\b[^\n;|&]*?\s+/[ck]", re.IGNORECASE)
+_PS_WRAP_RE = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:c|co|com|comm|comma|comman|command)\b\s*", re.IGNORECASE)
+_PS_ENC_RE = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:e|en|enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\b\s*([^\s;|&]+)", re.IGNORECASE)
+
+
+def _extract_shell_subcommands(part):
+    """Extract command substitutions and nested shell wrapper payloads."""
+    subs = _extract_command_substitutions(part)
+    for pat in (_SH_WRAP_RE, _PS_WRAP_RE):
+        for match in pat.finditer(part):
+            arg = _extract_wrapper_body_arg(part[match.end():])
+            if arg:
+                subs.append(arg)
+    for match in _CMD_WRAP_RE.finditer(part):
+        rest = part[match.end():]
+        if rest.startswith((" ", "\t", "'", '"')):
+            arg = _extract_wrapper_body_arg(rest)
+            if arg:
+                subs.append(arg)
+    for match in _PS_ENC_RE.finditer(part):
+        dec = _decode_ps_encoded_command(match.group(1))
+        if dec:
+            subs.append(dec)
     return subs
 
 
@@ -230,7 +345,7 @@ def _part_stdout_targets(part, _depth=0):
         t for t in STDOUT_WRITE.findall(_mask_quoted_shell_ops(part))
         if t.lower() not in ("/dev/null", "$null", "nul")
     ]
-    if _depth < 2:
+    if _depth < 4:
         for sub in _extract_shell_subcommands(part):
             for sub_part in _split_shell_segments(sub):
                 targets.extend(_part_stdout_targets(sub_part, _depth + 1))
@@ -238,7 +353,7 @@ def _part_stdout_targets(part, _depth=0):
 
 
 def _is_shell_write(cmd, _depth=0):
-    if _depth > 2 or not cmd:
+    if _depth > 4 or not cmd:
         return False
     if _PS_WRITE_PATTERN.search(cmd) or re.search(r"\b(?:tee|rm|mv)\b|\bsed\s+-i\b", cmd):
         return True
@@ -250,8 +365,6 @@ def _is_shell_write(cmd, _depth=0):
     return False
 
 
-_PS_HS_SINGLE_RE = re.compile(r"@'\r?\n.*?\r?\n'@", re.DOTALL)
-_PS_HS_DOUBLE_RE = re.compile(r'@"\r?\n.*?\r?\n"@', re.DOTALL)
 _GIT_VALUE_FLAGS = frozenset({
     "-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-prefix", "--config-env",
 })
@@ -262,33 +375,74 @@ _BRANCH_TAIL_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 _INTAKE_BRANCH_KINDS = frozenset({"feature", "bugfix", "hotfix", "chore", "docs"})
 
 
+def _ps_herestring_end(cmd, body_start, quote):
+    term = "\n" + quote + "@"
+    idx = cmd.find(term, body_start)
+    while idx != -1:
+        after = idx + len(term)
+        if after == len(cmd) or cmd[after] in "\r\n \t;|&)":
+            return after
+        idx = cmd.find(term, idx + 1)
+    return -1
+
+
 def _strip_powershell_herestrings(cmd):
-    intermediate = _PS_HS_SINGLE_RE.sub(" ", cmd)
-    return _PS_HS_DOUBLE_RE.sub(" ", intermediate)
+    """Strip unquoted static PowerShell here-strings while keeping quoted strings intact."""
+    out, i, n = [], 0, len(cmd)
+    in_s = in_d = esc = False
+    while i < n:
+        if not in_s and not in_d and cmd[i:i + 2] in ("@'", '@"'):
+            q = cmd[i + 1]
+            step = 3 if cmd[i + 2:i + 3] == "\n" else (4 if cmd[i + 2:i + 4] == "\r\n" else 0)
+            if step:
+                after = _ps_herestring_end(cmd, i + step, q)
+                if after != -1:
+                    body = cmd[i + step:after - 2]
+                    if q == "'" or ("$(" not in body and "`" not in body):
+                        out.append(" ")
+                        i = after
+                        continue
+        ch = cmd[i]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s and in_d:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        out.append(ch)
+        i += 1
+    return "".join(out)
 
 
 def _tokenize_command(cmd):
-    """Tokenize shell command honoring quotes and double-quote escapes."""
+    """Tokenize shell command honoring quotes and preserving empty quoted tokens."""
     tokens, current = [], []
-    in_single = in_double = False
+    in_single = in_double = had_token = False
     i, n = 0, len(cmd)
     while i < n:
         ch = cmd[i]
         if ch == "'" and not in_double:
             in_single = not in_single
+            had_token = True
         elif ch == '"' and not in_single:
             in_double = not in_double
+            had_token = True
         elif ch == "\\" and in_double and i + 1 < n and cmd[i + 1] in ('"', "\\"):
             i += 1
             current.append(cmd[i])
+            had_token = True
         elif ch.isspace() and not in_single and not in_double:
-            if current:
+            if had_token or current:
                 tokens.append("".join(current))
                 current = []
+                had_token = False
         else:
             current.append(ch)
+            had_token = True
         i += 1
-    if current:
+    if had_token or current:
         tokens.append("".join(current))
     return tokens
 
@@ -317,11 +471,17 @@ def _skip_command_wrappers(tokens):
         base = _cmd_basename_no_exe(tok)
         if base == "env":
             i += 1
-            while i < len(tokens) and (
-                _is_env_assignment(tokens[i]) or tokens[i] in ("-i", "--ignore-environment")
-            ):
-                i += 1
-        elif base in ("command", "time", "nohup"):
+            while i < len(tokens):
+                t = tokens[i]
+                if _is_env_assignment(t) or t in ("-i", "--ignore-environment", "-0", "--null"):
+                    i += 1
+                elif t in ("-u", "--unset", "-C", "--chdir", "-S", "--split-string"):
+                    i = min(i + 2, len(tokens))
+                elif t.startswith(("--unset=", "--chdir=", "--split-string=")):
+                    i += 1
+                else:
+                    break
+        elif base in ("command", "time", "nohup", "exec"):
             i += 1
         elif base == "rtk":
             i += 1
@@ -405,7 +565,7 @@ def _collect_git_violations_depth(part, depth, out):
         v = _classify_git_tokens(cmd_toks[1:])
         if v and v not in out:
             out.append(v)
-    if depth < 2:
+    if depth < 4:
         for sub in _extract_shell_subcommands(part):
             for seg in _split_shell_segments(sub):
                 _collect_git_violations_depth(seg, depth + 1, out)
@@ -451,6 +611,142 @@ def is_pure_intake_branch_create(raw_cmd):
     return kind in _INTAKE_BRANCH_KINDS and bool(_BRANCH_TAIL_RE.match(tail))
 
 
+def _collapse_path_token(tok):
+    if "/" not in tok and "\\" not in tok:
+        return tok
+    norm = tok.replace("\\", "/")
+    stack = []
+    for seg in norm.split("/"):
+        if not seg or seg == ".":
+            continue
+        if seg == "..":
+            if stack and stack[-1] != "..":
+                stack.pop()
+            else:
+                stack.append("..")
+        else:
+            stack.append(seg)
+    return ("/" if norm.startswith("/") else "") + "/".join(stack)
+
+
+def _collapse_cmd_paths(raw):
+    seps = set(" \t\r\n'\";&|><(){},=")
+    out, cur = [], []
+    for ch in raw:
+        if ch in seps:
+            if cur:
+                out.append(_collapse_path_token("".join(cur)))
+                cur = []
+            out.append(ch)
+        else:
+            cur.append(ch)
+    if cur:
+        out.append(_collapse_path_token("".join(cur)))
+    return "".join(out)
+
+
+def _is_state_or_runtime_text(low, seen_cd_tdq):
+    return (
+        "docs/tdq/state.json" in low
+        or "docs/tdq/state.md" in low
+        or ".tdq-runtime" in low
+        or (seen_cd_tdq and any(k in low for k in ("state.json", "state.md", "turn-meta-")))
+    )
+
+
+_NON_STATE_WRITER_CMDS = frozenset({
+    "git", "pytest", "cargo", "rg", "grep", "egrep", "fgrep", "findstr",
+    "jq", "cat", "head", "tail", "type", "get-content", "gc",
+})
+_STATE_POS_PS_RE = re.compile(
+    r"(?is)(?:\b(?:tee|mv|cp|truncate|rm|del|erase|rmdir|rd|copy|move|dd|install|ln|mklink|"
+    r"set-content|add-content|out-file|copy-item|move-item|remove-item|new-item|set-item|clear-content|"
+    r"sc|ac|cpi|mi|ri|ni|si|clc)\b|\bsed\b[^;|&]*\s-i\b|\[(?:system\.)?io\.file\]::)"
+)
+_STATE_PY_NODE_RE = re.compile(
+    r"(?is)(?:\bopen\([^)]*['\"](?:w|a|x|r\+|w\+)|write_text\b|write_bytes\b|\.unlink\b|\.rmdir\b|"
+    r"\bos\.(?:remove|unlink|replace|rename)\b|\bshutil\.(?:copy|copy2|copyfile|move|rmtree)\b|"
+    r"\bjson\.dump\b|writefile|writefilesync|appendfile|rmsync|unlinksync|createwritestream)"
+)
+
+
+def _mutates_tdq_state_depth(raw_cmd, depth, seen_cd_tdq):
+    for raw_seg in _split_shell_segments(raw_cmd):
+        col = _collapse_cmd_paths(raw_seg)
+        low = col.lower()
+        cmd_toks = _skip_command_wrappers(_tokenize_command(col))
+        base = _cmd_basename_no_exe(cmd_toks[0]) if cmd_toks else ""
+        if base in ("cd", "chdir", "set-location", "sl", "pushd") and ("docs/tdq" in low or ".tdq-runtime" in low):
+            seen_cd_tdq = True
+        redir_hit = any(
+            _is_state_or_runtime_text(_collapse_path_token(t).lower(), seen_cd_tdq)
+            for t in _part_stdout_targets(col, 0)
+        )
+        op_hit = base not in _NON_STATE_WRITER_CMDS and bool(
+            _STATE_POS_PS_RE.search(low) or _STATE_PY_NODE_RE.search(low)
+        )
+        if redir_hit or (_is_state_or_runtime_text(low, seen_cd_tdq) and op_hit):
+            return True
+        if depth < 4 and any(_mutates_tdq_state_depth(sub, depth + 1, seen_cd_tdq) for sub in _extract_shell_subcommands(raw_seg)):
+            return True
+    return False
+
+
+def mutates_tdq_state(raw_cmd):
+    """Detect direct or wrapped shell writes to docs/tdq/state.json, STATE.md, or .tdq-runtime/."""
+    return _mutates_tdq_state_depth(_strip_powershell_herestrings(raw_cmd), 0, False)
+
+
+def _branch_candidates_from_git(args):
+    subcmd, rest = _parse_git_subcommand(args)
+    if not subcmd:
+        return []
+    sub, out, i = subcmd.lower(), [], 0
+    if sub in ("checkout", "switch"):
+        flags = ("-b", "-B", "-c", "-C", "--create", "--force-create", "--orphan")
+        while i < len(rest):
+            if rest[i] in flags and i + 1 < len(rest):
+                out.append(rest[i + 1])
+                i += 2
+            else:
+                i += 1
+    elif sub == "branch":
+        pos = next((a for a in rest if not a.startswith("-")), None)
+        if pos:
+            out.append(pos)
+    elif sub == "worktree" and rest and rest[0].lower() == "add":
+        i = 1
+        while i < len(rest):
+            if rest[i] in ("-b", "-B") and i + 1 < len(rest):
+                out.append(rest[i + 1])
+                i += 2
+            else:
+                if not rest[i].startswith("-"):
+                    out.append(rest[i].replace("\\", "/").rstrip("/").rsplit("/", 1)[-1])
+                i += 1
+    return out
+
+
+def _collect_banned_branch_depth(cmd, depth):
+    for seg in _split_shell_segments(cmd):
+        cmd_toks = _skip_command_wrappers(_tokenize_command(seg))
+        if cmd_toks and _cmd_basename_no_exe(cmd_toks[0]) == "git":
+            for cand in _branch_candidates_from_git(cmd_toks[1:]):
+                if BAN.match(cand):
+                    return cand
+        if depth < 4:
+            for sub in _extract_shell_subcommands(seg):
+                hit = _collect_banned_branch_depth(sub, depth + 1)
+                if hit:
+                    return hit
+    return None
+
+
+def has_banned_ai_branch(raw_cmd):
+    """Return banned AI-prefixed branch or worktree basename if present."""
+    return _collect_banned_branch_depth(_strip_powershell_herestrings(raw_cmd), 0)
+
+
 def _enforce_agy_bash_guards(payload, cwd):
     info = detect_subagent(payload, cwd)
     agy = is_agy()
@@ -465,12 +761,11 @@ def _enforce_agy_bash_guards(payload, cwd):
     if agy and _PS_WRITE_PATTERN.search(cmd) and ("docs/tdq/state.json" in norm_cmd or "docs/tdq/STATE.md" in norm_cmd):
         block(cwd, payload, "GATE", ["Do not mutate TDQ state via PowerShell; use tdq_state.py CLI."])
         return True
-    is_runtime_write = (
-        re.search(r"docs/tdq/\.tdq-runtime(?:/|\b|$)", norm_cmd, re.IGNORECASE)
-        and (_PS_WRITE_PATTERN.search(cmd) or any(p.search(norm_cmd) for p in STATE_WRITES))
-    )
-    if agy and is_runtime_write:
-        block(cwd, payload, "STATE", ["Direct mutation of docs/tdq/.tdq-runtime/ is prohibited."])
+    if agy and mutates_tdq_state(cmd):
+        block(cwd, payload, "STATE", ["Direct mutation of TDQ state or docs/tdq/.tdq-runtime/ is prohibited."])
+        return True
+    if agy and has_banned_ai_branch(cmd):
+        block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])
         return True
     if agy and re.search(r"git\s+(?:checkout\s+-[bB]|switch\s+-[cC]|branch)\s+['\"]?(?:claude|antigravity|gemini|codex)[-_]", cmd, re.IGNORECASE):
         block(cwd, payload, "TDQ:GIT", ["AI-prefixed branch names are banned; name the branch after the work."])
@@ -488,6 +783,9 @@ def _check_git_conventions(cmd, cwd, payload, rows):
             branch_names.append(_clean(b_name))
         if path:
             branch_names.append(os.path.basename(_clean(path).rstrip("/")))
+    extra_br = has_banned_ai_branch(cmd)
+    if extra_br and extra_br not in branch_names:
+        branch_names.append(extra_br)
     for name in branch_names:
         if BAN.match(name):
             remind(cwd, payload, "TDQ:GIT", [
@@ -530,15 +828,12 @@ def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind
             echo_line("TDQ:OUTPUT", "limited the output, or confirmed the whole is needed"),
         ], rows=rows)
 
-    norm_cmd = cmd.replace("\\", "/")
-    if re.search(STATE, norm_cmd):
-        for pattern in STATE_WRITES:
-            if pattern.search(norm_cmd):
-                remind(cwd, payload, "TDQ:STATE", [
-                    "Do not write the state file straight through the shell.",
-                    "How: python3 scripts/tdq_state.py set|approve|init|reset.",
-                    echo_line("TDQ:STATE", "wrote state through the CLI"),
-                ], rows=rows)
+    if mutates_tdq_state(cmd):
+        remind(cwd, payload, "TDQ:STATE", [
+            "Do not write the state file straight through the shell.",
+            "How: python3 scripts/tdq_state.py set|approve|init|reset.",
+            echo_line("TDQ:STATE", "wrote state through the CLI"),
+        ], rows=rows)
 
 
 def eval_bash(payload, suppress_output_remind=False):
@@ -553,8 +848,11 @@ def eval_bash(payload, suppress_output_remind=False):
     state = __import__("tdq_state").load(cwd) or {}
     parts = _split_shell_segments(cmd, seps=(";", "&"))
     mutates_outside_docs = any(
-        (SHELL_MUTATOR.search(part) and not DOCS_ARTIFACT.search(part))
-        or any(not DOCS_ARTIFACT.search(target) for target in _part_stdout_targets(part))
+        (SHELL_MUTATOR.search(part) and (not DOCS_ARTIFACT.search(part) or ".." in part))
+        or any(
+            not DOCS_ARTIFACT.search(_collapse_path_token(target)) or ".." in _collapse_path_token(target)
+            for target in _part_stdout_targets(part)
+        )
         for part in parts)
     if payload.get("agent_id") and state.get("active_request") \
             and state.get("phase") not in ("implement", "qc") and mutates_outside_docs:
