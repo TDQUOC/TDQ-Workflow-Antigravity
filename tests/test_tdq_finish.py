@@ -9,8 +9,12 @@ import tempfile
 import unittest
 from unittest import mock
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from helper import ROOT, write_file
+
+pytestmark = pytest.mark.smoke
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPT = os.path.join(REPO, "scripts", "tdq_finish.py")
