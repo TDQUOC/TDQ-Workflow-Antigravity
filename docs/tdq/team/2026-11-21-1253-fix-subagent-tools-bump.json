@@ -1,0 +1,104 @@
+{
+  "slug": "2026-11-21-1253-fix-subagent-tools-bump",
+  "plan_file": "docs\\tdq\\plan\\2026-11-21-1253-fix-subagent-tools-bump.md",
+  "plan_sha": "bf8dddeeb175bbde5e6881e8be81e6d6f116f824370504b1acc7e4842b9dd7b9",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "6a9f8e6508eba86b7633fbcfa369967523a796792908c5a5abcafff0a4373f84",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "tools/patches/skills_and_agents.py",
+        "agents/tdq-explorer.md",
+        "tests/test_agent_frontmatter.py"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "hop-dong",
+      "vung_file": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json"
+      ],
+      "dot": 1
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/Cargo.toml",
+        "hooks/rust/tdq-dispatch/Cargo.lock",
+        "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe"
+      ],
+      "dot": 1
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 2
+    },
+    "T2.4": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 2
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_manifests.py",
+        "tools/patches/__init__.py",
+        "tools/build_agy_plugin.py",
+        "plugins/tdq-workflow-agy/plugin.json",
+        "plugins/tdq-workflow-agy/manifest.json",
+        "plugins/tdq-workflow-agy/README.md",
+        "plugins/tdq-workflow-agy/agents/tdq-implementer.md",
+        "plugins/tdq-workflow-agy/agents/tdq-qc-tester.md",
+        "plugins/tdq-workflow-agy/agents/tdq-reviewer.md",
+        "plugins/tdq-workflow-agy/agents/tdq-security-reviewer.md",
+        "plugins/tdq-workflow-agy/agents/tdq-build-resolver.md",
+        "plugins/tdq-workflow-agy/agents/tdq-refactor-cleaner.md",
+        "plugins/tdq-workflow-agy/agents/tdq-explorer.md",
+        "plugins/tdq-workflow-agy/agents/tdq-debugger.md"
+      ],
+      "dot": 3
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md"
+      ],
+      "dot": 4
+    },
+    "T4.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md"
+      ],
+      "dot": 5
+    },
+    "T5.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md"
+      ],
+      "dot": 6
+    },
+    "T5.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "phu-thuoc",
+      "vung_file": [
+        "docs/tdq/reports/2026-11-21-1253-fix-subagent-tools-bump.md"
+      ],
+      "dot": 7
+    }
+  }
+}
