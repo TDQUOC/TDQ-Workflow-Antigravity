@@ -56,6 +56,7 @@ AGY_CODES = (
     "ANCHOR",
     "DOD",
     "INTAKE",
+    "PLAIN",
 )
 CODES = AGY_CODES
 
@@ -2428,10 +2429,10 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             '        write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": False, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or "")})\n'
             "    return False, is_new\n\n\n"
             "def _agy_phase_anchor(cwd, state, payload, sid):\n"
-            '    """Inject 1-line [TDQ:GON] or [TDQ:QC] once per phase entry or post-compaction."""\n'
+            '    """Inject 1-line [TDQ:GON], [TDQ:QC], or [TDQ:PLAIN] once per phase entry or post-compaction."""\n'
             '    req = str((state or {}).get("active_request") or "")\n'
             '    pha = effective_phase(state, warn=False)\n'
-            '    if not req or pha not in ("implement", "qc"):\n'
+            '    if not req or pha not in ("implement", "qc", "spec", "plan", "report"):\n'
             "        return\n"
             "    meta = read_turn_meta(cwd, sid)\n"
             '    anchor = f"{req}:{pha}"\n'
@@ -2445,8 +2446,15 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             '            cap_lim = MAX_GON_CHARS if work_kind_hieu_luc(state) == "investigate" else min(MAX_GON_CHARS, 160)\n'
             "            dong = _truncate(tmpl.format(ma=MA_GON, muc=muc), cap_lim)\n"
             "            emit_context([dong])\n"
-            "    else:\n"
+            '    elif pha == "qc":\n'
             '        emit_context(["[TDQ:QC] QC gate: verify DoD with evidence, run tdq-qc-tester, check clean-code invariants."])\n'
+            "    else:\n"
+            '        plain_hint = _truncate(\n'
+            '            f"[TDQ:PLAIN] ({pha}) Layer-1 front (chat & Tóm tắt dễ hiểu): 10-15s plain "  # i18n-allow\n'
+            '            "prose (<=120w, <=6 backticks/100w, <=2 ·/line); push path:line below.",\n'
+            '            MAX_CHARS,\n'
+            "        )\n"
+            "        emit_context([plain_hint])\n"
             '    meta["phase_anchor"] = anchor\n'
             "    write_turn_meta(cwd, sid, meta)",
             label="prompt_context_agy_turn_hook",
@@ -2495,13 +2503,15 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "    # AFTER the standing block: _emit cuts from the tail, and the law pointer must not be\n"
         "    # what pushes the NEXT line out of the 240-char ceiling.\n"
         "    _nhac_gon(cwd, state, payload, sid)\n"
-        "    _nhac_qc(cwd, state, payload, sid)",
+        "    _nhac_qc(cwd, state, payload, sid)\n"
+        "    _nhac_plain(cwd, state, payload, sid)",
         "    _emit(cwd, sid, lines, critical=drifted)\n"
         "    if agy_mode:\n"
         "        _agy_phase_anchor(cwd, state, payload, sid)\n"
         "    else:\n"
         "        _nhac_gon(cwd, state, payload, sid)\n"
-        "        _nhac_qc(cwd, state, payload, sid)",
+        "        _nhac_qc(cwd, state, payload, sid)\n"
+        "        _nhac_plain(cwd, state, payload, sid)",
         label="prompt_context_agy_phase_anchor",
         sentinel="if agy_mode:\n        _agy_phase_anchor(cwd, state, payload, sid)",
     )

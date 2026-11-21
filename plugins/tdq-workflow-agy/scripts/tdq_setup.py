@@ -1141,9 +1141,9 @@ Chi tiết cẩm nang: `{goc}/skills/tdq-setup/references/mcp-first-guide.md`.
 
 ## Chuẩn Trình bày & Báo cáo (Soul & Report)
 
-- Luôn trình bày đơn giản, dễ hiểu, ngắn gọn nhưng trực quan, đầy đủ thông tin để mọi người đọc đều nắm được bản chất và bằng chứng.
-- Mặc định cho cả `spec`, `plan` và `report`: kể theo mạch Trước → Sau → Kết quả với ô `Tóm tắt dễ hiểu` ở đầu file `.md`. Viết ngắn gọn, tự nhiên để ai đọc 10–15 giây cũng hiểu ngay, không nhồi tường `·`.
-- Phase `report` luôn xuất cặp `docs/tdq/reports/<slug>.md` và `Archify HTML` (`docs/tdq/reports/<slug>.html`); khi có cập nhật bắt buộc nêu rõ 4 phần: (1) Trước request trạng thái/flow thế nào, (2) Sau request thế nào, (3) Đã test gì, và (4) Kết quả test ra được cái gì."""
+- Luôn trình bày đơn giản, dễ hiểu, ngắn gọn nhưng trực quan, đầy đủ thông tin theo chuẩn 2 lớp (`user-facing-block.md`). Lớp 1 cho người đọc ở chat (8–16 dòng, không bọc backtick số thường) và ô `> **Tóm tắt dễ hiểu:**` đầu file `.md` (<= 120 từ, <= 6 backtick/100 từ, không nhồi tường `·`). Lớp 2 lưu đầy đủ bằng chứng bên dưới.
+- Mặc định cho cả `spec`, `plan` và `report`: kể theo mạch Trước → Sau → Kết quả với ô `Tóm tắt dễ hiểu` ở đầu file `.md` để ai đọc 10–15 giây cũng hiểu ngay.
+- Phase `report` luôn xuất cặp `docs/tdq/reports/<slug>.md` và `Archify HTML` (`docs/tdq/reports/<slug>.html`) với đủ 4 mục: Trước request, Sau request, Đã test gì, Kết quả test."""
 
 
 def khoi_huong_dan(goc=None):

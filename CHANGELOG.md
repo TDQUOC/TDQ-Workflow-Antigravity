@@ -2,6 +2,16 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.105.0 — 2026-11-21
+
+Triển khai mặc định trình bày `2` tầng với Lớp 1 kể chuyện gọn tự nhiên và Lớp 2 giữ số liệu đối chiếu (`2026-11-21-1819-trien-khai-trinh-bay-2-tang`). Bản mới nâng cấp đủ quy chuẩn, hook nhắc đúng lúc, luật kiểm tự động, web Archify tiếng Việt và kiểm thử hành vi.
+
+- **M1 (`skills/tdq-conventions/references/user-facing-block*.md`, khuôn `spec`/`plan`/`report`/`qc`, `tdq-build/SKILL.md`, `docs/claude-md-mau.md`, `scripts/tdq_setup.py`)**: Đưa trần Lớp 1 lên đầu quy chuẩn (`L1–40`) và sửa luật số `4` cấm bọc backtick chữ số. Thống nhất `> **Tóm tắt dễ hiểu:**`, xóa dán `verbatim` và giữ mọi tệp dưới `3.500` token.
+- **M2 (`tools/patches/gate_guidance.py`, `tools/patches/agy_hooks.py`, `hooks/scripts/_common.py`, `hooks/scripts/prompt_context.py`)**: Mở rộng bảng mã `[TDQ:*]` từ `22 → 23` mã với mã `PLAIN`, tự động bơm thẻ nhắc `[TDQ:PLAIN]` (`<= 240` ký tự) đúng lúc vào pha `spec`, `plan`, `report` hoặc sau compact/resume.
+- **M3 (`scripts/doc_lint.py`, `tests/test_doc_lint_r16.py`)**: Bổ sung luật `R16` (`R16_MOC = "2026-11-21-1819"`) trong `OUTPUT_DIRS` khóa mật độ backtick (`<= 6/100` từ), độ dài tóm tắt (`<= 120` từ), độ dài câu (`<= 35` từ) và nhồi dấu `·` ở phần mở đầu tài liệu mới, miễn tài liệu cũ.
+- **M4 (`scripts/tdq_archify.py`, `skills/tdq-spec/references/archify-ba.md`, `skills/tdq-build/references/archify-lifecycle.md`, `tests/test_archify_vi.py`)**: Tự động chèn `@meta locale=en` vào bản tạm nếu thiếu (tránh rơi về `zh-CN`) và Việt hóa nhãn giao diện tĩnh cùng JSON `#explainer-reader-words` sang tiếng Việt khi `doc_lang=vi` trước bước băm manifest.
+- **M5 (`tests/test_report_visual.py`, `tests/test_hooks_dual_protocol.py`, `docs/tdq/token-budget.json`, `plugins/tdq-workflow-agy/`)**: Bổ sung fixture kiểm chứng hành vi `R16`, nâng phiên bản đồng bộ `0.105.0` trong repo, khóa lại ngân sách token và biên dịch sạch `plugins/tdq-workflow-agy/` `0` findings.
+
 ## 0.104.0 — 2026-11-21
 
 Nâng cấp pha QC và `tdq-qc-tester` theo hướng Dev-First, E2E-First qua 3 Wave (`2026-11-21-1536-nang-cap-qc-tester-e2e`). Nổi bật: `--workers auto`, `Auto Meta-Gate` 1 dòng, rút gọn `tdq_timing.py show`, `Changed-Flow E2E Smoke`, `Dev Behavior QC Card`, Accessibility Tree Snapshot và bản `0.104.0` sạch 0 findings.

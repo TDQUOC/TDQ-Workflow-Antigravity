@@ -38,6 +38,7 @@ EXPECTED_GUIDANCE = (
     "ANCHOR",
     "DOD",
     "INTAKE",
+    "PLAIN",
 )
 EXPECTED_REMOVED = ("ASK", "DEVTOOL", "FEEDBACK", "GATE", "QC", "RULE", "STUCK")
 FOUR_PART_LABELS = (
@@ -50,7 +51,7 @@ BANNED_CHARS = ("✅", "❌", "⚠️", "┌", "│", "─")
 
 
 class TestGateGuidanceConstants(unittest.TestCase):
-    """Verify code groups, deduplicated 22-code union, and 7 removed codes."""
+    """Verify code groups, deduplicated 23-code union, and 7 removed codes."""
 
     def test_code_groups_and_counts(self):
         self.assertEqual(gate_guidance.HARD_DENY_CODES, EXPECTED_HARD_DENY)
@@ -60,7 +61,7 @@ class TestGateGuidanceConstants(unittest.TestCase):
 
         self.assertEqual(len(gate_guidance.HARD_DENY_CODES), 9)
         self.assertEqual(len(gate_guidance.OVERWRITE_CODES), 2)
-        self.assertEqual(len(gate_guidance.GUIDANCE_CODES), 12)
+        self.assertEqual(len(gate_guidance.GUIDANCE_CODES), 13)
         self.assertEqual(len(gate_guidance.LEAN_REMOVED_CODES), 7)
 
         union_codes = (
@@ -68,8 +69,8 @@ class TestGateGuidanceConstants(unittest.TestCase):
             | set(gate_guidance.OVERWRITE_CODES)
             | set(gate_guidance.GUIDANCE_CODES)
         )
-        self.assertEqual(len(union_codes), 22)
-        self.assertEqual(len(gate_guidance.ALL_AGY_CODES), 22)
+        self.assertEqual(len(union_codes), 23)
+        self.assertEqual(len(gate_guidance.ALL_AGY_CODES), 23)
         self.assertEqual(set(gate_guidance.ALL_AGY_CODES), union_codes)
         self.assertEqual(
             set(gate_guidance.HARD_DENY_CODES) & set(gate_guidance.OVERWRITE_CODES),
@@ -236,6 +237,29 @@ class TestNormalizeAndFormatters(unittest.TestCase):
         with patch.dict(os.environ, {"TDQ_LOG": "0"}), patch("sys.stderr", buf_off):
             module.build_reminder_entry("UNKNOWN_TEST_CODE")
         self.assertEqual(buf_off.getvalue(), "")
+
+    def test_plain_phase_anchor_emits_only_for_presentation_phases(self):
+        hooks_scripts = str(ROOT / "hooks" / "scripts")
+        if hooks_scripts not in sys.path:
+            sys.path.insert(0, hooks_scripts)
+        import prompt_context  # noqa: E402
+
+        emitted: list[list[str]] = []
+        with patch.object(prompt_context, "emit_context", side_effect=emitted.append), \
+             patch.object(prompt_context, "already_reminded", return_value=False), \
+             patch.object(prompt_context, "turn_log_append"):
+            for pha in ("spec", "plan", "report"):
+                prompt_context._nhac_plain(str(ROOT), {"phase": pha, "active_request": "req-1"}, {}, "sid-1")
+            for other in ("idle", "analyze", "implement", "qc"):
+                prompt_context._nhac_plain(str(ROOT), {"phase": other, "active_request": "req-1"}, {}, "sid-1")
+
+        self.assertEqual(len(emitted), 3)
+        for batch, pha in zip(emitted, ("spec", "plan", "report")):
+            self.assertEqual(len(batch), 1)
+            msg = batch[0]
+            self.assertIn("[TDQ:PLAIN]", msg)
+            self.assertIn(f"({pha})", msg)
+            self.assertLessEqual(len(msg), 240)
 
 
 if __name__ == "__main__":

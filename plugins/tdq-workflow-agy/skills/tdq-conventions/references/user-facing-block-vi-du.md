@@ -103,8 +103,8 @@ Mọi thứ đã hoàn tất, test sạch toàn bộ hệ thống và sẵn sàn
 - **Trước đây:** Mọi việc điều tra lỗi đều bị ép đi chung quy trình dựng code nên dư nhiều bảng mẫu không cần thiết và thiếu chỗ gom bằng chứng an toàn.
 - **Sau khi làm xong:** Hệ thống tách rạch ròi hai luồng xử lý ngay từ khâu mở request:
   - **Nhẹ ở đầu, sâu ở bước làm:** Giảm thủ tục thừa cho tác vụ điều tra, vẫn giữ lối nâng cấp khi chuyển sang vá lỗi.
-  - **Giữ ngữ cảnh và an toàn:** Đồng bộ khóa ghi chép và giữ nguyên tốc độ đọc theo dải dòng (`14,35 ms`).
-- **Kiểm tra & Kết quả:** Đã chạy toàn bộ bộ kiểm thử nền (`4.596` test đạt, `0` lỗi) và kiểm chứng độc lập đạt toàn bộ tiêu chuẩn.
+  - **Giữ ngữ cảnh và an toàn:** Đồng bộ khóa ghi chép và giữ nguyên tốc độ đọc theo dải dòng (14,35 ms).
+- **Kiểm tra & Kết quả:** Đã chạy toàn bộ bộ kiểm thử nền (4.596 test đạt, 0 lỗi) và kiểm chứng độc lập đạt toàn bộ tiêu chuẩn.
 
 Xem đầy đủ tại: `docs/tdq/reports/<slug>.md`
 

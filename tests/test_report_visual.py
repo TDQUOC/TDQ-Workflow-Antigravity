@@ -1,8 +1,13 @@
-"""Contract: một chuẩn report Markdown + Archify HTML cho cả Deep và Express."""
+"""Contract & behavior tests: 2-tier report Markdown + Archify HTML for both Deep and Express."""
+import sys
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
+
+import doc_lint  # noqa: E402
 
 
 def text(path):
@@ -63,12 +68,48 @@ class ReportVisualContract(unittest.TestCase):
         self.assertNotIn("compress each item into ONE line", template)
         self.assertNotIn("separating ideas with `·`", template)
         for phrase in (
-            "Tóm tắt nhanh:",
+            "Tóm tắt dễ hiểu:",
             "1. Trước và sau request có gì khác?",
             "Trước đây:",
             "Sau khi làm xong:",
         ):
             self.assertIn(phrase, template)
+
+    def test_r16_flags_dense_bad_report(self):
+        bad_report = (
+            "# REPORT — Demo\n\n"
+            "Ngày: 2026-11-21 · Branch: feature · Mode: subagent · QC: full\n\n"
+            "> **Tóm tắt dễ hiểu:** Hệ thống chạy `foo`, `bar`, `baz`, `qux`, `corge`, "
+            "`grault` trong scripts/doc_lint.py tại `:42` để xử lý báo cáo.\n\n"
+            "## Trước request (trạng thái/flow)\n\n"
+            "Trước đây bị chậm.\n"
+        )
+        findings = doc_lint.r16_loi(bad_report, "docs/tdq/reports/2026-11-21-1900-bad.md")
+        joined = "\n".join(msg for _, msg in findings)
+        self.assertIn("middle-dots", joined)
+        self.assertIn("backtick density", joined)
+        self.assertIn("raw file path", joined)
+        self.assertIn("raw `:line`", joined)
+
+    def test_r16_accepts_clean_two_tier_and_pre_cutoff_reports(self):
+        good_report = (
+            "# REPORT — Chuẩn hai tầng\n\n"
+            "Ngày: 2026-11-21 · Nhánh: feature · Trạng thái: HOÀN THÀNH\n\n"
+            "> **Tóm tắt dễ hiểu:** Trước khi sửa, báo cáo hay viết lẫn tên tệp ngay dòng mở đầu. "
+            "Sau nâng cấp, phần đầu chỉ kể gọn kết quả để người đọc nắm nhanh trong mười giây. "
+            "Mọi số đo và đường dẫn đối chiếu đều nằm gọn ở nửa sau.\n\n"
+            "## Trước request (trạng thái/flow)\n\n"
+            "Xem `scripts/doc_lint.py:1` và `skills/tdq-build/references/report-template.md`.\n"
+        )
+        self.assertEqual(
+            doc_lint.r16_loi(good_report, "docs/tdq/reports/2026-11-21-1900-good.md"),
+            [],
+        )
+        legacy_dense = "# REPORT — Cũ\n\nKhông có ô tóm tắt nhưng trước mốc.\n"
+        self.assertEqual(
+            doc_lint.r16_loi(legacy_dense, "docs/tdq/reports/2026-11-21-1536-old.md"),
+            [],
+        )
 
 
 if __name__ == "__main__":

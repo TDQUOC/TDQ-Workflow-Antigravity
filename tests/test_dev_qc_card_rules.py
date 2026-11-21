@@ -44,7 +44,7 @@ class DevBehaviorQcCardContractTest(unittest.TestCase):
 
     def test_report_template_references_qc_card_and_preserves_quick_summary(self):
         self.assertIn("Dev Behavior QC Card", self.report)
-        self.assertIn("Tóm tắt nhanh:", self.report)
+        self.assertIn("Tóm tắt dễ hiểu:", self.report)
         self.assertIn("tdq_timing.py show", self.report)
 
     def test_qc_tester_agent_aligns_with_card_smoke_e2e_and_meta_gate(self):

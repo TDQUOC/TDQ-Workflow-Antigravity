@@ -19,14 +19,14 @@ below before writing the report; working from memory is banned.
 
 <!-- doc-lint: allow R1 -->
 7. Write `docs/tdq/reports/<slug>.md` — in the user's document language, with NO hard line
-   limit; ~10-20 lines recommended. Write in plain, accessible language so any reader can
-   understand it (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`), explicitly stating:
+   limit; ~10-20 lines recommended. Write in plain, accessible words (`đơn giản, dễ hiểu`, <!-- i18n-allow -->
+   `trực quan, đầy đủ thông tin`) with Layer-1 `> **Tóm tắt dễ hiểu:**` upfront (`<= 120` <!-- i18n-allow -->
+   words, `<= 6` backticks/100w, `0` wrapped numbers). Place full Layer-2 evidence below:
    (1) before-request state/flow (`Trước request (trạng thái/flow)`),
    (2) after-request state/flow (`Sau request (trạng thái/flow)`),
    (3) what was tested (`Đã test gì`), and
    (4) actual test results (`Kết quả test`). Template: section `## The report shape` in this file.
-   The timing table is **mandatory**: run `tdq_timing.py show` and paste the whole table into the
-   report; never estimate the numbers yourself.
+   The timing table is **mandatory**: run `tdq_timing.py show` and paste verbatim output below.
 
 7b. **Both lanes** write the paired visual report `docs/tdq/reports/<slug>.html` from actual
    task, DoD, QC, output and limit evidence via [Archify lifecycle](archify-lifecycle.md),
@@ -41,7 +41,7 @@ below before writing the report; working from memory is banned.
    when the books close on an open box, but the reminder is a net, not a substitute — tick
    as each item passes.
 
-9. Present the report in chat (verbatim, or a short summary plus the path).
+9. Present a crisp 8–16 line Layer-1 summary in chat plus `Xem đầy đủ tại:`; never dump raw Layer-2 markdown or timing tables into chat. <!-- i18n-allow -->
 
 10. **Ask the user whether to commit** — mandatory; never commit the final result on your own
     (the single exception: an unblocking commit during build under the Hard rules, which must
@@ -103,17 +103,17 @@ Next step: `python3 "${PLUGIN_ROOT}/scripts/tdq_state.py" set phase=idle`
 
 (deliberate repetition — the original is step 7 of `## The execution steps` in this file.)
 
-`docs/tdq/reports/<slug>.md` — in the user's document language, with NO hard line limit.
-Keep wording simple, clear, visual, and complete (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`) for every reader following [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md).
-Lead with a `Tóm tắt nhanh` blockquote. Explain Before → After → Result cleanly across readable sub-bullets instead of packing facts onto middle-dot (`·`) lines. Draw behavior and command highlights from `Dev Behavior QC Card` in `docs/tdq/qc/<slug>.md`, and paste verbatim `tdq_timing.py show` output (hiding all-unavailable host columns while preserving JSON v2).
+`docs/tdq/reports/<slug>.md` — keep Layer-1 plain and clear (`đơn giản, dễ hiểu`, `trực quan, đầy đủ thông tin`) per [user-facing-block.md](../../tdq-conventions/references/user-facing-block.md). <!-- i18n-allow -->
+Lead with `> **Tóm tắt dễ hiểu:**`. Explain Before → After → Result cleanly without middle-dot (`·`) walls. Pull behavior checks from `Dev Behavior QC Card` and paste verbatim `tdq_timing.py show` below. <!-- i18n-allow -->
 
 <!-- i18n-allow: report template written in the default document language -->
 ```markdown
-# REPORT — <tên việc> (`<slug>` · lane <lane> · mode <mode> · <n> task tick đủ)
+# BÁO CÁO — <tên việc>
 
+Ngày: YYYY-MM-DD · Mã yêu cầu: <slug> (<n> task tick đủ)
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 
-> **Tóm tắt nhanh:** <2–3 câu: trước vướng gì → sau sửa gì → kết quả thật>.
+> **Tóm tắt dễ hiểu:** <2–3 câu (<= 120 từ, 0 bọc code quanh số hay đường dẫn): trước vướng gì → sau sửa gì → kết quả thật>.
 
 **Trước request (trạng thái/flow):** <trạng thái và luồng trước khi sửa, dễ hiểu>
 **Sau request (trạng thái/flow):** <luồng mới ngắn gọn, tách ý con bên dưới nếu cần>
@@ -121,9 +121,9 @@ Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conve
 - **<Ý chính 2>:** <tác dụng>
 **Đã test gì:** <kịch bản, vùng chạm và lệnh kiểm>
 **Kết quả test:** <số pass/skip/fail, đo thực tế trước → sau, QC PASS x/y DoD>
-**Đầu ra:** <file chính> · **Archify HTML:** `docs/tdq/reports/<slug>.html` · Backup: <đường dẫn nếu có>
+**Đầu ra:** <file chính> · **Archify HTML:** `docs/tdq/reports/<slug>.html`
 **Giới hạn:** <việc chưa làm và ảnh hưởng, hoặc "không có">
-**Lệch spec chờ duyệt:** <Qn · ngưỡng → đo · phương án — hoặc "không có">
+**Lệch spec chờ duyệt:** <Qn: ngưỡng → đo (phương án) — hoặc "không có">
 **Git:** <chưa commit / commit đã tạo>
 
 ## Thời gian
@@ -154,7 +154,7 @@ V1 timing and step-audit gaps remain **legacy assistant-gap estimates**, not mod
 
 ## Check before presenting
 
-- No hard cap; 10-20 lines recommended, as short as possible without dropping an item.
+- Chat reply stays 8–16 Layer-1 lines (`<= 25` words/bullet, `0` wrapped plain numbers); full evidence lives in Layer 2 of the report `.md`.
 - Every number comes from real output, never an estimate. A measurement distorted by conditions
   gets said plainly in the "Kết quả" line. <!-- i18n-allow: canonical line name of the report -->
 - The "Giới hạn" line must not be left empty <!-- i18n-allow: canonical line name of the report --> while work remains unfinished — tell the truth, hide

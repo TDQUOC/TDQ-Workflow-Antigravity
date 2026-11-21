@@ -38,6 +38,7 @@ GUIDANCE_CODES: tuple[str, ...] = (
     "ANCHOR",
     "DOD",
     "INTAKE",
+    "PLAIN",
 )
 
 ALL_AGY_CODES: tuple[str, ...] = tuple(
@@ -285,6 +286,16 @@ GUIDANCE_TABLE: dict[str, dict[str, str]] = {
         "model_hint": (
             "No active TDQ request open; start with tdq-intake (for _tdq_direct, "
             "analyze and stop once at mini-plan gate)."
+        ),
+    },
+    "PLAIN": {
+        "chuyen_gi": "Chuẩn bị viết `spec`, `plan`, `report` hoặc tóm tắt gửi người dùng.",  # i18n-allow
+        "vi_sao": "Tách Lớp 1 dễ đọc khỏi chi tiết kỹ thuật giúp người xem nắm ngay trong 10–15 giây.",  # i18n-allow
+        "lam_gi": "Mở đầu bằng `> **Tóm tắt dễ hiểu:**` (<=120 từ, <=6 backtick/100 từ), không bọc code quanh số.",  # i18n-allow
+        "bo_qua": "Phần chứng cứ chi tiết bên dưới (Lớp 2) vẫn giữ đủ mã bằng chứng và dòng tệp.",  # i18n-allow
+        "model_hint": (
+            "Layer-1 front (chat & top callout): 10-15s plain prose (<=120w, "
+            "<=6 backticks/100w, <=2 middle-dots/line); push path:line below."
         ),
     },
 }

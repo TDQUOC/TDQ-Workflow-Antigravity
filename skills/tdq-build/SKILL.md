@@ -162,9 +162,8 @@ then Part C below.
 The execution steps — from writing the report through asking about the commit to merging the
 request branch back — live in
 [references/report-template.md](references/report-template.md) under `## The execution steps`.
-Read THAT section before writing the report, through the line index at the top of the file.
-Working from memory is banned. The report template and the verbatim commit question block are
-separate sections in the same index, fetched when you reach them.
+Read THAT section and [user-facing-block.md](../tdq-conventions/references/user-facing-block.md) before writing.
+Working from memory is banned. Both Layer-1 plain summary and commit block live in those indexes.
 
 Done when: the report is written, the user has been asked about the commit, and the request
 branch has been merged back into `nhanh_goc`.

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1819-trien-khai-trinh-bay-2-tang\\.tmp.bao-cao.archify.16466239d53048d6a3b4d9a345870f1c.md",
+    "sha256": "4233935f0208a9b7a788a005808d241bf08122eac77e67d1b4fa074840ccecd4",
+    "bytes": 2888
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1819-trien-khai-trinh-bay-2-tang.9e63285bdc724fb0ab4ed91d3828c482.html",
+    "sha256": "bfb344c986b99cf4e37e22fb2c9fe116ea4ab4e9e806ee4f5c9f22222b3231df",
+    "bytes": 1229108
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 31 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-1819-trien-khai-trinh-bay-2-tang\\.tmp.bao-cao.archify.16466239d53048d6a3b4d9a345870f1c.md",
+        "line": 5,
+        "component": "answer"
+      },
+      "evidence": {
+        "reason": "Sentence has 31 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 31,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1819-trien-khai-trinh-bay-2-tang.9e63285bdc724fb0ab4ed91d3828c482.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-1819-trien-khai-trinh-bay-2-tang.9e63285bdc724fb0ab4ed91d3828c482.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2219,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
