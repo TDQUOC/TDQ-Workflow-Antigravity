@@ -14,7 +14,7 @@ from helper import ROOT
 LINT = os.path.join(ROOT, "scripts", "doc_lint.py")
 
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
-import doc_lint  # noqa: E402  — đọc hằng CONTRACT_FIELDS trực tiếp
+import doc_lint  # đọc hằng CONTRACT_FIELDS trực tiếp
 
 
 class LintBase(unittest.TestCase):
@@ -32,7 +32,7 @@ class LintBase(unittest.TestCase):
 
     def lint(self, *paths):
         proc = subprocess.run([sys.executable, LINT, *paths],
-                              capture_output=True, encoding="utf-8", text=True)
+                              check=False, capture_output=True, encoding="utf-8", text=True)
         return proc.returncode, proc.stdout
 
     def assert_hits(self, path, rule):
@@ -50,7 +50,7 @@ class MissingPathTest(LintBase):
 
     def _lint_err(self, *paths):
         proc = subprocess.run([sys.executable, LINT, *paths],
-                              capture_output=True, encoding="utf-8", text=True)
+                              check=False, capture_output=True, encoding="utf-8", text=True)
         return proc.returncode, proc.stdout, proc.stderr
 
     def test_missing_path_no_md_suffix_exit_nonzero(self):
@@ -289,7 +289,7 @@ class PairTest(LintBase):
         spec = self.write(os.path.join("spec", "s.md"), spec_text)
         plan = self.write(os.path.join("plan", "p.md"), plan_text)
         proc = subprocess.run([sys.executable, LINT, "--pair", spec, plan],
-                              capture_output=True, encoding="utf-8", text=True)
+                              check=False, capture_output=True, encoding="utf-8", text=True)
         return proc.returncode, proc.stdout
 
     def test_pair_ok(self):
@@ -317,7 +317,7 @@ class PairTest(LintBase):
 
     def test_pair_bad_argc(self):
         proc = subprocess.run([sys.executable, LINT, "--pair", "mot-file"],
-                              capture_output=True, encoding="utf-8", text=True)
+                              check=False, capture_output=True, encoding="utf-8", text=True)
         self.assertEqual(proc.returncode, 2)
 
     def test_pair_ok_with_mcp_label(self):
@@ -423,7 +423,7 @@ class PairCumSongSongTest(LintBase):
         spec = self.write(os.path.join("spec", "s.md"), SPEC_3B_OK)
         plan = self.write("p.md", plan_text)
         proc = subprocess.run([sys.executable, LINT, "--pair", spec, plan],
-                              capture_output=True, encoding="utf-8", text=True)
+                              check=False, capture_output=True, encoding="utf-8", text=True)
         return proc.returncode, proc.stdout
 
     def test_pair_plan_thieu_cum_song_song(self):
@@ -479,7 +479,7 @@ class LogServiceTest(LintBase):
     def chay(self, path, env_them=None):
         env = dict(os.environ)
         env.update(env_them or {})
-        return subprocess.run([sys.executable, LINT, path], capture_output=True,
+        return subprocess.run([sys.executable, LINT, path], check=False, capture_output=True,
                               encoding="utf-8", text=True, env=env)
 
     def test_log_bat_mac_dinh_ra_stderr(self):
@@ -689,10 +689,14 @@ class R15ModelEffortAndAgentCallersTest(LintBase):
         self.assertEqual(loi, [], loi)
 
     def test_agent_callers_duoc_noi_trong_skills(self):
-        build_md = open(os.path.join(ROOT, "skills", "tdq-build", "SKILL.md"), encoding="utf-8").read()
-        team_md = open(os.path.join(ROOT, "skills", "tdq-build", "references", "team-mode.md"), encoding="utf-8").read()
-        qc_md = open(os.path.join(ROOT, "skills", "tdq-build", "references", "qc.md"), encoding="utf-8").read()
-        lean_md = open(os.path.join(ROOT, "skills", "tdq-lean", "SKILL.md"), encoding="utf-8").read()
+        with open(os.path.join(ROOT, "skills", "tdq-build", "SKILL.md"), encoding="utf-8") as fh:
+            build_md = fh.read()
+        with open(os.path.join(ROOT, "skills", "tdq-build", "references", "team-mode.md"), encoding="utf-8") as fh:
+            team_md = fh.read()
+        with open(os.path.join(ROOT, "skills", "tdq-build", "references", "qc.md"), encoding="utf-8") as fh:
+            qc_md = fh.read()
+        with open(os.path.join(ROOT, "skills", "tdq-lean", "SKILL.md"), encoding="utf-8") as fh:
+            lean_md = fh.read()
         self.assertIn("tdq-security-reviewer", build_md)
         self.assertIn("tdq-build-resolver", team_md)
         self.assertIn("tdq-refactor-cleaner", team_md)
@@ -735,3 +739,119 @@ class R14InvestigateTest(LintBase):
 
         inv_file = self.write(os.path.join("docs", "tdq", "spec", "2026-11-21-0100-inv.md"), inv_3)
         self.assertEqual(doc_lint.lint_file(inv_file), [])
+
+
+class CliDocsRuleTest(LintBase):
+    """R16 — docs/tdq/scenarios/ & docs/tdq/bugs/ validate scenario length & script CLI flags."""
+
+    def _write_demo_scripts(self):
+        self.write(
+            os.path.join("scripts", "demo_tool.py"),
+            "import argparse\n"
+            "ap = argparse.ArgumentParser()\n"
+            "ap.add_argument('--files', nargs='*')\n"
+            "ap.add_argument('--dry-run', action='store_true')\n",
+        )
+        self.write(
+            os.path.join("scripts", "manual_tool.py"),
+            "import sys\n"
+            "def main(argv):\n"
+            "    if '--json' in argv:\n"
+            "        return 0\n"
+            "    return 1\n",
+        )
+
+    def test_bug_board_invalid_cli_flag_fails(self):
+        self._write_demo_scripts()
+        board = self.write(
+            os.path.join("docs", "tdq", "bugs", "BUG_BOARD.md"),
+            "# Bug Board\n\n- Repro: `py -3 -X utf8 scripts/demo_tool.py --khong-ton-tai`\n",
+        )
+        self.assert_hits(board, "R16")
+        code, out = self.lint(board)
+        self.assertEqual(code, 1)
+        self.assertIn("--khong-ton-tai", out)
+
+    def test_bug_board_missing_script_fails(self):
+        self._write_demo_scripts()
+        board = self.write(
+            os.path.join("docs", "tdq", "bugs", "BUG_BOARD.md"),
+            "# Bug Board\n\n- Repro: `python3 scripts/missing_script.py --dry-run`\n",
+        )
+        self.assert_hits(board, "R16")
+        _, out = self.lint(board)
+        self.assertIn("missing_script.py", out)
+
+    def test_bug_board_valid_flags_both_argparse_and_manual_clean(self):
+        self._write_demo_scripts()
+        board = self.write(
+            os.path.join("docs", "tdq", "bugs", "BUG_BOARD.md"),
+            "# Bug Board\n\n"
+            "- Repro: `py -3 scripts/demo_tool.py --files a.py --dry-run`\n"
+            "```bash\n"
+            "python3 scripts/manual_tool.py --json\n"
+            "```\n",
+        )
+        self.assert_clean(board)
+
+    def test_bug_board_manual_script_rejects_unknown_flag(self):
+        self._write_demo_scripts()
+        board = self.write(
+            os.path.join("docs", "tdq", "bugs", "BUG_BOARD.md"),
+            "# Bug Board\n\n- Repro: `python3 scripts/manual_tool.py --bogus`\n",
+        )
+        self.assert_hits(board, "R16")
+
+    def test_scenario_line_cap_and_cli_validation(self):
+        self._write_demo_scripts()
+        ok_sc = self.write(
+            os.path.join("docs", "tdq", "scenarios", "login.md"),
+            "# Scenario: Demo CLI\n\n"
+            "- Goal: Run demo tool safely\n"
+            "- act: `py -3 scripts/demo_tool.py --dry-run`\n"
+            "- assert: exit 0\n",
+        )
+        self.assert_clean(ok_sc)
+
+        long_lines = ["# Scenario: Too long", "", "- Goal: Oversized"] + [
+            f"- act {i}: step {i}" for i in range(1, 43)
+        ]
+        long_sc = self.write(
+            os.path.join("docs", "tdq", "scenarios", "too_long.md"),
+            "\n".join(long_lines) + "\n",
+        )
+        self.assert_hits(long_sc, "R16")
+
+        bad_cmd_sc = self.write(
+            os.path.join("docs", "tdq", "scenarios", "bad_cmd.md"),
+            "# Scenario: Bad flag\n\n```bash\npy -3 scripts/demo_tool.py --nope\n```\n",
+        )
+        self.assert_hits(bad_cmd_sc, "R16")
+
+    def test_empty_scenario_and_bug_board_no_command_clean(self):
+        self.assert_clean(self.write(os.path.join("docs", "tdq", "scenarios", "empty.md"), ""))
+        self.assert_clean(self.write(os.path.join("docs", "tdq", "bugs", "empty.md"), ""))
+        self.assert_clean(
+            self.write(
+                os.path.join("docs", "tdq", "bugs", "notes.md"),
+                "# Bugs\n\n- Chưa có lệnh tái hiện cụ thể.\n",
+            )
+        )
+
+    def test_outside_scenarios_and_bugs_not_checked_by_r16(self):
+        report = self.write(
+            os.path.join("docs", "tdq", "reports", "2026-11-21-0100-rep.md"),
+            "# Report\n\n- Đã ghi ví dụ `scripts/ghost_cmd.py --khong-ton-tai`.\n",
+        )
+        self.assert_clean(report)
+
+    def test_validate_cli_flags_direct_api(self):
+        self._write_demo_scripts()
+        bad = self.write(
+            os.path.join("docs", "tdq", "bugs", "direct.md"),
+            "# Board\n\n- `py -3 scripts/demo_tool.py --unknown-flag`\n",
+        )
+        findings = doc_lint.validate_cli_flags(doc_lint.Doc(bad), repo_root=self.tmp.name)
+        self.assertEqual(len(findings), 1)
+        self.assertIn("--unknown-flag", findings[0])
+
