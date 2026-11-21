@@ -15,6 +15,7 @@ Env: TDQ_LOG=0 silences ISO-timestamped stderr logs (enabled by default).
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import re
@@ -27,10 +28,16 @@ SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
 
-import doc_lint
-import i18n_check
-import token_budget
-import utf8_io  # noqa: F401 — imported for its side effect: stdout/stderr become UTF-8
+import doc_lint  # noqa: E402
+import token_budget  # noqa: E402
+import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
+
+
+def _load_i18n_check():
+    """Load `i18n_check` only when present alongside this script (absent in stripped release bundles)."""
+    if not os.path.isfile(os.path.join(SCRIPTS_DIR, "i18n_check.py")):
+        return None
+    return importlib.import_module("i18n_check")
 
 I18N_DIRS = ("skills", "agents", "scripts")
 CLI_DOC_DIRS = (os.path.join("docs", "tdq", "scenarios"), os.path.join("docs", "tdq", "bugs"))
@@ -186,13 +193,17 @@ def _check_i18n(
     target_files: list[str], repo_root: str, run_all: bool
 ) -> tuple[str, bool, list[str]] | None:
     """Run `i18n_check.scan_file` on targets under `skills/`, `agents/`, or `scripts/`."""
+    mod = _load_i18n_check()
+    if mod is None:
+        _log("i18n_check: skip (i18n_check.py not installed)")
+        return None
     if run_all and not target_files:
         dirs = [os.path.join(repo_root, d) for d in I18N_DIRS if os.path.isdir(os.path.join(repo_root, d))]
-        scan_files = i18n_check.collect(dirs) if dirs else []
+        scan_files = mod.collect(dirs) if dirs else []
     else:
         scan_files = [
             p for p in target_files
-            if p.endswith(i18n_check.SCAN_SUFFIXES)
+            if p.endswith(mod.SCAN_SUFFIXES)
             and any(_under_subdir(p, repo_root, d) for d in I18N_DIRS)
         ]
     if not scan_files:
@@ -200,7 +211,7 @@ def _check_i18n(
         return None
     errors: list[str] = []
     for path in scan_files:
-        for finding in i18n_check.scan_file(path):
+        for finding in mod.scan_file(path):
             errors.append(f"{finding['file']}:{finding['line']}: [{finding['kind']}] {finding['text']}")
     _log(f"i18n_check: checked {len(scan_files)} file(s), errors={len(errors)}")
     return "i18n_check", not errors, errors

@@ -305,6 +305,16 @@ class MetaGateTest(unittest.TestCase):
         rc = tdq_meta_gate.run_meta_gate([str(doc)], check_cli=True, repo=str(self.repo))
         self.assertEqual(rc, 0)
 
+    def test_check_i18n_skips_cleanly_without_i18n_module(self):
+        from unittest import mock
+
+        import tdq_meta_gate
+
+        skill = self._write("skills/demo/SKILL.md", "---\nname: demo\ndescription: demo\n---\n\n# Demo\n")
+        with mock.patch.object(tdq_meta_gate, "_load_i18n_check", return_value=None):
+            result = tdq_meta_gate._check_i18n([str(skill)], str(self.repo), run_all=False)
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -69,7 +69,7 @@ RELEASE_EXCLUDE_DIRS = frozenset({
 RELEASE_EXCLUDE_TOP_DIRS = frozenset({"plugins", "tools"})
 RELEASE_EXCLUDE_PATHS = frozenset({".agents/plugins.json"})
 RELEASE_EXCLUDE_FILES = frozenset({
-    ".DS_Store", "CHANGELOG-archive.md", "pyrightconfig.json",
+    ".DS_Store", "CHANGELOG-archive.md", "pyrightconfig.json", "pytest.ini",
     "state.json", ".tdq-turn.jsonl", "README-Antigravity.md",
     "UPSTREAM-TRACE.md", "install.py", "install.ps1", "install.sh",
 })

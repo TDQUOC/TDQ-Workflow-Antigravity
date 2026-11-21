@@ -106,7 +106,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P2 — Wave 2: Smoke/E2E Suite Markers & Khóa lỗi `v0.103.0`
 
-- [>] **T2.1** (e8m) Gắn marker `pytestmark = pytest.mark.smoke` cho `5` module kiểm định plugin, agent frontmatter, token budget và i18n — Test: `py -3 -X utf8 -m pytest -m smoke tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_build_portable.py tests/test_token_budget.py tests/test_i18n_check.py -q`
+- [x] **T2.1** (e8m) Gắn marker `pytestmark = pytest.mark.smoke` cho `5` module kiểm định plugin, agent frontmatter, token budget và i18n — Test: `py -3 -X utf8 -m pytest -m smoke tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_build_portable.py tests/test_token_budget.py tests/test_i18n_check.py -q`
   - Req: `§2#4, Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ logic assertion sẵn có của từng file test
   - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agy_plugin_validate.py`, `tests/test_build_portable.py`, `tests/test_token_budget.py`, `tests/test_i18n_check.py`
   - Cần: `T1.1`
@@ -117,7 +117,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: bổ sung khai báo `pytestmark = pytest.mark.smoke` cấp module đúng chuẩn `pytest.ini`
   - Ca góc hiểm & Assert: chạy `--strict-markers` thoát `0` với số test collected `> 0`
 
-- [>] **T2.2** (e8m) Gắn marker `pytestmark = [pytest.mark.smoke, pytest.mark.e2e]` cho `5` module hook, Rust dispatch parity và state gate — Test: `py -3 -X utf8 -m pytest -m "smoke and e2e" tests/test_agy_hooks.py tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_command_gate.py tests/test_state_muc_qc.py -q`
+- [x] **T2.2** (e8m) Gắn marker `pytestmark = [pytest.mark.smoke, pytest.mark.e2e]` cho `5` module hook, Rust dispatch parity và state gate — Test: `py -3 -X utf8 -m pytest -m "smoke and e2e" tests/test_agy_hooks.py tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_command_gate.py tests/test_state_muc_qc.py -q`
   - Req: `§2#4, Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` test logic và không gọi SSH sang máy ngoài
   - Chạm: `tests/test_agy_hooks.py`, `tests/test_rust_dispatch_parity.py`, `tests/test_bash_gate.py`, `tests/test_command_gate.py`, `tests/test_state_muc_qc.py`
   - Cần: `T1.1`
@@ -128,7 +128,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: khai báo `pytestmark` cấp module không làm thay đổi tập case trong mỗi class `unittest.TestCase`
   - Ca góc hiểm & Assert: chạy `--strict-markers` đạt `exit_code == 0`, `0` skipped bất thường
 
-- [>] **T2.3** (e10m) Gắn marker `smoke` cho `5` module runner/finish/lint/MCP và viết `tests/test_v01030_regression_smoke.py` khóa lỗi `v0.103.0` (`call_mcp_tool` trên bundle compile) — Test: `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
+- [x] **T2.3** (e10m) Gắn marker `smoke` cho `5` module runner/finish/lint/MCP và viết `tests/test_v01030_regression_smoke.py` khóa lỗi `v0.103.0` (`call_mcp_tool` trên bundle compile) — Test: `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
   - Req: `§2#4, Q3` · Ngoài phạm vi: không sửa `tools/patches/skills_and_agents.py`; test phải chạy độc lập trên bản compile thật/TemporaryDirectory không cần gọi Antigravity host
   - Chạm: `tests/test_tdq_runner_integration.py`, `tests/test_tdq_finish.py`, `tests/test_doc_lint_r15.py`, `tests/test_devtool_mcp_integration.py`, `tests/test_read_gate.py`, `tests/test_v01030_regression_smoke.py`
   - Sinh ra: `tests/test_v01030_regression_smoke.py`
@@ -178,7 +178,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P4 — Wave 4: Version Bump `0.104.0`, Token Budget & AGY Plugin Build
 
-- [ ] **T4.1** (e8m) Uniform Mechanical Sweep: bump phiên bản `0.103.1` → `0.104.0` đồng bộ trong `6` tệp cấu hình, manifest và công cụ build (`Cargo.toml`, `.claude-plugin`, `.codex-plugin`, `tools/`) — Test: `py -3 -X utf8 -c "from pathlib import Path; files=['.claude-plugin/plugin.json','.codex-plugin/plugin.json','hooks/rust/tdq-dispatch/Cargo.toml','tools/patches/agy_manifests.py','tools/patches/__init__.py','tools/build_agy_plugin.py']; texts=[Path(f).read_text(encoding='utf-8') for f in files]; assert all('0.104.0' in t and '0.103.1' not in t for t in texts)"`
+- [~] **T4.1** (e8m) Uniform Mechanical Sweep: bump phiên bản `0.103.1` → `0.104.0` đồng bộ trong `6` tệp cấu hình, manifest và công cụ build (`Cargo.toml`, `.claude-plugin`, `.codex-plugin`, `tools/`) — Test: `py -3 -X utf8 -c "from pathlib import Path; files=['.claude-plugin/plugin.json','.codex-plugin/plugin.json','hooks/rust/tdq-dispatch/Cargo.toml','tools/patches/agy_manifests.py','tools/patches/__init__.py','tools/build_agy_plugin.py']; texts=[Path(f).read_text(encoding='utf-8') for f in files]; assert all('0.104.0' in t and '0.103.1' not in t for t in texts)"`
   - Req: `§2#7, Q7` · Ngoài phạm vi: `GIỮ NGUYÊN` code `.rs` và binary Rust đã biên dịch (`v0.103.1` runtime protocol không đổi); `Cargo.toml` chỉ nâng trường `version`
   - Chạm: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `hooks/rust/tdq-dispatch/Cargo.toml`, `tools/patches/agy_manifests.py`, `tools/patches/__init__.py`, `tools/build_agy_plugin.py`
   - Cần: `T2.1`, `T2.2`, `T2.3`, `T3.1`, `T3.2`
@@ -202,7 +202,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P5 — Log & test bắt buộc
 
-- [>] **T5.1** (e4m) Kiểm tra hợp đồng `TDQ_LOG=1/0` (ISO timestamp mặc định bật trên `stderr`, tắt khi `TDQ_LOG=0`) trên tất cả script runtime mới và đã sửa (`tdq_test.py`, `tdq_timing.py`, `tdq_meta_gate.py`, `doc_lint.py`) — Test: `py -3 -X utf8 -m pytest tests/test_phase1_logging.py tests/test_runtime_logging.py tests/test_meta_gate.py -q`
+- [x] **T5.1** (e4m) Kiểm tra hợp đồng `TDQ_LOG=1/0` (ISO timestamp mặc định bật trên `stderr`, tắt khi `TDQ_LOG=0`) trên tất cả script runtime mới và đã sửa (`tdq_test.py`, `tdq_timing.py`, `tdq_meta_gate.py`, `doc_lint.py`) — Test: `py -3 -X utf8 -m pytest tests/test_phase1_logging.py tests/test_runtime_logging.py tests/test_meta_gate.py -q`
   - Req: `§4#1, Q8` · Ngoài phạm vi: `GIỮ NGUYÊN` định dạng ISO prefix của `tdq_finish.py`
   - Chạm: `tests/test_meta_gate.py`
   - Cần: `T1.1`, `T1.2`, `T1.3`

@@ -37,7 +37,7 @@ PHASE1_RUNTIME_MODULES = {
 APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
     "rtk_integration", "tdq_mcp_shrink", "tdq_ccr", "caveman_config",
-    "tdq_plan_scaffold", "tdq_config",
+    "tdq_plan_scaffold", "tdq_config", "tdq_meta_gate",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -56,6 +56,8 @@ APPROVED_RELEASE_DOCS = {
     "hooks/scripts/subagent_stop.py",
     # Approved 2026-11-21-0217-trien-khai-investigate-v2
     "skills/tdq-conventions/references/investigate-mode.md",
+    # Approved 2026-11-21-1536-nang-cap-qc-tester-e2e Wave 3 E2E scenario template
+    "skills/tdq-browser-test/references/scenario-template.md",
 }
 
 
