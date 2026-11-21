@@ -13,7 +13,10 @@ import os
 import re
 import unittest
 
+import pytest
 from helper import ROOT
+
+pytestmark = pytest.mark.smoke
 
 QC_MD = os.path.join(ROOT, "skills", "tdq-build", "references", "qc.md")
 BUILD_SKILL = os.path.join(ROOT, "skills", "tdq-build", "SKILL.md")
@@ -67,6 +70,18 @@ class BangMucTest(unittest.TestCase):
         self.assertEqual(self.bang["full"][cot], "KHÔNG",
                          "mức mặc định `full` không được chạy runtime test")
         self.assertEqual(self.bang["ultra"][cot], "CÓ", "mức `ultra` phải chạy runtime test")
+
+    def test_bang_full_bat_smoke_test(self):
+        """Wave 3: mức `full` mở Changed-Flow E2E Smoke (`smoke test = CÓ`)."""
+        tieu_de = [c.strip() for c in
+                   re.search(r"\|\s*Mức\s*\|(.+)\|", self.qc).group(0).strip("|").split("|")]
+        cot_smoke = tieu_de.index("smoke test")
+        self.assertEqual(self.bang["lite"][cot_smoke], "KHÔNG",
+                         "mức `lite` giữ smoke test = KHÔNG")
+        self.assertEqual(self.bang["full"][cot_smoke], "CÓ",
+                         "mức `full` phải bật Changed-Flow E2E Smoke (`smoke test = CÓ`)")
+        self.assertEqual(self.bang["ultra"][cot_smoke], "CÓ",
+                         "mức `ultra` phải giữ smoke test = CÓ")
 
     def test_bang_chi_ultra_goi_agent_doc_lap(self):
         """Đọc thẳng cột cuối của bảng: chỉ `ultra` mới gọi agent QC độc lập."""

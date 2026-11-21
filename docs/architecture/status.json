@@ -28,6 +28,7 @@
     "Source file modified: scripts/tdq_test_receipt.py",
     "Source file modified: scripts/tdq_timing.py",
     "Source file modified: scripts/token_audit.py",
+    "Source file modified: skills/tdq-browser-test/SKILL.md",
     "Source file modified: skills/tdq-build/SKILL.md",
     "Source file modified: skills/tdq-build/references/qc.md",
     "Source file modified: skills/tdq-build/references/report-template.md",
@@ -4353,10 +4354,11 @@
     "Source file added: scripts/tdq_config.py",
     "Source file added: scripts/tdq_meta_gate.py",
     "Source file added: scripts/tdq_plan_scaffold.py",
+    "Source file added: skills/tdq-browser-test/references/scenario-template.md",
     "Source file added: skills/tdq-build/references/qc-vong-fix.md",
     "Source file added: skills/tdq-conventions/references/investigate-mode.md",
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-21T09:36:34Z"
+  "checked_at": "2026-11-21T09:48:26Z"
 }

@@ -106,7 +106,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P2 — Wave 2: Smoke/E2E Suite Markers & Khóa lỗi `v0.103.0`
 
-- [ ] **T2.1** (e8m) Gắn marker `pytestmark = pytest.mark.smoke` cho `5` module kiểm định plugin, agent frontmatter, token budget và i18n — Test: `py -3 -X utf8 -m pytest -m smoke tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_build_portable.py tests/test_token_budget.py tests/test_i18n_check.py -q`
+- [>] **T2.1** (e8m) Gắn marker `pytestmark = pytest.mark.smoke` cho `5` module kiểm định plugin, agent frontmatter, token budget và i18n — Test: `py -3 -X utf8 -m pytest -m smoke tests/test_agent_frontmatter.py tests/test_agy_plugin_validate.py tests/test_build_portable.py tests/test_token_budget.py tests/test_i18n_check.py -q`
   - Req: `§2#4, Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ logic assertion sẵn có của từng file test
   - Chạm: `tests/test_agent_frontmatter.py`, `tests/test_agy_plugin_validate.py`, `tests/test_build_portable.py`, `tests/test_token_budget.py`, `tests/test_i18n_check.py`
   - Cần: `T1.1`
@@ -117,7 +117,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: bổ sung khai báo `pytestmark = pytest.mark.smoke` cấp module đúng chuẩn `pytest.ini`
   - Ca góc hiểm & Assert: chạy `--strict-markers` thoát `0` với số test collected `> 0`
 
-- [ ] **T2.2** (e8m) Gắn marker `pytestmark = [pytest.mark.smoke, pytest.mark.e2e]` cho `5` module hook, Rust dispatch parity và state gate — Test: `py -3 -X utf8 -m pytest -m "smoke and e2e" tests/test_agy_hooks.py tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_command_gate.py tests/test_state_muc_qc.py -q`
+- [>] **T2.2** (e8m) Gắn marker `pytestmark = [pytest.mark.smoke, pytest.mark.e2e]` cho `5` module hook, Rust dispatch parity và state gate — Test: `py -3 -X utf8 -m pytest -m "smoke and e2e" tests/test_agy_hooks.py tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_command_gate.py tests/test_state_muc_qc.py -q`
   - Req: `§2#4, Q3` · Ngoài phạm vi: `GIỮ NGUYÊN` test logic và không gọi SSH sang máy ngoài
   - Chạm: `tests/test_agy_hooks.py`, `tests/test_rust_dispatch_parity.py`, `tests/test_bash_gate.py`, `tests/test_command_gate.py`, `tests/test_state_muc_qc.py`
   - Cần: `T1.1`
@@ -128,7 +128,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: khai báo `pytestmark` cấp module không làm thay đổi tập case trong mỗi class `unittest.TestCase`
   - Ca góc hiểm & Assert: chạy `--strict-markers` đạt `exit_code == 0`, `0` skipped bất thường
 
-- [ ] **T2.3** (e10m) Gắn marker `smoke` cho `5` module runner/finish/lint/MCP và viết `tests/test_v01030_regression_smoke.py` khóa lỗi `v0.103.0` (`call_mcp_tool` trên bundle compile) — Test: `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
+- [>] **T2.3** (e10m) Gắn marker `smoke` cho `5` module runner/finish/lint/MCP và viết `tests/test_v01030_regression_smoke.py` khóa lỗi `v0.103.0` (`call_mcp_tool` trên bundle compile) — Test: `py -3 -X utf8 scripts/tdq_test.py smoke-e2e --files agents/tdq-explorer.md tools/patches/skills_and_agents.py --fail-fast`
   - Req: `§2#4, Q3` · Ngoài phạm vi: không sửa `tools/patches/skills_and_agents.py`; test phải chạy độc lập trên bản compile thật/TemporaryDirectory không cần gọi Antigravity host
   - Chạm: `tests/test_tdq_runner_integration.py`, `tests/test_tdq_finish.py`, `tests/test_doc_lint_r15.py`, `tests/test_devtool_mcp_integration.py`, `tests/test_read_gate.py`, `tests/test_v01030_regression_smoke.py`
   - Sinh ra: `tests/test_v01030_regression_smoke.py`
@@ -142,7 +142,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P3 — Wave 3: Dev Behavior QC Card, Rules & Browser Accessibility Snapshot
 
-- [ ] **T3.1** (e12m) Cập nhật `qc.md` (`full` mở `smoke test = CÓ`, `--workers auto`, `QC-F4` OOP giới hạn cho class/tầng, `Auto Meta-Gate`, `Dev Behavior QC Card`, 5-step Fresh Evidence Gate), `report-template.md`, `agents/tdq-qc-tester.md` và tests hợp đồng — Test: `py -3 -X utf8 -m pytest tests/test_muc_qc_qc_md.py tests/test_dev_qc_card_rules.py tests/test_clean_code_rule.py tests/test_i18n_check.py -q`
+- [x] **T3.1** (e12m) Cập nhật `qc.md` (`full` mở `smoke test = CÓ`, `--workers auto`, `QC-F4` OOP giới hạn cho class/tầng, `Auto Meta-Gate`, `Dev Behavior QC Card`, 5-step Fresh Evidence Gate), `report-template.md`, `agents/tdq-qc-tester.md` và tests hợp đồng — Test: `py -3 -X utf8 -m pytest tests/test_muc_qc_qc_md.py tests/test_dev_qc_card_rules.py tests/test_clean_code_rule.py tests/test_i18n_check.py -q`
   - Req: `§2#5, §5, Q5` · Ngoài phạm vi: `GIỮ NGUYÊN` `skills/tdq-conventions/references/clean-code.md`, `runtime test = KHÔNG` ở `full`, `tdq-qc-tester = KHÔNG` ở `full` và `CÓ` ở `ultra`
   - Chạm: `skills/tdq-build/references/qc.md`, `skills/tdq-build/references/report-template.md`, `agents/tdq-qc-tester.md`, `tests/test_muc_qc_qc_md.py`, `tests/test_dev_qc_card_rules.py`
   - Sinh ra: `tests/test_dev_qc_card_rules.py`
@@ -154,7 +154,7 @@ Trạng thái plan: ĐANG CHẠY
   - Logic cốt lõi: cập nhật bảng `muc_qc` (`CÓ (vùng đổi)` hoặc `CÓ` theo `hop_le` trong `test_muc_qc_qc_md.py`), đổi `QC-F1` sang `--workers auto`, tách `QC-F4` thành nhánh OOP vs script thực dụng, thêm khối `Dev Behavior QC Card` vào đầu `qc.md` & `report-template.md`
   - Ca góc hiểm & Assert: toàn bộ text hướng dẫn luật viết tiếng Anh chuẩn trừ phần `i18n-allow`; `assert "smoke test" in qc_text` & `tests/test_clean_code_rule.py` vẫn pass
 
-- [ ] **T3.2** (e12m) Cập nhật `skills/tdq-browser-test/SKILL.md` và `vision-test-loop.md` dùng mặc định Accessibility Tree Snapshot (`take_snapshot` + `console`/`errors` fail-closed), thêm `scenario-template.md` (`7–19` dòng + Bug Board + opt-in `e2e_adapter`) và kiểm thử HTML thực tế — Test: `py -3 -X utf8 -m pytest tests/test_vision_test_loop_doc.py tests/test_i18n_check.py -q`
+- [x] **T3.2** (e12m) Cập nhật `skills/tdq-browser-test/SKILL.md` và `vision-test-loop.md` dùng mặc định Accessibility Tree Snapshot (`take_snapshot` + `console`/`errors` fail-closed), thêm `scenario-template.md` (`7–19` dòng + Bug Board + opt-in `e2e_adapter`) và kiểm thử HTML thực tế — Test: `py -3 -X utf8 -m pytest tests/test_vision_test_loop_doc.py tests/test_i18n_check.py -q`
   - Dùng: `tdq-browser-test` (mcp)
   - Để: thực thi luồng Accessibility Tree Snapshot (`take_snapshot` + `list_console_messages`) trên Archify HTML preview thật để nghiệm thu thiết kế mới tại `Q6`, nạp skill TRƯỚC bước đỏ
   - Ra: `skills/tdq-browser-test/SKILL.md`, `skills/tdq-browser-test/references/scenario-template.md`, `skills/tdq-build/references/vision-test-loop.md` đã chuẩn hóa và bằng chứng snapshot HTML `0` console error
@@ -202,7 +202,7 @@ Trạng thái plan: ĐANG CHẠY
 
 ## P5 — Log & test bắt buộc
 
-- [ ] **T5.1** (e4m) Kiểm tra hợp đồng `TDQ_LOG=1/0` (ISO timestamp mặc định bật trên `stderr`, tắt khi `TDQ_LOG=0`) trên tất cả script runtime mới và đã sửa (`tdq_test.py`, `tdq_timing.py`, `tdq_meta_gate.py`, `doc_lint.py`) — Test: `py -3 -X utf8 -m pytest tests/test_phase1_logging.py tests/test_runtime_logging.py tests/test_meta_gate.py -q`
+- [>] **T5.1** (e4m) Kiểm tra hợp đồng `TDQ_LOG=1/0` (ISO timestamp mặc định bật trên `stderr`, tắt khi `TDQ_LOG=0`) trên tất cả script runtime mới và đã sửa (`tdq_test.py`, `tdq_timing.py`, `tdq_meta_gate.py`, `doc_lint.py`) — Test: `py -3 -X utf8 -m pytest tests/test_phase1_logging.py tests/test_runtime_logging.py tests/test_meta_gate.py -q`
   - Req: `§4#1, Q8` · Ngoài phạm vi: `GIỮ NGUYÊN` định dạng ISO prefix của `tdq_finish.py`
   - Chạm: `tests/test_meta_gate.py`
   - Cần: `T1.1`, `T1.2`, `T1.3`
