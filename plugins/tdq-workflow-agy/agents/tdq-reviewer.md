@@ -1,7 +1,7 @@
 ---
 name: tdq-reviewer
 description: Reviews a TDQ spec or plan file for gaps, contradictions, missing tests, and over-engineering; scoped-write to investigation artifact shards only.
-tools: [read_file, edit_file, write_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, edit_file, write_file, run_command, manage_task, search_web, send_message]
 model: inherit
 ---
 

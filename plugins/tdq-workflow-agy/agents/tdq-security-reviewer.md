@@ -1,7 +1,7 @@
 ---
 name: tdq-security-reviewer
 description: Independent security auditor checking code changes for OWASP Top 10, hardcoded secrets, injection vulnerabilities, and least-privilege compliance. Read-only.
-tools: [read_file, grep_search, find_by_name, list_dir, call_mcp_tool, run_command, send_message]
+tools: [read_file, run_command, manage_task, send_message]
 model: inherit
 ---
 
