@@ -616,3 +616,97 @@ def test_ec17_command_gate_rtk_collapse_and_setup_notice(tmp_path):
     assert ss_muted.returncode == 0
     msg_muted = json.loads(ss_muted.stdout.strip())["injectSteps"][0]["systemMessage"]["systemMessage"]
     assert "--with-rtk" not in msg_muted
+
+
+def _run_cmd_gate_decision(repo: Path, sid: str, cmd: str) -> dict:
+    """Run compiled command_gate.py on AGY PreToolUse with RTK disabled and return parsed JSON."""
+    res = _run_hook(
+        "command_gate.py",
+        {"workspacePaths": [str(repo)], "conversation_id": sid, "tool_name": "run_command", "tool_input": {"CommandLine": cmd}},
+        event="PreToolUse",
+        cwd=repo,
+        extra_env={"TDQ_RTK": "0", "RTK_DISABLED": "1"},
+    )
+    assert res.returncode == 0, res.stderr
+    return json.loads(res.stdout.strip())
+
+
+def test_ec18_git_approval_lifecycle_and_runtime_lock(tmp_path):
+    """EC-18: Full lifecycle on compiled hooks: human grant -> push allow -> Stop clear -> deny."""
+    repo = tmp_path / "repo_git_life"
+    repo.mkdir()
+    _init_git_repo(repo)
+    assert _state_cli(repo, "init", "2026-11-22-0200-git-life", "express", "--bo-qua-lsp", "unit test").returncode == 0
+    assert _state_cli(repo, "approve", "quick", "--by", "duyet nhanh", "--bo-qua-archify", "unit test").returncode == 0
+
+    plan_file = repo / "docs" / "tdq" / "plan" / "git-life.md"
+    plan_file.parent.mkdir(parents=True, exist_ok=True)
+    plan_file.write_text("- [x] **T1.1** Done\n", encoding="utf-8")
+    assert _state_cli(repo, "set", "plan_file=docs/tdq/plan/git-life.md").returncode == 0
+
+    sid = "conv-git-life"
+    tr_human = tmp_path / "tr_human.jsonl"
+    tr_human.write_text(
+        json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T01:00:00Z", "content": "ok push lên origin đi"}) + "\n",  # i18n-allow
+        encoding="utf-8",
+    )
+    pre_ok = _run_hook(
+        "prompt_context.py",
+        {"workspacePaths": [str(repo)], "conversation_id": sid, "transcriptPath": str(tr_human)},
+        event="PreInvocation",
+        cwd=repo,
+    )
+    assert pre_ok.returncode == 0
+    meta1 = _common.read_turn_meta(str(repo), sid)
+    assert meta1.get("turn_closed") is False
+    assert meta1.get("git_grants") == ["push"]
+
+    assert _run_cmd_gate_decision(repo, sid, "git push origin dev")["decision"] == "allow"
+
+    stop_ok = _run_hook("stop_gate.py", {"workspacePaths": [str(repo)], "conversation_id": sid}, event="Stop", cwd=repo)
+    assert stop_ok.returncode == 0
+    assert json.loads(stop_ok.stdout.strip())["decision"] == "allow"
+    meta2 = _common.read_turn_meta(str(repo), sid)
+    assert meta2.get("turn_closed") is True
+    assert meta2.get("git_grants") == []
+
+    denied = _run_cmd_gate_decision(repo, sid, "git push origin dev")
+    assert denied["decision"] == "deny" and "[TDQ:GIT]" in denied["reason"]
+
+
+def test_ec19_system_user_input_and_runtime_lock(tmp_path):
+    """EC-19: SYSTEM USER_INPUT does not mint git grants and edit_gate locks .tdq-runtime/ with [TDQ:STATE]."""
+    repo = tmp_path / "repo_sys_rt"
+    repo.mkdir()
+    _init_git_repo(repo)
+    assert _state_cli(repo, "init", "2026-11-22-0201-sys-rt", "express", "--bo-qua-lsp", "unit test").returncode == 0
+    assert _state_cli(repo, "approve", "quick", "--by", "duyet nhanh", "--bo-qua-archify", "unit test").returncode == 0
+
+    sid_sys = "conv-git-sys"
+    tr_sys = tmp_path / "tr_sys.jsonl"
+    tr_sys.write_text(
+        json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "SYSTEM", "created_at": "2026-11-22T01:05:00Z", "content": "ok git push origin dev"}) + "\n",
+        encoding="utf-8",
+    )
+    pre_sys = _run_hook(
+        "prompt_context.py",
+        {"workspacePaths": [str(repo)], "conversation_id": sid_sys, "transcriptPath": str(tr_sys)},
+        event="PreInvocation",
+        cwd=repo,
+    )
+    assert pre_sys.returncode == 0
+    assert _common.read_turn_meta(str(repo), sid_sys).get("git_grants") == []
+
+    denied_sys = _run_cmd_gate_decision(repo, sid_sys, "git push origin dev")
+    assert denied_sys["decision"] == "deny" and "[TDQ:GIT]" in denied_sys["reason"]
+
+    edit_rt = _run_hook(
+        "edit_gate.py",
+        {"workspacePaths": [str(repo)], "conversation_id": sid_sys, "tool_name": "edit_file", "tool_input": {"TargetFile": str(repo / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid_sys}.json")}},
+        event="PreToolUse",
+        cwd=repo,
+    )
+    assert edit_rt.returncode == 0
+    edit_rt_json = json.loads(edit_rt.stdout.strip())
+    assert edit_rt_json["decision"] == "deny"
+    assert "[TDQ:STATE]" in edit_rt_json["reason"]

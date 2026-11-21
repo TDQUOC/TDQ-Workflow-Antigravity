@@ -486,5 +486,132 @@ class TestEvalHelpers(unittest.TestCase):
         self.assertNotIn("deny", out)
 
 
+class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
+    """Direct unit tests for git safety parser, Step-3b branch helper, and .tdq-runtime/ lock."""
+
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location(
+            "bash_gate_git_mod", os.path.join(HOOKS, "bash_gate.py"))
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = self._tmp.name
+        self.addCleanup(self._tmp.cleanup)
+
+    def test_collect_git_policy_violations_variants(self):
+        self.assertEqual(self.mod.collect_git_policy_violations("git push origin dev"), ["push_needs_approval"])
+        for force_cmd in (
+            "git push --force origin dev",
+            "git push -f origin dev",
+            "git push --force-with-lease origin dev",
+            "git push origin +HEAD:dev",
+        ):
+            with self.subTest(force_cmd=force_cmd):
+                self.assertEqual(self.mod.collect_git_policy_violations(force_cmd), ["force_push_forbidden"])
+        self.assertEqual(self.mod.collect_git_policy_violations("git reset --hard HEAD~1"), ["reset_hard_needs_approval"])
+        self.assertEqual(self.mod.collect_git_policy_violations("git clean -fd"), ["clean_force_needs_approval"])
+        self.assertEqual(
+            self.mod.collect_git_policy_violations('git commit -m "feat: x" -m "Co-Authored-By: Claude <noreply@anthropic.com>"'),
+            ["co_authored_trailer"],
+        )
+        self.assertEqual(
+            self.mod.collect_git_policy_violations('bash -c "git -C repo push --force origin dev"'),
+            ["force_push_forbidden"],
+        )
+        self.assertEqual(
+            self.mod.collect_git_policy_violations("git push origin dev && git reset --hard HEAD~1"),
+            ["push_needs_approval", "reset_hard_needs_approval"],
+        )
+        self.assertEqual(self.mod.collect_git_policy_violations('py -3 scripts/skill_inventory.py --loc "hook git push"'), [])
+        self.assertEqual(self.mod.collect_git_policy_violations('git commit -m "docs: git push"'), [])
+
+    def test_inspect_git_command_safety_priority_and_false_positives(self):
+        self.assertEqual(self.mod.inspect_git_command_safety("git push origin dev"), "push_needs_approval")
+        self.assertEqual(self.mod.inspect_git_command_safety("git push --force origin dev"), "force_push_forbidden")
+        self.assertEqual(self.mod.inspect_git_command_safety("git reset --hard HEAD~1"), "reset_hard_needs_approval")
+        self.assertEqual(self.mod.inspect_git_command_safety("git clean -fd"), "clean_force_needs_approval")
+        self.assertEqual(
+            self.mod.inspect_git_command_safety('git push origin dev && git commit -m "x" -m "Co-Authored-By: Claude"'),
+            "co_authored_trailer",
+        )
+        self.assertEqual(
+            self.mod.inspect_git_command_safety("git push origin dev && git push --force origin dev"),
+            "force_push_forbidden",
+        )
+        self.assertIsNone(self.mod.inspect_git_command_safety('py -3 scripts/skill_inventory.py --loc "hook git push"'))
+        self.assertIsNone(self.mod.inspect_git_command_safety('git commit -m "docs: git push"'))
+
+    def test_is_pure_intake_branch_create_valid_and_rejected(self):
+        for valid in (
+            "git switch -c feature/demo",
+            "git switch --create bugfix/fix-1",
+            "git checkout -b hotfix/patch-2",
+            "git switch -c chore/cleanup_3",
+            "git checkout -b docs/spec-notes",
+        ):
+            with self.subTest(valid=valid):
+                self.assertTrue(self.mod.is_pure_intake_branch_create(valid))
+
+        for invalid in (
+            "git switch -c feature/demo; echo a > src/x.py",
+            "git switch -c feature/demo && git status",
+            "git switch -c claude/bad",
+            "git checkout -b gemini-x",
+            "git switch -c release/v1",
+            "git switch -c demo",
+            "git switch -c feature/demo > out.txt",
+            'bash -c "git switch -c feature/demo"',
+        ):
+            with self.subTest(invalid=invalid):
+                self.assertFalse(self.mod.is_pure_intake_branch_create(invalid))
+
+    def test_tdq_runtime_state_detection_slash_and_backslash(self):
+        for cmd in (
+            "echo '{}' > docs/tdq/.tdq-runtime/turn-meta-s1.json",
+            r"echo '{}' > docs\tdq\.tdq-runtime\turn-meta-s1.json",
+        ):
+            with self.subTest(claude_cmd=cmd):
+                payload = load_fixture("bash_cmd.json", cwd=self.cwd, session_id="rt-cl-" + cmd[:18])
+                payload["tool_input"] = {"command": cmd}
+                rc, out, _ = run_hook("bash_gate.py", payload)
+                self.assertEqual(rc, 0)
+                dec, ctx = decision(out)
+                self.assertEqual(dec, "allow")
+                self.assertIn("TDQ:STATE", ctx)
+
+        for cmd in (
+            "echo '{}' > docs/tdq/.tdq-runtime/turn-meta-s1.json",
+            r"echo '{}' > docs\tdq\.tdq-runtime\turn-meta-s1.json",
+            r"Set-Content docs\tdq\.tdq-runtime\turns-s1.jsonl '{}'",
+        ):
+            with self.subTest(agy_cmd=cmd):
+                payload = {
+                    "cwd": self.cwd,
+                    "conversationId": "rt-agy-" + str(abs(hash(cmd)) % 10000),
+                    "hookEventName": "PreToolUse",
+                    "toolName": "run_command",
+                    "toolInput": {"CommandLine": cmd},
+                }
+                rc, out, _ = run_hook("bash_gate.py", payload)
+                self.assertEqual(rc, 0)
+                data = json.loads(out)
+                self.assertEqual(data.get("decision"), "deny")
+                self.assertIn("STATE", data.get("reason", ""))
+
+        read_payload = {
+            "cwd": self.cwd,
+            "conversationId": "rt-agy-read",
+            "hookEventName": "PreToolUse",
+            "toolName": "run_command",
+            "toolInput": {"CommandLine": r"cat docs\tdq\.tdq-runtime\turn-meta-s1.json"},
+        }
+        rc_read, out_read, _ = run_hook("bash_gate.py", read_payload)
+        self.assertEqual(rc_read, 0)
+        self.assertNotIn("deny", out_read)
+
+
 if __name__ == "__main__":
     unittest.main()
