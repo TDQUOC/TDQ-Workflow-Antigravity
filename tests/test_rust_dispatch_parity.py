@@ -1326,3 +1326,22 @@ def test_qc2_fd_redirect_cd_runtime_and_herestring_parity(tmp_path: Path) -> Non
         _assert_cmd_deny_git(r_ctx, p_ctx, "c-qc2-hs", hs_cmd)
 
 
+def test_qc3_comment_injection_and_herestring_delimiter_parity(tmp_path: Path) -> None:
+    """Verify QC3 comment quote neutralization and safe PS comment parity on real binaries."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "qc3", "2026-11-22-0401-qc3sec")
+    for bad_cmd in (
+        "Write-Output ok # @'\ngit push --force origin dev\n'@\n",
+        "<# ' #> git push --force origin dev # '",
+        'cmd /c "echo ok # & git push --force origin dev"',
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-qc3-git", bad_cmd)
+
+    r_st, p_st = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc3-st", "<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json"))
+    assert_full_json_parity(r_st, p_st, expected_code="STATE")
+    assert r_st["decision"] == "deny"
+
+    r_ok, p_ok = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc3-ok", "<# note #> echo ok"))
+    assert_full_json_parity(r_ok, p_ok)
+    assert r_ok == {"decision": "allow"}
+
+

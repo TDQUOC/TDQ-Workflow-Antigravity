@@ -673,6 +673,18 @@ class TestAgySmartHardeningStaged(unittest.TestCase):
         self.assertEqual(parsed(out_ed).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
         self.assertIn("TDQ:STATE", out_ed)
 
+    def test_qc3_agy_pretooluse_git_dir_and_block_comment_guards(self):
+        for cmd, code in (
+            ("git --git-dir /tmp/g switch -C claude-x", "TDQ:GIT"),
+            ("git --work-tree /tmp/w checkout -B gemini-x", "TDQ:GIT"),
+            ("<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json", "TDQ:STATE"),
+        ):
+            with self.subTest(cmd=cmd):
+                rc, out, _ = agy("agy_pretooluse_gate.py", {"tool_input": {"command": cmd}})
+                self.assertEqual(rc, 0)
+                self.assertEqual(parsed(out).get("decision"), "deny")
+                self.assertIn(code, parsed(out).get("reason", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

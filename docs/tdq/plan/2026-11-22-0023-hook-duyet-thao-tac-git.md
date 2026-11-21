@@ -244,6 +244,40 @@ Trạng thái plan: CHỜ DUYỆT
   - Logic: Add unit, hook, and real-binary parity tests covering all 4 CRITICAL/HIGH blocking issues and 3 LOW residuals; run all 6 core pytest suites, `cargo test`, `i18n_check`, and `ruff`.
   - Tiêu chí & Assert: All 6 core pytest suites and `cargo test` exit `0` with `0 fail`, `i18n_check` and `ruff` delta `+0`
 
+## QC vòng 3 — fix
+
+- [x] **QC3.1** (e10m) Neutralize unquoted `#`/`<#...#>` comment quotes and enforce `@'`/`@"` value delimiters in Rust `command_parser.rs` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+  - Chạm: `hooks/rust/tdq-dispatch/src/command_parser.rs`
+  - Cần: Không
+  - Neo & Công cụ: `edit_file` on `command_parser.rs` (`strip_powershell_herestrings`, `neutralize_comment_quotes`, `split_shell_segments`, `mask_quoted_shell_ops`, `tokenize_command`, `extract_command_substitutions`)
+  - Trước → Sau: Comments `# @'\n` or `<# ' #>` opened false here-strings or poisoned quotes → Single-pass unquoted comment quote neutralization plus `@'`/`@"` delimiter validation across Rust parsers
+  - Logic: Add `is_comment_delim`, `is_herestring_delim`, and `neutralize_comment_quotes`; handle unquoted `<#...#>` and `#...\n` inside `strip_powershell_herestrings` before `@'`/`@"` matching and call `neutralize_comment_quotes` at lexer/splitter boundaries.
+  - Tiêu chí & Assert: `cargo test` passes `0 fail`, catching `Write-Output ok # @'\n...`, `<# ' #> ...`, `cmd /c "echo # & ..."`, while keeping safe PS here-strings allowed
+
+- [x] **QC3.2** (e10m) Mirror comment neutralization and fix `--git-dir`/`--work-tree` regex in Python `bash_gate.py` and `agy_pretooluse_gate.py` — Test: `py -3 -X utf8 -m pytest tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q`
+  - Chạm: `hooks/scripts/bash_gate.py`, `hooks/scripts/agy_pretooluse_gate.py`
+  - Cần: `QC3.1`
+  - Neo & Công cụ: `edit_file` on `hooks/scripts/bash_gate.py` and `hooks/scripts/agy_pretooluse_gate.py`
+  - Trước → Sau: Python lexers lacked `#`/`<#...#>` neutralization and `agy_pretooluse_gate.py` missed leading `-` on `git-dir`/`work-tree` → 1-1 comment quote neutralization across Python gates and fixed `--git-dir`/`--work-tree` regex
+  - Logic: Mirror `QC3.1` `_neutralize_comment_quotes` and delimiter checks in `bash_gate.py` and `agy_pretooluse_gate.py`, and fix `-(?:[Cc]|-git-dir|-work-tree)` in `_branch_names`.
+  - Tiêu chí & Assert: `pytest tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q` passes `0 fail`, `i18n_check` and `ruff` delta `+0`
+
+- [x] **QC3.3** (e8m) Rebuild release `tdq-dispatch.exe` and repackage `plugins/tdq-workflow-agy/` in-repo — Test: `py -3 -X utf8 tools/build_agy_plugin.py --upstream .`
+  - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`, `plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py`, `plugins/tdq-workflow-agy/manifest.json`
+  - Cần: `QC3.1`, `QC3.2`
+  - Neo & Công cụ: `cargo build --release` + `tools/build_agy_plugin.py --upstream .` + `agy plugin validate --strict --json`
+  - Trước → Sau: Round-2 plugin binary & scripts lacked comment neutralization → Clean in-repo rebuild with matching SHA-256 and `0` strict validation findings
+  - Logic: Compile release `tdq-dispatch.exe`, run `tools/build_agy_plugin.py --upstream .`, verify SHA-256 parity and strict plugin validation without modifying host install or `main`.
+  - Tiêu chí & Assert: `agy plugin validate --strict --json` returns `"findings": []`, SHA-256 matches `target/release/tdq-dispatch.exe`
+
+- [x] **QC3.4** (e10m) Add QC3 comment-injection and `--git-dir` adversarial parity tests and verify 6 core pytest suites plus cargo test — Test: `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py tests/test_gate_guidance.py tests/test_agy_plugin_validate.py -q`
+  - Chạm: `tests/test_bash_gate.py`, `tests/test_agy_hooks.py`, `tests/test_rust_dispatch_parity.py`
+  - Cần: `QC3.3`
+  - Neo & Công cụ: `edit_file` adding QC3 regression and parity vectors in the 3 test modules
+  - Trước → Sau: Test suites lacked `# @'\n`, `<# ' #>`, and `--git-dir` comment/flag bypass assertions → Full round-3 parity suite exercising Rust binary and fallback Python
+  - Logic: Add adversarial test functions across `test_bash_gate.py`, `test_agy_hooks.py`, and `test_rust_dispatch_parity.py`, then run all 6 core pytest suites, `cargo test`, `i18n_check`, and `ruff`.
+  - Tiêu chí & Assert: All 6 core pytest suites and `cargo test` exit `0` with `0 fail`, `i18n_check` and `ruff` delta `+0`
+
 ## Cụm song song
 
 Phân tích đồ thị phụ thuộc (`Cần:`) cho thấy 7 task có tập `Chạm:` hoàn toàn tách rời nhau (0 file trùng), xếp thành 5 đợt:

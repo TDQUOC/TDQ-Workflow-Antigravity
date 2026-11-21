@@ -140,6 +140,7 @@ _PS_WRITE_PATTERN = re.compile(
 
 def _split_shell_segments(cmd, seps=(";", "&", "|", "\n")):
     """Split a shell command on separators only when outside single/double quotes."""
+    cmd = _neutralize_comment_quotes(cmd)
     segments, buf = [], []
     in_single = in_double = escaped = False
     for ch in cmd:
@@ -170,6 +171,7 @@ def _split_shell_segments(cmd, seps=(";", "&", "|", "\n")):
 
 def _mask_quoted_shell_ops(part):
     """Replace shell redirection/separator chars inside quotes so `>` in strings is not misread."""
+    part = _neutralize_comment_quotes(part)
     out = []
     in_single = in_double = escaped = False
     for ch in part:
@@ -217,6 +219,7 @@ def _scan_paren_body(part, start_inner):
 
 
 def _extract_command_substitutions(part):
+    part = _neutralize_comment_quotes(part)
     out, idx, n = [], 0, len(part)
     in_s = in_d = esc = False
     while idx < n:
@@ -410,21 +413,65 @@ def _ps_herestring_end(cmd, body_start, quote):
     return -1
 
 
-def _strip_powershell_herestrings(cmd):
-    """Strip unquoted static PowerShell here-strings while keeping quoted/non-PS commands intact."""
-    if not _has_ps_herestring_context(cmd):
-        return cmd
+_COMMENT_DELIMS = frozenset(" \t\r\n;|&({")
+_HERESTRING_DELIMS = frozenset(" \t\r\n=(,;|&{+:")
+
+
+def _try_neutralize_comment_step(cmd, i):
+    if cmd.startswith("<#", i):
+        end_idx = cmd.find("#>", i + 2)
+        if end_idx != -1:
+            inner = "".join(" " if c in "'\"@<>" else c for c in cmd[i + 2:end_idx])
+            return f"  {inner}  ", end_idx + 2
+    if cmd[i] == "#" and (i == 0 or cmd[i - 1] in _COMMENT_DELIMS):
+        nl = cmd.find("\n", i)
+        j = len(cmd) if nl == -1 else nl
+        return "".join(" " if c in "'\"@" else c for c in cmd[i:j]), j
+    return None, i
+
+
+def _neutralize_comment_quotes(cmd):
     out, i, n = [], 0, len(cmd)
     in_s = in_d = esc = False
     while i < n:
-        if not in_s and not in_d and cmd[i:i + 2] in ("@'", '@"'):
-            q = cmd[i + 1]
-            step = 3 if cmd[i + 2:i + 3] == "\n" else (4 if cmd[i + 2:i + 4] == "\r\n" else 0)
-            if step:
-                after = _ps_herestring_end(cmd, i + step, q)
-                if after != -1:
-                    body = cmd[i + step:max(i + step, after - 3)]
-                    if _herestring_body_safe_for_strip(body, q):
+        if not in_s and not in_d:
+            rep, next_i = _try_neutralize_comment_step(cmd, i)
+            if rep is not None:
+                out.append(rep)
+                i = next_i
+                continue
+        ch = cmd[i]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s and in_d:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _strip_powershell_herestrings(cmd):
+    """Strip static PS here-strings in PS context and neutralize unquoted comment quotes everywhere."""
+    ps_ctx = _has_ps_herestring_context(cmd)
+    out, i, n = [], 0, len(cmd)
+    in_s = in_d = esc = False
+    while i < n:
+        if not in_s and not in_d:
+            rep, next_i = _try_neutralize_comment_step(cmd, i)
+            if rep is not None:
+                out.append(rep)
+                i = next_i
+                continue
+            if ps_ctx and (i == 0 or cmd[i - 1] in _HERESTRING_DELIMS) and cmd[i:i + 2] in ("@'", '@"'):
+                q = cmd[i + 1]
+                step = 3 if cmd[i + 2:i + 3] == "\n" else (4 if cmd[i + 2:i + 4] == "\r\n" else 0)
+                if step:
+                    after = _ps_herestring_end(cmd, i + step, q)
+                    if after != -1 and _herestring_body_safe_for_strip(cmd[i + step:max(i + step, after - 3)], q):
                         out.append(" ")
                         i = after
                         continue
@@ -444,6 +491,7 @@ def _strip_powershell_herestrings(cmd):
 
 def _tokenize_command(cmd):
     """Tokenize shell command honoring quotes and preserving empty quoted tokens."""
+    cmd = _neutralize_comment_quotes(cmd)
     tokens, current = [], []
     in_single = in_double = had_token = False
     i, n = 0, len(cmd)

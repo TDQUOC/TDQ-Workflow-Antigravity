@@ -667,6 +667,20 @@ class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
             with self.subTest(hs_bypass=hs_bypass):
                 self.assertEqual(self.mod.inspect_git_command_safety(hs_bypass), "force_push_forbidden")
 
+    def test_qc3_comment_neutralization_and_herestring_delimiters(self):
+        for exploit_cmd in (
+            "Write-Output ok # @'\ngit push --force origin dev\n'@\n",
+            "Write-Output ok #@'\ngit push --force origin dev\n'@\n",
+            "<# ' #> git push --force origin dev # '",
+            'pwsh -c "<# \' #> git push --force origin dev"',
+            'cmd /c "echo ok # & git push --force origin dev"',
+        ):
+            with self.subTest(exploit_cmd=exploit_cmd):
+                self.assertEqual(self.mod.inspect_git_command_safety(exploit_cmd), "force_push_forbidden")
+        self.assertTrue(self.mod.mutates_tdq_state("<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json"))
+        self.assertFalse(self.mod.mutates_tdq_state("<# note #> echo ok"))
+        self.assertIsNone(self.mod.inspect_git_command_safety("$note = @'\n# comment\ngit push --force origin dev\n'@\nWrite-Host $note"))
+
 
 if __name__ == "__main__":
     unittest.main()

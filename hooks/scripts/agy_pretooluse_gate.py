@@ -181,7 +181,43 @@ _AGY_WRITE_OP_RE = re.compile(
 )
 
 
+_AGY_COMMENT_DELIMS = frozenset(" \t\r\n;|&({")
+
+
+def _neutralize_agy_comment_quotes(cmd):
+    out, i, n = [], 0, len(cmd)
+    in_s = in_d = esc = False
+    while i < n:
+        if not in_s and not in_d:
+            if cmd.startswith("<#", i):
+                end_idx = cmd.find("#>", i + 2)
+                if end_idx != -1:
+                    inner = "".join(" " if c in "'\"@<>" else c for c in cmd[i + 2:end_idx])
+                    out.append(f"  {inner}  ")
+                    i = end_idx + 2
+                    continue
+            if cmd[i] == "#" and (i == 0 or cmd[i - 1] in _AGY_COMMENT_DELIMS):
+                nl = cmd.find("\n", i)
+                j = n if nl == -1 else nl
+                out.append("".join(" " if c in "'\"@" else c for c in cmd[i:j]))
+                i = j
+                continue
+        ch = cmd[i]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s and in_d:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
 def _split_agy_segments(cmd):
+    cmd = _neutralize_agy_comment_quotes(cmd)
     segs, buf = [], []
     in_s = in_d = esc = False
     for ch in cmd:
@@ -251,6 +287,7 @@ _AGY_REDIR_RE = re.compile(r"(?<![<=!-])(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
 
 
 def _mask_agy_quoted_ops(part):
+    part = _neutralize_agy_comment_quotes(part)
     out, in_s, in_d, esc = [], False, False, False
     for ch in part:
         if esc:
@@ -285,9 +322,10 @@ def _has_agy_state_redir(col, seen_cd_tdq, seen_cd_runtime):
 
 
 def _branch_names(cmd, _depth=0):
+    cmd = _neutralize_agy_comment_quotes(cmd)
     names = []
     norm = re.sub(
-        r"\bgit\b(?:\s+(?:-(?:[Cc]|git-dir|work-tree)\s+(?:\"[^\"]*\"|'[^']*'|\S+)|--(?:git-dir|work-tree)=\S+))+",
+        r"\bgit\b(?:\s+(?:-(?:[Cc]|-git-dir|-work-tree)\s+(?:\"[^\"]*\"|'[^']*'|\S+)|--(?:git-dir|work-tree)=\S+))+",
         "git",
         cmd,
     )

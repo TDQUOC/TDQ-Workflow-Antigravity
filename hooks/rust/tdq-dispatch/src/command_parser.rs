@@ -52,25 +52,87 @@ fn herestring_body_safe_for_strip(body: &str, quote: u8) -> bool {
     !out_of_quote
 }
 
-/// Clean unquoted static PowerShell here-strings (`@'...'@` / safe `@"..."@`) in PS context only.
-pub fn strip_powershell_herestrings(cmd: &str) -> String {
-    if !has_ps_herestring_context(cmd) {
-        return cmd.to_string();
+fn is_comment_delim(prev: Option<u8>) -> bool {
+    matches!(prev, None | Some(b' ' | b'\t' | b'\r' | b'\n' | b';' | b'|' | b'&' | b'(' | b'{'))
+}
+
+fn is_herestring_delim(prev: Option<u8>) -> bool {
+    matches!(prev, None | Some(b' ' | b'\t' | b'\r' | b'\n' | b'=' | b'(' | b',' | b';' | b'|' | b'&' | b'{' | b'+' | b':'))
+}
+
+fn try_neutralize_comment_step(cmd: &str, i: usize, prev: Option<u8>, out: &mut String) -> Option<usize> {
+    let bytes = cmd.as_bytes();
+    if bytes.get(i..i + 2) == Some(b"<#") {
+        if let Some(rel) = cmd[i + 2..].find("#>") {
+            out.push_str("  ");
+            for c in cmd[i + 2..i + 2 + rel].chars() {
+                out.push(if matches!(c, '\'' | '"' | '@' | '<' | '>') { ' ' } else { c });
+            }
+            out.push_str("  ");
+            return Some(i + 2 + rel + 2);
+        }
     }
+    if bytes.get(i) == Some(&b'#') && is_comment_delim(prev) {
+        let mut j = i;
+        for c in cmd[i..].chars() {
+            if c == '\n' {
+                break;
+            }
+            out.push(if matches!(c, '\'' | '"' | '@') { ' ' } else { c });
+            j += c.len_utf8();
+        }
+        return Some(j);
+    }
+    None
+}
+
+fn neutralize_comment_quotes(cmd: &str) -> String {
     let bytes = cmd.as_bytes();
     let mut out = String::with_capacity(cmd.len());
     let (mut i, mut in_s, mut in_d, mut esc) = (0, false, false, false);
     while i < bytes.len() {
-        if !in_s && !in_d && i + 2 < bytes.len() && bytes[i] == b'@' && matches!(bytes[i + 1], b'\'' | b'"') {
-            let q = bytes[i + 1];
-            let step = if bytes[i + 2] == b'\n' { 3 } else if bytes[i + 2] == b'\r' && bytes.get(i + 3) == Some(&b'\n') { 4 } else { 0 };
-            if step > 0 {
-                if let Some(after) = ps_herestring_end(bytes, i + step, q) {
-                    let body_end = after.saturating_sub(3).max(i + step);
-                    if herestring_body_safe_for_strip(&cmd[i + step..body_end], q) {
-                        out.push(' ');
-                        i = after;
-                        continue;
+        let prev = i.checked_sub(1).and_then(|k| bytes.get(k).copied());
+        if !in_s && !in_d {
+            if let Some(next_i) = try_neutralize_comment_step(cmd, i, prev, &mut out) {
+                i = next_i;
+                continue;
+            }
+        }
+        let ch = cmd[i..].chars().next().unwrap_or('\0');
+        if esc { esc = false; }
+        else if ch == '\\' && !in_s && in_d { esc = true; }
+        else if ch == '\'' && !in_d { in_s = !in_s; }
+        else if ch == '"' && !in_s { in_d = !in_d; }
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
+}
+
+/// Clean static PS here-strings in PS context and neutralize unquoted comment quotes everywhere.
+pub fn strip_powershell_herestrings(cmd: &str) -> String {
+    let ps_ctx = has_ps_herestring_context(cmd);
+    let bytes = cmd.as_bytes();
+    let mut out = String::with_capacity(cmd.len());
+    let (mut i, mut in_s, mut in_d, mut esc) = (0, false, false, false);
+    while i < bytes.len() {
+        let prev = i.checked_sub(1).and_then(|k| bytes.get(k).copied());
+        if !in_s && !in_d {
+            if let Some(next_i) = try_neutralize_comment_step(cmd, i, prev, &mut out) {
+                i = next_i;
+                continue;
+            }
+            if ps_ctx && is_herestring_delim(prev) && i + 2 < bytes.len() && bytes[i] == b'@' && matches!(bytes[i + 1], b'\'' | b'"') {
+                let q = bytes[i + 1];
+                let step = if bytes[i + 2] == b'\n' { 3 } else if bytes[i + 2] == b'\r' && bytes.get(i + 3) == Some(&b'\n') { 4 } else { 0 };
+                if step > 0 {
+                    if let Some(after) = ps_herestring_end(bytes, i + step, q) {
+                        let body_end = after.saturating_sub(3).max(i + step);
+                        if herestring_body_safe_for_strip(&cmd[i + step..body_end], q) {
+                            out.push(' ');
+                            i = after;
+                            continue;
+                        }
                     }
                 }
             }
@@ -88,10 +150,11 @@ pub fn strip_powershell_herestrings(cmd: &str) -> String {
 
 /// Tokenize command string into arguments, preserving empty quoted strings (`""`, `''`).
 pub fn tokenize_command(cmd: &str) -> Vec<String> {
+    let cleaned = neutralize_comment_quotes(cmd);
     let mut tokens = Vec::new();
     let mut current = String::new();
     let (mut in_single, mut in_double, mut had_token) = (false, false, false);
-    let mut chars = cmd.chars().peekable();
+    let mut chars = cleaned.chars().peekable();
     while let Some(c) = chars.next() {
         match c {
             '\'' if !in_double => {
@@ -503,10 +566,11 @@ pub fn is_pure_intake_branch_create(raw_cmd: &str) -> bool {
 }
 
 fn split_shell_segments(cmd: &str, split_pipe_nl: bool) -> Vec<String> {
+    let cleaned = neutralize_comment_quotes(cmd);
     let mut segments = Vec::new();
     let mut buf = String::new();
     let (mut in_single, mut in_double, mut escaped) = (false, false, false);
-    for ch in cmd.chars() {
+    for ch in cleaned.chars() {
         if escaped {
             buf.push(ch);
             escaped = false;
@@ -544,9 +608,10 @@ fn split_shell_segments(cmd: &str, split_pipe_nl: bool) -> Vec<String> {
 }
 
 fn mask_quoted_shell_ops(part: &str) -> String {
-    let mut out = String::with_capacity(part.len());
+    let cleaned = neutralize_comment_quotes(part);
+    let mut out = String::with_capacity(cleaned.len());
     let (mut in_single, mut in_double, mut escaped) = (false, false, false);
-    for ch in part.chars() {
+    for ch in cleaned.chars() {
         if escaped {
             let masked = (in_single || in_double) && matches!(ch, ';' | '|' | '&' | '>' | '<' | '\n');
             out.push(if masked { '_' } else { ch });
@@ -603,6 +668,8 @@ fn scan_paren_body(part: &str, start_inner: usize) -> Option<(String, usize)> {
 }
 
 fn extract_command_substitutions(part: &str) -> Vec<String> {
+    let cleaned = neutralize_comment_quotes(part);
+    let part = cleaned.as_str();
     let mut out = Vec::new();
     let (mut idx, mut in_s, mut in_d, mut esc) = (0usize, false, false, false);
     while idx < part.len() {
@@ -1441,6 +1508,31 @@ mod tests {
         }
         assert_eq!(
             inspect_git_policy("$note = @'\ngit push --force origin dev\n'@\nWrite-Host $note"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_qc3_comment_neutralization_and_herestring_delimiters() {
+        for exploit_cmd in &[
+            "Write-Output ok # @'\ngit push --force origin dev\n'@\n",
+            "Write-Output ok #@'\ngit push --force origin dev\n'@\n",
+            "<# ' #> git push --force origin dev # '",
+            r#"pwsh -c "<# ' #> git push --force origin dev""#,
+            r#"cmd /c "echo ok # & git push --force origin dev""#,
+        ] {
+            assert_eq!(
+                inspect_git_policy(exploit_cmd),
+                Some(GitPolicyViolation::ForcePushForbidden),
+                "QC3 expected force push caught for {}",
+                exploit_cmd
+            );
+        }
+        assert!(mutates_tdq_state("<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json"));
+        assert!(!mutates_tdq_state("<# safe note #> echo ok"));
+        assert!(!is_shell_mutator("<# safe note #> echo ok"));
+        assert_eq!(
+            inspect_git_policy("$note = @'\n# comment\ngit push --force origin dev\n'@\nWrite-Host $note"),
             None
         );
     }
