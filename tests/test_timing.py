@@ -247,7 +247,9 @@ class BangThoiGian(TempRepo):
             self.cwd, "show", "--now", "2026-08-15T10:00:00+07:00",
             "--transcript-dir", os.path.join(self.cwd, "khong-ton-tai"))
         self.assertEqual(rc, 0)
-        self.assertIn("—", out)
+        self.assertIn("| Phase | Wall clock | Times entered |", out)
+        self.assertNotIn("— [unavailable]", out)
+        self.assertIn("Host metrics unavailable (5 hidden:", out)
         self.assertIn("transcript", (out + err).lower())
 
     def test_khong_co_request_thi_noi_ro_va_thoat_0(self):
@@ -633,6 +635,82 @@ class TimingV2(TempRepo):
         self.assertIn("— [unavailable]", markdown)
         self.assertIn("model_giay=null", markdown)
         self.assertNotIn("\n", status)
+
+    def test_all_unavailable_metrics_collapses_table_columns(self):
+        data = self.measure([])
+        decoded = json.loads(json.dumps(data))
+        self.assertEqual(decoded["schema_version"], 2)
+        self.assertEqual(set(decoded["metrics"]), set(tdq_timing.METRIC_KEYS))
+        for key in tdq_timing.METRIC_KEYS:
+            self.assertEqual(decoded["metrics"][key]["quality"], "unavailable")
+
+        md = tdq_timing.bang_markdown(decoded)
+        self.assertIn("| Phase | Wall clock | Times entered |", md)
+        self.assertNotIn("— [unavailable]", md)
+        for label in tdq_timing.METRIC_LABELS:
+            self.assertNotIn(label, md)
+        self.assertIn("model_giay=null", md)
+        self.assertIn("Transcript attribution:", md)
+        self.assertIn(
+            "Host metrics unavailable (5 hidden: api_request_seconds, tool_call_seconds, "
+            "background_job_seconds, observed_union_seconds, unattributed_seconds):",
+            md,
+        )
+        self.assertIn("| analyze | 10s | 1 |", md)
+        self.assertIn("| implement | 10s | 1 |", md)
+        self.assertIn("| Total | 20s |  |", md)
+        self.assertIn("## Agent Role Telemetry", md)
+
+    def test_all_unavailable_cli_logs_and_preserves_json_v2(self):
+        self.init_cli_state()
+        args = ("show", "--transcript-dir", str(self.logs), "--now", at_second(20))
+        rc_on, out_on, err_on = helper.run_timing_cli(
+            self.cwd, *args, env={"TDQ_LOG": "1"}
+        )
+        rc_off, out_off, err_off = helper.run_timing_cli(
+            self.cwd, *args, env={"TDQ_LOG": "0"}
+        )
+        self.assertEqual(rc_on, 0, err_on)
+        self.assertEqual(rc_off, 0, err_off)
+        self.assertEqual(out_on, out_off)
+        self.assertEqual(err_off, "")
+        self.assertRegex(err_on, r"\[\d{4}-\d{2}-\d{2}T")
+        self.assertIn("unavailable host metric columns", err_on)
+        self.assertIn("| Phase | Wall clock | Times entered |", out_on)
+        self.assertNotIn("— [unavailable]", out_on)
+
+        rc_js, out_js, err_js = helper.run_timing_cli(
+            self.cwd, *args, "--json", env={"TDQ_LOG": "0"}
+        )
+        self.assertEqual(rc_js, 0, err_js)
+        self.assertEqual(err_js, "")
+        payload = json.loads(out_js)
+        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(set(payload["metrics"]), set(tdq_timing.METRIC_KEYS))
+        for key in tdq_timing.METRIC_KEYS:
+            self.assertEqual(payload["metrics"][key]["quality"], "unavailable")
+
+    def test_invalid_window_and_partial_codex_markdown_behavior(self):
+        self.state["started_at"] = None
+        invalid_data = self.measure([])
+        invalid_md = tdq_timing.bang_markdown(invalid_data)
+        self.assertIn("| Phase | Wall clock | Times entered |", invalid_md)
+        self.assertIn("| Total | — |  |", invalid_md)
+        self.assertNotIn("— [unavailable]", invalid_md)
+        self.assertIn("Host metrics unavailable (5 hidden:", invalid_md)
+
+        self.state["started_at"] = at_second(0)
+        codex_records = [
+            {"type": "session_meta", "payload": {"id": "codex", "cwd": self.cwd}},
+            {"type": "response_item", "timestamp": at_second(1),
+             "payload": {"type": "function_call", "call_id": "call-1"}},
+            {"type": "response_item", "timestamp": at_second(6),
+             "payload": {"type": "function_call_output", "call_id": "call-1"}},
+        ]
+        partial_md = tdq_timing.bang_markdown(self.measure(codex_records))
+        for label in tdq_timing.METRIC_LABELS:
+            self.assertIn(label, partial_md)
+        self.assertIn("5s [complete]", partial_md)
 
     def test_status_includes_current_phase_wall_and_observed_quality(self):
         data = self.measure(self.api(0, 10) + self.tool(5, 15))
