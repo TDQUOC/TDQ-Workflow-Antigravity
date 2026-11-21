@@ -64,7 +64,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P1 — Vá Registry Tool Subagent & Test Khóa Âm Tính
 
-- [ ] **T1.1** (e6m) Cập nhật danh sách tool chuẩn registry Antigravity `_READONLY_TOOLS` và `_WRITER_TOOLS` tại `tools/patches/skills_and_agents.py:28-47`, sửa lặp `(`Write`/`Edit`/`write_file`)` ở `agents/tdq-explorer.md:15` thành `(`Write`/`Edit`)`, và nâng cấp `tests/test_agent_frontmatter.py:34,120-144` với `AGY_DISCOVERY_TOOLS`, `AGY_ALLOWED_TOOLS`, `AGY_FORBIDDEN_TOOLS` kèm test âm tính — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py -k "not test_built_agy_agents" -q`
+- [x] **T1.1** (e6m) Cập nhật danh sách tool chuẩn registry Antigravity `_READONLY_TOOLS` và `_WRITER_TOOLS` tại `tools/patches/skills_and_agents.py:28-47`, sửa lặp `(`Write`/`Edit`/`write_file`)` ở `agents/tdq-explorer.md:15` thành `(`Write`/`Edit`)`, và nâng cấp `tests/test_agent_frontmatter.py:34,120-144` với `AGY_DISCOVERY_TOOLS`, `AGY_ALLOWED_TOOLS`, `AGY_FORBIDDEN_TOOLS` kèm test âm tính — Test: `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py -k "not test_built_agy_agents" -q`
   - Dùng: `agy-customizations`, `migrate-agent-settings`, `antigravity-guide`, `plugin`
   - Để: đối chiếu bảng ánh xạ tên tool subagent hợp lệ và chuẩn frontmatter/plugin agent của Antigravity 2.0 (`read_file`, `edit_file`, `write_file`, `run_command`, `manage_task`, `search_web`, `send_message`), nạp trước bước đỏ
   - Ra: `tools/patches/skills_and_agents.py`, `agents/tdq-explorer.md`, `tests/test_agent_frontmatter.py` khớp chuẩn registry Antigravity
@@ -84,7 +84,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P2 — Đồng bộ Version `0.103.1` & Biên dịch Rust 3 OS Song song
 
-- [ ] **T2.1** (e5m) Nâng phiên bản lên `0.103.1` trong `.claude-plugin/plugin.json:4`, `.codex-plugin/plugin.json:3`, `README.md:3,144,237`, `UPSTREAM-TRACE.md:24` và chèn mục `## 0.103.1 — 2026-11-21` lên đầu `CHANGELOG.md:5` (giữ `CHANGELOG.md <= 500` dòng trên nền `461` dòng, không cần tách archive) — Test: `py -3 -X utf8 -m pytest tests/test_docs_consistency.py tests/test_adapter_host.py -q && py -3 -X utf8 scripts/doc_lint.py CHANGELOG.md`
+- [x] **T2.1** (e5m) Nâng phiên bản lên `0.103.1` trong `.claude-plugin/plugin.json:4`, `.codex-plugin/plugin.json:3`, `README.md:3,144,237`, `UPSTREAM-TRACE.md:24` và chèn mục `## 0.103.1 — 2026-11-21` lên đầu `CHANGELOG.md:5` (giữ `CHANGELOG.md <= 500` dòng trên nền `461` dòng, không cần tách archive) — Test: `py -3 -X utf8 -m pytest tests/test_docs_consistency.py tests/test_adapter_host.py -q && py -3 -X utf8 scripts/doc_lint.py CHANGELOG.md`
   - Req: `§1, §2#2, §3c B2` · Ngoài phạm vi: `GIỮ NGUYÊN` `description` khớp giữa Claude và Codex manifest, giữ số đếm `skills/` (`11`), `agents/` (`8`), `hooks/` (`17`), `scripts/` (`73`), `docs/CHANGELOG-archive-3.md`
   - Chạm: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `README.md`, `UPSTREAM-TRACE.md`, `CHANGELOG.md`
   - Cần: Không
@@ -95,7 +95,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Logic cốt lõi: Cập nhật `"version": "0.103.1"` ở `.claude-plugin/plugin.json` và `.codex-plugin/plugin.json`; thêm mục ngắn gọn `## 0.103.1 — 2026-11-21` (~`12` dòng) vào `CHANGELOG.md:5`; cập nhật badge/mục tiêu ở `README.md` và `Release Tag: v0.103.1` ở `UPSTREAM-TRACE.md`
   - Ca góc hiểm & Assert: Kiểm không vượt trần `500` dòng của `doc_lint R6`, `assert claude_ver == codex_ver == "0.103.1"`
 
-- [ ] **T2.2** (e5m) Nâng `hooks/rust/tdq-dispatch/Cargo.toml:3` lên `version = "0.103.1"`, chạy `cargo test`, `cargo clippy --all-targets -- -D warnings`, biên dịch `cargo build --release` (`+crt-static`) trên Windows và cập nhật `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml && cargo clippy --manifest-path hooks/rust/tdq-dispatch/Cargo.toml --all-targets -- -D warnings`
+- [x] **T2.2** (e5m) Nâng `hooks/rust/tdq-dispatch/Cargo.toml:3` lên `version = "0.103.1"`, chạy `cargo test`, `cargo clippy --all-targets -- -D warnings`, biên dịch `cargo build --release` (`+crt-static`) trên Windows và cập nhật `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe` — Test: `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml && cargo clippy --manifest-path hooks/rust/tdq-dispatch/Cargo.toml --all-targets -- -D warnings`
   - Req: `§1, §2#3, §3c B3` · Ngoài phạm vi: `GIỮ NGUYÊN` logic parser `command_parser.rs`, `pre_tool_use.rs`, `scoped-write` `5` lớp và giữ nguyên quy tắc `call_mcp_tool`/`grep_search` trong Rust hook
   - Chạm: `hooks/rust/tdq-dispatch/Cargo.toml`, `hooks/rust/tdq-dispatch/Cargo.lock`, `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`
   - Cần: Không
@@ -106,7 +106,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Logic cốt lõi: Sửa `version = "0.103.1"` ở `Cargo.toml:3`, chạy `cargo test` cập nhật `Cargo.lock`, chạy `cargo clippy` với `-D warnings`, build release rồi copy đè `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`
   - Ca góc hiểm & Assert: `assert open('plugins/tdq-workflow-agy/bin/tdq-dispatch.exe','rb').read(2) == b'MZ'` và kiểm `Cargo.lock` chứa `name = "tdq-dispatch"` ở `version = "0.103.1"`
 
-- [ ] **T2.3** (e8m) Dùng `scratch/ssh_rust_build.py` gửi nguồn `hooks/rust/tdq-dispatch` (kèm `tools/patches/gate_guidance.json`) qua SSH lên `ubuntu-100-95`, chạy `cargo test` và `cargo build --release --target x86_64-unknown-linux-musl`, tải về `plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64`, chạy `test_remote_linux_simulation.py` và hậu kiểm `0` tệp sót — Test: `py -3 -X utf8 -m pytest tests/test_remote_linux_simulation.py -q`
+- [x] **T2.3** (e8m) Dùng `scratch/ssh_rust_build.py` gửi nguồn `hooks/rust/tdq-dispatch` (kèm `tools/patches/gate_guidance.json`) qua SSH lên `ubuntu-100-95`, chạy `cargo test` và `cargo build --release --target x86_64-unknown-linux-musl`, tải về `plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64`, chạy `test_remote_linux_simulation.py` và hậu kiểm `0` tệp sót — Test: `py -3 -X utf8 -m pytest tests/test_remote_linux_simulation.py -q`
   - Req: `§1, §2#3, §2#4, §3c B3` · Ngoài phạm vi: `GIỮ NGUYÊN` rustup toolchain và mọi tệp ngoài `/tmp/tdq-build-*` của user `ubuntu` trên `ubuntu-100-95`
   - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64`
   - Cần: `T2.2`
@@ -117,7 +117,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Logic cốt lõi: Truyền `Cargo.lock` vừa cập nhật của `T2.2` cùng nguồn Rust và `gate_guidance.json`, build target `x86_64-unknown-linux-musl`, tải nhị phân về `plugins/tdq-workflow-agy/bin/`, dọn trong `finally`, rồi chạy simulation test
   - Ca góc hiểm & Assert: Luôn xóa `/tmp/tdq*` kể cả khi build thất bại; `assert data[:4] == b'\x7fELF'` và kiểm `leftover_count == 0`
 
-- [ ] **T2.4** (e8m) Dùng `scratch/ssh_rust_build.py` gửi nguồn `hooks/rust/tdq-dispatch` (kèm `tools/patches/gate_guidance.json`) qua SSH lên `mbair` song song với `T2.3`, chạy `cargo test` và `cargo build --release --target aarch64-apple-darwin`, tải về `plugins/tdq-workflow-agy/bin/tdq-dispatch-darwin-arm64`, chạy `test_remote_mac_simulation.py` và hậu kiểm `0` tệp sót — Test: `py -3 -X utf8 -m pytest tests/test_remote_mac_simulation.py -q`
+- [x] **T2.4** (e8m) Dùng `scratch/ssh_rust_build.py` gửi nguồn `hooks/rust/tdq-dispatch` (kèm `tools/patches/gate_guidance.json`) qua SSH lên `mbair` song song với `T2.3`, chạy `cargo test` và `cargo build --release --target aarch64-apple-darwin`, tải về `plugins/tdq-workflow-agy/bin/tdq-dispatch-darwin-arm64`, chạy `test_remote_mac_simulation.py` và hậu kiểm `0` tệp sót — Test: `py -3 -X utf8 -m pytest tests/test_remote_mac_simulation.py -q`
   - Req: `§1, §2#3, §2#4, §3c B3` · Ngoài phạm vi: `GIỮ NGUYÊN` Xcode CLT, rustup toolchain và mọi tệp khác trên `mbair`
   - Chạm: `plugins/tdq-workflow-agy/bin/tdq-dispatch-darwin-arm64`
   - Cần: `T2.2`
