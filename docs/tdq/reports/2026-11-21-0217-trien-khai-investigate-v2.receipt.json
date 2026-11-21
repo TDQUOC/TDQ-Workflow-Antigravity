@@ -11,7 +11,7 @@
     "bytes": 6084
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.3d1a9282d00243ae8daeedb1725ee52a.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.2c5a1b1c87cf4a0f9c59cae23260c789.html",
     "sha256": "8ca00e813f1afb0019a87ada8465be9615df59ee19d4d6b6faa15f085c6b9bfa",
     "bytes": 1621702
   },
@@ -133,11 +133,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.3d1a9282d00243ae8daeedb1725ee52a.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.3d1a9282d00243ae8daeedb1725ee52a.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.2c5a1b1c87cf4a0f9c59cae23260c789.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-21-0217-trien-khai-investigate-v2.2c5a1b1c87cf4a0f9c59cae23260c789.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2569,
+  "durationMs": 2579,
   "browserCheck": {
     "requested": false,
     "ran": false

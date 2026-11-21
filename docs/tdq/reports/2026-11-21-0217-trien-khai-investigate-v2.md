@@ -101,5 +101,5 @@ Quality: wall-clock `3h 29min` theo đồng hồ phiên từ `02:19:38+07:00`; c
 ```
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-21-0217-trien-khai-investigate-v2.manifest.json -->
-<!-- manifest_digest: cb7abc674409c9efa42f5f633081c8548f80953e8436c46ac2a3c6ecb1888fff -->
+<!-- manifest_digest: 30a16b37c3da50de7f949463d225df8c48ef4dc0214ba69ac786a739e7593a99 -->
 <!-- tdq-archify-binding:end -->
