@@ -152,7 +152,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P4 — Log & Test Bắt buộc + Kiểm định Toàn repo Đa Worker
 
-- [>] **T4.1** (e4m) Kiểm chứng log service bật mặc định có timestamp ISO (`TDQ_LOG=1`) và im lặng hoàn toàn khi tắt (`TDQ_LOG=0`) trên `tools/build_agy_plugin.py`, `scripts/build_portable.py --sinh-main --nguon HEAD --dry-run` và `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`; khởi tạo biên bản QC `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md` — Test: `py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_rust_dispatch_parity.py -q`
+- [x] **T4.1** (e4m) Kiểm chứng log service bật mặc định có timestamp ISO (`TDQ_LOG=1`) và im lặng hoàn toàn khi tắt (`TDQ_LOG=0`) trên `tools/build_agy_plugin.py`, `scripts/build_portable.py --sinh-main --nguon HEAD --dry-run` và `plugins/tdq-workflow-agy/bin/tdq-dispatch.exe`; khởi tạo biên bản QC `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md` — Test: `py -3 -X utf8 -m pytest tests/test_build_portable.py tests/test_rust_dispatch_parity.py -q`
   - Req: `§4` · Ngoài phạm vi: `GIỮ NGUYÊN` toàn bộ mã nguồn runtime (chỉ đo kiểm và ghi hồ sơ QC)
   - Chạm: `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md`
   - Cần: `T3.1`
@@ -163,7 +163,7 @@ Trạng thái plan: ĐÃ DUYỆT
   - Logic cốt lõi: Chạy đối chiếu `TDQ_LOG=1` và `TDQ_LOG=0` qua môi trường tách biệt, xác nhận test parity + build portable xanh, lưu log vào biên bản QC
   - Ca góc hiểm & Assert: `assert proc_on.returncode == 0 and len(proc_on.stderr) > 0 and proc_off.returncode == 0 and proc_off.stderr.strip() == ""`
 
-- [ ] **T4.2** (e8m) Chạy trọn bộ kiểm thử toàn repo đa worker `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off` (dự phòng `--workers 2` hoặc `--workers 1` nếu gặp race lock đa tiến trình trên Windows), chạy `token_budget.py --kiem`, `doc_lint.py`, hậu kiểm cuối `0` tàn dư trên `ubuntu-100-95` & `mbair`, và thực hiện QC độc lập (`muc_qc = full`; dùng `self` subagent nếu phiên IDE đang mở còn cache RAM agent `0.103.0`) — Test: `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off && py -3 -X utf8 scripts/token_budget.py --kiem`
+- [x] **T4.2** (e8m) Chạy trọn bộ kiểm thử toàn repo đa worker `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off` (dự phòng `--workers 2` hoặc `--workers 1` nếu gặp race lock đa tiến trình trên Windows), chạy `token_budget.py --kiem`, `doc_lint.py`, hậu kiểm cuối `0` tàn dư trên `ubuntu-100-95` & `mbair`, và thực hiện QC độc lập (`muc_qc = full`; dùng `self` subagent nếu phiên IDE đang mở còn cache RAM agent `0.103.0`) — Test: `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off && py -3 -X utf8 scripts/token_budget.py --kiem`
   - Req: `§6 Q1–Q5` · Ngoài phạm vi: Không sửa code trừ khi phát hiện lỗi hồi quy (khi đó mở task `QCn.x`)
   - Chạm: `docs/tdq/qc/2026-11-21-1253-fix-subagent-tools-bump.md`
   - Cần: `T4.1`
@@ -178,7 +178,7 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## P5 — Cài đặt Antigravity User-Level `0.103.1`, Kiểm Subagent & Xuất bản `main` + Tag `v0.103.1`
 
-- [ ] **T5.1** (e5m) Ghi `mtime` trước của `~/.claude/plugins/installed_plugins.json`, chạy `py -3 -X utf8 install.py` cài gói `0.103.1` chỉ ra `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` (giữ nguyên bọc Caveman `3` server + RTK), kiểm chứng `agy.EXE plugin validate --strict`, `agy.EXE plugin list`, xác nhận `0/8` file `agents/tdq-*.md` tại `~/.gemini/` chứa tool cấm, đối chiếu `~/.claude/` không đổi `mtime`, và gọi thử `invoke_subagent(TypeName="tdq-explorer")` để kiểm chứng runtime (ghi nhận rõ trạng thái RAM cache nếu phiên IDE hiện tại chưa restart) — Test: `agy.EXE plugin validate C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy --strict --json && agy.EXE plugin list`
+- [x] **T5.1** (e5m) Ghi `mtime` trước của `~/.claude/plugins/installed_plugins.json`, chạy `py -3 -X utf8 install.py` cài gói `0.103.1` chỉ ra `C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy` (giữ nguyên bọc Caveman `3` server + RTK), kiểm chứng `agy.EXE plugin validate --strict`, `agy.EXE plugin list`, xác nhận `0/8` file `agents/tdq-*.md` tại `~/.gemini/` chứa tool cấm, đối chiếu `~/.claude/` không đổi `mtime`, và gọi thử `invoke_subagent(TypeName="tdq-explorer")` để kiểm chứng runtime (ghi nhận rõ trạng thái RAM cache nếu phiên IDE hiện tại chưa restart) — Test: `agy.EXE plugin validate C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy --strict --json && agy.EXE plugin list`
   - Dùng: `tdq-setup`, `tdq-checkportable`
   - Để: kiểm tra môi trường tìm kiếm/hướng dẫn user-level (`tdq-setup`) và tính toàn vẹn gói plugin đã cài tại `~/.gemini/` (`tdq-checkportable`) mà không ghi đè `~/.claude/CLAUDE.md`
   - Ra: xác nhận cấu hình `~/.gemini/` đồng bộ `0.103.1` cùng Caveman và RTK intact
@@ -224,10 +224,10 @@ Trạng thái plan: ĐÃ DUYỆT
 
 ## Definition of Done
 
-- [ ] Q1 Vá `_READONLY_TOOLS` / `_WRITER_TOOLS`, `tdq-explorer.md` & test âm tính: `8/8` tệp `plugins/tdq-workflow-agy/agents/tdq-*.md` sạch `call_mcp_tool`/`grep_search`/`find_by_name`/`list_dir` ở `tools:`, không lặp `write_file` — `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py -q`
-- [ ] Q2 Manifest, `README.md`, `UPSTREAM-TRACE.md` & `CHANGELOG.md` (`<= 500` dòng) đồng bộ `0.103.1` — `py -3 -X utf8 -m pytest tests/test_docs_consistency.py tests/test_adapter_host.py -q && py -3 -X utf8 scripts/doc_lint.py CHANGELOG.md`
-- [ ] Q3 Crate Rust `0.103.1` & `3` nhị phân native thật (`Windows`, `Linux musl`, `macOS ARM64`) PASS `cargo test`, `clippy`, parity/lock, mô phỏng SSH và `2` máy SSH sạch `0` tàn dư — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml && py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_rust_lock_safety.py tests/test_remote_linux_simulation.py tests/test_remote_mac_simulation.py -q`
-- [ ] Q4 Compiler & gói plugin `plugins/tdq-workflow-agy/` (`v0.103.1`) đạt chuẩn nghiêm ngặt — `py -3 -X utf8 tools/build_agy_plugin.py --upstream . && agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json && py -3 -X utf8 scripts/token_budget.py --kiem`
-- [ ] Q5 Bộ kiểm thử toàn repo (`muc_qc = full`) đạt `0 failed` (`bo_sot == 0`) & QC độc lập PASS — `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off`
-- [ ] Q6 Antigravity user-level (`~/.gemini/config/plugins/tdq-workflow-agy`) chạy `0.103.1` sạch `call_mcp_tool` trong `8/8` agents, giữ nguyên Caveman/RTK, không chạm `~/.claude/` & kiểm gọi subagent — `agy.EXE plugin validate C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy --strict --json && agy.EXE plugin list`
+- [x] Q1 Vá `_READONLY_TOOLS` / `_WRITER_TOOLS`, `tdq-explorer.md` & test âm tính: `8/8` tệp `plugins/tdq-workflow-agy/agents/tdq-*.md` sạch `call_mcp_tool`/`grep_search`/`find_by_name`/`list_dir` ở `tools:`, không lặp `write_file` — `py -3 -X utf8 -m pytest tests/test_agent_frontmatter.py -q`
+- [x] Q2 Manifest, `README.md`, `UPSTREAM-TRACE.md` & `CHANGELOG.md` (`<= 500` dòng) đồng bộ `0.103.1` — `py -3 -X utf8 -m pytest tests/test_docs_consistency.py tests/test_adapter_host.py -q && py -3 -X utf8 scripts/doc_lint.py CHANGELOG.md`
+- [x] Q3 Crate Rust `0.103.1` & `3` nhị phân native thật (`Windows`, `Linux musl`, `macOS ARM64`) PASS `cargo test`, `clippy`, parity/lock, mô phỏng SSH và `2` máy SSH sạch `0` tàn dư — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml && py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_rust_lock_safety.py tests/test_remote_linux_simulation.py tests/test_remote_mac_simulation.py -q`
+- [x] Q4 Compiler & gói plugin `plugins/tdq-workflow-agy/` (`v0.103.1`) đạt chuẩn nghiêm ngặt — `py -3 -X utf8 tools/build_agy_plugin.py --upstream . && agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json && py -3 -X utf8 scripts/token_budget.py --kiem`
+- [x] Q5 Bộ kiểm thử toàn repo (`muc_qc = full`) đạt `0 failed` (`bo_sot == 0`) & QC độc lập PASS — `py -3 -X utf8 scripts/tdq_test.py tron-bo --workers 6 --fresh --reuse off`
+- [x] Q6 Antigravity user-level (`~/.gemini/config/plugins/tdq-workflow-agy`) chạy `0.103.1` sạch `call_mcp_tool` trong `8/8` agents, giữ nguyên Caveman/RTK, không chạm `~/.claude/` & kiểm gọi subagent — `agy.EXE plugin validate C:\Users\admin\.gemini\config\plugins\tdq-workflow-agy --strict --json && agy.EXE plugin list`
 - [ ] Q7 Nhánh phát hành local `main` (`--sinh-main` từ `dev`) & annotated tag `v0.103.1` khớp `main` HEAD, không `git push` — `git show main:.claude-plugin/plugin.json && git log -1 --format="%H" v0.103.1 && git rev-parse main`
