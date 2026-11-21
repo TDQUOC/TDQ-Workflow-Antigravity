@@ -1,0 +1,20 @@
+tests/test_luat_gate_chat.py::CamPopupTest::test_popup_khong_xuat_hien_ngoai_hai_file_viet_luat
+tests/test_luat_gate_chat.py::CamPopupTest::test_popup_luat_cam_nam_o_tang_conventions_va_phu_moi_cau_hoi
+tests/test_luat_gate_chat.py::NextStepTest::test_next_step_co_luat_va_ghi_ro_la_lop_du_phong
+tests/test_luat_gate_chat.py::NextStepTest::test_next_step_moi_dong_neu_duoc_pha_ke
+tests/test_luat_gate_chat.py::DuongKeTest::test_duong_ke_khai_dung_ky_tu
+tests/test_luat_gate_chat.py::DuongKeTest::test_duong_ke_khong_con_cau_mau_thuan
+tests/test_luat_gate_chat.py::DuongKeTest::test_duong_ke_la_thanh_phan_sau_khoi_tra_loi
+tests/test_user_facing_block.py::UserFacingBlockTest::test_bans_emoji_and_has_no_emoji_itself
+tests/test_user_facing_block.py::UserFacingBlockTest::test_block_file_exists
+tests/test_user_facing_block.py::UserFacingBlockTest::test_code_generated_blocks_conform
+tests/test_user_facing_block.py::UserFacingBlockTest::test_every_user_facing_skill_points_here
+tests/test_user_facing_block.py::UserFacingBlockTest::test_hard_rules_giu_buoc_tu_soat
+tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_seven_touchpoints
+tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_six_components
+tests/test_user_facing_block.py::UserFacingBlockTest::test_plain_language_narrative_rule_and_samples
+tests/test_user_facing_block.py::UserFacingBlockTest::test_rules_table_and_seven_rules
+tests/test_user_facing_block.py::UserFacingBlockTest::test_sample_blocks_follow_rules
+tests/test_user_facing_block.py::UserFacingBlockTest::test_symbol_whitelist
+
+18 tests collected in 0.15s

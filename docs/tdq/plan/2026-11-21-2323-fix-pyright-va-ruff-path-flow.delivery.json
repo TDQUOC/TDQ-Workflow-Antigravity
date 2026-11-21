@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "44c52ec2-788b-4c42-b17d-ee32bf13731a",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-2323-fix-pyright-va-ruff-path\\.tmp.truoc-sau.archify.a4dcac88c2454050ab433dc92879755c.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\plan\\.tmp.2026-11-21-2323-fix-pyright-va-ruff-path-flow.701571ee5ed74584bad19ee815001967.html",
+  "specification": {
+    "sha256": "d55ef981c2fd59d966fb2933b516fdd45b67d24dda4ffbe05021259760f6dd86",
+    "bytes": 1689
+  },
+  "artifact": {
+    "sha256": "c1d326ffdb5d69c57aa14c7b1a3c466ca037ae47104037c2e515cd081b3f0460",
+    "bytes": 854434
+  },
+  "explainer": {
+    "preparedSha256": "c7cbf8665e42a57e24271f85d34d2569f39579531361e27c60ea758f291b8040",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-pyright-tools",
+        "inline": true,
+        "sha256": "0f197bdf1d7ad6bf22342787296c681db4314d31e1c32eafc799cb04e13e4f8e",
+        "bytes": 1002
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-user-path",
+        "inline": true,
+        "sha256": "4f9cd0b13fe0e1e3445cdfe3d34241c1df8d30038be81d30e9458ebec219ddd2",
+        "bytes": 1025
+      }
+    ]
+  }
+}

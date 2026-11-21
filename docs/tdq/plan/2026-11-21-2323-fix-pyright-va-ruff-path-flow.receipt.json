@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-21-2323-fix-pyright-va-ruff-path\\.tmp.truoc-sau.archify.a4dcac88c2454050ab433dc92879755c.md",
+    "sha256": "d55ef981c2fd59d966fb2933b516fdd45b67d24dda4ffbe05021259760f6dd86",
+    "bytes": 1689
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\plan\\.tmp.2026-11-21-2323-fix-pyright-va-ruff-path-flow.701571ee5ed74584bad19ee815001967.html",
+    "sha256": "c1d326ffdb5d69c57aa14c7b1a3c466ca037ae47104037c2e515cd081b3f0460",
+    "bytes": 854434
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\plan\\.tmp.2026-11-21-2323-fix-pyright-va-ruff-path-flow.701571ee5ed74584bad19ee815001967.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\plan\\.tmp.2026-11-21-2323-fix-pyright-va-ruff-path-flow.701571ee5ed74584bad19ee815001967.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1829,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

@@ -1,0 +1,4262 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "schema_version": 1,
+    "backend": "pytest",
+    "selectors": [
+      "tests/test_gitflow_van_ban.py",
+      "tests/test_luat_dung.py",
+      "tests/test_luat_subagent_pr.py",
+      "tests/test_report_visual.py",
+      "tests/test_soul_rules.py",
+      "tests/test_timing.py",
+      "tests/test_user_facing_block.py"
+    ],
+    "scope": "direct",
+    "case_ids": [
+      "tests/test_gitflow_van_ban.py::IntakeTest::test_de_xuat_loai_nam_trong_cau_hoi_chon_lane",
+      "tests/test_gitflow_van_ban.py::IntakeTest::test_mo_nhanh_dung_lane",
+      "tests/test_gitflow_van_ban.py::IntakeTest::test_repo_ban_thi_dung_va_hoi",
+      "tests/test_gitflow_van_ban.py::KhuonBaoCaoTest::test_buoc_muoi_du_hai_nhanh_tra_loi",
+      "tests/test_gitflow_van_ban.py::LuatTenNhanhTest::test_luat_ten_nhanh_du_nam_loai_va_giu_gach_cu",
+      "tests/test_gitflow_van_ban.py::TenNhanhMauTest::test_khong_tien_to_cam",
+      "tests/test_gitflow_van_ban.py::TenNhanhMauTest::test_ten_nhanh_hop_le",
+      "tests/test_luat_dung.py::LuatDung::test_dung_bon_loai_co_mat_o_ca_hai_file",
+      "tests/test_luat_dung.py::LuatDung::test_dung_khong_con_cho_dung_vi_doi_pham_vi",
+      "tests/test_luat_dung.py::LuatDung::test_dung_nguong_truot_thi_ghi_lech_lam_tiep",
+      "tests/test_luat_dung.py::LuatDung::test_dung_qc_khong_keo_user_vao_giua",
+      "tests/test_luat_dung.py::Khuon::test_khuon_co_hai_cot_moi",
+      "tests/test_luat_dung.py::Khuon::test_khuon_dien_du_thi_qua_r14",
+      "tests/test_luat_dung.py::Khuon::test_khuon_thieu_do_thi_r14_bat",
+      "tests/test_luat_dung.py::QcReport::test_qc_report_qc_ghi_lech_khong_fail",
+      "tests/test_luat_dung.py::QcReport::test_qc_report_report_hoi_duyet_tung_lech",
+      "tests/test_luat_subagent_pr.py::TestLuatSubagent::test_subagent_conventions_mo_moi_phase_chi_doc",
+      "tests/test_luat_subagent_pr.py::TestLuatSubagent::test_subagent_reminder_code_noi_ca_moi",
+      "tests/test_luat_subagent_pr.py::TestLuatPr::test_pr_report_co_than_pr_soan_san",
+      "tests/test_report_visual.py::ReportVisualContract::test_both_lanes_enter_shared_report_and_write_pair",
+      "tests/test_report_visual.py::ReportVisualContract::test_express_reports_do_not_invent_a_second_gate_or_renderer",
+      "tests/test_report_visual.py::ReportVisualContract::test_html_reports_actual_result_with_honest_fallback",
+      "tests/test_report_visual.py::ReportVisualContract::test_report_requires_plain_language_visual_four_parts_and_archify_html",
+      "tests/test_report_visual.py::ReportVisualContract::test_report_template_defaults_to_natural_story_without_dot_packing",
+      "tests/test_soul_rules.py::SoulFile::test_thu_tu_pham_vi_va_do_dai",
+      "tests/test_soul_rules.py::SoulFile::test_thu_tu_uu_tien",
+      "tests/test_soul_rules.py::SoulTrongKhuon::test_khuon_tai_lieu",
+      "tests/test_soul_rules.py::SoulRequestDangMo::test_soul_request_dang_mo",
+      "tests/test_soul_rules.py::SoulPointers::test_dong_tro_soul",
+      "tests/test_soul_rules.py::SoulPointers::test_soul_and_conventions_require_simple_visual_complete_presentation",
+      "tests/test_timing.py::ParseSlug::test_parse_slug_bon_so_khong_phai_gio",
+      "tests/test_timing.py::ParseSlug::test_parse_slug_cu",
+      "tests/test_timing.py::ParseSlug::test_parse_slug_moi",
+      "tests/test_timing.py::ParseSlug::test_parse_slug_sai",
+      "tests/test_timing.py::InitSlug::test_init_bat_buoc_gio_phut",
+      "tests/test_timing.py::InitSlug::test_init_bat_buoc_nhan_slug_moi",
+      "tests/test_timing.py::MocThoiGianTrongState::test_init_dong_dau_started_at",
+      "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_ghi_moi_lan_doi_phase",
+      "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_khong_ghi_khi_phase_khong_doi",
+      "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_quay_lui_ghi_them_moc",
+      "tests/test_timing.py::MocThoiGianTrongState::test_state_cu_duoc_va_field_thieu",
+      "tests/test_timing.py::MocThoiGianTrongState::test_state_cu_phase_history_hong_thi_bo_qua",
+      "tests/test_timing.py::BangThoiGian::test_assistant_gap_cannot_be_presented_as_model",
+      "tests/test_timing.py::BangThoiGian::test_bang_thoi_gian_co_du_cot",
+      "tests/test_timing.py::BangThoiGian::test_khong_co_request_thi_noi_ro_va_thoat_0",
+      "tests/test_timing.py::BangThoiGian::test_khong_transcript_thi_gach_ngang_va_van_thoat_0",
+      "tests/test_timing.py::BangThoiGian::test_long_gap_does_not_identify_user_absence",
+      "tests/test_timing.py::BangThoiGian::test_quay_lui_cong_don_va_dem_so_lan",
+      "tests/test_timing.py::BangThoiGian::test_request_wall_window_does_not_infer_model",
+      "tests/test_timing.py::DongSo::test_dong_so_ghi_dung_mot_dong_jsonl",
+      "tests/test_timing.py::DongSo::test_dong_so_hai_lan_khong_ghi_trung",
+      "tests/test_timing.py::DongSo::test_dong_so_khong_co_request_thi_im_lang",
+      "tests/test_timing.py::NoiVaoWorkflow::test_finish_dong_so_khi_ve_idle",
+      "tests/test_timing.py::NoiVaoWorkflow::test_finish_phase_khac_idle_khong_dong_so",
+      "tests/test_timing.py::NoiVaoWorkflow::test_init_dong_so_request_cu_truoc_khi_reset",
+      "tests/test_timing.py::NoiVaoWorkflow::test_init_lan_dau_khong_ghi_gi",
+      "tests/test_timing.py::LuatVaKhuon::test_cong_thuc_slug_moi_o_moi_noi",
+      "tests/test_timing.py::LuatVaKhuon::test_khuon_report_co_bang_thoi_gian",
+      "tests/test_timing.py::LuatVaKhuon::test_status_co_dong_dong_ho",
+      "tests/test_timing.py::LogService::test_tat_log_bang_bien_moi_truong",
+      "tests/test_timing.py::TimingV2::test_background_tool_return_does_not_infer_job_duration",
+      "tests/test_timing.py::TimingV2::test_bad_phase_mark_types_are_diagnosed",
+      "tests/test_timing.py::TimingV2::test_cli_auto_resolves_codex_without_claude_default",
+      "tests/test_timing.py::TimingV2::test_cli_host_repeatable_sessions_and_status_json",
+      "tests/test_timing.py::TimingV2::test_cli_naive_now_rejected_and_json_empty_state_is_null",
+      "tests/test_timing.py::TimingV2::test_close_preserves_history_and_uses_request_start_pair",
+      "tests/test_timing.py::TimingV2::test_codex_task_wall_is_not_an_api_span",
+      "tests/test_timing.py::TimingV2::test_duplicate_phase_mark_does_not_add_an_entry",
+      "tests/test_timing.py::TimingV2::test_fractional_seconds_are_not_rounded_before_aggregation",
+      "tests/test_timing.py::TimingV2::test_half_open_window_excludes_boundary_only_intervals",
+      "tests/test_timing.py::TimingV2::test_incomplete_stream_preserves_confirmed_partial_time",
+      "tests/test_timing.py::TimingV2::test_incomplete_stream_without_valid_spans_does_not_claim_zero",
+      "tests/test_timing.py::TimingV2::test_invalid_history_is_reported_without_changing_request_measurement",
+      "tests/test_timing.py::TimingV2::test_json_markdown_status_preserve_quality_and_meaning",
+      "tests/test_timing.py::TimingV2::test_known_overlap_and_phase_clipping",
+      "tests/test_timing.py::TimingV2::test_long_span_is_retained_without_300_second_threshold",
+      "tests/test_timing.py::TimingV2::test_malformed_log_reduces_quality_without_losing_known_span",
+      "tests/test_timing.py::TimingV2::test_many_repeated_phases_conserve_observed_time",
+      "tests/test_timing.py::TimingV2::test_missing_request_start_does_not_fall_back_to_phase",
+      "tests/test_timing.py::TimingV2::test_missing_sources_keep_wall_but_not_fake_zero",
+      "tests/test_timing.py::TimingV2::test_naive_end_or_end_before_start_is_unavailable",
+      "tests/test_timing.py::TimingV2::test_out_of_order_phase_marks_cannot_double_count",
+      "tests/test_timing.py::TimingV2::test_phase_ending_at_request_start_is_not_an_entry_inside_window",
+      "tests/test_timing.py::TimingV2::test_phases_before_request_are_clipped",
+      "tests/test_timing.py::TimingV2::test_public_aggregation_logs_diagnostics_to_stderr_only",
+      "tests/test_timing.py::TimingV2::test_repeated_phase_accumulates_duration_and_entry_count",
+      "tests/test_timing.py::TimingV2::test_same_kind_overlap_is_merged_before_cross_kind_union",
+      "tests/test_timing.py::TimingV2::test_session_filter_controls_attribution",
+      "tests/test_timing.py::TimingV2::test_simultaneous_phase_transitions_remain_disjoint",
+      "tests/test_timing.py::TimingV2::test_spans_are_clipped_at_both_request_boundaries",
+      "tests/test_timing.py::TimingV2::test_status_includes_current_phase_wall_and_observed_quality",
+      "tests/test_timing.py::TimingV2::test_total_uses_request_window_even_before_first_phase",
+      "tests/test_timing.py::TimingV2::test_v1_formatter_uses_legacy_label_without_mutating_history",
+      "tests/test_timing.py::RoleTelemetry::test_empty_telemetry_returns_empty_list",
+      "tests/test_timing.py::RoleTelemetry::test_role_summary_filters_optional_slug",
+      "tests/test_timing.py::RoleTelemetry::test_role_summary_groups_by_agent_role_and_skips_corrupt_lines",
+      "tests/test_timing.py::RoleTelemetry::test_timing_show_and_roles_cli_render_agent_role_telemetry",
+      "tests/test_timing.py::RoleTelemetry::test_token_audit_role_telemetry_summary_and_cli_table",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_bans_emoji_and_has_no_emoji_itself",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_block_file_exists",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_code_generated_blocks_conform",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_every_user_facing_skill_points_here",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_hard_rules_giu_buoc_tu_soat",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_seven_touchpoints",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_six_components",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_plain_language_narrative_rule_and_samples",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_rules_table_and_seven_rules",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_sample_blocks_follow_rules",
+      "tests/test_user_facing_block.py::UserFacingBlockTest::test_symbol_whitelist"
+    ],
+    "diagnostics": [],
+    "fingerprint": null,
+    "complete": true
+  },
+  "outcomes": [
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::IntakeTest::test_de_xuat_loai_nam_trong_cau_hoi_chon_lane",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005275000003166497
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.005190700001548976
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013749999925494194
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'feature'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'bugfix'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'hotfix'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'chore'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'docs'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::IntakeTest::test_mo_nhanh_dung_lane",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017339999612886459
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000650699992547743
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012630000128410757
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tu": "'full'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tu": "'quick'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tu": "'nh\u1ecf'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::IntakeTest::test_repo_ban_thi_dung_va_hoi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017320000915788114
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001463999942643568
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014089999604038894
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::KhuonBaoCaoTest::test_buoc_muoi_du_hai_nhanh_tra_loi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00022669999452773482
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0006083000043872744
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014909998571965843
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tra_loi": "'\"commit\"'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "tra_loi": "'\"ch\u01b0a\"'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::LuatTenNhanhTest::test_luat_ten_nhanh_du_nam_loai_va_giu_gach_cu",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003727000002982095
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0011894999915966764
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013860000763088465
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'feature'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'bugfix'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'hotfix'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'chore'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "loai": "'docs'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "gach": "'never** start with'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "gach": "'generated with'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "gach": "'commit or push before th'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "gach": "'you may init git or a wo'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::TenNhanhMauTest::test_khong_tien_to_cam",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0007069999992381781
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0007370999956037849
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012060000153724104
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'bugfix/state-mat-nhanh-goc'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'chore/bump-phien-ban'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'docs/kien-truc-module'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'feature/login-gui'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'hotfix/hook-treo-turn'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_gitflow_van_ban.py::TenNhanhMauTest::test_ten_nhanh_hop_le",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016500000492669642
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.1800414000026649
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001900000061141327
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'bugfix/state-mat-nhanh-goc'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'chore/bump-phien-ban'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'docs/kien-truc-module'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'feature/login-gui'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "ten": "'hotfix/hook-treo-turn'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::LuatDung::test_dung_bon_loai_co_mat_o_ca_hai_file",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025400001322850585
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0004557000065688044
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012290000449866056
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::LuatDung::test_dung_khong_con_cho_dung_vi_doi_pham_vi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001635000080568716
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.009478599997237325
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015390000771731138
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::LuatDung::test_dung_nguong_truot_thi_ghi_lech_lam_tiep",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018740000086836517
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005049000028520823
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012160000915173441
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::LuatDung::test_dung_qc_khong_keo_user_vao_giua",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015800000983290374
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025610000011511147
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013800000306218863
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::Khuon::test_khuon_co_hai_cot_moi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021010001364629716
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00026559999969322234
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001213000068673864
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::Khuon::test_khuon_dien_du_thi_qua_r14",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015460001304745674
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005856000061612576
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012360000982880592
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::Khuon::test_khuon_thieu_do_thi_r14_bat",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016290000348817557
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003482000029180199
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013010000111535192
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::QcReport::test_qc_report_qc_ghi_lech_khong_fail",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020589999621734023
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00028639999800361693
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00011799999629147351
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_dung.py::QcReport::test_qc_report_report_hoi_duyet_tung_lech",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015700000221841037
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002902999985963106
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013210000179242343
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_subagent_pr.py::TestLuatSubagent::test_subagent_conventions_mo_moi_phase_chi_doc",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019820001034531742
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003853999951388687
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001171000039903447
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_subagent_pr.py::TestLuatSubagent::test_subagent_reminder_code_noi_ca_moi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001551000023027882
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00024219999613706023
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012910000805277377
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_luat_subagent_pr.py::TestLuatPr::test_pr_report_co_than_pr_soan_san",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020560000848490745
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002978000120492652
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013590000162366778
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_report_visual.py::ReportVisualContract::test_both_lanes_enter_shared_report_and_write_pair",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021800000104121864
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0007295000104932114
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012340000830590725
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_report_visual.py::ReportVisualContract::test_express_reports_do_not_invent_a_second_gate_or_renderer",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017169999773614109
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005210999952396378
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012260000221431255
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_report_visual.py::ReportVisualContract::test_html_reports_actual_result_with_honest_fallback",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001604999997653067
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0009691000013845041
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001221999991685152
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_report_visual.py::ReportVisualContract::test_report_requires_plain_language_visual_four_parts_and_archify_html",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015990000974852592
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0038271999947028235
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001289999927394092
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_report_visual.py::ReportVisualContract::test_report_template_defaults_to_natural_story_without_dot_packing",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016689999029040337
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00029999999969732016
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013760000001639128
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulFile::test_thu_tu_pham_vi_va_do_dai",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021919999562669545
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003547999949660152
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001210999907925725
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulFile::test_thu_tu_uu_tien",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001584999990882352
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003825000021606684
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013380000018514693
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulTrongKhuon::test_khuon_tai_lieu",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020920000679325312
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0016697999963071197
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013749999925494194
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "path": "'skills/tdq-intake/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "path": "'skills/tdq-spec/references/spec-template.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "path": "'skills/tdq-plan/references/plan-template.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "path": "'skills/tdq-build/references/qc.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "path": "'skills/tdq-build/references/report-template.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulRequestDangMo::test_soul_request_dang_mo",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020450000010896474
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0016516000032424927
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000148899998748675
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "kind": "'brief'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "kind": "'spec'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "kind": "'plan'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulPointers::test_dong_tro_soul",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00022260000696405768
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003183999942848459
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012540000898297876
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_soul_rules.py::SoulPointers::test_soul_and_conventions_require_simple_visual_complete_presentation",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016209999739658087
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0004005999944638461
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001396000006934628
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::ParseSlug::test_parse_slug_bon_so_khong_phai_gio",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021099999139551073
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001545999984955415
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001221999991685152
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::ParseSlug::test_parse_slug_cu",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016349999350495636
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016989999858196825
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013179999950807542
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::ParseSlug::test_parse_slug_moi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015929999062791467
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001472000003559515
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001205000007757917
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::ParseSlug::test_parse_slug_sai",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015609999536536634
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0009323999984189868
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013700000999961048
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "''"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "'khong-co-ngay'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "'2026-8-15-thieu-so-0'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "'2026-08-15'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "'2026-13-40-ngay-khong-co-that'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "slug": "None"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_timing.py::InitSlug::test_init_bat_buoc_gio_phut",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019789999350905418
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.08190590000594966
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017139999545179307
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::InitSlug::test_init_bat_buoc_nhan_slug_moi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023099999816622585
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.09121269999013748
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019130000146105886
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_init_dong_dau_started_at",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00026119999529328197
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.090818800003035
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017659999139141291
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_ghi_moi_lan_doi_phase",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020290000247769058
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.5505059999995865
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021729999571107328
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_khong_ghi_khi_phase_khong_doi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020590001076925546
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.27266259999305476
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016920000780373812
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_phase_history_quay_lui_ghi_them_moc",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021330000890884548
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.530432200001087
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002562000008765608
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_state_cu_duoc_va_field_thieu",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002148000057786703
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001965500006917864
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013220000255387276
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::MocThoiGianTrongState::test_state_cu_phase_history_hong_thi_bo_qua",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017269999079871923
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001748999988194555
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018090000958181918
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_assistant_gap_cannot_be_presented_as_model",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023400000645779073
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07787009999447037
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019169998995494097
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_bang_thoi_gian_co_du_cot",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020560000848490745
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0762581000017235
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017340001068077981
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_khong_co_request_thi_noi_ro_va_thoat_0",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002069000038318336
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07655959999829065
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017939999816007912
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_khong_transcript_thi_gach_ngang_va_van_thoat_0",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00031659999513067305
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07709649999742396
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001782000035746023
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_long_gap_does_not_identify_user_absence",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021109999215696007
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07778390000748914
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003409999917494133
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_quay_lui_cong_don_va_dem_so_lan",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002246000076411292
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0765246999944793
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016980001237243414
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::BangThoiGian::test_request_wall_window_does_not_infer_model",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00029999999969732016
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07830639999883715
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000185500000952743
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::DongSo::test_dong_so_ghi_dung_mot_dong_jsonl",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002784999960567802
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07835330000671092
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017699999443721026
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::DongSo::test_dong_so_hai_lan_khong_ghi_trung",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019859999883919954
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.15013170000747778
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017179999849759042
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::DongSo::test_dong_so_khong_co_request_thi_im_lang",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001973999897018075
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07688619999680668
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019320000137668103
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::NoiVaoWorkflow::test_finish_dong_so_khi_ve_idle",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002597999991849065
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.3772332000080496
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001849999971454963
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::NoiVaoWorkflow::test_finish_phase_khac_idle_khong_dong_so",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002032000047620386
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2827022000128636
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017859999206848443
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::NoiVaoWorkflow::test_init_dong_so_request_cu_truoc_khi_reset",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020259998564142734
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.28570290000061505
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002232000115327537
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::NoiVaoWorkflow::test_init_lan_dau_khong_ghi_gi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023330000112764537
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.09524299998884089
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019690000044647604
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::LuatVaKhuon::test_cong_thuc_slug_moi_o_moi_noi",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0003552999987732619
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.030943899997510016
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018579998868517578
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::LuatVaKhuon::test_khuon_report_co_bang_thoi_gian",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021559999731834978
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00035170000046491623
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013359999866224825
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::LuatVaKhuon::test_status_co_dong_dong_ho",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017850000585895032
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002578999992692843
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017519999528303742
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::LogService::test_tat_log_bang_bien_moi_truong",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00027459999546408653
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.14993370001320727
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019350000366102904
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_background_tool_return_does_not_infer_job_duration",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00030109999352134764
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0033915999956661835
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013749999925494194
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_bad_phase_mark_types_are_diagnosed",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016549999418202788
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.002969000008306466
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001568000006955117
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_cli_auto_resolves_codex_without_claude_default",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016599999798927456
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2703932000003988
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015300000086426735
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_cli_host_repeatable_sessions_and_status_json",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00025290000485256314
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.35933510000177193
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015520000306423753
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_cli_naive_now_rejected_and_json_empty_state_is_null",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021209999977145344
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.1544655000034254
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001593000051798299
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_close_preserves_history_and_uses_request_start_pair",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002066000015474856
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.006468900013715029
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015259999781847
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_codex_task_wall_is_not_an_api_span",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00021690000721719116
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0033715000026859343
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013770000077784061
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_duplicate_phase_mark_does_not_add_an_entry",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018989999080076814
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003267199994297698
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013979998766444623
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_fractional_seconds_are_not_rounded_before_aggregation",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020219999714754522
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003209000002243556
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014570000348612666
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_half_open_window_excludes_boundary_only_intervals",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001984000118682161
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003541300000506453
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014740000187885016
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_incomplete_stream_preserves_confirmed_partial_time",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001998999941861257
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0035001999931409955
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013660000695381314
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_incomplete_stream_without_valid_spans_does_not_claim_zero",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018289999570697546
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0031100999913178384
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013500000932253897
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_invalid_history_is_reported_without_changing_request_measurement",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017689999367576092
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003090199999860488
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014279999595601112
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_json_markdown_status_preserve_quality_and_meaning",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017860000662039965
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0035361999907763675
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015189999248832464
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_known_overlap_and_phase_clipping",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019619999511633068
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0036177000001771376
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001446999958716333
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_long_span_is_retained_without_300_second_threshold",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019150000298395753
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0035167000023648143
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014309999824035913
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_malformed_log_reduces_quality_without_losing_known_span",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020050001330673695
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0036806000134674832
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001508999994257465
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_many_repeated_phases_conserve_observed_time",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020140000560786575
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004958799996529706
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017630000365898013
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_missing_request_start_does_not_fall_back_to_phase",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002082999999402091
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0034967999963555485
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014540000120177865
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_missing_sources_keep_wall_but_not_fake_zero",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019669999892357737
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0030922000005375594
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001399000029778108
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_naive_end_or_end_before_start_is_unavailable",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001967999996850267
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.005498899990925565
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014790000568609685
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "end": "datetime.datetime(2026, 10, 27, 0, 0)"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "end": "datetime.datetime(2026, 10, 26, 23, 59, 59, tzinfo=datetime.timezone.utc)"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "end": "None"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_out_of_order_phase_marks_cannot_double_count",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001993000041693449
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0035293000109959394
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014739998732693493
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_phase_ending_at_request_start_is_not_an_entry_inside_window",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020769999537151307
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003461300002527423
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014989999181125313
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_phases_before_request_are_clipped",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020370000856928527
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0034604999964358285
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014699999883305281
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_public_aggregation_logs_diagnostics_to_stderr_only",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001981999957934022
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004741699987789616
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002694999857340008
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_repeated_phase_accumulates_duration_and_entry_count",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00031380000291392207
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004063000000314787
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001449999981559813
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_same_kind_overlap_is_merged_before_cross_kind_union",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020599999697878957
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004822800008696504
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017260000458918512
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_session_filter_controls_attribution",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002305000089108944
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.005244500003755093
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015700000221841037
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_simultaneous_phase_transitions_remain_disjoint",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002502999996067956
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0038432000001193956
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016250000044237822
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_spans_are_clipped_at_both_request_boundaries",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002133999951183796
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003868899992085062
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00023610000789631158
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_status_includes_current_phase_wall_and_observed_quality",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00032839999767020345
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004452000008313917
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001503000094089657
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_total_uses_request_window_even_before_first_phase",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020799999765586108
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0038109000015538186
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014760000340174884
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::TimingV2::test_v1_formatter_uses_legacy_label_without_mutating_history",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020850000146310776
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0025938999897334725
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017010000010486692
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::RoleTelemetry::test_empty_telemetry_returns_empty_list",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002488000027369708
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.07903439999790862
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00029320000612642616
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::RoleTelemetry::test_role_summary_filters_optional_slug",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00024619999749120325
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0023364000080619007
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001399000029778108
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::RoleTelemetry::test_role_summary_groups_by_agent_role_and_skips_corrupt_lines",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019489999976940453
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004324399997130968
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013770000077784061
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::RoleTelemetry::test_timing_show_and_roles_cli_render_agent_role_telemetry",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000189200000022538
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.3254525999946054
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020570000924635679
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_timing.py::RoleTelemetry::test_token_audit_role_telemetry_summary_and_cli_table",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002221999893663451
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.2833249999966938
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019699998665601015
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_bans_emoji_and_has_no_emoji_itself",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0002573999954620376
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.003537500000675209
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00014289999671746045
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-conventions/references/user-facing-block.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-conventions/references/user-facing-block-vi-du.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-spec/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-plan/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-plan/references/mode-gate.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-intake/references/lane-decision.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-intake/references/quick-lane.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-intake/references/quick-lane-mini.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-intake/references/interview.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-build/references/report-template.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'skills/tdq-status/SKILL.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_block_file_exists",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020470000163186342
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00019279999833088368
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012939999578520656
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_code_generated_blocks_conform",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016349999350495636
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00561300000117626
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016179999511223286
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "target": "'spec'",
+              "mode": "None"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "target": "'plan'",
+              "mode": "None"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "target": "'quick'",
+              "mode": "None"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "target": "'mode'",
+              "mode": "'main'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "target": "'mode'",
+              "mode": "'subagent'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_every_user_facing_skill_points_here",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018820000695995986
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0024105999909806997
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013110000872984529
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-conventions/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-spec/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-plan/SKILL.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-build/references/report-template.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/lane-decision.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/interview.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/quick-lane.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-plan/references/mode-gate.md'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-status/SKILL.md'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_hard_rules_giu_buoc_tu_soat",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016080000204965472
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0005483999993884936
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012009999772999436
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_seven_touchpoints",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0001728000061120838
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.001117300009354949
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012089998926967382
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'pipeline'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'interview'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'spec'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'plan'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'mode'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'express'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "touchpoint": "'commit'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_lists_six_components",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00015829999756533653
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.000991799999610521
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012009999772999436
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'Opening line'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'Body'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'File path'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'Separator rule'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'Answer block'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "component": "'Closing rule of the turn'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_plain_language_narrative_rule_and_samples",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00018770000315271318
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0004267000040272251
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012489999062381685
+        }
+      ],
+      "subtests": []
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_rules_table_and_seven_rules",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00017389999993611127
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0009719000081531703
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012539999443106353
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "vidu": "'### Before'"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "vidu": "'### After'"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_sample_blocks_follow_rules",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00020580001000780612
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.004212800005916506
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00012369999603834003
+        }
+      ],
+      "subtests": [
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-conventions/references/user-facing-block-vi-du.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-conventions/references/user-facing-block-vi-du.md'",
+              "khoi": "1"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-spec/SKILL.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-plan/SKILL.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-plan/references/mode-gate.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-plan/references/mode-gate.md'",
+              "khoi": "1"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/lane-decision.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/quick-lane.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-intake/references/quick-lane-mini.md'",
+              "khoi": "0"
+            }
+          }
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0,
+          "subtest": {
+            "message": "",
+            "parameters": {
+              "file": "'tdq-build/references/report-template.md'",
+              "khoi": "0"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "tests/test_user_facing_block.py::UserFacingBlockTest::test_symbol_whitelist",
+      "outcome": "pass",
+      "reason": "",
+      "capability": null,
+      "phases": [
+        {
+          "phase": "setup",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00016789999790489674
+        },
+        {
+          "phase": "call",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.0021219999907771125
+        },
+        {
+          "phase": "teardown",
+          "outcome": "pass",
+          "reason": "",
+          "duration_seconds": 0.00013660000695381314
+        }
+      ],
+      "subtests": []
+    }
+  ],
+  "completed": true,
+  "exit_code": 0
+}

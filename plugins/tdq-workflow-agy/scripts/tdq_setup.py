@@ -998,10 +998,20 @@ def doc_thong_bao_update_moi(home=None):
     return False, ""
 
 
+def kiem_va_them_user_scripts_path():
+    """Add existing user Scripts dirs with binaries to PATH without installing."""
+    if _khong_cham_may():
+        return [], [], []
+    da_lam, ghi_chu = tdq_checkportable.dam_bao_user_scripts_tren_path()
+    return da_lam, ghi_chu, []
+
+
 def kiem_va_cai_shim_python3(tu_dong_them_path=True):
     """Tự động kiểm tra và cài đặt shim python3 trên Windows nếu thiếu hoặc lỗi. -> (da_cai, canh_bao, no)."""
     if not tdq_ten_lenh.la_windows():
         return [], [], []
+
+    da_path, cb_path, _ = kiem_va_them_user_scripts_path() if tu_dong_them_path else ([], [], [])
 
     song = False
     try:
@@ -1012,16 +1022,16 @@ def kiem_va_cai_shim_python3(tu_dong_them_path=True):
         song = False
 
     if song and tdq_ten_lenh.co_shim_python3():
-        return ["shim `python3` đã sẵn sàng"], [], []
+        return ["shim `python3` đã sẵn sàng"] + da_path, cb_path, []
 
     _log("phát hiện `python3` chưa hoạt động hoặc dính Microsoft Store stub — tiến hành cài shim")
     da_lam, ghi_chu = tdq_checkportable.cai_shim_python3(nen_tang="win32", tu_dong_them_path=tu_dong_them_path)
     if da_lam:
-        return [f"shim `python3`: {d}" for d in da_lam], ghi_chu, []
+        return [f"shim `python3`: {d}" for d in da_lam] + da_path, ghi_chu + cb_path, []
     # Nếu không có file mới được ghi nhưng ghi_chu cho thấy đã đúng sẵn hoặc song == True
     if any("already correct" in g for g in ghi_chu) or song:
-        return ["shim `python3` đã sẵn sàng"], ghi_chu, []
-    return [], ghi_chu, ["không thể tự cài shim `python3` tự động (cần cấp quyền PATH)"]
+        return ["shim `python3` đã sẵn sàng"] + da_path, ghi_chu + cb_path, []
+    return da_path, ghi_chu + cb_path, ["không thể tự cài shim `python3` tự động (cần cấp quyền PATH)"]
 
 
 def kiem_dryrun_hook(goc_plugin=None):
@@ -1112,7 +1122,7 @@ KHOI_HUONG_DAN = """## Bộ tìm kiếm 3 tầng
 - Mọi yêu cầu mới từ người dùng BẮT BUỘC phải mở bằng skill `tdq-workflow:tdq-intake` (hoặc `tdq-intake` nếu cài cục bộ) và chạy theo pipeline của TDQ Workflow (quick hoặc full). Tuyệt đối KHÔNG tự ý chuyển sang plan mode của harness (`EnterPlanMode`) khi nhận yêu cầu.
 - Yêu cầu chứa '_tdq_direct' → tự động phân tích & tìm kiếm mã nguồn, lập mini-plan và chỉ dừng ở 1 cổng duyệt mini-plan (không hỏi chọn pipeline, không phỏng vấn).
 - Ngoại lệ Refactor & Kiến trúc sạch (Rung 1): Khi người dùng yêu cầu Refactor, tái cấu trúc hoặc Clean Architecture/SOLID, cấu trúc sạch và tính mở rộng module đứng TRÊN luật phẫu thuật 1 dòng tối thiểu. Cấm tự ý ép gộp các tầng/lớp hợp lý thành hàm phẳng nếu làm vỡ chủ đích thiết kế.
-- Tự phục hồi môi trường (Self-healing): lỗi 'Python was not found' thì dùng Python đã cài (`python` hoặc `py -3`). Chẩn đoán trước; chỉ sửa kết nối/shim trong quyền đã cấp. Không chạy setup toàn phần nếu sẽ cài mới hoặc đổi permission/host ngoài phạm vi.
+- Tự phục hồi môi trường (Self-healing): lỗi 'Python was not found' thì dùng Python đã cài (`python` hoặc `py -3`). Công cụ đã cài sẵn ở thư mục Scripts/bin mức người dùng nhưng thiếu trong `PATH` thì được phép tự thêm vào User `PATH`. Không chạy setup toàn phần nếu sẽ cài mới hoặc đổi permission/host ngoài phạm vi.
 - Skill báo `Unknown skill` → plugin chưa bật ở project này: đọc `{goc}/skills/tdq-intake/SKILL.md`, thay `{bien_plugin}` bằng `{goc}`, làm theo; nhắc người dùng chạy lệnh setup ở trên để bật plugin.
 - Không được tự ý đổi mode làm việc hiện tại (`EnterPlanMode`, `ExitPlanMode`...).
 - Mọi câu hỏi, lựa chọn option và duyệt gate PHẢI trao đổi trực tiếp trong chat (dạng `1a 2b 3c`, "duyệt spec", "duyệt plan", "duyệt nhanh" hoặc câu tự nhiên). Tuyệt đối CẤM mở popup question UI (`AskUserQuestion`) của agent code.
