@@ -622,5 +622,27 @@ def test_nested_claude_worktree_is_generated_but_project_settings_are_inputs(tmp
     assert receipts.check_eligibility(project, manifest, policy)[0] is False
 
 
+def test_ruff_cache_changes_do_not_invalidate_or_cause_incomplete(tmp_path):
+    project, manifest, policy = fixture(tmp_path)
+    first = run(project, manifest, policy)
+    ruff_entry = project / ".ruff_cache/0.17.3/entry"
+    ruff_entry.parent.mkdir(parents=True)
+    ruff_entry.write_text("cached-lint-state", encoding="utf-8")
+    second = run(project, manifest, policy)
+    assert second["action"] == "reused"
+    assert first["source_receipt_id"] == second["source_receipt_id"]
+
+    def execute_while_ruff_writes():
+        (project / ".ruff_cache/0.17.3/entry").write_text("updated-during-run", encoding="utf-8")
+        (project / ".ruff_cache/CACHEDIR.TAG").write_text("Signature: 8a477f597d28d172789f06886806bc55", encoding="utf-8")
+        return result_for(manifest)
+
+    third = run(project, manifest, policy, execute_while_ruff_writes, fresh=True)
+    assert third["status"] == "PASS"
+    assert third["receipt_reason"] != "inputs_changed_during_execution"
+    policy["cases"][manifest["case_ids"][0]]["input_paths"] = [".ruff_cache/CACHEDIR.TAG"]
+    assert receipts.check_eligibility(project, manifest, policy)[0] is False
+
+
 if __name__ == "__main__" and sys.argv[1:2] == ["--worker"]:
     _worker(*sys.argv[2:])

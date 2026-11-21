@@ -27,7 +27,7 @@ SCHEMA_VERSION = 1
 POLICY_PATH = Path("docs/tdq/reuse-policy.json")
 CACHE_PATH = Path("docs/tdq/cache")
 EXCLUDED_DIRS = {".git", ".venv", ".venv-tokens", "node_modules", "__pycache__",
-                 ".pytest_cache", ".tdq-worktrees"}
+                 ".pytest_cache", ".ruff_cache", ".tdq-worktrees"}
 # Nested agent checkouts are generated independent worktrees, not project inputs.
 # Keep .claude/settings.json and all other project configuration in the envelope.
 GENERATED_PREFIXES = ("docs/tdq/", ".claude/worktrees/", ".tdq-worktrees/", "docs/workinglog/", "docs/working-log/")
