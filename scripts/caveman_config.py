@@ -19,6 +19,7 @@ import utf8_io  # noqa: F401 — forces UTF-8 stdio on Windows
 
 CAVEMAN_MCP_SERVERS: tuple[str, ...] = ("lsp", "chrome-devtools", "tavily-primary")
 PROXY_SCRIPT_NAME = "tdq_mcp_shrink.py"
+LAUNCHER_SCRIPT_NAME = "tdq_mcp_launcher.mjs"
 PROXY_ENV_VARS: dict[str, str] = {
     "PYTHONUTF8": "1",
     "PYTHONUNBUFFERED": "1",
@@ -162,19 +163,43 @@ def disable_caveman(home: str | None = None) -> dict[str, Any]:
     return {**cfg, "ok": True, "reason": "disabled", "config_path": str(target)}
 
 
-def _split_wrapped_args(entry: dict[str, Any]) -> tuple[str, list[str]] | None:
-    """Extract `(orig_cmd, orig_args)` if an MCP server entry is Caveman-wrapped."""
+def _script_basename(token: str) -> str:
+    """Return cross-platform filename component from a slash or backslash path."""
+    return str(token).replace("\\", "/").rsplit("/", 1)[-1]
+
+
+def _parse_wrapped_entry(entry: dict[str, Any]) -> tuple[str, str, list[str]] | None:
+    """Return `(mode, orig_cmd, orig_args)` for node or python wrapped entries."""
     args = entry.get("args")
     if not isinstance(args, list) or "--" not in args:
         return None
     dash_idx = args.index("--")
     prefix = [str(item) for item in args[:dash_idx]]
-    if not any(Path(item).name == PROXY_SCRIPT_NAME for item in prefix):
-        return None
     tail = [str(item) for item in args[dash_idx + 1 :]]
     if not tail:
         return None
-    return tail[0], tail[1:]
+    if any(_script_basename(item) == PROXY_SCRIPT_NAME for item in prefix):
+        return "python_proxy", tail[0], tail[1:]
+    if (
+        len(prefix) >= 2
+        and _script_basename(prefix[0]) == LAUNCHER_SCRIPT_NAME
+        and "caveman" in prefix[1:]
+    ):
+        return "node_launcher", tail[0], tail[1:]
+    return None
+
+
+def _split_wrapped_args(entry: dict[str, Any]) -> tuple[str, list[str]] | None:
+    """Extract `(orig_cmd, orig_args)` if an MCP server entry is Caveman-wrapped."""
+    parsed = _parse_wrapped_entry(entry)
+    if parsed is None:
+        return None
+    return parsed[1], parsed[2]
+
+
+def _is_agy_node_launcher(orig_args: list[str]) -> bool:
+    """Return True when entry already delegates through tdq_mcp_launcher.mjs."""
+    return bool(orig_args) and _script_basename(orig_args[0]) == LAUNCHER_SCRIPT_NAME
 
 
 def _wrap_server_entry(entry: dict[str, Any], proxy_script: Path) -> bool:
@@ -186,8 +211,12 @@ def _wrap_server_entry(entry: dict[str, Any], proxy_script: Path) -> bool:
         return False
     raw_args = entry.get("args")
     orig_args = [str(item) for item in raw_args] if isinstance(raw_args, list) else []
-    entry["command"] = sys.executable
-    entry["args"] = ["-u", str(proxy_script), "--", orig_cmd, *orig_args]
+    if _is_agy_node_launcher(orig_args):
+        entry["command"] = orig_cmd
+        entry["args"] = [orig_args[0], "caveman", "--", orig_cmd, *orig_args]
+    else:
+        entry["command"] = sys.executable
+        entry["args"] = ["-u", str(proxy_script), "--", orig_cmd, *orig_args]
     raw_env = entry.get("env")
     env = dict(raw_env) if isinstance(raw_env, dict) else {}
     env.update(PROXY_ENV_VARS)
@@ -266,26 +295,38 @@ def unwrap_mcp_config(mcp_file: Path) -> list[str]:
     return unwrapped
 
 
-def _inspect_mcp_file(mcp_file: Path) -> tuple[list[str], list[str]]:
-    """Return `(present_servers, wrapped_servers)` for known Caveman MCP targets."""
+def _inspect_mcp_file_details(
+    mcp_file: Path,
+) -> tuple[list[str], list[str], str]:
+    """Return `(present_servers, wrapped_servers, wrapper_mode)` for MCP config."""
     if not mcp_file.is_file():
-        return [], []
+        return [], [], "none"
     try:
         data = json.loads(mcp_file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return [], []
+        return [], [], "none"
     servers = data.get("mcpServers") if isinstance(data, dict) else None
     if not isinstance(servers, dict):
-        return [], []
+        return [], [], "none"
     present: list[str] = []
     wrapped: list[str] = []
+    modes: set[str] = set()
     for name in CAVEMAN_MCP_SERVERS:
         entry = servers.get(name)
         if not isinstance(entry, dict):
             continue
         present.append(name)
-        if _split_wrapped_args(entry) is not None:
+        parsed = _parse_wrapped_entry(entry)
+        if parsed is not None:
             wrapped.append(name)
+            modes.add(parsed[0])
+    mode = next(iter(modes)) if len(modes) == 1 else ("mixed" if modes else "none")
+    return present, wrapped, mode
+
+
+def _inspect_mcp_file(mcp_file: Path) -> tuple[list[str], list[str]]:
+    """Return `(present_servers, wrapped_servers)` for known Caveman MCP targets."""
+    present, wrapped, _ = _inspect_mcp_file_details(mcp_file)
     return present, wrapped
 
 
@@ -302,8 +343,9 @@ def probe_caveman(
     cfg = load_config(home=home)
     cfg_file = config_path(home=home)
     proxy_path = root / "scripts" / PROXY_SCRIPT_NAME
+    launcher_path = root / "scripts" / LAUNCHER_SCRIPT_NAME
     mcp_file = root / "mcp_config.json"
-    present, mcp_wrapped = _inspect_mcp_file(mcp_file)
+    present, mcp_wrapped, wrapper_mode = _inspect_mcp_file_details(mcp_file)
     return {
         "enabled": bool(cfg["enabled"]),
         "prompt_muted": bool(cfg["prompt_muted"]),
@@ -313,10 +355,13 @@ def probe_caveman(
         "config_exists": cfg_file.is_file(),
         "proxy_script": str(proxy_path),
         "proxy_exists": proxy_path.is_file(),
+        "launcher_script": str(launcher_path),
+        "launcher_exists": launcher_path.is_file(),
         "mcp_config_path": str(mcp_file),
         "mcp_config_exists": mcp_file.is_file(),
         "mcp_present_servers": present,
         "mcp_wrapped_servers": mcp_wrapped,
+        "mcp_wrapper_mode": wrapper_mode,
         "active": bool(cfg["enabled"]) and bool(mcp_wrapped),
     }
 
