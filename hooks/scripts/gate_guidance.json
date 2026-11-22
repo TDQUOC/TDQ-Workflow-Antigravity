@@ -1,0 +1,229 @@
+{
+  "hard_deny_codes": [
+    "APPROVE",
+    "GIT",
+    "TEAM",
+    "STATE",
+    "READONLY",
+    "VUNG",
+    "ZERO-POPUP",
+    "SUBAGENT",
+    "UNFINISHED"
+  ],
+  "overwrite_codes": [
+    "LSP",
+    "SUBAGENT"
+  ],
+  "guidance_codes_list": [
+    "SEARCH",
+    "TICK",
+    "DOC",
+    "LOG",
+    "OUTPUT",
+    "SETUP",
+    "GON",
+    "NEXT",
+    "WORKTREE",
+    "ANCHOR",
+    "DOD",
+    "INTAKE",
+    "PLAIN"
+  ],
+  "all_agy_codes": [
+    "APPROVE",
+    "GIT",
+    "TEAM",
+    "STATE",
+    "READONLY",
+    "VUNG",
+    "ZERO-POPUP",
+    "SUBAGENT",
+    "UNFINISHED",
+    "LSP",
+    "SEARCH",
+    "TICK",
+    "DOC",
+    "LOG",
+    "OUTPUT",
+    "SETUP",
+    "GON",
+    "NEXT",
+    "WORKTREE",
+    "ANCHOR",
+    "DOD",
+    "INTAKE",
+    "PLAIN"
+  ],
+  "lean_removed_codes": [
+    "ASK",
+    "DEVTOOL",
+    "FEEDBACK",
+    "GATE",
+    "QC",
+    "RULE",
+    "STUCK"
+  ],
+  "guidance_codes": {
+    "APPROVE": {
+      "chuyen_gi": "Đang chờ người dùng duyệt bước hiện tại trước khi chuyển pha.",
+      "vi_sao": "Duyệt rõ trong chat giúp chốt phạm vi và tránh suy đoán sai ý.",
+      "lam_gi": "In lại khối lựa chọn trong chat rồi chạy `tdq_state.py approve` sau khi chốt.",
+      "bo_qua": "Chỉ mở khi người dùng đã đồng ý rõ và cờ `*_approved` đã bật.",
+      "model_hint": "Wait for explicit user approval in chat, then record via tdq_state.py approve; never guess ambiguous replies."
+    },
+    "GIT": {
+      "chuyen_gi": "Thao tác git được bảo vệ (chưa có duyệt lượt hiện tại) hoặc nhánh/commit mang dấu vết AI.",
+      "vi_sao": "Giữ lịch sử Git thuần kỹ thuật và chặn lệnh đẩy, xóa ngoài ý muốn của người dùng.",
+      "lam_gi": "Xin người dùng duyệt rõ trong chat (với push/reset/clean) hoặc bỏ tiền tố nhánh và trailer AI.",
+      "bo_qua": "Chỉ mở push thường, reset --hard, clean -f trong lượt được duyệt; luôn chặn force-push, nhánh AI và Co-Authored-By:.",
+      "model_hint": "Ask user approval in chat for push/reset/clean; never force-push, use AI branch prefixes, or add Co-Authored-By."
+    },
+    "TEAM": {
+      "chuyen_gi": "Thao tác sửa file sai vùng phân công nhóm hoặc trước pha `implement`.",
+      "vi_sao": "Khóa vùng ngăn các subagent ghi đè nhau và giữ đúng vai trò điều phối.",
+      "lam_gi": "Chỉ sửa file trong vùng được giao hoặc mở task qua `tdq_team.py open`.",
+      "bo_qua": "Subagent được ghi báo cáo vào `docs/tdq/artifacts/` hoặc khi leader đặt `tu_lam`.",
+      "model_hint": "Respect team assignment map and worktree bounds; do not edit delegated areas or source outside implement phase."
+    },
+    "STATE": {
+      "chuyen_gi": "Thao tác định ghi tay trực tiếp vào `docs/tdq/state.json` hoặc `STATE.md`.",
+      "vi_sao": "Sửa tay dễ lệch checksum, hỏng bản chiếu chỉ-đọc và gãy luồng pha.",
+      "lam_gi": "Dùng CLI `py -3 scripts/tdq_state.py <set|approve|init|reset|pause>`.",
+      "bo_qua": "Chỉ được đọc file state; không có ngoại lệ ghi trực tiếp ngoài CLI.",
+      "model_hint": "Never hand-edit docs/tdq/state.json or STATE.md; mutate workflow state exclusively via tdq_state.py CLI."
+    },
+    "READONLY": {
+      "chuyen_gi": "Subagent vai trò chỉ đọc vừa gọi công cụ hoặc lệnh làm đổi file.",
+      "vi_sao": "Vai trò kiểm tra phải độc lập với người viết code để đánh giá khách quan.",
+      "lam_gi": "Dừng ghi file; chỉ đọc/chạy kiểm thử và trả kết quả về cho leader.",
+      "bo_qua": "Không có ngoại lệ ghi file cho vai trò reviewer, qc-tester hay browser.",
+      "model_hint": "Read-only subagent cannot modify files; run diagnostics only and return structured findings to the leader."
+    },
+    "VUNG": {
+      "chuyen_gi": "Đường dẫn ghi nằm ngoài `VÙNG FILE` được cấp hoặc vào vùng khóa.",
+      "vi_sao": "Ranh giới vùng bảo vệ các nhánh song song không đè nhau và khóa file test.",
+      "lam_gi": "Chỉ sửa file trong `VÙNG FILE`; nếu cần thêm file hãy báo leader nới vùng.",
+      "bo_qua": "Chỉ mở sau khi leader cập nhật `VÙNG FILE` trong kế hoạch và giao lại.",
+      "model_hint": "Target path is outside allowed VUNG FILE or inside locked zone; edit only assigned paths or ask leader to widen scope."
+    },
+    "ZERO-POPUP": {
+      "chuyen_gi": "Hệ thống vừa gọi popup hỏi người dùng trong lúc yêu cầu TDQ đang mở.",
+      "vi_sao": "Mọi câu hỏi `1a 2b 3c` và dấu duyệt phải nằm trực tiếp trong luồng chat.",
+      "lam_gi": "Bỏ công cụ popup; viết câu hỏi đánh số kèm phương án và dòng `➤` trong chat.",
+      "bo_qua": "Chỉ dùng công cụ hỏi popup khi chưa có yêu cầu TDQ nào đang mở.",
+      "model_hint": "Popup question tools are banned during an active TDQ request; ask numbered options (1a 2b) directly in chat."
+    },
+    "SUBAGENT": {
+      "chuyen_gi": "Lệnh subagent sai chế độ `swarm` hoặc lệch `Workspace` khi có `WORKTREE:`.",
+      "vi_sao": "`WORKTREE:` đã tách nhánh sẵn nên cần `inherit`, còn `swarm` cần mode `subagent`.",
+      "lam_gi": "Dùng `Workspace='inherit'`, điền đủ trường giao việc và chỉ `swarm` ở mode `subagent`.",
+      "bo_qua": "Hook tự sửa `Workspace='inherit'` nếu chỉ sai tham số; `swarm` chỉ chạy khi đã duyệt.",
+      "model_hint": "Use Workspace='inherit' when WORKTREE: is provided, include all task fields, and use swarm only in subagent mode."
+    },
+    "UNFINISHED": {
+      "chuyen_gi": "Định kết thúc lượt trong khi pha `implement` vẫn còn task mở `[ ]`/`[~]`.",
+      "vi_sao": "Không được bỏ dở giữa chừng khi vẫn còn task chưa hoàn tất theo kế hoạch.",
+      "lam_gi": "Làm tiếp task mở theo red → green và tick `[x]` trước khi dừng lượt.",
+      "bo_qua": "Chỉ dừng khi đã chạy `pause --loai ...` hoặc `continuationActive=True`.",
+      "model_hint": "Open tasks remain in implement phase; finish them and tick [x] before stopping, or declare pause --loai."
+    },
+    "LSP": {
+      "chuyen_gi": "Lời gọi LSP thiếu `language_id`, sai `(root, lang)`, hoặc `blast_radius` quá rộng.",
+      "vi_sao": "Thiếu `language_id` dễ treo server sai ngôn ngữ; `blast_radius` rộng dễ timeout.",
+      "lam_gi": "Truyền đúng `language_id`, giữ `blast_radius <= 3` file, `scope='exported'`.",
+      "bo_qua": "Hook tự điền cho repo đơn ngữ; dùng `--bo-qua-lsp` chỉ cho doc hoặc nội tệp.",
+      "model_hint": "Pass explicit language_id (or rely on auto-overwrite), keep blast_radius <=3 files, scope='exported', include_transitive=False."
+    },
+    "SEARCH": {
+      "chuyen_gi": "Tìm kiếm code bằng Grep/shell mà chưa hỏi tầng khái niệm LSP hoặc Graphify.",
+      "vi_sao": "Đi qua LSP/Graphify trước giúp khoanh đúng symbol và giảm grep mò tốn token.",
+      "lam_gi": "Gọi `find_symbol`, `find_references` hoặc `graphify query` trước khi grep tiếp.",
+      "bo_qua": "Ân xá lần 1; pha `analyze`/`spec`, từ trong prompt hoặc lọc tên file được phép.",
+      "model_hint": "Query concept layer first (LSP find_symbol/find_references or graphify query) before consecutive grep; 1st miss is warned."
+    },
+    "TICK": {
+      "chuyen_gi": "Code đã sửa nhưng ô kiểm `[~]`/`[x]` trong file kế hoạch chưa cập nhật.",
+      "vi_sao": "Đánh dấu từng task giữ tiến độ khớp thực tế và hỗ trợ khôi phục khi gián đoạn.",
+      "lam_gi": "Mở plan đánh dấu `[~]` khi đang làm và đổi `[x]` ngay sau khi test xanh.",
+      "bo_qua": "Miễn khi sửa trong `tests/**`, worktree cô lập hoặc chưa có file kế hoạch.",
+      "model_hint": "Keep plan checkboxes synced: mark active task [~] and tick [x] immediately once its test passes."
+    },
+    "DOC": {
+      "chuyen_gi": "Đọc lại toàn bộ một file chưa thay đổi trong cùng phiên (hoặc file dữ liệu lớn).",
+      "vi_sao": "Đọc lặp nguyên file làm phình ngữ cảnh và tốn chi phí ở mọi lượt gọi sau.",
+      "lam_gi": "Dùng `StartLine`/`EndLine` đúng đoạn cần xem hoặc `tdq_ccr.py` cho file > 32 KB.",
+      "bo_qua": "Bỏ qua khi đọc lần đầu, đọc dải dòng mới, hoặc file vừa đổi nội dung.",
+      "model_hint": "Avoid whole-file re-reads of unchanged files; use StartLine/EndLine (or tdq_ccr.py summarize for >32KB data)."
+    },
+    "LOG": {
+      "chuyen_gi": "Kho mã nguồn có thay đổi nhưng nhật ký `docs/workinglog/` hôm nay chưa cập nhật.",
+      "vi_sao": "Nhật ký ghi lại file sửa, lý do và kết quả test để đối chiếu giữa các phiên.",
+      "lam_gi": "Chạy `tdq_finish.py --files ... --log \"...\"`; không sửa tay file workinglog.",
+      "bo_qua": "Bỏ qua ở lượt chỉ đọc hoặc khi chỉ sửa nháp trong `docs/.staging*`.",
+      "model_hint": "Repo changed without working log entry; run tdq_finish.py --files ... --log '...' (never hand-edit docs/workinglog)."
+    },
+    "OUTPUT": {
+      "chuyen_gi": "Lệnh shell có nguy cơ xuất toàn bộ file hoặc log dài không giới hạn dòng.",
+      "vi_sao": "Đầu ra dài chưa lọc chiếm đầy ngữ cảnh và lặp lại chi phí đọc ở bước sau.",
+      "lam_gi": "Giới hạn bằng `head`/`tail`/`Select-Object`/`-n` hoặc dùng `read_file` theo dòng.",
+      "bo_qua": "Bỏ qua khi `rtk` đã nén hợp lệ hoặc khi cần toàn bộ đầu ra để chẩn đoán.",
+      "model_hint": "Limit unbounded shell output with head/tail/Select-Object/-n or use read_file with line range (or rtk compression)."
+    },
+    "SETUP": {
+      "chuyen_gi": "Thiếu công cụ hỗ trợ (`rtk`, `rg`, `caveman`, hoặc stub Python) hay chưa cài xong.",
+      "vi_sao": "Đủ công cụ giúp tiết kiệm token, chạy đúng UTF-8 và bật đủ tìm kiếm 3 tầng.",
+      "lam_gi": "Chạy `tdq_setup.py` / `tdq_lsp.py check`; đề xuất người dùng duyệt nếu cần cài thêm.",
+      "bo_qua": "Bỏ qua khi đã tắt nhắc qua cờ mute hoặc không dùng công cụ tùy chọn đó.",
+      "model_hint": "Environment tool missing or setup incomplete; verify with tdq_setup.py / tdq_lsp.py check and ask user before installing."
+    },
+    "GON": {
+      "chuyen_gi": "Nhắc kiểm tra thang gọn 7 bậc (`build-less-than-asked`) trước khi thêm cấu trúc mới.",
+      "vi_sao": "Ưu tiên tái dùng mã sẵn có và stdlib giúp tránh đẻ thừa lớp hoặc wrapper.",
+      "lam_gi": "Xét từ bậc 1 (không thêm mới → repo → stdlib → tối giản) và giữ cyclomatic <= 10.",
+      "bo_qua": "Tắt khi `muc_gat=off` hoặc yêu cầu chỉ định rõ Refactor/Clean Architecture.",
+      "model_hint": "Apply the 7-rung lean ladder before creating new files/abstractions (reuse repo/stdlib first; keep cyclomatic <= 10)."
+    },
+    "NEXT": {
+      "chuyen_gi": "Chỉ dẫn pha TDQ hiện tại và bước chuyển tiếp kế tiếp được nạp đầu lượt.",
+      "vi_sao": "Giữ agent làm đúng việc của pha hiện hành, không nhảy cóc sang pha sau.",
+      "lam_gi": "Theo đúng chỉ dẫn `[TDQ:NEXT]` đã có sẵn mà không cần chạy lại `next`.",
+      "bo_qua": "Chỉ chạy `tdq_state.py next` khi ngữ cảnh chưa có dòng `[TDQ:NEXT]`.",
+      "model_hint": "Follow injected [TDQ:NEXT] phase guidance directly without re-running next unless phase changed or missing."
+    },
+    "WORKTREE": {
+      "chuyen_gi": "Sổ đăng ký vẫn còn worktree đang mở từ nhiệm vụ hoặc đợt song song trước.",
+      "vi_sao": "Worktree tồn đọng chiếm đĩa, giữ khóa nhánh cũ và dễ gây nhầm đường dẫn.",
+      "lam_gi": "Chạy `py -3 scripts/tdq_team.py sweep` sau khi merge xong để dọn sạch.",
+      "bo_qua": "Bỏ qua khi các subagent trong đợt hiện tại vẫn đang làm việc trên đó.",
+      "model_hint": "Open worktrees remain in ledger; run tdq_team.py sweep after merging completed parallel tasks."
+    },
+    "ANCHOR": {
+      "chuyen_gi": "Phiên vừa nén hoặc khôi phục từ điểm neo (`compact`/`resume`) của yêu cầu đang chạy.",
+      "vi_sao": "Thẻ neo giữ tên request, pha, task mở và quy tắc cấm để không mất mạch làm việc.",
+      "lam_gi": "Đọc kỹ `request`, `phase`, `doing`, `next` trong thẻ neo và đối chiếu lại file đĩa.",
+      "bo_qua": "Không phát ở phiên mới bình thường khi chưa qua nhánh `compact`/`resume`.",
+      "model_hint": "Session resumed/compacted; re-anchor on active request, phase, doing task, and verify disk state before acting."
+    },
+    "DOD": {
+      "chuyen_gi": "Đang đóng gói `report`/`idle` sau khi QC PASS nhưng ô kiểm DoD vẫn còn trống.",
+      "vi_sao": "Checkbox DoD trong plan là bằng chứng nghiệm thu khớp với kết quả QC đã chạy.",
+      "lam_gi": "Mở plan kiểm lại từng mục DoD đã đạt và đánh dấu `[x]` trước khi kết thúc.",
+      "bo_qua": "Bỏ qua nếu mục chưa đạt đã được ghi độ lệch (`lech add`) trong báo cáo.",
+      "model_hint": "QC passed but DoD checkboxes in the plan remain unchecked; verify and tick [x] before closing out."
+    },
+    "INTAKE": {
+      "chuyen_gi": "Chưa có yêu cầu TDQ nào đang mở (hoặc phát hiện cờ `_tdq_direct` trong prompt).",
+      "vi_sao": "Mọi yêu cầu mới phải đi qua `tdq-intake` để mở nhánh và theo dõi đúng quy trình.",
+      "lam_gi": "Mở skill `tdq-intake` (với `_tdq_direct`: phân tích, lập mini-plan và chốt 1 cổng duyệt).",
+      "bo_qua": "Bỏ qua nếu lượt hiện tại đang trả lời tiếp cuộc phỏng vấn `tdq-intake` đã mở.",
+      "model_hint": "No active TDQ request open; start with tdq-intake (for _tdq_direct, analyze and stop once at mini-plan gate)."
+    },
+    "PLAIN": {
+      "chuyen_gi": "Chuẩn bị viết `spec`, `plan`, `report` hoặc tóm tắt gửi người dùng.",
+      "vi_sao": "Tách Lớp 1 dễ đọc khỏi chi tiết kỹ thuật giúp người xem nắm ngay trong 10–15 giây.",
+      "lam_gi": "Mở đầu bằng `> **Tóm tắt dễ hiểu:**` (<=120 từ, <=6 backtick/100 từ), không bọc code quanh số.",
+      "bo_qua": "Phần chứng cứ chi tiết bên dưới (Lớp 2) vẫn giữ đủ mã bằng chứng và dòng tệp.",
+      "model_hint": "Layer-1 front (chat & top callout): 10-15s plain prose (<=120w, <=6 backticks/100w, <=2 middle-dots/line); push path:line below."
+    }
+  }
+}

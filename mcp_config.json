@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "lsp": {
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs",
+        "lsp"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs",
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--userDataDir=${PLUGIN_DATA}/chrome-devtools-profile"
+      ]
+    },
+    "tavily-primary": {
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs",
+        "npx",
+        "-y",
+        "tavily-mcp@latest"
+      ]
+    }
+  }
+}

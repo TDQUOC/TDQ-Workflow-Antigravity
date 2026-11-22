@@ -1,0 +1,1735 @@
+#!/usr/bin/env python3
+"""Lint the instruction docs of the TDQ workflow (spec §2.6).
+
+Purpose: keep every skill in a shape a small model still reads and follows —
+unbroken step numbering, copy-pasteable commands, an exit condition, no vague words.
+
+Usage:
+    python3 scripts/doc_lint.py skills
+    python3 scripts/doc_lint.py skills/tdq-spec/SKILL.md
+
+Prints `file:line: [RULE] description`; exit 1 on violations, 0 when clean, 2 on bad syntax.
+Silence one rule for one line: put `<!-- doc-lint: allow R4 -->` on the line RIGHT ABOVE it.
+Env: TDQ_LOG=0 turns the log service off (on by default, one ISO-timestamped line to stderr).
+"""
+import ast
+import json
+import os
+import posixpath
+import re
+import shlex
+import subprocess
+import sys
+from datetime import datetime
+
+import utf8_io  # noqa: F401 — imported for its side effect: stdout/stderr become UTF-8
+
+EXIT_SYNTAX = 2
+
+
+def _log(message):
+    """Log service: one ISO-timestamped line to stderr. Silenced by TDQ_LOG=0.
+
+    To stderr and not stdout: stdout is this linter's machine-read channel
+    (`file:line: [RULE]`), and mixing the log into it breaks the contract with callers.
+    """
+    if os.environ.get("TDQ_LOG", "1") != "0":
+        print(f"[{datetime.now().isoformat(timespec='seconds')}] doc_lint: {message}",
+              file=sys.stderr)
+
+# The line cap of a SKILL.md by skill name (spec §2.4). The tests share this constant.
+SKILL_LINE_LIMITS = {
+    # 2026-10-02: five caps raised, each by its own measured amount. Two things were added to
+    # every one of these bodies: the line-index block `doc_index.py` writes, and the pointer
+    # sentences to the new sibling files. Measured, file lines HEAD -> now, and cap old -> new:
+    #   tdq-conventions 184 -> 191 (block 7)   cap 183 -> 192
+    #   tdq-intake      138 -> 148 (block 5)   cap 140 -> 148
+    #   tdq-plan        111 -> 120 (block 3)   cap 110 -> 121
+    #   tdq-setup       121 -> 130 (block 6)   cap 120 -> 130
+    #   tdq-build       165 -> 169 (block 4)   cap 165 -> 174
+    # The new cap is the new line count plus at most 5 lines of head-room, so the next edit
+    # does not have to move a number again. The block buys back more than it costs: it is what
+    # lets a reader take ONE section with `offset/limit` instead of the whole file. A line cap
+    # is a tier-3 constraint in soul.md — hitting it means raising the cap, never compressing
+    # a law to fit.
+    # 2026-09-05: 120 → 135. Step 3b (open the request branch) and the type proposal folded
+    # into the lane question are runtime-tier rules — they run on EVERY request, so they sit
+    # in the body. The long form (commands, the five types, the naming rule) already lives in
+    # references/nhanh-request.md; what stays here is the short form that must be read anyway.
+    # 2026-09-23: 135 → 140. Bước 5c (hỏi mức QC) chạy trên MỌI request và phải nằm ở thân
+    # skill, vì nó là thứ quyết định phase `qc` chạy bao nhiêu. Phần dài (ba lựa chọn, luật
+    # không bày `off`, lệnh ghi state) nằm ở references/analyze-full.md; ở đây chỉ còn dòng
+    # ngắn nhất. Trần là ràng buộc tầng 3 của soul.md — chạm trần thì nâng trần, không nén luật.
+    "tdq-intake": 148,
+    "tdq-spec": 100,
+    # 2026-08-18: 100 → 110. The mode proposal moved from eyeballing the task count to
+    # running `tdq_bench.py simulate` — the command block plus the reason for factor 1.5
+    # must sit in the skill body to be read every time a plan is written.
+    # 2026-11-20: 121 -> 132. Two-Pass Plan V2+ steps plus Tier-1 sibling pointers
+    # (planner-rules.md, plan-examples.md) and scaffolder/verifier CLI references.
+    "tdq-plan": 132,
+    # 2026-09-17: 150 → 165. The build-less-than-asked law landed 2 rules in the body (climb
+    # the ladder before creating anything; make it run first and refactor after). Both are
+    # tier 1–2 by soul.md:99, so they may not be pushed into a reference file, and soul.md:101
+    # settles the collision in advance: a line cap is a tier 3 constraint, so hitting it means
+    # raising the cap, never compressing the law to fit. The 7 rungs, the intensity table and
+    # the examples DID go to references/rules/chung.md — only the rule sentences stayed here.
+    "tdq-build": 174,
+    "tdq-status": 60,
+    # 2026-08-23: new skill. The setup ladder plus the runbook for re-configuring a machine
+    # are read whole when the ladder reports a missing rung, so they stay in the body.
+    # 2026-11-03: 130 → 132. Tool-composition routing is tier 1 in soul.md;
+    # keep it in the body and raise the tier-3 line cap rather than compress the rule.
+    "tdq-setup": 132,
+    # 2026-08-15: 120 → 130. The one-sweep rule (§10) is a runtime-tier rule, so it has to
+    # sit in the skill body to be loaded every turn. Soul ranks runtime above context cost,
+    # hence 10 more lines to keep the rule readable instead of squeezing it to fit.
+    # 2026-08-16: 130 → 133. Clean code dropped its question gate and its scan script, so the
+    # SOLID rule only survives if §11 loads it every turn — 3 loading lines in the body, the
+    # detail in references.
+    # 2026-08-17: 133 → 143. Team mode added 2 runtime-tier rules to §1 (closing the books
+    # several times inside one long turn; never ending a turn while the plan still has tasks,
+    # plus its 3 exceptions). Both must be readable every turn; pushing them down into
+    # references would neuter them.
+    # 2026-08-19: 143 → 145. Direction C lifted `plugin-routing.md` and `measure-scenario.md`
+    # to tier 1: no SKILL.md pointed at those two files before, so they were reachable only
+    # through another reference — exactly where a model reads half of it. The price is 2
+    # pointer lines in the skill body.
+    # 2026-08-22: 145 → 165. The three-layer language rule (rules · machine strings · documents
+    # and dialogue following `doc_lang`) is tier 1: a model that never reads it writes the
+    # user's documents in the language of the rule files. Its table plus the fallback rule cost
+    # 20 lines in the body.
+    # 2026-09-02: 165 → 168. Four rules moved OUT of `~/.claude/CLAUDE.md` and into this body
+    # (§7 the git-init allowance and the sole commit exception; §8 the mem0 search-then-store
+    # rule). They cost 4 lines here but leave a file loaded on EVERY turn of EVERY project —
+    # a net cut. Plan: docs/tdq/plan/2026-09-01-2355-thi-hanh-cat-instruction.md
+    # 2026-09-03: 168 → 177. The `Next step:` rule (every such line names the phase that comes
+    # next) is the fallback layer for hosts with no hooks — Gemini CLI, Copilot CLI, Aider see
+    # the skill text and nothing else. A rule about what every skill body must say cannot live
+    # in a reference the host may never open.
+    # Plan: docs/tdq/plan/2026-09-03-1220-gate-chat-va-next-pha.md
+    # 2026-09-05: 177 → 183. Section 7 gained the request-branch naming rule (five types,
+    # forward slash, which lane opens one). It is read on every request, so the short form
+    # stays in the body; the commands and the full table live in
+    # skills/tdq-intake/references/nhanh-request.md.
+    # 2026-11-03: 192 → 209. Tool-composition rules are tier 1 in soul.md;
+    # runtime rules outrank the tier-3 line cap and must remain readable in the body.
+    "tdq-conventions": 209,
+    # The recovery skill: its 7 steps plus the hard "lose no data" rule block must sit in the
+    # skill body, because a weak model that skips the reference runs the very command that
+    # destroys the whole request.
+    "tdq-check-status": 80,
+    # 2026-09-17: new skill, T4.1 of plan 2026-09-16-2234-cong-sinh-ponytail-tdq. Three modes
+    # (`review`, `audit`, `debt`) in the body and nothing in references: each mode is 3 steps
+    # plus its `Done when:`/`Next step:` pair, and a mode read by halves reports a finding with
+    # no tag — the one thing the skill forbids. Measured 73 lines; the cap leaves 7.
+    "tdq-lean": 80,
+    # 2026-10-25: two browser MCP skills added in 0.74.0 (measured 51 and 77 lines; caps leave 9 and 8).
+    "tdq-browser-research": 60,
+    "tdq-browser-test": 85,
+}
+MAX_LINES_ANY = 500
+MAX_SENTENCE_WORDS = 40
+# a skill must point at at least one output-template file
+NEEDS_TEMPLATE = ("tdq-spec", "tdq-plan", "tdq-build")
+
+HEADING = re.compile(r"^(#+)\s+(.*)$")
+STEP = re.compile(r"^(\d+)\.\s+\S")
+FENCE = re.compile(r"^\s*```")
+# 2026-08-18: `(R\d)` → `(R\d+)` because rule codes reached two digits (R10), and a reason
+# may follow the code — a bare allow leaves no trace of why the exemption exists.
+ALLOW = re.compile(r"<!--\s*doc-lint:\s*allow\s+(R\d+)[^>]*-->")
+INLINE_CODE = re.compile(r"`[^`]*`")
+# An HTML comment is not prose: it is a note for whoever edits the file, and no reader
+# parses it as a sentence. Counting it under R5 would add ~8 words per i18n-allow label.
+HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+TEMPLATE_LINK = re.compile(r"references/[^)\s]*template[^)\s]*\.md")
+# `·` and `;` separate items in these docs — each item reads on its own
+SENTENCE_SPLIT = re.compile(r"(?<=[.!?…])\s+|\s*[·;]\s*")
+BULLET = re.compile(r"^\s*[-*]\s+\S")
+VAGUE = ["nếu cần", "tùy ý", "tuỳ ý", "nên cân nhắc", "linh hoạt", "tự quyết"]  # i18n-allow
+# headings of the "mandatory" sections — R1 scans step sections only, R4 scans rule sections too
+STEP_HEADINGS = ("các bước", "steps")  # i18n-allow
+STRICT_HEADINGS = STEP_HEADINGS + ("phần ", "luật", "giao thức")  # i18n-allow
+
+
+class Doc:
+    """One markdown file, pre-split: lines, fenced regions, headings."""
+
+    def __init__(self, path):
+        self.path = path
+        try:
+            with open(path, encoding="utf-8") as f:
+                self.lines = f.read().splitlines()
+        except OSError as exc:
+            # A20: a vanished/unreadable file → a message, not a raw traceback
+            sys.exit(f"⚠️ cannot read {path}: {exc}")
+        self.in_fence = []
+        fenced = False
+        for line in self.lines:
+            if FENCE.match(line):
+                fenced = not fenced
+                self.in_fence.append(True)  # the ``` line itself counts as inside the block
+            else:
+                self.in_fence.append(fenced)
+
+    def allowed(self, index, rule):
+        """Does the line right above carry `<!-- doc-lint: allow Rn -->` for this very rule?"""
+        if index == 0:
+            return False
+        found = ALLOW.search(self.lines[index - 1])
+        return bool(found) and found.group(1) == rule
+
+    def sections(self):
+        """Yield (normalised title, first line index, last line index) for every heading."""
+        heads = []
+        for i, line in enumerate(self.lines):
+            if self.in_fence[i]:
+                continue
+            m = HEADING.match(line)
+            if m:
+                heads.append((len(m.group(1)), m.group(2).strip().lower(), i))
+        for pos, (level, title, start) in enumerate(heads):
+            end = len(self.lines)
+            for next_level, _, next_start in heads[pos + 1:]:
+                if next_level <= level:
+                    end = next_start
+                    break
+            yield title, start, end
+
+
+def _report(out, doc, index, rule, msg):
+    if not doc.allowed(index, rule):
+        out.append(f"{doc.path}:{index + 1}: [{rule}] {msg}")
+
+
+def rule_r1(doc, out):
+    """Steps in the 'steps' section must run 1, 2, 3… with no jump and no repeat."""
+    for title, start, end in doc.sections():
+        if not any(k in title for k in STEP_HEADINGS):
+            continue
+        expected = 1
+        for i in range(start, end):
+            if doc.in_fence[i]:
+                continue
+            m = STEP.match(doc.lines[i])
+            if not m:
+                continue
+            got = int(m.group(1))
+            if got != expected:
+                _report(out, doc, i, "R1",
+                        f"step numbered {got}, expected {expected}")
+                expected = got
+            expected += 1
+
+
+def rule_r2(doc, out):
+    """A command must be copy-pasteable: inside a ``` block, inline code, or a table cell."""
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        stripped = INLINE_CODE.sub("", line)
+        if "python3" not in stripped and "py -3" not in stripped and "tdq_state.py" not in stripped:
+            continue
+        if line.lstrip().startswith("|"):
+            continue
+        _report(out, doc, i, "R2",
+                "command outside a ``` block / inline code / table → cannot be copied")
+
+
+# Each pair is one marker with the wordings accepted for it: the English one the rules are
+# written in today, and the Vietnamese one every skill carried before the rules were converted.
+# Either wording satisfies the rule — a bundle built from an older skill must not turn red.
+R3_MARKERS = (("Done when:", "Xong khi:"),          # i18n-allow
+              ("Next step:", "Bước kế tiếp:"))      # i18n-allow
+
+
+def rule_r3(doc, out):
+    """A SKILL.md must state when it is done and where to go next."""
+    if os.path.basename(doc.path) != "SKILL.md":
+        return
+    text = "\n".join(doc.lines)
+    for wordings in R3_MARKERS:
+        if not any(needle in text for needle in wordings):
+            out.append(f"{doc.path}:1: [R3] missing the marker `{wordings[0]}`")
+
+
+def rule_r4(doc, out):
+    """A vague word in a step/rule section — unless the next 3 lines pin it down with a table or `→`."""
+    strict = set()
+    for title, start, end in doc.sections():
+        if any(k in title for k in STRICT_HEADINGS):
+            strict.update(range(start, end))
+    for i, line in enumerate(doc.lines):
+        if i not in strict or doc.in_fence[i]:
+            continue
+        low = line.lower()
+        hit = next((w for w in VAGUE if w in low), None)
+        if not hit:
+            continue
+        after = doc.lines[i:i + 4]
+        if any(x.lstrip().startswith("|") or "→" in x for x in after):
+            continue
+        _report(out, doc, i, "R4", f"vague word \"{hit}\" — state the concrete condition")
+
+
+def rule_r5(doc, out):
+    """An over-long sentence makes a small model read the wrong emphasis."""
+    state = {"buf": [], "start": None}
+
+    def flush():
+        if state["buf"]:
+            for sentence in SENTENCE_SPLIT.split(" ".join(state["buf"])):
+                words = sentence.split()
+                if len(words) > MAX_SENTENCE_WORDS:
+                    _report(out, doc, state["start"], "R5",
+                            f"sentence of {len(words)} words (> {MAX_SENTENCE_WORDS}) — split it")
+        state["buf"], state["start"] = [], None
+
+    for i, line in enumerate(doc.lines):
+        text = line.strip()
+        if doc.in_fence[i] or not text or text.startswith(("|", "#", "```")):
+            flush()
+            continue
+        # An `allow` line belongs to NO paragraph. Swallowing it into the buffer points
+        # state["start"] at the comment itself, so allowed() looks one line higher and the
+        # escape hatch stops working.
+        if ALLOW.search(line):
+            flush()
+            continue
+        # every bullet / numbered step is its own reading unit
+        if BULLET.match(line) or STEP.match(line):
+            flush()
+        if state["start"] is None:
+            state["start"] = i
+        state["buf"].append(INLINE_CODE.sub("", HTML_COMMENT.sub("", text)))
+    flush()
+
+
+def rule_r6(doc, out):
+    """Length: a SKILL.md has its own cap; every file stays <= 500 lines."""
+    count = len(doc.lines)
+    if count > MAX_LINES_ANY:
+        out.append(f"{doc.path}:1: [R6] {count} lines > {MAX_LINES_ANY}")
+    if os.path.basename(doc.path) != "SKILL.md":
+        return
+    skill = os.path.basename(os.path.dirname(doc.path))
+    limit = SKILL_LINE_LIMITS.get(skill)
+    if limit and count > limit:
+        out.append(f"{doc.path}:1: [R6] {skill}: {count} lines > the cap of {limit}")
+
+
+def rule_r7(doc, out):
+    """A skill that produces a file for the user must ship an output template, not leave the shape to invention."""
+    if os.path.basename(doc.path) != "SKILL.md":
+        return
+    skill = os.path.basename(os.path.dirname(doc.path))
+    if skill not in NEEDS_TEMPLATE:
+        return
+    if not TEMPLATE_LINK.search("\n".join(doc.lines)):
+        out.append(f"{doc.path}:1: [R7] missing a link to references/*template*.md")
+
+
+# --------------------------------------------- R8: a spec must inventory its capabilities
+
+# The verdicts allowed in the §3b table — a closed set, no invented values.
+DECISIONS = ("DÙNG", "KHÔNG", "NỀN")  # i18n-allow
+# The 4 closed rejection reasons (matched as a PREFIX — detail may follow the reason).
+CLOSED_REASONS = ("khác lĩnh vực", "spec §3 đã chọn cách khác tốt hơn",  # i18n-allow
+                  "thiếu quyền/công cụ", "user đã cấm")  # i18n-allow
+# The 4 mandatory fields of a contract block in the plan (the 5th is the `Dùng:` line itself).  # i18n-allow
+# `Nạp` was dropped on 2026-08-09: the path sentence for sub-agents moved into `Để`.  # i18n-allow
+CONTRACT_FIELDS = ("Để", "Ra", "Kiểm", "Không dùng cho")  # i18n-allow
+CONTRACT_SCAN = 8   # the fields must sit within the 8 lines below the `Dùng:` line  # i18n-allow
+
+
+def _spec3b_rows(doc):
+    """[(line index, cells)] of the §3b table; None when the spec has no 3b section."""
+    section = None
+    for title, start, end in doc.sections():
+        if title.replace(" ", "").startswith("3b"):
+            section = (start, end)
+            break
+    if section is None:
+        return None
+    rows = []
+    for i in range(*section):
+        line = doc.lines[i].strip()
+        if doc.in_fence[i] or not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 4 or set(cells[0]) <= set("-: ") or cells[2].lower() == "phán quyết":  # i18n-allow
+            continue
+        rows.append((i, cells))
+    return rows
+
+
+def rule_r8(doc, out):
+    """A file under `spec/` must carry a valid §3b table (the capability inventory)."""
+    if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "spec":
+        return
+    for line in doc.lines:
+        found = ALLOW.search(line)
+        if found and found.group(1) == "R8":
+            return          # FILE-level exemption — for specs written before 0.3.3
+    rows = _spec3b_rows(doc)
+    if rows is None:
+        out.append(f"{doc.path}:1: [R8] spec missing the section `## 3b. Năng lực & công cụ`")  # i18n-allow
+        return
+    if not rows:
+        out.append(f"{doc.path}:1: [R8] the §3b table holds no data row")
+        return
+    for i, cells in rows:
+        decision = cells[2].replace("*", "").strip()
+        if decision not in DECISIONS:
+            _report(out, doc, i, "R8",
+                    f"verdict \"{decision}\" — only DÙNG / KHÔNG / NỀN are accepted")  # i18n-allow
+        elif decision == "KHÔNG" and not cells[3].strip().strip("`").startswith(CLOSED_REASONS):  # i18n-allow
+            _report(out, doc, i, "R8", "the rejection reason is not one of the 4 closed reasons")
+
+
+# ------------------------------------- R9: a rule file must carry the full 3-section shape (soul §3)
+
+# The 3 mandatory sections of a rule file — level-2 headings, compared case-insensitively.
+# Each entry lists the wordings of ONE section. Rule bodies are English from 2026-08-22,
+# while older rule files still carry the Vietnamese headings — either wording satisfies R9.
+RULE_SECTIONS = (("when it applies", "khi nào áp dụng"),  # i18n-allow
+                 ("what to do", "làm gì"),  # i18n-allow
+                 ("self-check", "tự kiểm"))  # i18n-allow
+# R9 is nailed to soul.md + the rule library; a wider scope would wrongly redden old files
+# written to another shape (spec 2026-08-14-set-soul-workflow §3).
+RULES_DIR_MARK = f"{os.sep}references{os.sep}rules{os.sep}"
+# Add EXACTLY the file name, never open all of `references/`: clean-code.md lost its
+# command-shaped self-check when the old scan script was deleted, so R9 carries that check.
+RULE_FILE_NAMES = ("soul.md", "clean-code.md")
+
+
+def _r9_in_scope(path):
+    abs_path = os.path.abspath(path)
+    return os.path.basename(abs_path) in RULE_FILE_NAMES or RULES_DIR_MARK in abs_path
+
+
+def rule_r9(doc, out):
+    """soul.md + references/rules/*: all 3 mandatory `##` sections present."""
+    if not _r9_in_scope(doc.path):
+        return
+    have = set()
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m and len(m.group(1)) == 2:
+            have.add(m.group(2).strip().lower())
+    for wordings in RULE_SECTIONS:
+        if not any(need in have for need in wordings):
+            out.append(f"{doc.path}:1: [R9] rule file missing the section `## {wordings[0]}` "
+                       "— the 3-section shape is mandatory (soul principle 3)")
+
+
+# ------------------------- R10: a lane-full spec must declare its module boundaries
+
+# Reads the lane off the header line `... · Lane: full`. Only lane full is bound by this rule —
+# lane quick drops the module-boundary section on purpose, so checking it there is a false alarm.
+LANE_RE = re.compile(r"Lane:\s*(full|quick)", re.IGNORECASE)
+WORK_KIND_RE = re.compile(
+    r"\bWork\s+kind\*{0,2}\s*:\s*\*{0,2}`?(build|investigate)\b", re.IGNORECASE
+)
+R10_HEADING = "2b. ranh giới module"  # i18n-allow
+
+
+def _first_15_with_fences(doc_or_lines):
+    """Yield (line, is_fenced) pairs for the first 15 lines of a Doc, string, or sequence."""
+    if hasattr(doc_or_lines, "lines") and hasattr(doc_or_lines, "in_fence"):
+        return list(zip(doc_or_lines.lines[:15], doc_or_lines.in_fence[:15]))
+    raw = doc_or_lines.splitlines() if isinstance(doc_or_lines, str) else list(doc_or_lines)
+    fenced = False
+    out = []
+    for line in raw[:15]:
+        if FENCE.match(line):
+            fenced = not fenced
+            out.append((line, True))
+        else:
+            out.append((line, fenced))
+    return out
+
+
+def _is_investigate_doc(doc_or_lines):
+    """Return True when the first 15 non-fenced lines declare `Work kind: investigate`."""
+    for line, is_fenced in _first_15_with_fences(doc_or_lines):
+        if is_fenced:
+            continue
+        m = WORK_KIND_RE.search(line)
+        if m:
+            return m.group(1).lower() == "investigate"
+    return False
+
+
+def _lane_cua_spec(doc):
+    """Returns 'full' | 'quick' | None. None means the spec declares no lane."""
+    for line in doc.lines[:15]:
+        m = LANE_RE.search(line)
+        if m:
+            return m.group(1).lower()
+    return None
+
+
+def rule_r10(doc, out):
+    """A lane-full spec needs `## 2b. Ranh giới module` — the plan cuts tasks along it."""  # i18n-allow
+    if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "spec":
+        return
+    if _lane_cua_spec(doc) != "full":
+        return
+    if _is_investigate_doc(doc):
+        return
+    for line in doc.lines:
+        found = ALLOW.search(line)
+        if found and found.group(1) == "R10":
+            return          # FILE-level exemption — for specs written before this rule
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m and m.group(2).strip().lower().startswith(R10_HEADING):
+            return
+    out.append(f"{doc.path}:1: [R10] lane-full spec is missing the section "
+               "`## 2b. Ranh giới module` — the plan has no cut line to split tasks")  # i18n-allow
+
+
+# --------------------- R11: a spec holds no check command, only the PASS condition
+
+# The day the rule landed. A spec whose slug predates it is NOT bound by R11: 42 old specs
+# follow the old rule, and editing them or sprinkling exemption lines into them would touch
+# files outside the request.
+R11_MOC = "2026-08-19"
+# The signs of "this is a concrete check command" rather than a PASS condition: a test file
+# path, and pytest's selection flag. Both are only correct AFTER the code exists — put them in
+# the spec (sealed with a sha at approval) and a wrong name found at QC forces a re-approval.
+# Measured: 2 of 7 cases in docs/tdq/reports/2026-08-18-2050-spec-doi-sau-khi-duyet.md.
+R11_DAU_HIEU = (
+    (re.compile(r"tests?/[\w./-]*test_[\w.-]+\.py"), "a test file path"),
+    (re.compile(r"(?<![\w-])-k\s+\S"), "the test selection flag `-k`"),
+)
+
+
+def _slug_truoc_moc(path):
+    """True when the spec file name starts with a date earlier than the rule landing day."""
+    ten = os.path.basename(path)
+    return ten[:10] < R11_MOC if re.match(r"\d{4}-\d{2}-\d{2}", ten[:10]) else False
+
+
+def rule_r11(doc, out):
+    """A spec states the PASS CONDITION only; the concrete check command belongs to the plan."""
+    if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "spec":
+        return
+    if _slug_truoc_moc(doc.path):
+        return
+    for i, line in enumerate(doc.lines):
+        if ALLOW.search(doc.lines[i - 1]) if i else False:
+            continue
+        for mau, ten in R11_DAU_HIEU:
+            if mau.search(line):
+                _report(out, doc, i, "R11",
+                        f"the spec carries {ten} — move it to the plan, a spec holds PASS conditions only")
+                break
+
+
+# --------------------- R13: the token cap of a rule file, enforced through the lock file
+def kiem_tran_token(paths):
+    """-> the R13 findings for the `skills/` area, read from `docs/tdq/token-budget.json`.
+
+    Why it goes through a lock file instead of counting here: `doc_lint` runs in CI, where this
+    repo deliberately installs no outside tool, so there is NO tokenizer. And no substitute
+    quantity is trustworthy — measured 2026-10-02 over 43 files: tokens per line spread 4.1×,
+    bytes per token 1.81×. So `token_budget.py` measures on a machine that has a tokenizer and
+    locks the number with a `sha256`; here only the hash is compared. A match means the number
+    still holds, a mismatch says the measurement is stale — it never guesses.
+
+    This is a REPO-level check, not a per-file one, so it runs once for the whole lint pass, and
+    only when that pass touched a file under `skills/`.
+    """
+    moc = f"{os.sep}skills{os.sep}"
+    trong_vung = [os.path.abspath(p) for p in paths if moc in os.path.abspath(p)]
+    if not trong_vung:
+        return []
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import token_budget
+    # The root comes from the linted path itself, not from `token_budget.ROOT`: when this plugin
+    # lints ANOTHER project, `ROOT` is the install directory, so the check would talk about TDQ's
+    # own rule files while the lock that needs checking lives in that other project — the two
+    # halves would never meet.
+    goc = trong_vung[0][:trong_vung[0].index(moc)] or token_budget.ROOT
+    return [f"{token_budget.FILE_KHOA}:1: [R13] {d}" for d in token_budget.kiem_khoa(goc)]
+
+
+# --------------------- R15: Plan V2+ task completeness, placeholders, and ANTI-2 guard
+R15_MOC = "2026-11-20"
+EXT_MA_NGUON = (
+    ".py", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs",
+    ".c", ".cpp", ".cs", ".rb", ".php", ".java",
+)
+EXT_CAU_HINH = (".json", ".yaml", ".yml", ".toml", ".ini", ".cfg")
+_DIAGNOSTIC_PREFIXES = ("docs/tdq/artifacts/", "docs/tdq/bench/")
+
+
+def _normalize_posix_rel(rel: str) -> str:
+    norm = posixpath.normpath(rel.strip().replace("\\", "/"))
+    while norm.startswith("./"):
+        norm = norm[2:]
+    return norm
+
+
+def _is_diagnostic_artifact_path(rel: str) -> bool:
+    if not rel:
+        return False
+    low = _normalize_posix_rel(rel).lower()
+    if low.startswith(_DIAGNOSTIC_PREFIXES):
+        return True
+    is_abs = low.startswith("/") or (len(low) >= 2 and low[1] == ":")
+    return is_abs and any(f"/{prefix}" in low for prefix in _DIAGNOSTIC_PREFIXES)
+
+
+def is_product_source_path(rel: str) -> bool:
+    """Return True when `rel` is a product source file outside `docs/tdq/{artifacts,bench}/`."""
+    if not rel or _is_diagnostic_artifact_path(rel):
+        return False
+    return _normalize_posix_rel(rel).lower().endswith(EXT_MA_NGUON)
+TU_KHOA_LOGIC = ("đặc tả", "logic", "giải thuật", "thuật toán", "pseudo-code")  # i18n-allow
+BANNED_PLACEHOLDERS = (
+    "tbd",
+    "todo",
+    "handle edge cases",
+    "appropriate validation",
+    "xử lý các edge case",  # i18n-allow
+    "thêm validation phù hợp",  # i18n-allow
+    "cập nhật các file liên quan",  # i18n-allow
+    "viết test cho các hàm trên",  # i18n-allow
+    "tối ưu nếu cần",  # i18n-allow
+)
+_BANNED_PH_RES = tuple(
+    (phrase, re.compile(r"(?<!\w)" + re.escape(phrase) + r"(?!\w)", re.IGNORECASE))
+    for phrase in BANNED_PLACEHOLDERS
+)
+_BANNED_ELLIPSIS_RE = re.compile(r"^\s*(?:\d+\.|[-*])\s+.*\.\.\.\s*$")
+_FIELD_VALUE_RE = re.compile(r"^\s*[-*]\s*[^:]+:\s*`([^`]*)`\s*$")
+
+ANTI2_PATTERNS = (
+    ("assert True", re.compile(r"\bassert\s*\(?\s*True\s*\)?(?=$|[\s,;)\"'`])")),
+    ("assert 1 == 1", re.compile(r"\bassert\s*\(?\s*(\d+)\s*==\s*\1\s*\)?")),
+    ("assert len(...) >= 0", re.compile(r"\bassert\s+len\([^)]*\)\s*>=\s*0\b")),
+    ("bare os.path.exists", re.compile(r"\bos\.path\.exists\s*\(")),
+    ("bare Test-Path", re.compile(r"\bTest-Path\b", re.IGNORECASE)),
+)
+_CONTENT_OR_EXIT_RE = re.compile(
+    r"(?:['\")\]]\s+in\s+[A-Za-z_]|open\(|read_text|\.read\(|json\.load|"
+    r"get-content|select-string|-match|\bgrep\b|\brg\b|\bdiff\b|"
+    r"returncode|lastexitcode|\bexit\s+\d|==|!=|&&|\|\|)",
+    re.IGNORECASE,
+)
+
+_R15_TASK_RE = re.compile(r"^-\s*\[[ ~x>]\]\s*\*\*((?:T|QC)\d+(?:[A-Za-z0-9.]*))\*\*")
+_R15_LEGACY_PREFIXES = ("- [ ] **T", "- [x] **T", "- [~] **T", "- [>] **T")
+_R15_PATH_RE = re.compile(r"[A-Za-z0-9_./\\-]+\.[A-Za-z][A-Za-z0-9]*")
+_R15_SWEEP_RE = re.compile(
+    r"(?:uniform\s+mechanical\s+sweep|[\(\[]\s*sweep\s*[\)\]]|"
+    r"(?:loại|type|nhãn|nhan_loai)\s*:\s*[^.\n]*\bsweep\b)",  # i18n-allow
+    re.IGNORECASE,
+)
+_R15_SYNC_SIG_RE = re.compile(r"(?:dong-bo-chu-ky|đồng\s+bộ\s+chữ\s+ký)", re.IGNORECASE)  # i18n-allow
+_R15_LOGIC_LABEL_RE = re.compile(r"^\s*[-*]\s*(?:\*\*)?logic\b", re.IGNORECASE | re.MULTILINE)
+_R15_REQ_RE = re.compile(r"(?:^|\s|[-*])(?:\*\*)?req(?:\*\*)?\s*:", re.IGNORECASE)
+_R15_ORACLE_HEAD_PREFIXES = (
+    "tiêu chí:", "assert:", "test oracle:", "kiểm:", "ca hiểm:", "ca góc hiểm",  # i18n-allow
+)
+_R15_CONTRACT_RE = re.compile(r"\b(?:giao tiếp|consumes|produces)\s*:", re.IGNORECASE)  # i18n-allow
+_R15_MAX_FULL_LINES = 35
+_R15_MAX_SWEEP_FILES = 6
+_R15_MAX_SYNC_SIG_FILES = 5
+
+_R15_COMPACT_RULES = (
+    ("Chạm/Sinh ra", lambda s: any(k in s for k in ("chạm:", "cham:", "sinh ra:"))),  # i18n-allow
+    ("Vị trí neo/Quy luật", lambda s: any(k in s for k in ("vị trí neo:", "vi tri neo:", "neo & công cụ:", "quy luật:", "quy luat:"))),  # i18n-allow
+    ("Trước → Sau", lambda s: any(k in s for k in ("trước → sau:", "trước -> sau:", "truoc -> sau:"))),  # i18n-allow
+    ("Logic", lambda s: bool(_R15_LOGIC_LABEL_RE.search(s))),
+    ("Tiêu chí", lambda s: any(k in s for k in ("tiêu chí:", "tiêu chí chấp nhận", "ca góc hiểm", "test oracle", "assert:"))),  # i18n-allow
+)
+_R15_FULL_RULES = (
+    ("Req", lambda s: bool(_R15_REQ_RE.search(s))),
+    ("Ngoài phạm vi/GIỮ NGUYÊN", lambda s: any(k in s for k in ("ngoài phạm vi:", "ngoai pham vi:", "giữ nguyên"))),  # i18n-allow
+    ("Chạm", lambda s: "chạm:" in s or "cham:" in s),  # i18n-allow
+    ("Neo & Công cụ/Vị trí neo", lambda s: any(k in s for k in ("neo & công cụ:", "vị trí neo:", "vi tri neo:"))),  # i18n-allow
+    ("Trước → Sau", lambda s: any(k in s for k in ("trước → sau:", "trước -> sau:", "truoc -> sau:"))),  # i18n-allow
+    ("Tiêu chí chấp nhận/EARS", lambda s: "tiêu chí chấp nhận" in s or bool(re.search(r"\bears\b", s))),  # i18n-allow
+    ("Logic", lambda s: bool(_R15_LOGIC_LABEL_RE.search(s))),
+    ("Ca góc hiểm/Assert/Tiêu chí", lambda s: any(k in s for k in ("ca góc hiểm", "tiêu chí:", "test oracle", "assert:"))),  # i18n-allow
+)
+_R15_CONFIG_RULES = (
+    ("schema/key", lambda s: any(k in s for k in ("schema", "key", "khóa", "trường", "trước → sau", "trước -> sau", "logic", "đặc tả"))),  # i18n-allow
+    ("verification", lambda s: any(k in s for k in ("tiêu chí", "assert", "kiểm", "test oracle", "ca góc hiểm", "ears"))),  # i18n-allow
+)
+
+
+def _plan_sau_moc(path):
+    """Return True only when filename begins with YYYY-MM-DD >= R15_MOC."""
+    name = os.path.basename(path)
+    return name[:10] >= R15_MOC if re.match(r"^\d{4}-\d{2}-\d{2}", name) else False
+
+
+def _line_indent(line):
+    prefix = line[:len(line) - len(line.lstrip(" \t"))]
+    return len(prefix.expandtabs(4))
+
+
+def _extract_legacy_tasks(doc):
+    tasks = []
+    curr_idx = None
+    curr_lines = []
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        if line.startswith(_R15_LEGACY_PREFIXES):
+            if curr_idx is not None:
+                tasks.append((curr_idx, curr_lines))
+            curr_idx, curr_lines = i, []
+        elif curr_idx is not None:
+            if line.startswith((" ", "\t")):
+                curr_lines.append(line)
+            elif line.strip():
+                tasks.append((curr_idx, curr_lines))
+                curr_idx, curr_lines = None, []
+    if curr_idx is not None:
+        tasks.append((curr_idx, curr_lines))
+    return tasks
+
+
+def _legacy_has_code(indented):
+    for line in indented:
+        low = line.lower()
+        if ("chạm:" in low or "cham:" in low) and any(  # i18n-allow
+            is_product_source_path(p) for p in _R15_PATH_RE.findall(line)
+        ):
+            return True
+    return False
+
+
+def _legacy_r15(doc):
+    out = []
+    for task_idx, indented in _extract_legacy_tasks(doc):
+        if _legacy_has_code(indented) and not any(any(kw in l.lower() for kw in TU_KHOA_LOGIC) for l in indented):
+            _report(out, doc, task_idx, "R15",
+                    "task can thiệp mã nguồn nhưng thiếu khối đặc tả kỹ thuật/pseudo-code (Rule R15: Self-Contained Task Block)")  # i18n-allow
+    return out
+
+
+def _append_task(tasks, curr):
+    if curr is not None:
+        tasks.append((curr["idx"], curr["id"], curr["head"], curr["body"], curr["end"]))
+
+
+def _extract_plan_tasks(doc):
+    tasks, curr = [], None
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            if curr is not None:
+                curr["end"] = i
+            continue
+        m = _R15_TASK_RE.match(line)
+        if m:
+            _append_task(tasks, curr)
+            curr = {"idx": i, "id": m.group(1), "head": line, "body": [], "end": i}
+        elif curr is not None and line.startswith((" ", "\t")):
+            curr["body"].append((i, line))
+            if line.strip():
+                curr["end"] = i
+        elif line.strip():
+            _append_task(tasks, curr)
+            curr = None
+    _append_task(tasks, curr)
+    return tasks
+
+
+def _cham_paths(body_items):
+    """Extract unique declared paths from single-line or multiline `Chạm:` sections."""  # i18n-allow
+    in_cham = False
+    cham_indent = 0
+    paths = []
+    for _, line in body_items:
+        if not line.strip():
+            continue
+        indent = _line_indent(line)
+        clean = re.sub(r"^\s*[-*]\s*", "", line).replace("**", "").strip().lower()
+        if clean.startswith(("chạm:", "cham:")):  # i18n-allow
+            in_cham, cham_indent = True, indent
+            for p in _R15_PATH_RE.findall(line.partition(":")[2]):
+                if p not in paths:
+                    paths.append(p)
+            continue
+        if not in_cham:
+            continue
+        if indent <= cham_indent:
+            in_cham = False
+            continue
+        for p in _R15_PATH_RE.findall(line):
+            if p not in paths:
+                paths.append(p)
+    return paths
+
+
+def _find_banned_placeholder(line):
+    outside = INLINE_CODE.sub(" ", line)
+    for phrase, regex in _BANNED_PH_RES:
+        if regex.search(outside):
+            return phrase
+    if _BANNED_ELLIPSIS_RE.match(outside):
+        return "..."
+    m = _FIELD_VALUE_RE.match(line)
+    if m:
+        val = m.group(1).strip()
+        if val == "..." or val.lower() in BANNED_PLACEHOLDERS:
+            return val.lower()
+    return None
+
+
+def _match_anti2(text):
+    for label, regex in ANTI2_PATTERNS:
+        if not regex.search(text):
+            continue
+        if label.startswith("bare ") and _CONTENT_OR_EXIT_RE.search(text):
+            continue
+        return label
+    return None
+
+
+def _oracle_lines(body_items):
+    """Yield (idx, line) belonging to oracle/check sub-sections inside a task block."""
+    in_oracle, oracle_indent = False, 0
+    for idx, line in body_items:
+        if not line.strip():
+            continue
+        indent = _line_indent(line)
+        clean = re.sub(r"^\s*[-*]\s*", "", line).replace("**", "").strip().lower()
+        if clean.startswith(_R15_ORACLE_HEAD_PREFIXES):
+            in_oracle, oracle_indent = True, indent
+            if clean.startswith("ca hiểm:") and ("anti-2" in clean or "anti2" in clean):  # i18n-allow
+                continue
+            yield idx, line
+        elif in_oracle and indent > oracle_indent:
+            yield idx, line
+        else:
+            in_oracle = False
+
+
+def _check_anti2_task(doc, task_idx, header_line, body_items, out):
+    m = re.search(r"\bTest:\s*(.+)$", header_line)
+    if m:
+        hit = _match_anti2(m.group(1))
+        if hit:
+            _report(out, doc, task_idx, "R15", f"ANTI-2 blind assertion/check ({hit}) in Test clause")
+    for idx, line in _oracle_lines(body_items):
+        hit = _match_anti2(line)
+        if hit:
+            _report(out, doc, idx, "R15", f"ANTI-2 blind assertion/check ({hit}) in test oracle")
+
+
+def _is_quick_plan(doc):
+    for i, line in enumerate(doc.lines[:15]):
+        if doc.in_fence[i]:
+            continue
+        if line.lstrip().startswith("# QUICK") or _lane_cua_spec(doc) == "quick":
+            return True
+    return False
+
+
+def _missing_fields(body_norm, rules):
+    return [name for name, predicate in rules if not predicate(body_norm)]
+
+
+def _check_sweep_and_sync_caps(doc, task_idx, full_norm, cham_paths, out):
+    is_sweep = bool(_R15_SWEEP_RE.search(full_norm))
+    is_sync_sig = bool(_R15_SYNC_SIG_RE.search(full_norm))
+    if is_sweep and len(cham_paths) > _R15_MAX_SWEEP_FILES:
+        _report(out, doc, task_idx, "R15",
+                f"Uniform Mechanical Sweep touches {len(cham_paths)} files (> {_R15_MAX_SWEEP_FILES})")
+    if is_sync_sig and len(cham_paths) > _R15_MAX_SYNC_SIG_FILES:
+        _report(out, doc, task_idx, "R15",
+                f"dong-bo-chu-ky touches {len(cham_paths)} files (> {_R15_MAX_SYNC_SIG_FILES})")
+    return is_sweep or is_sync_sig
+
+
+def _check_code_or_config(doc, task_idx, task_id, body_norm, flags, line_count, out):
+    has_code, has_config, is_compact = flags
+    if has_code and (is_compact or task_id.upper().startswith("QC")):
+        miss = _missing_fields(body_norm, _R15_COMPACT_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15", f"R15-Compact task missing field(s): {', '.join(miss)}")
+        return
+    if has_code:
+        miss = _missing_fields(body_norm, _R15_FULL_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15",
+                    f"R15-Full task missing Per-Task Mini-Spec field(s): {', '.join(miss)}")
+        if line_count > _R15_MAX_FULL_LINES:
+            _report(out, doc, task_idx, "R15",
+                    f"R15-Full task block has {line_count} lines (> {_R15_MAX_FULL_LINES})")
+        return
+    if has_config:
+        miss = _missing_fields(body_norm, _R15_CONFIG_RULES)
+        if miss:
+            _report(out, doc, task_idx, "R15", f"config task missing required detail(s): {', '.join(miss)}")
+
+
+def _check_task_v2(doc, task, is_quick, out):
+    task_idx, task_id, header_line, body_items, end_idx = task
+    for idx, line in [(task_idx, header_line)] + body_items:
+        ph = _find_banned_placeholder(line)
+        if ph:
+            _report(out, doc, idx, "R15", f"banned placeholder \"{ph}\" — replace with concrete spec")
+    _check_anti2_task(doc, task_idx, header_line, body_items, out)
+
+    cham_paths = _cham_paths(body_items)
+    has_code = any(is_product_source_path(p) for p in cham_paths)
+    has_config = any(
+        not _is_diagnostic_artifact_path(p) and p.lower().endswith(EXT_CAU_HINH)
+        for p in cham_paths
+    )
+    body_norm = "\n".join(l.replace("**", "") for _, l in body_items).lower()
+    full_norm = header_line.replace("**", "").lower() + "\n" + body_norm
+    compact_flag = _check_sweep_and_sync_caps(doc, task_idx, full_norm, cham_paths, out) or is_quick
+    _check_code_or_config(doc, task_idx, task_id, body_norm,
+                          (has_code, has_config, compact_flag), end_idx - task_idx + 1, out)
+    return (has_code or has_config) and bool(_R15_CONTRACT_RE.search(body_norm))
+
+
+def _check_dod_v2(doc, out):
+    in_dod = False
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m:
+            in_dod = "definition of done" in m.group(2).strip().lower()
+            continue
+        if not in_dod or not re.match(r"^\s*[-*]\s+", line):
+            continue
+        ph = _find_banned_placeholder(line)
+        if ph:
+            _report(out, doc, i, "R15", f"banned placeholder \"{ph}\" in Definition of Done")
+        hit = _match_anti2(line)
+        if hit:
+            _report(out, doc, i, "R15", f"ANTI-2 blind assertion/check ({hit}) in Definition of Done")
+
+
+def _has_ownership_map(doc):
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        s = line.strip()
+        if not (HEADING.match(s) or s.startswith(("|", "**"))):
+            continue
+        low = s.lower()
+        if "sở hữu hợp đồng" in low or "ownership map" in low:  # i18n-allow
+            return True
+    return False
+
+
+def _plan_yeu_cau_model_effort(path):
+    """Enforce Model & Effort table starting from request 2026-11-20-1230 or date >= 2026-11-21."""
+    name = os.path.basename(path)
+    if re.match(r"^\d{4}-\d{2}-\d{2}-\d{4}\b", name):
+        return name[:15] >= "2026-11-20-1230"
+    if re.match(r"^\d{4}-\d{2}-\d{2}\b", name):
+        return name[:10] >= "2026-11-21"
+    return False
+
+
+def _check_model_effort_section(doc, out):
+    heading_idx = None
+    section_lines = []
+    for i, line in enumerate(doc.lines):
+        if doc.in_fence[i]:
+            continue
+        m = HEADING.match(line)
+        if m:
+            title = m.group(2).strip().lower()
+            if heading_idx is not None:
+                break
+            if "phân bổ model" in title or "model & effort" in title:  # i18n-allow
+                heading_idx = i
+            continue
+        if heading_idx is not None:
+            section_lines.append(line.lower())
+    if heading_idx is None:
+        _report(out, doc, 0, "R15", "plan missing required '## Phân bổ Model & Effort' section")
+        return
+    body = "\n".join(section_lines)
+    missing = [phase for phase in ("implement", "qc", "report") if phase not in body]
+    if missing:
+        _report(out, doc, heading_idx, "R15",
+                f"'## Phân bổ Model & Effort' missing phase allocation(s): {', '.join(missing)}")
+
+
+def r15_loi(doc: Doc, check_dir: bool = True) -> list[str]:
+    """Validate plan task blocks for R15 (legacy before R15_MOC, full V2+ from R15_MOC onward)."""
+    if check_dir and os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "plan":
+        return []
+    if not _plan_sau_moc(doc.path):
+        return _legacy_r15(doc)
+    out = []
+    is_quick = _is_quick_plan(doc)
+    contract_tasks = 0
+    for task in _extract_plan_tasks(doc):
+        if _check_task_v2(doc, task, is_quick, out):
+            contract_tasks += 1
+    _check_dod_v2(doc, out)
+    if contract_tasks >= 2 and not _has_ownership_map(doc):
+        _report(out, doc, 0, "R15",
+                "plan has >= 2 contract code tasks without an Ownership Map section")
+    if not is_quick and _plan_yeu_cau_model_effort(doc.path):
+        _check_model_effort_section(doc, out)
+    return out
+
+
+def rule_r15(doc, out):
+    """Enforce R15 plan task specifications and ANTI-2 / placeholder guards."""
+    out.extend(r15_loi(doc, check_dir=True))
+
+
+# --------------------- R16: scenario & Bug Board CLI flag / length checks
+
+CLI_DOC_SCENARIO_MAX_LINES = 40
+_CLI_SCRIPT_RE = re.compile(
+    r"(?:^|[\s`\"'(|])(?:\./)?scripts/([A-Za-z0-9_.-]+\.py)\b(.*)"
+)
+_CLI_FLAG_RE = re.compile(r"^(--[A-Za-z0-9][A-Za-z0-9-]*)(?:=.*)?$")
+_CLI_FLAG_SCAN_RE = re.compile(r"--[A-Za-z0-9][A-Za-z0-9-]*")
+_CLI_SHELL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||[;|#])\s*")
+_SCRIPT_FLAGS_CACHE: dict[tuple[str, int, int, str | None], set[str]] = {}
+
+
+def _cli_doc_scope(path: str) -> tuple[str | None, str | None]:
+    """Return ('scenarios'|'bugs', repo_root) when path sits under docs/tdq/{scenarios,bugs}/."""
+    norm = os.path.abspath(path).replace("\\", "/")
+    for kind in ("scenarios", "bugs"):
+        marker = f"/docs/tdq/{kind}/"
+        if marker in norm:
+            root = norm[:norm.index(marker)] or os.path.sep
+            return kind, root
+    return None, None
+
+
+def _resolve_cli_script(script_name: str, repo_root: str | None) -> str | None:
+    """Locate `scripts/<script_name>` in `repo_root` (fallback to TDQ scripts when absent)."""
+    if ".." in script_name or "/" in script_name or "\\" in script_name:
+        return None
+    if repo_root is not None:
+        scripts_dir = os.path.join(repo_root, "scripts")
+        if os.path.isdir(scripts_dir):
+            cand = os.path.join(scripts_dir, script_name)
+            return cand if os.path.isfile(cand) else None
+    fallback = os.path.join(os.path.dirname(os.path.abspath(__file__)), script_name)
+    return fallback if os.path.isfile(fallback) else None
+
+
+def _docstring_node_ids(tree: ast.AST) -> set[int]:
+    """Return object ids of leading docstring Constant nodes across module/class/function bodies."""
+    ids: set[int] = set()
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            ids.add(id(first.value))
+    return ids
+
+
+def _add_argument_flags(call: ast.Call) -> set[str]:
+    """Extract `--flag` strings (plus `--no-...` for BooleanOptionalAction) from one Call node."""
+    found: set[str] = set()
+    for arg in call.args:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value.startswith("--"):
+            found.add(arg.value)
+    has_bool_opt = any(
+        kw.arg == "action" and "BooleanOptionalAction" in ast.dump(kw.value)
+        for kw in call.keywords
+    )
+    if has_bool_opt:
+        found.update(f"--no-{flag[2:]}" for flag in list(found))
+    return found
+
+
+def _parse_script_flags(source: str) -> tuple[set[str], set[str], bool]:
+    """Return (argparse_flags, string_literal_flags, supports_help) from Python source."""
+    supports_help = any(tok in source for tok in ("argparse", "ArgumentParser", "--help"))
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set(), set(_CLI_FLAG_SCAN_RE.findall(source)), supports_help
+    doc_ids = _docstring_node_ids(tree)
+    ap_flags: set[str] = set()
+    str_flags: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
+            if name == "add_argument":
+                ap_flags.update(_add_argument_flags(node))
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in doc_ids:
+            str_flags.update(_CLI_FLAG_SCAN_RE.findall(node.value))
+    return ap_flags, str_flags, supports_help
+
+
+def _help_cli_flags(script_path: str, subcommand: str | None) -> set[str]:
+    """Probe `<script> [subcommand] --help` safely to catch dynamic argparse options."""
+    cmd = [sys.executable, script_path]
+    if subcommand:
+        cmd.append(subcommand)
+    cmd.append("--help")
+    env = dict(os.environ, TDQ_LOG="0")
+    try:
+        proc = subprocess.run(cmd, check=False, capture_output=True, encoding="utf-8",
+                              errors="replace", text=True, timeout=3, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return set(_CLI_FLAG_SCAN_RE.findall(proc.stdout + "\n" + proc.stderr))
+
+
+def _valid_script_flags(script_path: str, subcommand: str | None) -> tuple[set[str], bool]:
+    """Return (declared_flags, has_argparse) for `script_path`, caching by file stat."""
+    try:
+        st = os.stat(script_path)
+    except OSError:
+        return set(), False
+    key = (os.path.abspath(script_path), st.st_mtime_ns, st.st_size, subcommand)
+    cached = _SCRIPT_FLAGS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        with open(script_path, encoding="utf-8", errors="ignore") as fh:
+            source = fh.read()
+    except OSError:
+        return set(), False
+    ap_flags, str_flags, supports_help = _parse_script_flags(source)
+    flags = (ap_flags | {"--help"}) if ap_flags else (str_flags | ({"--help"} if supports_help else set()))
+    result = (flags, "argparse" in source)
+    _SCRIPT_FLAGS_CACHE[key] = result
+    return result
+
+
+def _tokenize_cli_tail(raw_tail: str) -> tuple[str | None, list[str]]:
+    """Return (optional_subcommand, [--flags]) from the argument tail of one command."""
+    cmd_part = _CLI_SHELL_SPLIT_RE.split(raw_tail, maxsplit=1)[0]
+    try:
+        tokens = shlex.split(cmd_part)
+    except ValueError:
+        tokens = cmd_part.split()
+    subcommand = None
+    flags: list[str] = []
+    for tok in tokens:
+        if "scripts/" in tok and tok.endswith(".py"):
+            break
+        m = _CLI_FLAG_RE.match(tok)
+        if m:
+            flags.append(m.group(1))
+        elif subcommand is None and not flags and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", tok):
+            subcommand = tok
+    return subcommand, flags
+
+
+def _extract_cli_invocations(line: str, is_fenced: bool) -> list[tuple[str, str | None, list[str]]]:
+    """Extract (script_name, subcommand, [--flags]) invocations from one markdown line."""
+    segments = [line] if is_fenced else [
+        *[m.group(0)[1:-1] for m in INLINE_CODE.finditer(line)],
+        INLINE_CODE.sub(" ", line),
+    ]
+    found: list[tuple[str, str | None, list[str]]] = []
+    for seg in segments:
+        match = _CLI_SCRIPT_RE.search(seg)
+        if not match:
+            continue
+        subcommand, flags = _tokenize_cli_tail(match.group(2))
+        found.append((match.group(1), subcommand, flags))
+    return found
+
+
+def _check_cli_invocation(doc: Doc, idx: int, invocation: tuple[str, str | None, list[str]],
+                          effective_root: str | None, out: list[str]) -> None:
+    """Validate one extracted `scripts/<name>.py` invocation against `effective_root`."""
+    script_name, subcommand, flags = invocation
+    script_path = _resolve_cli_script(script_name, effective_root)
+    if not script_path:
+        _report(out, doc, idx, "R16", f"referenced script `scripts/{script_name}` does not exist")
+        return
+    valid, has_argparse = _valid_script_flags(script_path, subcommand)
+    help_probed = False
+    for flag in flags:
+        if flag in valid:
+            continue
+        if has_argparse and not help_probed:
+            valid.update(_help_cli_flags(script_path, subcommand))
+            help_probed = True
+        if flag not in valid:
+            _report(out, doc, idx, "R16", f"unknown CLI flag `{flag}` for `scripts/{script_name}`")
+
+
+def validate_cli_flags(doc: Doc, repo_root: str | None = None) -> list[str]:
+    """Validate `scripts/<name>.py` existence and `--flag` tokens in a scenario or Bug Board Doc."""
+    _, inferred_root = _cli_doc_scope(doc.path)
+    effective_root = repo_root if repo_root is not None else inferred_root
+    out: list[str] = []
+    for idx, line in enumerate(doc.lines):
+        for invocation in _extract_cli_invocations(line, doc.in_fence[idx]):
+            _check_cli_invocation(doc, idx, invocation, effective_root, out)
+    return out
+
+
+def _scenario_exempt_first_line(doc: Doc) -> bool:
+    """Return True when line 1 explicitly exempts the doc from R16."""
+    if not doc.lines:
+        return False
+    found = ALLOW.search(doc.lines[0])
+    return bool(found) and found.group(1) == "R16"
+
+
+def rule_cli_docs(doc, out):
+    """Validate scenario line cap (<= 40) and script/flag names under docs/tdq/{scenarios,bugs}/."""
+    kind, repo_root = _cli_doc_scope(doc.path)
+    if kind is None or not any(line.strip() for line in doc.lines):
+        return
+    if kind == "scenarios" and not _scenario_exempt_first_line(doc):
+        base = os.path.basename(doc.path).lower()
+        has_markers = any(k in "\n".join(doc.lines).lower() for k in ("goal", "act", "assert"))
+        if (base not in ("readme.md", "index.md") or has_markers) and len(doc.lines) > CLI_DOC_SCENARIO_MAX_LINES:
+            out.append(
+                f"{doc.path}:1: [R16] scenario has {len(doc.lines)} lines "
+                f"(> {CLI_DOC_SCENARIO_MAX_LINES}) — keep E2E scenarios concise"
+            )
+    out.extend(validate_cli_flags(doc, repo_root=repo_root))
+
+
+RULES = [rule_r1, rule_r2, rule_r3, rule_r4, rule_r5, rule_r6, rule_r7, rule_r8,
+         rule_r9, rule_r10, rule_r11, rule_r15, rule_cli_docs]
+
+# Directories holding records / machine-generated files — bound by R8 only, see lint_file().
+OUTPUT_DIRS = (os.path.join("docs", "tdq"), os.path.join("docs", "workinglog"),
+               "graphify-out")
+
+
+def _plan_contracts(lines):
+    """{skill name: (line index, set of fields present)} from the `- Dùng:` blocks of a plan."""  # i18n-allow
+    blocks = {}
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped.startswith("- Dùng:"):  # i18n-allow
+            continue
+        name = stripped[len("- Dùng:"):].strip()  # i18n-allow
+        if name.endswith("(mcp)"):
+            name = name[: -len("(mcp)")].strip()
+        name = name.strip("`*")
+        fields = set()
+        for j in range(i + 1, min(i + 1 + CONTRACT_SCAN, len(lines))):
+            body = lines[j].strip()
+            if body.startswith("- Dùng:"):  # i18n-allow
+                break
+            for field in CONTRACT_FIELDS:
+                if body.startswith(f"- {field}:"):
+                    fields.add(field)
+        if name and name not in blocks:
+            blocks[name] = (i, fields)
+    return blocks
+
+
+def pair(spec_path, plan_path):
+    """Every DÙNG row of spec §3b needs a full contract block in the plan."""  # i18n-allow
+    _log(f"pairing {os.path.basename(spec_path)} ↔ {os.path.basename(plan_path)}")
+    try:
+        spec = Doc(spec_path)
+        with open(plan_path, encoding="utf-8") as f:
+            plan_lines = f.read().splitlines()
+    except OSError as exc:
+        print(f"--pair: cannot read the file ({exc})", file=sys.stderr)
+        return 1
+    plan_doc = Doc(plan_path)
+    rows = _spec3b_rows(spec)
+    if not rows:
+        print(f"{spec_path}:1: [R8] the spec has no §3b table to pair against")
+        return 1
+    blocks = _plan_contracts(plan_lines)
+    problems = []
+    # The parallel-cluster section is MANDATORY in every plan, every mode: modularity is a
+    # property of the DOCUMENT, not of the run mode. Without it `tdq_team.py` has nothing to
+    # read, and the plan loses its parallel cut lines altogether.
+    if not any(l.strip().lower().startswith("## cụm song song") for l in plan_lines):  # i18n-allow
+        problems.append(f"{plan_path}:1: [R8] plan missing the section `## Cụm song song` "  # i18n-allow
+                        "— mandatory in every plan; \"một cụm vì <lý do>\" is still valid")  # i18n-allow
+    for i, cells in rows:
+        if cells[2].replace("*", "").strip() != "DÙNG":  # i18n-allow
+            continue
+        skill = cells[0].replace("*", "").strip().strip("`")
+        if skill not in blocks:
+            problems.append(f"{plan_path}:1: [R8] skill {skill} has no contract block in the plan")
+            continue
+        line_no, fields = blocks[skill]
+        for field in CONTRACT_FIELDS:
+            if field not in fields:
+                problems.append(f"{plan_path}:{line_no + 1}: [R8] skill {skill} missing the field {field}")
+    problems.extend(r15_loi(plan_doc, check_dir=False))
+    for problem in problems:
+        print(problem)
+    return 1 if problems else 0
+
+
+
+# --------------------- R12: a file produced for the user must be written in Vietnamese
+
+# The output-language gate. It is the precondition of direction A (rules written in English):
+# that move is only safe while something MEASURES that the output for the user does not drift
+# into English along with the rules. It inspects the produced FILE, not what the model prints to
+# chat — the hook deliberately never reads the transcript (hooks/scripts/stop_gate.py:5); version
+# 0.1.8 did read it and blocked valid turns by mistake.
+# The only language this rule can measure: its detector is the Vietnamese diacritic alphabet.
+R12_LANG = "vi"
+R12_DAU_TV = re.compile(
+    "[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]",  # i18n-allow
+    re.IGNORECASE)
+# Stripped before counting: backticked identifiers, URLs, markdown link targets. Those are almost
+# always English and legitimately present in every Vietnamese report.
+R12_INLINE = re.compile(r"`[^`]*`|https?://\S+|\[[^\]]*\]\([^)]*\)")
+R12_TU = re.compile(r"[A-Za-zÀ-ỹ][A-Za-zÀ-ỹ'’-]*")  # i18n-allow
+# Below the word threshold sit labels, table cells, constant names — too few words to judge a language.
+R12_TOI_THIEU_TU = 6
+# One stray sentence is not evidence; three prose lines in a row make a paragraph.
+R12_TOI_THIEU_DONG = 3
+
+
+def _r12_van_xuoi(line):
+    """None = does not qualify as prose (breaks the run). True/False = carries Vietnamese marks or not."""
+    text = R12_INLINE.sub(" ", line)
+    stripped = text.strip()
+    if stripped.startswith(("|", ">", "#", "-", "*", "<!--")) or re.match(r"^\d+\.\s", stripped):
+        return None
+    if len(R12_TU.findall(text)) < R12_TOI_THIEU_TU:
+        return None
+    return bool(R12_DAU_TV.search(text))
+
+
+def _doc_lang(path):
+    """The `doc_lang` of the request owning this file, or the default when there is no state.
+
+    Read from `docs/tdq/state.json` of the nearest enclosing project. Only the state
+    knows which language the user reads; the file itself cannot say.
+    """
+    goc = os.path.abspath(os.environ.get("TDQ_PROJECT_DIR") or os.path.dirname(path) or ".")
+    while True:
+        state = os.path.join(goc, "docs", "tdq", "state.json")
+        if os.path.isfile(state):
+            try:
+                with open(state, encoding="utf-8") as f:
+                    return (json.load(f).get("doc_lang") or R12_LANG).strip().lower()
+            except (OSError, ValueError, AttributeError):
+                return R12_LANG
+        cha = os.path.dirname(goc)
+        if cha == goc:
+            return R12_LANG
+        goc = cha
+
+
+def rule_r12(doc, out):
+    """A long prose paragraph in the wrong language → reported once, on its first line.
+
+    The detector reads Vietnamese diacritics, so it can only judge Vietnamese: the rule runs
+    when `doc_lang` is `vi` and stands down for every other language, where a wrong-language
+    paragraph is not measurable by a machine and QC reads it instead.
+    """
+    if _doc_lang(doc.path) != R12_LANG:
+        return
+    dau = None
+    dai = 0
+    for i, line in enumerate(doc.lines + [""]):
+        co_dau = None if i >= len(doc.lines) or doc.in_fence[i] else _r12_van_xuoi(line)
+        if co_dau is False:
+            if dau is None:
+                dau = i
+            dai += 1
+            continue
+        if dau is not None and dai >= R12_TOI_THIEU_DONG and not doc.allowed(dau, "R12"):
+            out.append(f"{doc.path}:{dau + 1}: [R12] paragraph with no Vietnamese diacritic "
+                       f"({dai} lines) — a file produced for the user must be written in Vietnamese")
+        dau = None
+        dai = 0
+
+
+# --------------------- R14: a numeric threshold in spec §6 must carry a measurement and a fallback
+
+# The slug the rule landed with. Specs before it are not bound: they were written without the
+# two columns, and back-filling them would touch files outside the request.
+R14_MOC = "2026-10-03-0732"
+R14_SLUG = re.compile(r"\d{4}-\d{2}-\d{2}-\d{4}")
+# Header aliases per document language (`doc_lang`): a spec written in English names the same
+# columns in English, and matching the Vietnamese headers only made every English spec fail R14.
+R14_COT_PASS = ("điều kiện pass", "pass condition", "pass criteria")  # i18n-allow
+R14_COT_DO = ("đo trước", "measured before", "prior measurement", "measurement")  # i18n-allow
+R14_COT_DU_PHONG = ("dự phòng nếu trượt", "fallback")  # i18n-allow
+# A number not glued to a word, a decimal or a section sign: `Q12`, `R14`, `v0.3.3` and
+# `§2 dòng 1` (a pointer to section 2, not "2 lines") never read as a threshold.
+R14_SO = r"(?<![\w.,§])(\d+(?:[.,]\d+)*)(?![\w.,]*\d)"
+R14_DON_VI = r"(?:MB|GB|KB|%|ms|giây|phút|token|ký tự|dòng|s)(?!\w)"  # i18n-allow
+# A comparator followed by a number. `->` / `=>` are arrows, not "greater than".
+R14_SO_SANH = re.compile(
+    r"(?:≤|≥|<=|>=|<|(?<![-=])>|(?<!\w)(?:tối đa|tối thiểu|không quá|ít nhất)(?!\w))"  # i18n-allow
+    r"\s*~?\s*" + R14_SO, re.IGNORECASE)
+# The words for "above"/"below" are also plain prepositions ("over 103 specs"), so they only
+# count as a comparator when the number carries a unit.
+R14_GIOI_TU = re.compile(r"(?<!\w)(?:trên|dưới)\s*~?\s*" + R14_SO + r"\s*" + R14_DON_VI,  # i18n-allow
+                         re.IGNORECASE)
+R14_SO_DON_VI = re.compile(R14_SO + r"\s*" + R14_DON_VI)
+R14_RONG = {"", "—", "-", "–"}
+
+
+def _r14_nguong(cell):
+    """True when a PASS cell states a numeric threshold, not a presence/absence check.
+
+    A bare 0 or 1 is a presence check (`≥ 1 test`, `0 failure`), never a threshold. Inline code
+    counts like any other text: exempting it let a threshold dodge R14 just by being wrapped
+    in backticks (`≤ 200 MB`).
+    """
+    for mau in (R14_SO_SANH, R14_GIOI_TU, R14_SO_DON_VI):
+        for m in mau.finditer(cell):
+            if m.group(1) not in ("0", "1"):
+                return True
+    return False
+
+
+def _r14_o(line):
+    """Split a table row into stripped cells; `\\|` is a literal pipe, not a separator."""
+    body = line.strip().removeprefix("|")
+    if body.endswith("|") and not body.endswith("\\|"):
+        body = body[:-1]
+    return [c.strip() for c in re.split(r"(?<!\\)\|", body)]
+
+
+def _r14_cot(header, ten):
+    """Index of the first header cell holding one of the aliases in `ten`, else None."""
+    if header is None:
+        return None
+    for idx, cell in enumerate(header):
+        if any(bi_danh in cell.lower() for bi_danh in ten):
+            return idx
+    return None
+
+
+def _check_r14_row(line_no, cells, cols):
+    """Validate one `| Qn |` row of spec §6; return error message or None."""
+    c_pass, c_do, c_du = cols
+    if not cells or not re.fullmatch(r"Q\d+", cells[0]):
+        return None
+    if c_pass >= len(cells) or not _r14_nguong(cells[c_pass]):
+        return None
+    if c_do is None or c_du is None:
+        return (f"{cells[0]} states a numeric threshold but the §6 table lacks "
+                "the `Đo trước` / `Dự phòng nếu trượt` columns")  # i18n-allow
+    do = cells[c_do] if c_do < len(cells) else ""
+    du = cells[c_du] if c_du < len(cells) else ""
+    if do in R14_RONG or du in R14_RONG:
+        return (f"{cells[0]} states a numeric threshold but "
+                "`Đo trước` or `Dự phòng nếu trượt` is empty")  # i18n-allow
+    if not re.search(r"\d", do):
+        return (f"{cells[0]}: `Đo trước` holds no number — "  # i18n-allow
+                "a measurement or a sourced estimate is required")
+    return None
+
+
+def _r14_section6_lines(lines):
+    """Yield (1-based line_no, line) inside non-fenced `## 6.` sections."""
+    trong_6 = fenced = False
+    for i, line in enumerate(lines):
+        if FENCE.match(line):
+            fenced = not fenced
+        elif not fenced and re.match(r"^##\s", line):
+            trong_6 = bool(re.match(r"^##\s+6\.", line))
+        elif not fenced and trong_6:
+            yield i + 1, line
+
+
+def _r14_header_cols(line):
+    header = _r14_o(line)
+    c_pass = _r14_cot(header, R14_COT_PASS)
+    return (
+        2 if c_pass is None else c_pass,
+        _r14_cot(header, R14_COT_DO),
+        _r14_cot(header, R14_COT_DU_PHONG),
+    )
+
+
+def r14_loi(text, ten_file):
+    """-> [(line_number, message)] for R14. Pure: no I/O, so tdq_state can call it at approval.
+
+    Scans the `| Qn |` rows of the `## 6.` section. A row whose PASS condition holds a numeric
+    threshold needs a measurement cell with a number in it and a non-empty fallback cell.
+    Only specs whose slug sorts at or after R14_MOC (and not `Work kind: investigate`) are bound.
+    """
+    ten = os.path.basename(ten_file)
+    if not R14_SLUG.match(ten) or ten[:15] < R14_MOC:
+        return []
+    lines = text.splitlines()
+    if _is_investigate_doc(lines):
+        return []
+    loi = []
+    cols = (2, None, None)
+    for line_no, line in _r14_section6_lines(lines):
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            if not stripped:
+                cols = (2, None, None)
+            continue
+        nxt = lines[line_no] if line_no < len(lines) else ""
+        if re.match(r"^\s*\|?\s*:?-{3,}", nxt):
+            cols = _r14_header_cols(line)
+            continue
+        msg = _check_r14_row(line_no, _r14_o(line), cols)
+        if msg:
+            loi.append((line_no, msg))
+    return loi
+
+
+def rule_r14(doc, out):
+    """A numeric threshold in spec §6 carries a prior measurement and a fallback."""
+    if os.path.basename(os.path.dirname(os.path.abspath(doc.path))) != "spec":
+        return
+    loi = r14_loi("\n".join(doc.lines), doc.path)  # the slug cutoff lives in r14_loi alone
+    _log(f"R14 {os.path.basename(doc.path)} → {len(loi)} finding(s)")
+    for so_dong, msg in loi:
+        _report(out, doc, so_dong - 1, "R14", msg)
+
+
+# --------------------- R16: Layer-1 readability gate on spec, plan, and reports
+
+R16_MOC = "2026-11-21-1819"
+R16_TARGET_DIRS = ("spec", "plan", "reports")
+R16_MAX_CALLOUT_WORDS = 120
+R16_MAX_SENTENCE_WORDS = 35
+R16_MAX_BACKTICKS_PER_100 = 6
+R16_MAX_MIDDLE_DOTS = 2
+_R16_SCOPE_RE = re.compile(r"(?:^|/)docs/tdq/(?:spec|plan|reports)/[^/]+$")
+_R16_LAYER2_RE = re.compile(
+    r"^##\s+(?:1(?:\.|\s|$)|mục\s+lục\b|table\s+of\s+contents\b|p1\b|phân\s+bổ\b|thời\s+gian\b)",  # i18n-allow
+    re.IGNORECASE,
+)
+_R16_CALLOUT_RE = re.compile(r"^\s*>\s*\*\*Tóm tắt dễ hiểu:\*\*\s*(.*)$")  # i18n-allow
+_R16_BOLD_LABEL_RE = re.compile(r"^\*\*[^*]+:\*\*")
+_R16_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_:/.-])[A-Za-z0-9_.-]+(?:[/\\][A-Za-z0-9_.-]+)+\.[A-Za-z][A-Za-z0-9]{0,7}(?![A-Za-z0-9_/.-])"
+)
+_R16_LINE_REF_RE = re.compile(r"(?<!\d):\d+\b")
+
+
+def _r16_in_scope(ten_file):
+    """Return True when `ten_file` is a .md slug >= R16_MOC in spec/, plan/, or reports/."""
+    norm = ten_file.replace("\\", "/")
+    ten = posixpath.basename(norm)
+    if not ten.endswith(".md") or not R14_SLUG.match(ten) or ten[:15] < R16_MOC:
+        return False
+    parent_dir = posixpath.dirname(norm)
+    if not parent_dir:
+        return True
+    if "docs/tdq/" in norm:
+        return bool(_R16_SCOPE_RE.search(norm))
+    return posixpath.basename(parent_dir) in R16_TARGET_DIRS
+
+
+def _r16_line_allowed(lines, idx):
+    """Return True when `allow R16` sits above `idx` (or on line 0 for line-1 checks)."""
+    if idx == 0:
+        found = ALLOW.search(lines[0]) if lines else None
+        return bool(found) and found.group(1) == "R16"
+    found = ALLOW.search(lines[idx - 1])
+    return bool(found) and found.group(1) == "R16"
+
+
+def _r16_opening_lines(lines):
+    """Return [(0-based idx, line, in_fence)] before Layer-2 headings."""
+    opening = []
+    fenced = False
+    for idx, line in enumerate(lines):
+        if FENCE.match(line):
+            fenced = not fenced
+            opening.append((idx, line, True))
+            continue
+        if not fenced and _R16_LAYER2_RE.match(line):
+            break
+        opening.append((idx, line, fenced))
+    return opening
+
+
+def _r16_collect_continuation(opening, start_pos):
+    """Collect continuation blockquote lines immediately following the callout header."""
+    parts = []
+    for _, nxt_line, nxt_fenced in opening[start_pos:]:
+        if nxt_fenced or not nxt_line.lstrip().startswith(">"):
+            break
+        inner = nxt_line.lstrip()[1:].strip()
+        if _R16_BOLD_LABEL_RE.match(inner):
+            break
+        if inner:
+            parts.append(inner)
+    return parts
+
+
+def _r16_extract_callout(opening):
+    """Return (start_idx, body_text) for `> **Tóm tắt dễ hiểu:**` in opening, else None."""  # i18n-allow
+    for pos, (idx, line, in_fence) in enumerate(opening):
+        if in_fence:
+            continue
+        match = _R16_CALLOUT_RE.match(line)
+        if match:
+            parts = [match.group(1).strip()] + _r16_collect_continuation(opening, pos + 1)
+            return idx, " ".join(p for p in parts if p)
+    return None
+
+
+def _r16_check_callout(lines, start_idx, body, loi):
+    """Validate summary callout length, sentence cap, backtick density, and raw tech refs."""
+    if _r16_line_allowed(lines, start_idx):
+        return
+    line_no = start_idx + 1
+    clean_body = HTML_COMMENT.sub(" ", body).strip()
+    plain_body = clean_body.replace("`", "")
+    word_count = len(plain_body.split())
+    if word_count == 0:
+        loi.append((line_no, "summary callout `> **Tóm tắt dễ hiểu:**` is empty"))  # i18n-allow
+        return
+    if word_count > R16_MAX_CALLOUT_WORDS:
+        loi.append((line_no, f"summary callout has {word_count} words (> {R16_MAX_CALLOUT_WORDS}) — keep Layer 1 concise"))
+    for sentence in SENTENCE_SPLIT.split(plain_body):
+        s_count = len(sentence.split())
+        if s_count > R16_MAX_SENTENCE_WORDS:
+            loi.append((line_no, f"summary callout sentence has {s_count} words (> {R16_MAX_SENTENCE_WORDS}) — split it"))
+    bt_pairs = len(INLINE_CODE.findall(clean_body))
+    if bt_pairs * 100 > R16_MAX_BACKTICKS_PER_100 * word_count:
+        rate = bt_pairs * 100.0 / word_count
+        loi.append((
+            line_no,
+            (
+                f"summary callout backtick density {bt_pairs}/{word_count}w "
+                f"({rate:.1f}/100w > {R16_MAX_BACKTICKS_PER_100}/100w)"
+            ),
+        ))
+    if _R16_PATH_RE.search(clean_body):
+        loi.append((line_no, "summary callout contains raw file path — move paths to Layer 2"))
+    if _R16_LINE_REF_RE.search(clean_body):
+        loi.append((line_no, "summary callout contains raw `:line` reference — move references to Layer 2"))
+
+
+def _r16_check_middle_dots(lines, opening, loi):
+    """Flag non-table/non-blockquote/non-Soul opening lines packing >= 3 middle-dots (`·`)."""
+    for idx, line, in_fence in opening:
+        if in_fence:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("|", ">", "<!--")):
+            continue
+        low = stripped.lower()
+        if low.startswith(("soul:", "**soul:**")):
+            continue
+        dots = line.count("·")
+        if dots > R16_MAX_MIDDLE_DOTS and not _r16_line_allowed(lines, idx):
+            loi.append((
+                idx + 1,
+                f"Layer-1 opening line packs {dots} middle-dots (`·`) — keep <= {R16_MAX_MIDDLE_DOTS}",
+            ))
+
+
+def r16_loi(text, ten_file):
+    """-> [(line_number, message)] for R16 Layer-1 readability on spec, plan, and reports."""
+    if not _r16_in_scope(ten_file):
+        return []
+    lines = text.splitlines()
+    opening = _r16_opening_lines(lines)
+    loi = []
+    callout = _r16_extract_callout(opening)
+    if callout is None:
+        if not _r16_line_allowed(lines, 0):
+            loi.append((1, "missing Layer-1 summary callout `> **Tóm tắt dễ hiểu:**`"))  # i18n-allow
+    else:
+        _r16_check_callout(lines, callout[0], callout[1], loi)
+    _r16_check_middle_dots(lines, opening, loi)
+    return loi
+
+
+def rule_r16(doc, out):
+    """Enforce Layer-1 readability on spec/, plan/, and reports/ from R16_MOC onward."""
+    abs_norm = os.path.abspath(doc.path).replace("\\", "/")
+    if not _R16_SCOPE_RE.search(abs_norm):
+        return
+    loi = r16_loi("\n".join(doc.lines), doc.path)
+    _log(f"R16 {os.path.basename(doc.path)} → {len(loi)} finding(s)")
+    for so_dong, msg in loi:
+        _report(out, doc, so_dong - 1, "R16", msg)
+
+
+def lint_file(path):
+    doc = Doc(path)
+    out = []
+# R1–R7 are written for INSTRUCTION DOCS (skills/). The directories in OUTPUT_DIRS hold
+# records and machine-generated files — the user's verbatim words, test output, graphify
+# reports — which must not be reshaped to please a style rule. They are bound by R8 only,
+# and R8 limits itself to the spec/ directory.
+    abs_path = os.path.abspath(path)
+    is_output = any(f"{os.sep}{d}{os.sep}" in abs_path for d in OUTPUT_DIRS)
+    if is_output:
+        for rule in (rule_r8, rule_r10, rule_r11, rule_r12, rule_r14, rule_r15, rule_r16, rule_cli_docs):
+            rule(doc, out)
+    else:
+        for rule in RULES:
+            rule(doc, out)
+    return out
+
+
+def collect(paths):
+    files = []
+    for path in paths:
+        if os.path.isdir(path):
+            for dirpath, _, names in os.walk(path):
+                files += [os.path.join(dirpath, n) for n in sorted(names)
+                          if n.endswith(".md")]
+        elif path.endswith(".md"):
+            files.append(path)
+    return sorted(set(files))
+
+
+def main(argv):
+    if argv and argv[0] == "--pair":
+        if len(argv) != 3:
+            print("Usage: doc_lint.py --pair <spec.md> <plan.md>", file=sys.stderr)
+            return EXIT_SYNTAX
+        return pair(argv[1], argv[2])
+    if not argv:
+        print("Usage: doc_lint.py <file.md or directory> | --pair <spec> <plan>",
+              file=sys.stderr)
+        return EXIT_SYNTAX
+    # A19: a ghost path used to be dropped silently by collect() → a fake clean exit 0. Stopped up front.
+    missing = [p for p in argv if not os.path.exists(p)]
+    if missing:
+        for p in missing:
+            print(f"⚠️ not found: {p}", file=sys.stderr)
+        return EXIT_SYNTAX
+    paths = collect(argv)
+    _log(f"lint {len(paths)} file: {', '.join(os.path.basename(p) for p in paths)}")
+    problems = []
+    for path in paths:
+        loi = lint_file(path)
+        if loi:
+            _log(f"{os.path.basename(path)} → {len(loi)} violation(s)")
+        problems += loi
+    problems += kiem_tran_token(paths)
+    for line in problems:
+        print(line)
+    _log(f"done — {len(problems)} violation(s) total, exit {1 if problems else 0}")
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
