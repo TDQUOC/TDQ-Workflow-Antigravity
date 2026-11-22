@@ -270,6 +270,19 @@ def main():
         f"`python3 {os.path.join(GOC_PLUGIN, 'scripts', 'tdq_setup.py')}` (hoặc gọi skill tdq-setup)."
         if can_setup else ""
     )
+    nhac_pending_setup = ""
+    try:
+        import tdq_setup_state
+        res_pending = tdq_setup_state.evaluate_restart_resume(is_new_turn=False)
+        if res_pending.get("action") in ("remind_restart", "run_verify") or (
+            res_pending.get("reason") == "status_validating_after_restart"
+        ):
+            nhac_pending_setup = (
+                "[TDQ:SETUP] Pending post-restart verification — restart Antigravity if Phase 1 "
+                "just finished, then send any message to run 6-layer verify."
+            )
+    except Exception:  # noqa: BLE001
+        pass
     nhac_rtk = ""
     try:
         import rtk_integration
@@ -324,6 +337,7 @@ def main():
         thong_bao_update_nen,
         loi_cap_nhat,
         "[TDQ] Đã tự động cập nhật instruction và cấu hình cho phiên bản mới." if da_cap_nhat_ver else "",
+        nhac_pending_setup,
         nhac_setup,
         nhac_rtk,
         nhac_caveman,

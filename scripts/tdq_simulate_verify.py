@@ -163,6 +163,8 @@ def _snapshot_tree(root: Path) -> dict[str, tuple[int, int]]:
     snap: dict[str, tuple[int, int]] = {}
     try:
         for item in sorted(root.rglob("*")):
+            if "__pycache__" in item.parts or item.suffix == ".pyc":
+                continue
             if item.is_file():
                 st = item.stat()
                 snap[item.relative_to(root).as_posix()] = (st.st_size, st.st_mtime_ns)
@@ -355,6 +357,7 @@ def _sandbox_env(sandbox: Path, plugin_root: Path, sample_repo: Path) -> dict[st
     env["TDQ_KHONG_CHAM_MAY"] = "1"
     env["TDQ_KHOI_TAO_NEN"] = "0"
     env["TDQ_LOG"] = "0"
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
 
 

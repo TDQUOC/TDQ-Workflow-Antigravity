@@ -445,3 +445,26 @@ def test_integration_tdq_setup_post_restart_verify_clears_pending_flag(
     persisted = tdq_setup_state.load_setup_state(data_dir=state_dir)
     assert persisted["status"] == "verified"
     assert persisted["pending_flag"] is False
+
+
+def test_sandbox_env_suppresses_bytecode_and_snapshot_skips_pycache(tmp_path: Path) -> None:
+    """First verify right after clean install must not fail config_untouched due to .pyc files."""
+    sandbox = tmp_path / "sb"
+    sample_repo = tmp_path / "repo"
+    sample_repo.mkdir()
+    s_env = sim_verify._sandbox_env(sandbox, WORKTREE_ROOT, sample_repo)
+    assert s_env["PYTHONDONTWRITEBYTECODE"] == "1"
+
+    cfg_dir = tmp_path / ".gemini" / "config"
+    plugin_scripts = cfg_dir / "plugins" / "tdq-workflow-agy" / "scripts"
+    plugin_scripts.mkdir(parents=True)
+    (cfg_dir / "config.json").write_text("{}\n", encoding="utf-8")
+    before = sim_verify._snapshot_tree(cfg_dir)
+
+    pycache = plugin_scripts / "__pycache__"
+    pycache.mkdir()
+    (pycache / "tdq_setup.cpython-313.pyc").write_bytes(b"pyc-bytes")
+    assert sim_verify._snapshot_tree(cfg_dir) == before
+
+    (cfg_dir / "config.json").write_text('{"mutated": true}\n', encoding="utf-8")
+    assert sim_verify._snapshot_tree(cfg_dir) != before

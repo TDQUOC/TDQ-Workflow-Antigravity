@@ -236,8 +236,8 @@
     "token": 1375
   },
   "skills/tdq-setup/references/chrome-devtools-mcp-guide.md": {
-    "sha256": "ec3fee9aedca45e864dccb38247caf69971292f8211c64bdd95d29cf433f172a",
-    "token": 635
+    "sha256": "b61c1b7f47881a7c270f43ec51683d122abb50f1afddf44387fdf1c15d18ddcb",
+    "token": 581
   },
   "skills/tdq-setup/references/languages.md": {
     "sha256": "b31c78227a57017f86e0f27b4558fd509ba9b52374e072bb30eae26f1ca29129",
@@ -254,6 +254,10 @@
   "skills/tdq-setup/references/uu-tien-tim-kiem.md": {
     "sha256": "e2428a741141b92d0fe7ca853d5ad08593c4fb8477d6eb5a37a8663ffb53deff",
     "token": 3182
+  },
+  "skills/tdq-setup/references/zero-to-full-agy.md": {
+    "sha256": "e2eb716c5e583a1d221d74911a1b6d0a859fba6d89fa5ee10164d887056dabc6",
+    "token": 1542
   },
   "skills/tdq-spec/references/archify-ba.md": {
     "sha256": "3d1ff7b72b234adf92bb70bd648d9f77ccd78912c9f0b65bdd39762a6f2ebf61",
