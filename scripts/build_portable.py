@@ -750,7 +750,7 @@ def loc_muc_agy_release(raw_bytes, prefix="plugins/tdq-workflow-agy/"):
         parts = inner.split("/")
         if not inner or "__pycache__" in parts or inner.endswith((".pyc", ".pyo")):
             continue
-        if parts[0] == "bin" or (parts[0] == "scripts" and inner.endswith(".mjs")):
+        if parts[0] == "bin" or (parts[0] == "scripts" and inner.endswith((".mjs", ".sh"))):
             mode_and_rest = meta.split(b" ", 1)
             if len(mode_and_rest) == 2 and mode_and_rest[0] in (b"100644", b"100755"):
                 meta = b"100755 " + mode_and_rest[1]
