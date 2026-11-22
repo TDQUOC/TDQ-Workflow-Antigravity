@@ -1,0 +1,10 @@
+validate_ec=0 ms=189.8 len=276
+hook_preinv_ec=0 ms=267.1 stdout={"injectSteps": [{"systemMessage": {"systemMessage": "[TDQ:INTAKE] No request is open — unless this prompt belongs to an intake round already running, open tdq-
+mcp_lsp_ec=1 ms=153.7 lines=0 has_tools=False
+bin_rg=C:\Users\admin\.local\bin\rg.EXE
+bin_rtk=C:\Users\admin\.local\bin\rtk.EXE
+bin_uv=MISSING
+bin_node=C:\Users\admin\AppData\Local\fnm_multishells\21972_1795334735879\node.EXE
+bin_git=C:\Program Files\Git\cmd\git.EXE
+bin_agent-lsp=C:\Users\admin\.local\bin\agent-lsp.EXE
+cfg_before=371 cfg_after=371 equal=True
