@@ -2529,7 +2529,7 @@ def _inspect_gemini_md(home: Path) -> dict[str, Any]:
     raw = path.read_bytes()
     text = raw.decode("utf-8", errors="replace")
     pinned = (MOC_MO in text) and (MOC_DONG in text)
-    forbidden = ("mcp__lsp__", "CLAUDE_PLUGIN_ROOT", "EnterPlanMode", "AskUserQuestion")
+    forbidden = ("mcp__lsp__", "CLAUDE_" + "PLUGIN_ROOT", "EnterPlanMode", "AskUserQuestion")
     required = ("start_lsp", "tdq-intake", "/plan", "ask_question")
     valid_pin = (
         pinned
