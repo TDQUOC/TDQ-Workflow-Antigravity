@@ -1,0 +1,64 @@
+chain_ms=932.4
+env_keys={
+  "AGY_REQUIRE_AUTHENTICATED_UI_BOOTSTRAP": "1",
+  "ANTIGRAVITY_AGENT": "1",
+  "ANTIGRAVITY_AGENTAPI_EXE": "C:\\Users\\admin\\AppData\\Local\\Programs\\antigravity\\resources\\bin\\language_server.exe",
+  "ANTIGRAVITY_APP_DATA_DIR": "C:/Users/admin/.gemini/antigravity",
+  "ANTIGRAVITY_CONFIG_REL_DIR": "config",
+  "ANTIGRAVITY_CONVERSATION_ID": "abe6cf12-94b6-46ba-83f6-eef084b8cc15",
+  "ANTIGRAVITY_CREDENTIAL_SCOPE": "u9f0fac4fc024f4c1",
+  "ANTIGRAVITY_CSRF_TOKEN": "<set>",
+  "ANTIGRAVITY_GEMINI_DIR": "C:\\Users\\admin\\.gemini",
+  "ANTIGRAVITY_LS_ADDRESS": "localhost:56861",
+  "ANTIGRAVITY_LS_VERSION": "hub-2.34.0",
+  "ANTIGRAVITY_PLUGIN_SHIM_DIR": "C:\\Users\\admin\\AppData\\Local\\Temp\\agy-plugin-cli-2627955097",
+  "ANTIGRAVITY_PROJECT_ID": "653ee96c-d980-4753-9c4e-3c8d1fd91614",
+  "ANTIGRAVITY_SOURCE_METADATA": "{\"tool\":{\"conversationId\":\"abe6cf12-94b6-46ba-83f6-eef084b8cc15\",\"stepIndex\":18445,\"toolCall\":{\"id\":\"call_9932142728527157573\",\"name\":\"run_command\",\"argumentsJson\":\"{\\\"CommandLine\\\":\\\"@'\\\\nimport json, os, pathlib, shutil, subprocess, tempfile, time\\\\n\\\\nraw = pathlib.Path('docs/tdq/artifacts/2026-11-22-1424-phan-tich-setup-may-trong/raw')\\\\nraw.mkdir(parents=True, exist_ok=True)\\\\ncfg = pathlib.Path.home() / '.gemini' / 'config'\\\\ndef snap():\\\\n    return sorted((str(p.relative_to(cfg)), p.stat().st_size, int(p.stat().st_mtime)) for p in cfg.rglob('*') if p.is_file()) if cfg.exists() else []\\\\n\\\\nbefore = snap()\\\\nps_cmd = \\\\\\\"\\\\\\\"\\\\\\\"\\\\n$cur = $PID\\\\n$chain = @()\\\\nfor ($i=0; $i -lt 10 -and $cur -gt 0; $i++) {\\\\n  $p = Get-CimInstance Win32_Process -Filter \\\\\\\"ProcessId=$cur\\\\\\\" -ErrorAction SilentlyContinue\\\\n  if (-not $p) { break }\\\\n  $chain += [pscustomobject]@{pid=$p.ProcessId; ppid=$p.ParentProcessId; name=$p.Name; created=($p.CreationDate.ToString('o'))}\\\\n  $cur = $p.ParentProcessId\\\\n}\\\\n$chain | ConvertTo-Json -Depth 3\\\\n\\\\\\\"\\\\\\\"\\\\\\\"\\\\nt0 = time.perf_counter()\\\\nproc_chain = subprocess.run(['powershell', '-NoProfile', '-Command', ps_cmd], capture_output=True, text=True, timeout=15)\\\\nchain_ms = (time.perf_counter() - t0) * 1000.0\\\\nenv_keys = {k: ('\\\\u003cset\\\\u003e' if any(s in k.upper() for s in ('TOKEN', 'KEY', 'SECRET')) else v) for k, v in os.environ.items() if any(x in k.upper() for x in ('AGY', 'ANTIGRAVITY', 'PLUGIN', 'GEMINI', 'CODEIUM', 'VSCODE'))}\\\\n(raw / 'EV-C01_process_env.txt').write_text(\\\\n    f'chain_ms={chain_ms:.1f}\\\\\\\\nenv_keys={json.dumps(env_keys, indent=2)}\\\\\\\\nchain_stdout=\\\\\\\\n{proc_chain.stdout}\\\\\\\\n',\\\\n    encoding='utf-8'\\\\n)\\\\n\\\\ntop_entries = sorted((p.name, 'dir' if p.is_dir() else 'file') for p in cfg.iterdir()) if cfg.exists() else []\\\\npdata_dir = cfg / 'plugin-data'\\\\npdata_entries = sorted(p.name for p in pdata_dir.iterdir()) if pdata_dir.exists() else []\\\\n(raw / 'EV-C02_gemini_layout.txt').write_text(\\\\n    f'cfg_file_count={len(before)}\\\\\\\\ntop_entries={json.dumps(top_entries, indent=2)}\\\\\\\\nplugin_data_entries={json.dumps(pdata_entries, indent=2)}\\\\\\\\n',\\\\n    encoding='utf-8'\\\\n)\\\\n\\\\nlines = []\\\\nwith tempfile.TemporaryDirectory(prefix='tdq_sim_probe_') as tmp:\\\\n    tpath = pathlib.Path(tmp)\\\\n    (tpath / 'app.py').write_text('def calc_score(x: int) -\\\\u003e int:\\\\\\\\n    return x * 2\\\\\\\\n', encoding='utf-8')\\\\n    (tpath / 'main.js').write_text('export function doubleVal(n) { return n * 2; }\\\\\\\\n', encoding='utf-8')\\\\n    (tpath / 'pyrightconfig.json').write_text('{\\\\\\\"include\\\\\\\": [\\\\\\\".\\\\\\\"]}\\\\\\\\n', encoding='utf-8')\\\\n    (tpath / 'jsconfig.json').write_text('{\\\\\\\"compilerOptions\\\\\\\": {\\\\\\\"baseUrl\\\\\\\": \\\\\\\".\\\\\\\"}, \\\\\\\"include\\\\\\\": [\\\\\\\".\\\\\\\"]}\\\\\\\\n', encoding='utf-8')\\\\n\\\\n    t1 = time.perf_counter()\\\\n    v = subprocess.run(['agy.EXE', 'plugin', 'validate', 'plugins/tdq-workflow-agy', '--strict', '--json'], capture_output=True, text=True, timeout=15)\\\\n    lines.append(f'validate_ec={v.returncode} ms={(time.perf_counter()-t1)*1000:.1f} len={len(v.stdout)}')\\\\n\\\\n    hook_env = dict(os.environ, TDQ_PROJECT_DIR=tmp, TDQ_LOG='1')\\\\n    payload = json.dumps({'hookEventName': 'PreInvocation', 'lastUserInput': 'ping', 'cwd': tmp, 'workspacePaths': [tmp], 'conversationId': 'probe-sim'})\\\\n    t2 = time.perf_counter()\\\\n    hk = subprocess.run(['node', 'plugins/tdq-workflow-agy/scripts/tdq_hook_launcher.mjs', '--event', 'PreInvocation'], input=payload, env=hook_env, capture_output=True, text=True, timeout=15)\\\\n    lines.append(f'hook_preinv_ec={hk.returncode} ms={(time.perf_counter()-t2)*1000:.1f} stdout={hk.stdout.strip()[:160]}')\\\\n\\\\n    init_msg = json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {'protocolVersion': '2024-11-05', 'capabilities': {}, 'clientInfo': {'name': 'probe', 'version': '1.0'}}}) + '\\\\\\\\n'\\\\n    list_msg = json.dumps({'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list', 'params': {}}) + '\\\\\\\\n'\\\\n    t3 = time.perf_counter()\\\\n    mcp = subprocess.run(['node', 'plugins/tdq-workflow-agy/scripts/tdq_mcp_launcher.mjs', 'lsp'], input=init_msg + list_msg, capture_output=True, text=True, timeout=15)\\\\n    lines.append(f'mcp_lsp_ec={mcp.returncode} ms={(time.perf_counter()-t3)*1000:.1f} lines={len(mcp.stdout.splitlines())} has_tools={\\\\\\\"start_lsp\\\\\\\" in mcp.stdout}')\\\\n\\\\n    for exe in ('rg', 'rtk', 'uv', 'node', 'git', 'agent-lsp'):\\\\n        pexe = shutil.which(exe)\\\\n        lines.append(f'bin_{exe}={pexe or \\\\\\\"MISSING\\\\\\\"}')\\\\n\\\\nafter = snap()\\\\nlines.append(f'cfg_before={len(before)} cfg_after={len(after)} equal={before == after}')\\\\n(raw / 'EV-C03_sandbox_sim_probe.txt').write_text('\\\\\\\\n'.join(lines) + '\\\\\\\\n', encoding='utf-8')\\\\nprint('\\\\\\\\n'.join(lines))\\\\nprint('---LAYOUT---')\\\\nprint(json.dumps({'top_entries': top_entries, 'plugin_data': pdata_entries}))\\\\nprint('---CHAIN---')\\\\nprint(proc_chain.stdout)\\\\nprint('---ENV---')\\\\nprint(json.dumps(env_keys, indent=2))\\\\n'@ | py -3 -X utf8 -\\\",\\\"WaitMsBeforeAsync\\\":10000,\\\"toolSummary\\\":\\\"Execute isolated PID, layout, and sandbox probes\\\"}\"}}}",
+  "ANTIGRAVITY_TRAJECTORY_ID": "2e4a9a34-efa7-46ce-bda2-91d9d1c70a3b"
+}
+chain_stdout=
+[
+    {
+        "pid":  5336,
+        "ppid":  22300,
+        "name":  "powershell.exe",
+        "created":  "2026-11-22T15:05:35.9928070+07:00"
+    },
+    {
+        "pid":  22300,
+        "ppid":  12852,
+        "name":  "python.exe",
+        "created":  "2026-11-22T15:05:35.9140500+07:00"
+    },
+    {
+        "pid":  12852,
+        "ppid":  13496,
+        "name":  "py.exe",
+        "created":  "2026-11-22T15:05:35.9018790+07:00"
+    },
+    {
+        "pid":  13496,
+        "ppid":  23192,
+        "name":  "powershell.exe",
+        "created":  "2026-11-22T15:05:35.6772800+07:00"
+    },
+    {
+        "pid":  23192,
+        "ppid":  9872,
+        "name":  "language_server.exe",
+        "created":  "2026-11-21T21:55:09.1527940+07:00"
+    },
+    {
+        "pid":  9872,
+        "ppid":  12504,
+        "name":  "Antigravity.exe",
+        "created":  "2026-11-21T21:55:08.1901410+07:00"
+    },
+    {
+        "pid":  12504,
+        "ppid":  12456,
+        "name":  "explorer.exe",
+        "created":  "2026-11-21T21:53:15.5156190+07:00"
+    }
+]
+

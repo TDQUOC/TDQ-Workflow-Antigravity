@@ -1,0 +1,36 @@
+cfg_file_count=371
+top_entries=[
+  [
+    ".migrated",
+    "file"
+  ],
+  [
+    "config.json",
+    "file"
+  ],
+  [
+    "import_manifest.json",
+    "file"
+  ],
+  [
+    "mcp_config.json",
+    "file"
+  ],
+  [
+    "node_modules",
+    "dir"
+  ],
+  [
+    "plugins",
+    "dir"
+  ],
+  [
+    "projects",
+    "dir"
+  ],
+  [
+    "sidecars",
+    "dir"
+  ]
+]
+plugin_data_entries=[]

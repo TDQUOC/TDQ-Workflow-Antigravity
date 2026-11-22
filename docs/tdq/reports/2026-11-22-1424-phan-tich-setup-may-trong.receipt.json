@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1424-phan-tich-setup-may-trong\\.tmp.bao-cao.archify.e5be348ef10248fda0890f35a0033230.md",
+    "sha256": "f046e3579ad221afdf756916329d65ba279a227f421cfcb48c3934e8ab9cea9d",
+    "bytes": 2273
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1424-phan-tich-setup-may-trong.d4857e16d26546b79252254e1b861920.html",
+    "sha256": "a0bfc7e2b2d9ae2bfd3d918a4acc19efb4dfe596b66d0eb420df24a08ac8d59a",
+    "bytes": 890537
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 39 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1424-phan-tich-setup-may-trong\\.tmp.bao-cao.archify.e5be348ef10248fda0890f35a0033230.md",
+        "line": 5,
+        "component": "answer"
+      },
+      "evidence": {
+        "reason": "Sentence has 39 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 39,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1424-phan-tich-setup-may-trong.d4857e16d26546b79252254e1b861920.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1424-phan-tich-setup-may-trong.d4857e16d26546b79252254e1b861920.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1918,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

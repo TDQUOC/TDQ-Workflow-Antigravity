@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "010d87bf-0548-43d4-b48b-c2a676aaba82",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1424-phan-tich-setup-may-trong\\.tmp.bao-cao.archify.e5be348ef10248fda0890f35a0033230.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1424-phan-tich-setup-may-trong.d4857e16d26546b79252254e1b861920.html",
+  "specification": {
+    "sha256": "f046e3579ad221afdf756916329d65ba279a227f421cfcb48c3934e8ab9cea9d",
+    "bytes": 2273
+  },
+  "artifact": {
+    "sha256": "a0bfc7e2b2d9ae2bfd3d918a4acc19efb4dfe596b66d0eb420df24a08ac8d59a",
+    "bytes": 890537
+  },
+  "explainer": {
+    "preparedSha256": "3f19bb6eb72071f793f88229af71531a30b7d449133c658bd2ab233d3e1213be",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-setup-two-phase",
+        "inline": true,
+        "sha256": "5c308bb4b682d948fbb947bc474f334dc041a7f8331de3974291f9f4419972e6",
+        "bytes": 1686
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-setup-migration",
+        "inline": true,
+        "sha256": "a374288036d73ac4ed49b62bb2794303ecb4ef524efd364312981adbe9f8fc8e",
+        "bytes": 1387
+      }
+    ]
+  }
+}
