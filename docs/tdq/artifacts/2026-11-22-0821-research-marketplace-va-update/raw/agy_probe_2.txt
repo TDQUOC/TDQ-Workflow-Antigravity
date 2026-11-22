@@ -1,0 +1,143 @@
+=== REAL import_manifest.json ===
+{
+  "imports": null
+}
+=== REAL antigravity-cli\cache\marketplaces\antigravity-plugins-official\meta.json ===
+{"lastModified":"Mon, 02 Nov 2026 11:08:00 GMT"}
+=== REAL antigravity-cli\cache\marketplaces\antigravity-plugins-partners\meta.json ===
+{"lastModified":"Sat, 31 Oct 2026 16:18:00 GMT"}
+=== install_gh_root ec=0 ===
+STDOUT:
+Cloning plugin from https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git...
+  [ok]    tdq-workflow
+          ✔ skills      : 11 installed (tdq-browser-research, tdq-browser-test, tdq-build, tdq-check-status, tdq-conventions, tdq-intake, tdq-lean, tdq-plan, tdq-setup, tdq-spec, tdq-status)
+          ✔ agents      : 6 installed (tdq-build-resolver, tdq-implementer, tdq-qc-tester, tdq-refactor-cleaner, tdq-reviewer, tdq-security-reviewer)
+          ✔ hooks       : 2 installed (description, hooks)
+          Installed to C:\Users\admin\AppData\Local\Temp\tmpcd3um5lz\.gemini\config\plugins\tdq-workflow
+=== install_gh_subpath_dev ec=0 ===
+STDOUT:
+Cloning plugin from https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git...
+  [ok]    tdq-workflow-agy
+          ✔ skills      : 12 installed (tdq-browser-research, tdq-browser-test, tdq-build, tdq-check-status, tdq-checkportable, tdq-conventions, tdq-intake, tdq-lean, tdq-plan, tdq-setup, tdq-spec, tdq-status)
+          ✔ agents      : 8 installed (tdq-build-resolver, tdq-debugger, tdq-explorer, tdq-implementer, tdq-qc-tester, tdq-refactor-cleaner, tdq-reviewer, tdq-security-reviewer)
+          ✔ rules       : 10 installed (AGENTS, domain-git-safety, domain-mcp-first, lang-csharp, lang-go, lang-python, lang-rust, lang-shell-powershell, lang-sql-migration, lang-typescript)
+          ✔ mcpServers  : 3 installed (chrome-devtools, lsp, tavily-primary)
+          ✔ hooks       : 6 installed (tdq-post-invocation, tdq-post-tool-observe, tdq-pre-invocation, tdq-pre-tool-gates, tdq-session-start, tdq-stop-gate)
+          Installed to C:\Users\admin\AppData\Local\Temp\tmpcd3um5lz\.gemini\config\plugins\tdq-workflow-agy
+=== list_after_gh ec=0 ===
+STDOUT:
+[
+  {
+    "name": "tdq-workflow",
+    "enabled": true,
+    "version": "0.98.0",
+    "source": "claude-code",
+    "path": "C:\\Users\\admin\\AppData\\Local\\Temp\\tmpcd3um5lz\\.gemini\\config\\plugins\\tdq-workflow",
+    "skills": [
+      "tdq-browser-research",
+      "tdq-browser-test",
+      "tdq-build",
+      "tdq-check-status",
+      "tdq-conventions",
+      "tdq-intake",
+      "tdq-lean",
+      "tdq-plan",
+      "tdq-setup",
+      "tdq-spec",
+      "tdq-status"
+    ],
+    "agents": [
+      "tdq-build-resolver",
+      "tdq-implementer",
+      "tdq-refactor-cleaner"
+    ],
+    "hooks": [
+      "description",
+      "hooks"
+    ]
+  },
+  {
+    "name": "tdq-workflow-agy",
+    "enabled": true,
+    "version": "0.105.0",
+    "source": "antigravity",
+    "path": "C:\\Users\\admin\\AppData\\Local\\Temp\\tmpcd3um5lz\\.gemini\\config\\plugins\\tdq-workflow-agy",
+    "skills": [
+      "tdq-browser-research",
+      "tdq-browser-test",
+      "tdq-build",
+      "tdq-check-status",
+      "tdq-checkportable",
+      "tdq-conventions",
+      "tdq-intake",
+      "tdq-lean",
+      "tdq-plan",
+      "tdq-setup",
+      "tdq-spec",
+      "tdq-status"
+    ],
+    "agents": [
+      "tdq-build-resolver",
+      "tdq-debugger",
+      "tdq-explorer",
+      "tdq-implementer",
+      "tdq-qc-tester",
+      "tdq-refactor-cleaner",
+      "tdq-reviewer",
+      "tdq-security-reviewer"
+    ],
+    "rules": [
+      "AGENTS.md",
+      "domain-git-safety.md",
+      "domain-mcp-first.md",
+      "lang-csharp.md",
+    
+=== reinstall_gh_subpath_dev ec=0 ===
+STDOUT:
+Cloning plugin from https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git...
+  [ok]    tdq-workflow-agy
+          ✔ skills      : 12 installed (tdq-browser-research, tdq-browser-test, tdq-build, tdq-check-status, tdq-checkportable, tdq-conventions, tdq-intake, tdq-lean, tdq-plan, tdq-setup, tdq-spec, tdq-status)
+          ✔ agents      : 8 installed (tdq-build-resolver, tdq-debugger, tdq-explorer, tdq-implementer, tdq-qc-tester, tdq-refactor-cleaner, tdq-reviewer, tdq-security-reviewer)
+          ✔ rules       : 10 installed (AGENTS, domain-git-safety, domain-mcp-first, lang-csharp, lang-go, lang-python, lang-rust, lang-shell-powershell, lang-sql-migration, lang-typescript)
+          ✔ mcpServers  : 3 installed (chrome-devtools, lsp, tavily-primary)
+          ✔ hooks       : 6 installed (tdq-post-invocation, tdq-post-tool-observe, tdq-pre-invocation, tdq-pre-tool-gates, tdq-session-start, tdq-stop-gate)
+          Installed to C:\Users\admin\AppData\Local\Temp\tmpcd3um5lz\.gemini\config\plugins\tdq-workflow-agy (replaced existing installation)
+=== install_gh_main ec=0 ===
+STDOUT:
+Cloning plugin from https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git...
+  [ok]    tdq-workflow
+          ✔ skills      : 11 installed (tdq-browser-research, tdq-browser-test, tdq-build, tdq-check-status, tdq-conventions, tdq-intake, tdq-lean, tdq-plan, tdq-setup, tdq-spec, tdq-status)
+          ✔ agents      : 6 installed (tdq-build-resolver, tdq-implementer, tdq-qc-tester, tdq-refactor-cleaner, tdq-reviewer, tdq-security-reviewer)
+          ✔ hooks       : 2 installed (description, hooks)
+          Installed to C:\Users\admin\AppData\Local\Temp\tmpcd3um5lz\.gemini\config\plugins\tdq-workflow (replaced existing installation)
+=== link_after_cache ec=1 ===
+STDERR:
+Error: unknown marketplace: antigravity-plugins-official
+=== ISO import_manifest.json ===
+{
+  "imports": [
+    {
+      "name": "tdq-workflow",
+      "source": "claude-code",
+      "importedAt": "2026-11-22T01:45:48Z",
+      "components": [
+        "skills",
+        "agents",
+        "hooks"
+      ]
+    },
+    {
+      "name": "tdq-workflow-agy",
+      "source": "antigravity",
+      "importedAt": "2026-11-22T01:46:15Z",
+      "components": [
+        "skills",
+        "agents",
+        "rules",
+        "mcpServers",
+        "hooks"
+      ]
+    }
+  ]
+}
+REAL_HOME_UNTOUCHED: True

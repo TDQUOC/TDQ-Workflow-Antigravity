@@ -1,0 +1,22 @@
+# Shard Trục B — Kiểm toán cấu hình Git, Marketplace & Đa OS của Repo (T2.1)
+
+Ngày thu thập: 2026-11-22 · Skill nạp: `agy-customizations` (`docs/plugins.md`, `docs/json_configs.md`, `docs/hooks.md`, `docs/mcp_servers.md`, `docs/rules.md`, `docs/skills.md`)
+
+## Tóm tắt kiểm toán từng vùng tệp
+
+### 1. Gói Antigravity native (`plugins/tdq-workflow-agy/`) & Bộ dựng (`tools/`)
+
+- **[EV-B07] Metadata gốc của plugin đã gần hoàn chỉnh:** `plugins/tdq-workflow-agy/plugin.json:1-27` (v`0.105.0`) vượt qua `agy plugin validate --strict --json` với `0 findings`, có `displayName: "TDQ Workflow (Antigravity)"`, `logo: "assets/logo.svg"`, `suggestedPrompts` (`3`), `author`, `repository: "https://github.com/TDQUOC/TDQ-Workflow-Antigravity"`, `license: "MIT"`. Thiếu nhẹ `"$schema": "https://antigravity.google/schemas/v1/plugin.json"` và `"homepage"`.
+- **[EV-B01] LỖI NGHIÊM TRỌNG ĐA MÁY / ĐA OS — `mcp_config.json` đóng cứng đường dẫn máy `admin`:** `plugins/tdq-workflow-agy/mcp_config.json:1-31` (sinh từ `tools/patches/agy_manifests.py:14-44,151-171`) chứa `C:\\Users\\admin\\.local\\bin\\agent-lsp.exe`, `C:\\Users\\admin\\AppData\\Roaming\\fnm\\aliases\\default\\*.cmd`, `C:\\Users\\admin\\.cargo\\bin\\rust-analyzer.EXE`, `npx.cmd`, và `--userDataDir=C:/Users/admin/.gemini/chrome-devtools-profile`. Bất kỳ người dùng cộng đồng nào (trên Windows khác user `admin`, macOS, hay Linux) đều hỏng MCP khi cài trực tiếp từ GitHub.
+- **[EV-B02] LỖI NGHIÊM TRỌNG ĐA OS — `hooks.json` đóng cứng `bin\\tdq-dispatch.exe`:** `plugins/tdq-workflow-agy/hooks.json:7,16,28,37,46,55,64,73,82,96,107,116` (sinh bởi `agy_manifests.py:90-100` khi chạy trên Windows) ghi lệnh `bin\\tdq-dispatch.exe --event ...`. Khi cài qua `agy plugin install` trên macOS/Linux (`sh -c` per `agy-customizations/docs/hooks.md:129-130`), toàn bộ 6 lifecycle hook lỗi vì không chạy được `.exe` và đường dẫn dấu `\`. Script `tools/install_agy_plugin.py:71-104` có logic vá `hooks.json`/chép `tdq-dispatch` theo OS nhưng chỉ chạy nếu user cài thủ công bằng Python thay vì `agy plugin install`. Ngoài ra, `ag_build_plugins.md:575` yêu cầu đặt file thực thi dưới `scripts/` (không phải `bin/`) để bảo toàn quyền `0755` khi đóng gói Marketplace, và `agy_manifests.py:188` sinh `rules/AGENTS.md` dùng lệnh `py -3` vốn chỉ có trên Windows.
+- **[EV-B03] Binary macOS/Linux bị cũ (`stale`) & thiếu Mac Intel:** `tdq-dispatch.exe` nằm ở commit `f1e7fcfb` (`2026-11-22T04:02:25+07:00`), còn `tdq-dispatch-linux-x86_64` và `tdq-dispatch-darwin-arm64` vẫn là bản `d74393da` (`2026-11-21T13:35:31+07:00`). Workflow `.github/workflows/build-rust-hooks.yml:20-55` build artifact cho 3 OS nhưng không tự cập nhật vào repo/release, và thiếu target `x86_64-apple-darwin` (macOS Intel).
+
+### 2. Cấu hình Git, Nhánh & Marketplace Adapter
+
+- **[EV-B04] Trỏ root GitHub `https://github.com/TDQUOC/TDQ-Workflow-Antigravity` bị nhận nhầm thành Claude Code:** Remote `origin` đặt nhánh mặc định là `main` (`git ls-remote --symref origin HEAD` → `refs/heads/main`). Tuy nhiên `scripts/build_portable.py:69-70` lại liệt kê `"plugins", "tools"` vào `RELEASE_EXCLUDE_TOP_DIRS` và `".agents/plugins.json"` vào `RELEASE_EXCLUDE_PATHS`. Hệ quả là cả `main` (`91db3046`) lẫn `origin/main` (`d56f1d17`) hoàn toàn KHÔNG có `plugins/tdq-workflow-agy/` hay `.antigravity-plugin/plugin.json` — người dùng chạy `agy plugin install https://github.com/<owner>/<repo>` bị cài `.claude-plugin/plugin.json` dạng `claude-code` (`[EV-A11]`).
+- **[EV-B05] Trộn lẫn 3 chuẩn adapter và còn trỏ repo upstream cũ:**
+  - `.agents/plugins.json:1-7` hợp chuẩn Antigravity workspace discovery (`entries: [{"path": "./plugins"}]`), giúp mở repo trong workspace dùng được ngay `./plugins/tdq-workflow-agy/` (chỉ có trên `dev`).
+  - `.agents/plugins/marketplace.json:1-20` thực chất là manifest của Codex CLI (`name: "tdq-local"`, plugin `tdq-workflow`, `"url": "./"`), lệch tên với `tdq-workflow-agy` và không phải chuẩn Antigravity Marketplace (`agy_probe_3.txt:57-98`).
+  - `.claude-plugin/marketplace.json:1-13` và `.codex-plugin/plugin.json:8-9` vẫn trỏ mô tả/homepage về `TDQUOC/TDQ-Workflow`.
+- **[EV-B06] Chênh lệch Git remote `origin`:** `dev` đang đi trước `origin/dev` `25` commit (`0.105.0`), còn `main` (`0.103.1`) đang đi trước `origin/main` (`0.98.0`) `62` commit và chưa cập nhật `0.105.0`.
+- **[EV-B07/EV-B08] Vết cứng & tài liệu cũ:** `tools/build_agy_plugin.py:25` còn fallback `C:\Users\admin\...`, `README-Antigravity.md:3` vẫn ghi `v0.97.0`.

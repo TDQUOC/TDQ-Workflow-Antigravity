@@ -1,0 +1,48 @@
+=== git remote -v ===
+local-upstream	C:/Users/admin/Documents/Projects/ForAgentCode/TDQ-Workflow (fetch)
+local-upstream	C:/Users/admin/Documents/Projects/ForAgentCode/TDQ-Workflow (push)
+origin	https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git (fetch)
+origin	https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git (push)
+upstream	https://github.com/TDQUOC/TDQ-Workflow.git (fetch)
+upstream	https://github.com/TDQUOC/TDQ-Workflow.git (push)
+=== git ls-remote --symref origin HEAD ===
+ref: refs/heads/main	HEAD
+d56f1d17a91ba0bfc4d8e8ba7c2fae8a32c182dd	HEAD
+=== git rev-list --left-right --count dev...origin/dev ===
+25	0
+=== git rev-list --left-right --count main...origin/main ===
+62	0
+=== git branch -vv ===
+AntigravityBranch_Improve                                01f88cf1 [upstream/AntigravityBranch_Improve] feat(agy): port multi-host fixes to root source and harden Antigravity 2.0 hooks
+  dev                                                      4b3eae4a [origin/dev: ahead 25] docs(tdq): close request 2026-11-22-0023-hook-duyet-thao-tac-git to idle and sync Archify manifest on dev
+  docs/audit-sai-sot-noi-hook                              041f0e3f docs(audit): analyze hook relaxation behavior regressions and list 10 technical risks
+  docs/research-behavior-va-hieu-nang                      437e8d75 docs(research): propose hybrid 2-tier rust-python hook architecture and smart hardening
+* docs/research-marketplace-va-update                      4b3eae4a docs(tdq): close request 2026-11-22-0023-hook-duyet-thao-tac-git to idle and sync Archify manifest on dev
+  feature/dong-rust-binary-hook                            72f1e2e9 feat(hook): bundle standalone native Rust binary tdq-dispatch across Windows, Linux, and macOS (v0.101.0)
+  feature/hybrid-hook-smart-hardening                      760d6263 feat(hook): hybrid 2-tier hook dispatch, smart hardening, and multi-OS packaging
+  feature/tich-hop-rtk-antigravity                         3f02155b feat(rtk): finish RTK optimization, QC round 2, Archify sync, and idle close
+  main                                                     91db3046 [origin/main: ahead 62] release: v0.103.1 (from dev@35a75e3)
+  tdq/2026-11-20-0015-trien-khai-plan-v2-planner-spec/t1.1 0a90a9cc T1.1: isolate doc_plan sections, stabilize assignment sha, add packet command
+  tdq/2026-11-20-0015-trien-khai-plan-v2-planner-spec/t1.4 d18fee41 feat(state,eval): add R15 pre-approval gate, multiline Cham targets, and RE_TICK sync (T1.4)
+  tdq/2026-11-20-0015-trien-khai-plan-v2-planner-spec/t3.1 e863dfa1 feat(agy): remind tdq_team packet in subagent gate, lock token budget, rebuild agy plugin (T3.1)
+  tdq/2026-11-21-1536-nang-cap-qc-tester-e2e/t1.1          757f0e66 feat(test): add --workers auto, smoke-e2e router, and fix html/ruff_cache filters
+=== git ls-tree --name-only main ===
+.agents
+.claude-plugin
+.claude
+.codex-plugin
+.codex
+.env.example
+.gitattributes
+.gitignore
+.graphifyignore
+.opencode
+CHANGELOG.md
+README.md
+agents
+claude-export
+hooks
+portable_src
+scripts
+skills
+tdq-config.json

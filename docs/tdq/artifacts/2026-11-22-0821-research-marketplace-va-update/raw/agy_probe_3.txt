@@ -1,0 +1,236 @@
+=== REAL config.json plugins ===
+{
+  "chrome-devtools-plugin": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/chrome-devtools-plugin",
+      "marketplace": "antigravity-plugins-official",
+      "version": "1.10.1"
+    }
+  },
+  "gdocs": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/gdocs",
+      "marketplace": "antigravity-plugins-official",
+      "version": "0.0.9"
+    }
+  },
+  "gdrive": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/gdrive",
+      "marketplace": "antigravity-plugins-official",
+      "version": "0.0.11"
+    }
+  },
+  "gemini-api": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/gemini-api",
+      "marketplace": "antigravity-plugins-official",
+      "version": "2.6.0"
+    }
+  },
+  "google-antigravity-sdk": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/google-antigravity-sdk",
+      "marketplace": "antigravity-plugins-official",
+      "version": "0.0.9"
+    }
+  },
+  "gsheets": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/gsheets",
+      "marketplace": "antigravity-plugins-official",
+      "version": "0.0.8"
+    }
+  },
+  "gslides": {
+    "installedFrom": {
+      "id": "antigravity-plugins-official/plugin/gslides",
+      "marketplace": "antigravity-plugins-official",
+      "version": "0.0.8"
+    }
+  },
+  "tdq-workflow-agy": {
+    "enabled": true
+  }
+}
+=== REAL official marketplace.json top 45 lines ===
+{
+  "name": "antigravity-plugins-official",
+  "description": "Antigravity plugins marketplace catalog.",
+  "plugins": [
+    {
+      "name": "data-agent-kit-plugin",
+      "displayName": "Data Agent Kit",
+      "version": "1.2.0",
+      "description": "This plugin provides a specialized suite of skills for data engineers and database practitioners working on Google Cloud. It acts as an expert assistant, allowing you to use natural language prompts in your preferred coding agent to architect complex data pipelines, transform data with dbt, write Spark and BigQuery SQL notebooks, and orchestrate end-to-end workflows across GCP's data ecosystem.",
+      "logo": "https://www.gstatic.com/antigravity/plugins/data-agent-kit-plugin/assets/logo.svg?v=057413350267",
+      "suggestedPrompts": [
+        "Create a PySpark notebook to train a distributed Random Forest model on the BigQuery table my_transactions",
+        "Find datasets about customer orders in Knowledge Catalog and show their lineage",
+        "My last Dataflow job failed. Find the root cause in the logs and propose a fix"
+      ],
+      "author": {
+        "name": "Google LLC",
+        "email": "data-agent-kit@google.com"
+      },
+      "homepage": "https://cloud.google.com/products/data-agent-kit",
+      "repository": "https://github.com/GoogleCloudPlatform/data-agent-kit-plugin",
+      "license": "Apache-2.0",
+      "keywords": [
+        "gcp",
+        "data",
+        "bigquery",
+        "dbt",
+        "spark",
+        "spanner",
+        "alloydb",
+        "cloud-sql",
+        "bigtable",
+        "dataflow",
+        "airflow",
+        "notebooks"
+      ],
+      "source": {
+        "type": "archive",
+        "url": "https://www.gstatic.com/antigravity/plugins/data-agent-kit-plugin/data-agent-kit-plugin.zip?v=6c126226ae51",
+        "sha256": "6c126226ae51be41257cdfb7f938bc01d70aa66795ab7b0f9ce6c4d90ae74b69"
+      }
+    },
+    {
+      "name": "gcalendar",
+      "displayName": "Google Calendar",
+=== validate_root ec=1 ===
+{
+  "dir": ".",
+  "agentPluginsSpec": false,
+  "components": {
+    "agents": 0,
+    "hooks": 0,
+    "mcpServers": 0,
+    "rules": 0,
+    "sidecars": 0,
+    "skills": 0
+  },
+  "findings": [
+    {
+      "severity": "error",
+      "file": "plugin.json",
+      "message": "no plugin.json found at the plugin root or in .antigravity-plugin or .gemini-plugin. This looks like a Claude Code plugin: `plugin install` converts it, but it doesn't load as is"
+    }
+  ]
+}
+STDERR: Error: validation failed: 1 error, 0 warnings
+=== validate_agy_strict ec=0 ===
+{
+  "dir": "plugins/tdq-workflow-agy",
+  "manifest": "plugin.json",
+  "name": "tdq-workflow-agy",
+  "agentPluginsSpec": false,
+  "components": {
+    "agents": 8,
+    "hooks": 6,
+    "mcpServers": 3,
+    "rules": 10,
+    "sidecars": 0,
+    "skills": 12
+  },
+  "findings": []
+}
+=== install_local ec=0 ===
+[ok]    tdq-workflow-agy
+          ✔ skills      : 12 installed (tdq-browser-research, tdq-browser-test, tdq-build, tdq-check-status, tdq-checkportable, tdq-conventions, tdq-intake, tdq-lean, tdq-plan, tdq-setup, tdq-spec, tdq-status)
+          ✔ agents      : 8 installed (tdq-build-resolver, tdq-debugger, tdq-explorer, tdq-implementer, tdq-qc-tester, tdq-refactor-cleaner, tdq-reviewer, tdq-security-reviewer)
+          ✔ rules       : 10 installed (AGENTS, domain-git-safety, domain-mcp-first, lang-csharp, lang-go, lang-python, lang-rust, lang-shell-powershell, lang-sql-migration, lang-typescript)
+          ✔ mcpServers  : 3 installed (chrome-devtools, lsp, tavily-primary)
+          ✔ hooks       : 6 installed (tdq-post-invocation, tdq-post-tool-observe, tdq-pre-invocation, tdq-pre-tool-gates, tdq-session-start, tdq-stop-gate)
+          Installed to C:\Users\admin\AppData\Local\Temp\tmpd_yk3qf8\.gemini\config\plugins\tdq-workflow-agy
+=== disable_local ec=0 ===
+=== list_after_disable ec=0 ===
+[
+  {
+    "name": "tdq-workflow-agy",
+    "enabled": false,
+    "version": "0.105.0",
+    "source": "antigravity",
+    "path": "C:\\Users\\admin\\AppData\\Local\\Temp\\tmpd_yk3qf8\\.gemini\\config\\plugins\\tdq-workflow-agy",
+    "skills": [
+      "tdq-browser-research",
+      "tdq-browser-test",
+      "tdq-build",
+      "tdq-check-status",
+      "tdq-checkportable",
+      "tdq-conventions",
+      "tdq-intake",
+      "tdq-lean",
+      "tdq-plan",
+      "tdq-setup",
+      "tdq-spec",
+      "tdq-status"
+    ],
+    "agents": [
+      "tdq-build-resolver",
+      "tdq-debugger",
+      "tdq-explorer",
+      "tdq-implementer",
+      "tdq-qc-tester",
+      "tdq-refactor-cleaner",
+      "tdq-reviewer",
+      "tdq-security-reviewer"
+    ],
+    "rules": [
+      "AGENTS.md",
+      "domain-git-safety.md",
+      "domain-mcp-first.md",
+      "lang-csharp.md",
+      "lang-go.md",
+      "lang-python.md",
+      "lang-rust.md",
+      "lang-shell-powershell.md",
+      "lang-sql-migration.md",
+      "lang-typescript.md"
+    ],
+    "mcpServers": [
+      "chrome-devtools",
+      "lsp",
+      "tavily-primary"
+    ],
+    "hooks": [
+      "tdq-post-invocation",
+      "tdq-post-tool-observe",
+      "tdq-pre-invocation",
+      "tdq-pre-tool-gates",
+      "tdq-session-start",
+      "tdq-stop-gate"
+    ]
+  }
+]
+=== install_custom_mp ec=1 ===
+STDERR: Error: unknown marketplace: custom-mp
+=== link_official ec=1 ===
+STDERR: Error: unknown marketplace: antigravity-plugins-official
+=== ISO .gemini/config/config.json ===
+{
+  "plugins": {
+    "tdq-workflow-agy": {
+      "enabled": false
+    }
+  }
+}
+=== ISO .gemini/config/import_manifest.json ===
+{
+  "imports": [
+    {
+      "name": "tdq-workflow-agy",
+      "source": "antigravity",
+      "importedAt": "2026-11-22T01:47:50Z",
+      "components": [
+        "skills",
+        "agents",
+        "rules",
+        "mcpServers",
+        "hooks"
+      ]
+    }
+  ]
+}
+REAL_HOME_UNTOUCHED: True
