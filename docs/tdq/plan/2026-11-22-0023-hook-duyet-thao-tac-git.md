@@ -3,7 +3,7 @@
 Ngày: 2026-11-22 · Spec: ../spec/2026-11-22-0023-hook-duyet-thao-tac-git.md (bản 1.0, ĐÃ DUYỆT)
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
 Mode thực thi: subagent — đo thực tế bằng tdq_bench.py simulate (--he-so-agent 1.5): đội 12.3 phút vs main 14.3 phút (chênh 2.0 phút qua 4 wave, 4 task giao subagent và 3 task leader giữ) (ĐỀ XUẤT, user chốt lúc duyệt)
-Trạng thái plan: CHỜ DUYỆT
+Trạng thái plan: HOÀN THÀNH
 
 > **Tóm tắt dễ hiểu:** Kế hoạch chia thành bốn đợt kế tiếp nhau với bảy công việc tách biệt tệp để không xung đột vùng sửa. Hai đợt đầu nâng cấp bộ phân tích lệnh và cổng sự kiện trên nền Rust kèm bảng hướng dẫn chuẩn. Hai đợt sau đồng bộ tầng kịch bản Python, đóng gói lại bản dựng plugin và kiểm chứng toàn bộ đối chiếu hai tầng cùng bộ kiểm thử hồi quy.
 
@@ -295,9 +295,9 @@ Không có file nóng (`HOT FILE = 0`): mọi tệp nguồn, tệp patch, bản 
 
 Trỏ về §6 của spec `docs/tdq/spec/2026-11-22-0023-hook-duyet-thao-tac-git.md` (mức QC `full`, mỗi dòng kiểm chứng bằng một lệnh thực tế):
 
-- [ ] Q1 Kiểm thử Rust `tdq-dispatch` pass 100% (0 fail, bao phủ phân tích token, 3 loại vé single-turn, chặn cứng force-push/`Co-Authored-By:`/nhánh AI, khóa `.tdq-runtime/`, bước 3b) — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
-- [ ] Q2 Kiểm thử parity Rust ↔ Python & cổng hook (5 module cốt lõi) pass 100% (0 fail, giữ đúng 23 mã guidance) — `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_gate_guidance.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q`
-- [ ] Q3 Trọn bộ hồi quy Python toàn repo theo mức QC `full` đạt 0 fail — `py -3 -X utf8 -m pytest -q`
-- [ ] Q4 Đóng gói binary release & plugin Antigravity sạch (exit 0, `"status": "OK"`, 0 findings) — `py -3 -X utf8 tools/build_agy_plugin.py --upstream .` và `agy plugin validate plugins/tdq-workflow-agy --strict --json` và `py -3 -X utf8 -m pytest tests/test_agy_plugin_validate.py -q`
-- [ ] Q5 Ràng buộc kiến trúc, `i18n_check` delta `+0` trên mọi file sửa so với `dev`, `doc_lint` 0 violation trên `brief`/`spec`/`plan`/`report`, không chạm `~/.gemini/`, `main`, `soul.md` — `py -3 -X utf8 scripts/doc_lint.py --pair docs/tdq/spec/2026-11-22-0023-hook-duyet-thao-tac-git.md docs/tdq/plan/2026-11-22-0023-hook-duyet-thao-tac-git.md` và `py -3 -X utf8 scripts/i18n_check.py` (đối chiếu delta từng file sửa)
-- [ ] Q6 Kiểm tra clean code (`ruff check` 0 lỗi mới trên các file Python chạm, hàm `<= 50` dòng) và log service (`TDQ_LOG=1/0` xác minh trong test) — `ruff check hooks/scripts/prompt_context.py hooks/scripts/bash_gate.py hooks/scripts/edit_gate.py hooks/scripts/agy_pretooluse_gate.py tools/patches/agy_hooks.py`
+- [x] Q1 Kiểm thử Rust `tdq-dispatch` pass 100% (0 fail, bao phủ phân tích token, 3 loại vé single-turn, chặn cứng force-push/`Co-Authored-By:`/nhánh AI, khóa `.tdq-runtime/`, bước 3b) — `cargo test --manifest-path hooks/rust/tdq-dispatch/Cargo.toml`
+- [x] Q2 Kiểm thử parity Rust ↔ Python & cổng hook (5 module cốt lõi) pass 100% (0 fail, giữ đúng 23 mã guidance) — `py -3 -X utf8 -m pytest tests/test_rust_dispatch_parity.py tests/test_gate_guidance.py tests/test_bash_gate.py tests/test_agy_hooks.py tests/test_hooks_dual_protocol.py -q`
+- [x] Q3 Trọn bộ hồi quy Python toàn repo theo mức QC `full` đạt 0 fail — `py -3 -X utf8 -m pytest -q`
+- [x] Q4 Đóng gói binary release & plugin Antigravity sạch (exit 0, `"status": "OK"`, 0 findings) — `py -3 -X utf8 tools/build_agy_plugin.py --upstream .` và `agy plugin validate plugins/tdq-workflow-agy --strict --json` và `py -3 -X utf8 -m pytest tests/test_agy_plugin_validate.py -q`
+- [x] Q5 Ràng buộc kiến trúc, `i18n_check` delta `+0` trên mọi file sửa so với `dev`, `doc_lint` 0 violation trên `brief`/`spec`/`plan`/`report`, không chạm `~/.gemini/`, `main`, `soul.md` — `py -3 -X utf8 scripts/doc_lint.py --pair docs/tdq/spec/2026-11-22-0023-hook-duyet-thao-tac-git.md docs/tdq/plan/2026-11-22-0023-hook-duyet-thao-tac-git.md` và `py -3 -X utf8 scripts/i18n_check.py` (đối chiếu delta từng file sửa)
+- [x] Q6 Kiểm tra clean code (`ruff check` 0 lỗi mới trên các file Python chạm, hàm `<= 50` dòng) và log service (`TDQ_LOG=1/0` xác minh trong test) — `ruff check hooks/scripts/prompt_context.py hooks/scripts/bash_gate.py hooks/scripts/edit_gate.py hooks/scripts/agy_pretooluse_gate.py tools/patches/agy_hooks.py`
