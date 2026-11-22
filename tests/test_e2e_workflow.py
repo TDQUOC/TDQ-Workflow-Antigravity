@@ -49,13 +49,15 @@ def test_v5_live_mcp_agent_lsp_stdio_and_7_companion_extensions():
     servers = mcp_cfg["mcpServers"]
     assert {"lsp", "chrome-devtools", "tavily-primary"}.issubset(servers.keys())
 
-    # 1. Agent-LSP MCP live stdio JSON-RPC initialize + tools/list
+    # 1. Agent-LSP MCP live stdio JSON-RPC initialize + tools/list (via cross-platform launcher)
     lsp = servers["lsp"]
-    assert Path(lsp["command"]).is_file(), f"Missing agent-lsp binary: {lsp['command']}"
+    lsp_cmd = lsp["command"]
+    assert shutil.which(lsp_cmd) or Path(lsp_cmd).is_file(), f"Missing LSP launcher command: {lsp_cmd}"
+    lsp_args = [str(arg).replace("${PLUGIN_ROOT}", str(PLUGIN_DIR)) for arg in lsp.get("args", [])]
     kw = {"stdin": subprocess.PIPE, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
     if os.name == "nt":
         kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
-    proc = subprocess.Popen([lsp["command"], *lsp["args"]], **kw)
+    proc = subprocess.Popen([lsp_cmd, *lsp_args], **kw)
     lines: list[str] = []
 
     def _read():

@@ -7,7 +7,7 @@
 - Full pipeline: `analyze -> spec -> [approve spec] -> plan -> [approve plan] -> mode -> implement (red -> green per task) -> qc -> report -> [set phase=idle]`.
 - Express lane (`quick`): `analyze -> quick_analyze -> mini-plan -> [approve quick] -> implement -> report -> [set phase=idle]`.
 - Zero-Popup UI Policy (`ask_question` blocked mid-request): Ask numbered options (`1a 2b 3c`) and receive approvals directly in chat text. Use `--by "<exact user words>"` when recording approvals via CLI.
-- All Python helpers use `py -3 -X utf8 "<plugin_dir>/scripts/<script>.py"` (or `python3 scripts/<script>.py` inside TDQ repos).
+- All Python helpers use `python3 -X utf8 "<plugin_dir>/scripts/<script>.py"` on macOS/Linux or `py -3 -X utf8 "<plugin_dir>/scripts/<script>.py"` on Windows.
 
 ## 2. Clean Code Invariants & 7-Rung `TDQ:GON` Ladder
 Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-build/references/rules/chung.md`):

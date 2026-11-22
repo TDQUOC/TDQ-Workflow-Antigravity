@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1033-nhanh-release-agy-da-os\\.tmp.truoc-sau.archify.54c1b2a3eefb456996daf0886dc933f7.md",
+    "sha256": "4e9c0b5fd2c2510208dd46ad39927d65c562c03c8153be3d61e3c62c45dc2ecf",
+    "bytes": 1792
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os-preview.e8c67a0e17644bbf8270d8355f12d2de.html",
+    "sha256": "ea97c2ed63cd7312bfa99af7364cf19f71da931069f3e5bfff55d57d6d8da286",
+    "bytes": 867684
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os-preview.e8c67a0e17644bbf8270d8355f12d2de.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os-preview.e8c67a0e17644bbf8270d8355f12d2de.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1840,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

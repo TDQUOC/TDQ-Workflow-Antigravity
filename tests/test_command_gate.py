@@ -208,6 +208,7 @@ class TestCommandGate(unittest.TestCase):
         (out_dir / "hooks").mkdir(parents=True, exist_ok=True)
         (out_dir / "rules").mkdir(parents=True, exist_ok=True)
         agy_manifests.generate_hooks_json(out_dir)
+        agy_manifests.generate_mcp_config(out_dir)
         agy_manifests.generate_two_tier_rules(out_dir)
         hooks_data = json.loads((out_dir / "hooks.json").read_text(encoding="utf-8"))
         self.assertEqual(len(hooks_data.keys()), 6)
@@ -215,8 +216,7 @@ class TestCommandGate(unittest.TestCase):
         cmd_entries = [m for m in pre if m["matcher"] == "run_command"]
         self.assertEqual(len(cmd_entries), 1)
         cmd_str = cmd_entries[0]["hooks"][0]["command"]
-        self.assertIn("tdq-dispatch", cmd_str)
-        self.assertIn("--event PreToolUse", cmd_str)
+        self.assertEqual(cmd_str, "node scripts/tdq_hook_launcher.mjs --event PreToolUse")
         self.assertNotIn('"', cmd_str)
         search_entries = [m for m in pre if "grep_search" in m["matcher"]]
         self.assertEqual(len(search_entries), 1)
@@ -227,8 +227,22 @@ class TestCommandGate(unittest.TestCase):
         for removed in ("run_command", "read_file", "view_file"):
             self.assertNotIn(removed, post_matcher)
         self.assertIn("call_mcp_tool", post_matcher)
-        self.assertIn("tdq-dispatch", post[0]["hooks"][0]["command"])
-        self.assertIn("--event PostToolUse", post[0]["hooks"][0]["command"])
+        self.assertEqual(
+            post[0]["hooks"][0]["command"],
+            "node scripts/tdq_hook_launcher.mjs --event PostToolUse",
+        )
+        mcp_text = (out_dir / "mcp_config.json").read_text(encoding="utf-8")
+        for forbidden in ("Users\\admin", "Users/admin", "npx.cmd", ".claude.json"):
+            self.assertNotIn(forbidden, mcp_text)
+        mcp_data = json.loads(mcp_text)
+        self.assertEqual(set(mcp_data["mcpServers"].keys()), {"lsp", "chrome-devtools", "tavily-primary"})
+        for srv in mcp_data["mcpServers"].values():
+            self.assertEqual(srv["command"], "node")
+            self.assertEqual(srv["args"][0], "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs")
+        self.assertIn(
+            "--userDataDir=${PLUGIN_DATA}/chrome-devtools-profile",
+            mcp_data["mcpServers"]["chrome-devtools"]["args"],
+        )
         agents_text = (out_dir / "rules" / "AGENTS.md").read_text(encoding="utf-8")
         self.assertIn("rtk recall", agents_text)
         self.assertIn("rtk bypass", agents_text)

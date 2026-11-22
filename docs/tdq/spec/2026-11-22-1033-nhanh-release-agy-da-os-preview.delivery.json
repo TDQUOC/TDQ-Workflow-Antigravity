@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "e1ae94b8-603e-4ad6-96a0-ea389a1db3e3",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1033-nhanh-release-agy-da-os\\.tmp.truoc-sau.archify.54c1b2a3eefb456996daf0886dc933f7.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os-preview.e8c67a0e17644bbf8270d8355f12d2de.html",
+  "specification": {
+    "sha256": "4e9c0b5fd2c2510208dd46ad39927d65c562c03c8153be3d61e3c62c45dc2ecf",
+    "bytes": 1792
+  },
+  "artifact": {
+    "sha256": "ea97c2ed63cd7312bfa99af7364cf19f71da931069f3e5bfff55d57d6d8da286",
+    "bytes": 867684
+  },
+  "explainer": {
+    "preparedSha256": "159e455f66b70f59926ebcec095ed728a0289b744bb6149f80d6173e32495552",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-truoc-release",
+        "inline": true,
+        "sha256": "199ef61846523440c9694efda4971a6c46f666dd3ec689a1d39ba8fa2e637212",
+        "bytes": 1049
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sau-release",
+        "inline": true,
+        "sha256": "d6618a2ff525f01c46c6d34b4937bf02a3ef521ec4608f3968f1e76cd30f10f7",
+        "bytes": 1172
+      }
+    ]
+  }
+}
