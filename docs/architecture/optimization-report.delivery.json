@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "8d370b08-834d-4963-8547-3dfd0e4fb496",
+  "receiptId": "d563b88d-edcd-4dfb-9f18-397a11ceae0d",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\optimization-report.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\optimization-report.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\optimization-report.html",
   "specification": {
     "sha256": "ef83b7effbcb1c3b7062f61cad2b58a9a3f657ee3b5add9ed9d4b2fc4acce2ac",
     "bytes": 4466

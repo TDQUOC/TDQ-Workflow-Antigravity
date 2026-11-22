@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1521-trien-khai-setup-fully-agy\\truoc-sau.archify.md",
+    "sha256": "5edb23b98f7a1ba11c08c095406f8034219159bb59895dc299a580980f6f8a01",
+    "bytes": 2989
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy-preview.273e7e0a7029467da3e878523bef237a.html",
+    "sha256": "129cca9c3414a7672560cb15c05d50eb1a80f734078e947e071527ba2c84923a",
+    "bytes": 1279167
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy-preview.273e7e0a7029467da3e878523bef237a.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy-preview.273e7e0a7029467da3e878523bef237a.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2213,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

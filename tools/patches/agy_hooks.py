@@ -2608,7 +2608,8 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         '                        target="git_grant", grants=git_grants)\n'
         '        _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
         "    _nhac_worktree(cwd)\n"
-        "    _emit_setup_hooks(cwd, prompt, is_new_turn=True)",
+        '    hook_source = str(payload.get("source") or "")\n'
+        "    _emit_setup_hooks(cwd, prompt, is_new_turn=True, source=hook_source)",
         "    sid = session_id(payload)\n"
         "    agy_mode = is_agy()\n"
         "    is_new_turn = True\n"
@@ -2636,7 +2637,8 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         "            if not agy_mode:\n"
         '                _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
         "        _nhac_worktree(cwd)\n"
-        "        _emit_setup_hooks(cwd, prompt, is_new_turn=is_new_turn, user_md_fn=emit_user_markdown if agy_mode else None)",
+        '        hook_source = str(payload.get("source") or "")\n'
+        "        _emit_setup_hooks(cwd, prompt, is_new_turn=is_new_turn, user_md_fn=emit_user_markdown if agy_mode else None, source=hook_source)",
         label="prompt_context_conditional_snapshot",
         sentinel="should_stop, is_new_turn = _agy_pre_invocation_hook",
     )

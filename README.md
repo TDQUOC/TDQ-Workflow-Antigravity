@@ -85,7 +85,7 @@ Gõ kèm từ khóa "_tdq_direct" trong prompt ──► Tự động khảo sá
 
 ### 4.1. Thiết lập Zero-to-Full tự động (Antigravity & Đa nền tảng)
 
-`TDQ-Workflow` cung cấp chế độ thiết lập tự phục hồi (`Self-healing Setup`) qua cả lệnh chat **`setupfully tdq-workflow`** (tự cấp quyền user-space chạy Phase 1 → nhắc Restart Antigravity → tự chạy kiểm chứng 6 tầng `--post-restart-verify`) lẫn lệnh `/tdq-setup` (in bảng kê 1 lần để duyệt). Trên máy mới chưa có Python/Node, chạy trước Gate-0 bootstrap:
+`TDQ-Workflow` cung cấp chế độ thiết lập tự phục hồi (`Self-healing Setup`) qua lệnh chat **`setupfully tdq-workflow`** hoặc `/tdq-setup`. Lệnh chat tự chạy Phase 1, nhắc khởi động lại Antigravity, rồi tự kiểm chứng 6 tầng (`--post-restart-verify`), còn `/tdq-setup` in bảng kê một lần để duyệt. Trên máy mới chưa có Python/Node, chạy trước Gate-0 bootstrap:
 
 ```powershell
 # Windows (Gate-0) → tải/kiểm tra Python >= 3.10, Node >= 18 & Rust dispatch
@@ -100,7 +100,7 @@ py -3 scripts/tdq_setup.py --setupfully
 ./scripts/bootstrap.sh && python3 scripts/tdq_setup.py --setupfully
 ```
 
-Luồng thiết lập tự động kiểm tra và cấu hình đồng bộ cho host Antigravity (`0` nợ cấu hình Claude), RTK + `rg`, Caveman Node MCP wrapper, Archify (`~/.local/share/archify`), ghim `~/.gemini/GEMINI.md` (`< 24 KB`), lưu bí mật `TAVILY_API_KEY` vào `secrets.env` (`--set-tavily-key`), và chạy trình nghiệm thu sandbox 6 tầng `scripts/tdq_simulate_verify.py`.
+Luồng thiết lập tự động cấu hình host Antigravity với `0` nợ cấu hình Claude, cài RTK + `rg` và bật Caveman Node MCP wrapper. Hệ thống cũng tự chuẩn bị Archify (`~/.local/share/archify`), ghim `~/.gemini/GEMINI.md` (`< 24 KB`), lưu `TAVILY_API_KEY` vào `secrets.env` (`--set-tavily-key`), và chạy `scripts/tdq_simulate_verify.py`.
 
 Lệnh chuẩn cho cả môi trường truyền thống (`python3 scripts/tdq_setup.py`):
 1. Tạo shim `python3` trên Windows nếu máy chỉ có `python` hoặc `py -3`.

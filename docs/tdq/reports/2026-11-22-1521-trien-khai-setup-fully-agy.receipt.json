@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1521-trien-khai-setup-fully-agy\\.tmp.bao-cao.archify.974c9aadc5274a8981760ded56876332.md",
+    "sha256": "9fd0df5c101a43b04c80e588b68f550ea3abb7d7b2580a57a42162581155b1c6",
+    "bytes": 2104
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy.27e50e4f01ea49508adfdff6d03254bc.html",
+    "sha256": "10535a66f407cc00d078707f00c55c31d2986345d0b7b04f443d43e794336f1a",
+    "bytes": 891282
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-paragraph-length",
+      "severity": "warning",
+      "message": "This paragraph has 5 sentences and 32 reading units; long paragraphs are what the page should replace.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1521-trien-khai-setup-fully-agy\\.tmp.bao-cao.archify.974c9aadc5274a8981760ded56876332.md",
+        "line": 22,
+        "component": "prose",
+        "panelId": "luong-setupfully-truoc-sau"
+      },
+      "evidence": {
+        "reason": "This paragraph has 5 sentences and 32 reading units; long paragraphs are what the page should replace.",
+        "example": "把并列要点写成列表，把先后动作写成 @steps，把方案差异写成对比表。 / Turn parallel points into a list, ordered actions into @steps and option differences into a comparison.",
+        "rule": "paragraph-length",
+        "units": 32,
+        "limit": 120
+      },
+      "supportedFixes": [
+        "Split the paragraph into a list, steps or a comparison; keep at most two or three short sentences of prose."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy.27e50e4f01ea49508adfdff6d03254bc.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy.27e50e4f01ea49508adfdff6d03254bc.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1901,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

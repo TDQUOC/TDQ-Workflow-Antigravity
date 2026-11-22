@@ -517,6 +517,44 @@ def _remind_reason(is_new_turn: bool, current_fp: str, saved_fp: str) -> str:
     return "same_host_fingerprint"
 
 
+def _expire_pending_state(state: dict[str, Any], target_dir: Path) -> dict[str, Any]:
+    """Mark timed-out setup state expired and remove the pending flag."""
+    expired_state = dict(state)
+    expired_state["status"] = "expired"
+    save_setup_state(expired_state, pending=False, data_dir=target_dir)
+    _log("evaluate_restart_resume action=none reason=expired_ttl")
+    return {"action": "none", "reason": "expired_ttl", "state": expired_state}
+
+
+def _accept_restart_verify(
+    state: dict[str, Any], reason: str, current_fp: str, target_dir: Path
+) -> dict[str, Any]:
+    """Transition awaiting_restart state to validating_after_restart."""
+    next_state = dict(state)
+    next_state["status"] = "validating_after_restart"
+    next_state["resume_reason"] = reason
+    next_state["resumed_host_fingerprint"] = current_fp
+    save_setup_state(next_state, pending=True, data_dir=target_dir)
+    _log(f"evaluate_restart_resume action=run_verify reason={reason}")
+    return {"action": "run_verify", "reason": reason, "state": next_state}
+
+
+def _decide_awaiting_restart(
+    state: dict[str, Any], is_new_turn: bool, confirm_manual: bool, target_dir: Path
+) -> dict[str, Any]:
+    """Decide whether an awaiting_restart session is ready to verify or must wait."""
+    current_fp = str(compute_host_session_fingerprint().get("fingerprint", "") or "")
+    saved_fp = str(state.get("host_fingerprint", "") or "")
+    fp_changed = bool(current_fp and saved_fp and current_fp != saved_fp)
+    if confirm_manual:
+        return _accept_restart_verify(state, "confirm_manual", current_fp, target_dir)
+    if is_new_turn and fp_changed:
+        return _accept_restart_verify(state, "new_host_fingerprint", current_fp, target_dir)
+    reason = _remind_reason(is_new_turn, current_fp, saved_fp)
+    _log(f"evaluate_restart_resume action=remind_restart reason={reason}")
+    return {"action": "remind_restart", "reason": reason, "state": state}
+
+
 def evaluate_restart_resume(
     is_new_turn: bool,
     confirm_manual: bool = False,
@@ -525,43 +563,19 @@ def evaluate_restart_resume(
     """Evaluate setup-pending state and decide none | remind_restart | run_verify."""
     target_dir = Path(data_dir) if data_dir is not None else resolve_plugin_data_dir()
     flag_path = target_dir / PENDING_FLAG_FILENAME
-    flag_exists = flag_path.is_file()
     state = load_setup_state(data_dir=target_dir)
     status = str(state.get("status", "idle"))
-
-    if not flag_exists and status != "awaiting_restart":
+    if not flag_path.is_file() and status != "awaiting_restart":
         _log("evaluate_restart_resume action=none reason=no_pending_setup")
         return {"action": "none", "reason": "no_pending_setup", "state": state}
-
     if _is_state_expired(state):
-        expired_state = dict(state)
-        expired_state["status"] = "expired"
-        save_setup_state(expired_state, pending=False, data_dir=target_dir)
-        _log("evaluate_restart_resume action=none reason=expired_ttl")
-        return {"action": "none", "reason": "expired_ttl", "state": expired_state}
-
+        return _expire_pending_state(state, target_dir)
     if status != "awaiting_restart":
         if status in ("idle", "verified", "expired"):
             flag_path.unlink(missing_ok=True)
         _log(f"evaluate_restart_resume action=none reason=status_{status}")
         return {"action": "none", "reason": f"status_{status}", "state": state}
-
-    current_fp = str(compute_host_session_fingerprint().get("fingerprint", "") or "")
-    saved_fp = str(state.get("host_fingerprint", "") or "")
-    fp_changed = bool(current_fp and saved_fp and current_fp != saved_fp)
-    if confirm_manual or (is_new_turn and fp_changed):
-        reason = "confirm_manual" if confirm_manual else "new_host_fingerprint"
-        next_state = dict(state)
-        next_state["status"] = "validating_after_restart"
-        next_state["resume_reason"] = reason
-        next_state["resumed_host_fingerprint"] = current_fp
-        save_setup_state(next_state, pending=True, data_dir=target_dir)
-        _log(f"evaluate_restart_resume action=run_verify reason={reason}")
-        return {"action": "run_verify", "reason": reason, "state": next_state}
-
-    reason = _remind_reason(is_new_turn, current_fp, saved_fp)
-    _log(f"evaluate_restart_resume action=remind_restart reason={reason}")
-    return {"action": "remind_restart", "reason": reason, "state": state}
+    return _decide_awaiting_restart(state, is_new_turn, confirm_manual, target_dir)
 
 
 def _validate_secret_value(api_key: str) -> str:
@@ -586,20 +600,23 @@ def _windows_principal() -> str:
 
 
 def _apply_private_permissions(path: Path) -> None:
-    """Apply owner-only file permissions (0o600 POSIX, icacls DACL on Windows)."""
+    """Apply owner-only permissions (0o600 POSIX, fail-closed icacls DACL on Windows)."""
     if os.name != "nt":
         os.chmod(path, 0o600)
         return
     principal = _windows_principal()
     if not principal:
-        return
+        raise PermissionError("Unable to resolve Windows user principal for private file ACL")
     try:
-        _run_quiet_command(
+        proc = _run_quiet_command(
             ["icacls", str(path), "/inheritance:r", "/grant:r", f"{principal}:F"],
             timeout=5.0,
         )
     except (OSError, subprocess.SubprocessError) as exc:
-        _log(f"WARN unable to restrict ACL via icacls ({type(exc).__name__})")
+        raise PermissionError(f"icacls ACL hardening failed: {type(exc).__name__}") from exc
+    if proc is None or proc.returncode != 0:
+        rc = getattr(proc, "returncode", "none")
+        raise PermissionError(f"icacls ACL hardening returned non-zero exit ({rc})")
 
 
 def _parse_secret_line(raw_line: str) -> Optional[tuple[str, str]]:

@@ -468,3 +468,38 @@ def test_sandbox_env_suppresses_bytecode_and_snapshot_skips_pycache(tmp_path: Pa
 
     (cfg_dir / "config.json").write_text('{"mutated": true}\n', encoding="utf-8")
     assert sim_verify._snapshot_tree(cfg_dir) != before
+
+
+def test_hot_hook_latency_retry_and_noisy_stderr_mcp_handshake(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Confirm hot hook smooths single OS scheduler spikes while noisy MCP stderr never deadlocks."""
+    noisy_srv = tmp_path / "noisy_srv.py"
+    noisy_srv.write_text(
+        "import json, sys\n"
+        "sys.stderr.write('X' * 131072 + '\\n')\n"
+        "sys.stderr.flush()\n"
+        "for raw in sys.stdin:\n"
+        "    msg = json.loads(raw)\n"
+        "    if msg.get('method') == 'initialize':\n"
+        "        print(json.dumps({'jsonrpc': '2.0', 'id': msg['id'], 'result': {}}), flush=True)\n"
+        "    elif msg.get('method') == 'tools/list':\n"
+        "        print(json.dumps({'jsonrpc': '2.0', 'id': msg['id'], 'result': {'tools': [{'name': 't1'}]}}), flush=True)\n"
+        "        break\n",
+        encoding="utf-8",
+    )
+    rpc_res = sim_verify.run_mcp_jsonrpc_handshake(
+        [sys.executable, "-X", "utf8", str(noisy_srv)], tmp_path, dict(os.environ), timeout_sec=5.0
+    )
+    assert rpc_res["tools_count"] == 1
+
+    samples = iter([(0, "{}", "", 75.0), (0, "{}", "", 14.0)])
+    monkeypatch.setattr(sim_verify, "_hook_cmd_for_event", lambda *_a: ("rust_binary", ["tdq-dispatch.exe"]))
+    monkeypatch.setattr(sim_verify, "_run_cmd", lambda *_a: next(samples))
+    ok, row = sim_verify._run_single_lifecycle_hook(
+        WORKTREE_ROOT, "PreToolUse", {}, Path("tdq-dispatch.exe"), "rust_binary",
+        tmp_path, dict(os.environ), time.monotonic() + 10.0,
+    )
+    assert ok is True
+    assert row["hot_ok"] is True
+    assert row["elapsed_ms"] == 14.0

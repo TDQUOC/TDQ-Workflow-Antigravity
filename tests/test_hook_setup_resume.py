@@ -101,6 +101,8 @@ def test_extract_setupfully_trigger_positive_and_guards():
         "",
         "setup tdq-workflow",
         "setupfully tdq-workflow là gì?",
+        "explain setupfully tdq-workflow",
+        "how to run setupfully tdq-workflow",
         "cách chạy setupfully tdq-workflow?",
         "không chạy setupfully tdq-workflow",
         "đừng setupfully tdq-workflow",
@@ -185,6 +187,22 @@ def test_prompt_context_setupfully_and_restart_resume_flows(tmp_path: Path):
     assert "[TDQ:SETUP]" in ctx_new
     assert "--post-restart-verify" in ctx_new
     assert tdq_setup_state.load_setup_state(data_dir=state_dir)["status"] == "validating_after_restart"
+
+    # 5. source=compact/resume/system must NEVER trigger setupfully or restart resume
+    tdq_setup_state.save_setup_state(
+        {"status": "verified", "phase": 2},
+        pending=False,
+        data_dir=state_dir,
+    )
+    for blocked_src in ("compact", "resume", "system"):
+        resp_src = _run_hook_script(
+            pc_script,
+            "UserPromptSubmit",
+            {"cwd": str(repo), "session_id": f"s_{blocked_src}", "source": blocked_src, "prompt": "setupfully tdq-workflow"},
+            repo,
+            env,
+        )
+        assert "[TDQ:SETUP]" not in _extract_context_text(resp_src)
 
 
 def test_session_start_reports_pending_setup_flag(tmp_path: Path):
@@ -274,8 +292,18 @@ def test_rust_unit_suite_and_parity_isolation():
     wf_text = (ROOT / ".github" / "workflows" / "build-rust-hooks.yml").read_text(encoding="utf-8")
     assert "cargo test" in wf_text, "CI workflow must verify Rust unit tests before uploading binaries"
 
+    cargo_env = dict(os.environ)
+    cargo_bin = shutil.which("cargo")
+    if cargo_bin and "RUSTUP_HOME" not in cargo_env:
+        cargo_home = Path(cargo_bin).resolve().parent.parent
+        rustup_home = cargo_home.parent / ".rustup"
+        if rustup_home.is_dir():
+            cargo_env.setdefault("CARGO_HOME", str(cargo_home))
+            cargo_env["RUSTUP_HOME"] = str(rustup_home)
+
     kw: dict = {
         "cwd": str(ROOT),
+        "env": cargo_env,
         "capture_output": True,
         "text": True,
         "encoding": "utf-8",

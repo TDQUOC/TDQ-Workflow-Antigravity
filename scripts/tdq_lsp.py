@@ -297,33 +297,41 @@ def bac1_binary():
 TUONG_DUONG_MCP = {"javascript": "typescript"}
 
 
-def _is_antigravity_host():
+def _runtime_host_is_agy(caller_file: str = "") -> bool:
+    """Return True when file location or active PLUGIN_DATA signals Antigravity."""
+    candidates = [os.path.abspath(p).replace("\\", "/").lower() for p in (caller_file, __file__) if p]
+    markers = (
+        "/.gemini/config/plugins/",
+        "/plugins/tdq-workflow-agy/",
+        "/plugins/tdq-workflow/",
+        "/antigravity_portable/",
+    )
+    if any(marker in norm for norm in candidates for marker in markers):
+        return True
+    if os.environ.get("TDQ_KHONG_CHAM_MAY") == "1":
+        return False
+    return ".gemini" in os.environ.get("PLUGIN_DATA", "").replace("\\", "/").lower()
+
+
+def _disk_layout_is_agy() -> bool:
+    """Detect pure Antigravity home directory layout without Claude Code footprint."""
+    home = os.environ.get("HOME") or os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    gemini_dir = os.path.join(home, ".gemini")
+    has_gemini = any(os.path.isdir(os.path.join(gemini_dir, sub)) for sub in ("config", "antigravity"))
+    has_claude = os.path.exists(os.path.join(home, ".claude.json")) or os.path.isdir(
+        os.path.join(home, ".claude")
+    )
+    return bool(has_gemini and not has_claude)
+
+
+def _is_antigravity_host(caller_file: str = ""):
     """Return True when running inside Google Antigravity host/plugin context."""
     host_env = os.environ.get("TDQ_HOST", "").strip().lower()
     if host_env in ("antigravity", "agy"):
         return True
     if host_env == "claude":
         return False
-    norm = os.path.abspath(__file__).replace("\\", "/").lower()
-    if any(m in norm for m in (
-        "/.gemini/config/plugins/",
-        "/plugins/tdq-workflow-agy/",
-        "/plugins/tdq-workflow/",
-        "/antigravity_portable/",
-    )):
-        return True
-    if os.environ.get("TDQ_KHONG_CHAM_MAY") != "1":
-        if ".gemini" in os.environ.get("PLUGIN_DATA", "").replace("\\", "/").lower():
-            return True
-    home = os.environ.get("HOME") or os.environ.get("USERPROFILE") or os.path.expanduser("~")
-    gemini_dir = os.path.join(home, ".gemini")
-    has_gemini = os.path.isdir(os.path.join(gemini_dir, "config")) or os.path.isdir(
-        os.path.join(gemini_dir, "antigravity")
-    )
-    has_claude = os.path.exists(os.path.join(home, ".claude.json")) or os.path.isdir(
-        os.path.join(home, ".claude")
-    )
-    return bool(has_gemini and not has_claude)
+    return _runtime_host_is_agy(caller_file) or _disk_layout_is_agy()
 
 
 def _agy_mcp_configs():

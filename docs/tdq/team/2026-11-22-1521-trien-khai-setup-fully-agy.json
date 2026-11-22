@@ -1,0 +1,119 @@
+{
+  "slug": "2026-11-22-1521-trien-khai-setup-fully-agy",
+  "plan_file": "docs\\tdq\\plan\\2026-11-22-1521-trien-khai-setup-fully-agy.md",
+  "plan_sha": "8a02ff3bccac267a92549fb2f40fb5a464f37ad701ea175fdfe41b819396960a",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "dd361a932075ddb363eb70785722f2daaf6a1641139560963afd2bd62db1e9b0",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_setup_state.py",
+        "tests/test_tdq_setup_state.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_setup_probe.mjs",
+        "scripts/bootstrap.ps1",
+        "scripts/bootstrap.sh",
+        "scripts/build_portable.py",
+        "tests/test_bootstrap_probe.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_launchers.py",
+        "scripts/caveman_config.py",
+        "tools/install_agy_plugin.py",
+        "tests/test_caveman_agy_launcher.py"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_setup.py",
+        "scripts/tdq_lsp.py",
+        "scripts/setup_status.py",
+        "scripts/tdq_devtool_mcp.py",
+        "scripts/archify_delivery.py",
+        "tools/patches/cli_fixes_a.py",
+        "tests/test_agy_host_setup.py"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/main.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs",
+        "hooks/scripts/prompt_context.py",
+        "hooks/scripts/session_start.py",
+        "tools/patches/agy_hooks.py",
+        ".github/workflows/build-rust-hooks.yml",
+        "tests/test_rust_dispatch_parity.py",
+        "tests/test_hook_setup_resume.py"
+      ],
+      "dot": 3
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_simulate_verify.py",
+        "tests/test_tdq_simulate_verify.py"
+      ],
+      "dot": 4
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-setup/SKILL.md",
+        "skills/tdq-setup/references/zero-to-full-agy.md",
+        "skills/tdq-setup/references/chrome-devtools-mcp-guide.md",
+        "docs/tdq/token-budget.json",
+        "tests/test_tdq_setup_skill.py"
+      ],
+      "dot": 4
+    },
+    "T3.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/build_agy_plugin.py",
+        "tests/test_setup_bundle_e2e.py"
+      ],
+      "dot": 5
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_setup_log_service.py"
+      ],
+      "dot": 6
+    },
+    "T4.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-22-1521-trien-khai-setup-fully-agy/unit-suite-summary.md"
+      ],
+      "dot": 7,
+      "worktree_required": false
+    }
+  }
+}

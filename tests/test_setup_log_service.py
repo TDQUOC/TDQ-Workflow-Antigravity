@@ -232,7 +232,7 @@ def test_node_mcp_launcher_stderr_and_tdq_log_zero(tmp_path: Path) -> None:
     assert mcp_on.returncode == 0
     assert _assert_iso_stderr_and_json(mcp_on, expected_marker="tdq_mcp_launcher:") == {
         "ok": True,
-        "has_key": True,
+        "has_key": False,
     }
     assert "loaded 1 env key(s) from secrets.env" in mcp_on.stderr
     assert FAKE_TAVILY_SECRET not in mcp_on.stdout
@@ -240,7 +240,19 @@ def test_node_mcp_launcher_stderr_and_tdq_log_zero(tmp_path: Path) -> None:
 
     mcp_off = _run_subprocess([node_bin, str(MCP_LAUNCHER_MJS), "lsp", str(probe_child)], env_off)
     assert mcp_off.returncode == 0
-    assert _assert_muted_stderr_and_json(mcp_off) == {"ok": True, "has_key": True}
+    assert _assert_muted_stderr_and_json(mcp_off) == {"ok": True, "has_key": False}
+
+    # Tavily-targeted launch receives TAVILY_API_KEY in child env while never leaking it to stderr/stdout.
+    tav_on = _run_subprocess(
+        [node_bin, str(MCP_LAUNCHER_MJS), "lsp", str(probe_child), "--tavily"], env_on
+    )
+    assert tav_on.returncode == 0
+    assert _assert_iso_stderr_and_json(tav_on, expected_marker="tdq_mcp_launcher:") == {
+        "ok": True,
+        "has_key": True,
+    }
+    assert FAKE_TAVILY_SECRET not in tav_on.stdout
+    assert FAKE_TAVILY_SECRET not in tav_on.stderr
 
     err_env_on = {**env_on, "TDQ_MCP_OVERRIDE_CMD": "nonexistent-tdq-mcp-probe-bin"}
     missing_on = _run_subprocess([node_bin, str(MCP_LAUNCHER_MJS), "lsp"], err_env_on)

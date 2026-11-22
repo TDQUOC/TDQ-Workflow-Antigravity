@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "d24eab42-94b2-48ff-80b8-3d59387c2b5f",
+  "receiptId": "54ceaa34-d69f-43d1-ac63-ee51f33d4ecb",
   "status": "current",
   "command": "deliver",
   "type": "workflow",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
   "specification": {
     "sha256": "5b12b2f2fedafeffcde07d1b25eb29d67404861eb772552481ce503dd8b2e7cd",
     "bytes": 4898

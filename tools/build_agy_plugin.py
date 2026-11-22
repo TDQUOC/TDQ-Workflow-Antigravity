@@ -255,6 +255,19 @@ def _scan_text_leaks(path: Path, root: Path, needles: tuple[str, ...]) -> list[s
     return [f"{rel}: leaked {needle!r}" for needle in needles if needle in text]
 
 
+def _check_unwrapped_mcp_servers(mcp_file: Path) -> list[str]:
+    """Ensure staged mcp_config.json entries do not pre-bake Caveman wrappers."""
+    if not mcp_file.is_file():
+        return []
+    mcp_data = json.loads(mcp_file.read_text(encoding="utf-8"))
+    violations: list[str] = []
+    for srv_name, entry in (mcp_data.get("mcpServers") or {}).items():
+        raw_args = entry.get("args") if isinstance(entry, dict) else []
+        if "caveman" in [str(item) for item in (raw_args or [])]:
+            violations.append(f"mcp_config.json: server {srv_name} must remain unwrapped")
+    return violations
+
+
 def check_bundle_portability(root: Path) -> list[str]:
     """Check runtime manifests, Node launchers, and skills for leaked paths or pre-baked wrappers."""
     violations: list[str] = []
@@ -266,13 +279,7 @@ def check_bundle_portability(root: Path) -> list[str]:
     for path in sorted((root / "skills").rglob("*")):
         if path.is_file():
             violations.extend(_scan_text_leaks(path, root, _LEAKED_PATH_NEEDLES))
-    mcp_file = root / "mcp_config.json"
-    if mcp_file.is_file():
-        mcp_data = json.loads(mcp_file.read_text(encoding="utf-8"))
-        for srv_name, entry in (mcp_data.get("mcpServers") or {}).items():
-            args = entry.get("args") or [] if isinstance(entry, dict) else []
-            if "caveman" in [str(item) for item in args]:
-                violations.append(f"mcp_config.json: server {srv_name} must remain unwrapped")
+    violations.extend(_check_unwrapped_mcp_servers(root / "mcp_config.json"))
     return violations
 
 

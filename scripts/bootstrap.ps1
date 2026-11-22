@@ -15,10 +15,48 @@ param(
     [string]$RepoUrl = "https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git",
     [string]$Branch = "dev",
     [string]$PluginBranch = "release/antigravity",
+    [switch]$Yes,
     [switch]$Help
 )
 
 $ErrorActionPreference = "Stop"
+[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+function Test-AllowedRepoUrl {
+    param([string]$Url)
+    if ([string]::IsNullOrWhiteSpace($Url) -or $Url.StartsWith("-")) { return $false }
+    return ($Url -match '^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?$')
+}
+
+function Invoke-VerifiedRemoteScript {
+    param([string]$Uri, [string]$Label)
+    if (-not ($Uri -match '^https://[A-Za-z0-9.-]+/')) {
+        throw "Refusing non-HTTPS installer URL for ${Label}: $Uri"
+    }
+    $approved = $Yes -or ($env:TDQ_BOOTSTRAP_APPROVE -eq "1")
+    if (-not $approved -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+        $ans = Read-Host "Install $Label from $Uri? [y/N]"
+        $approved = ($ans -match '^(?i)(y|yes)$')
+    }
+    if (-not $approved) {
+        Write-TdqLog "Remote installer skipped for $Label without -Yes consent. Official URL: $Uri"
+        return $false
+    }
+    $tmpScript = Join-Path ([System.IO.Path]::GetTempPath()) ("tdq-bs-" + [Guid]::NewGuid().ToString("N") + ".ps1")
+    try {
+        $resp = Invoke-WebRequest -Uri $Uri -UseBasicParsing -MaximumRedirection 5 -TimeoutSec 30
+        if ($resp.StatusCode -lt 200 -or $resp.StatusCode -ge 300) { throw "HTTP status $($resp.StatusCode)" }
+        $body = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($body) -or $body.TrimStart() -match '^(?i)<(?:!doctype|html)\b') {
+            throw "Unexpected HTML or empty response from $Uri"
+        }
+        [System.IO.File]::WriteAllText($tmpScript, $body, [System.Text.Encoding]::UTF8)
+        & $tmpScript
+        return $true
+    } finally {
+        if (Test-Path -LiteralPath $tmpScript) { Remove-Item -LiteralPath $tmpScript -Force -ErrorAction SilentlyContinue }
+    }
+}
 
 function Write-TdqLog {
     param([string]$Message)
@@ -148,7 +186,7 @@ function Ensure-FnmAndNode {
         $ok = Install-WingetUserPackage -PackageId "Schniz.fnm" -Label "fnm"
         if (-not $ok) {
             Write-TdqLog "Attempting user-space fnm install script..."
-            Invoke-RestMethod -Uri "https://fnm.vercel.app/install.ps1" | Invoke-Expression
+            [void](Invoke-VerifiedRemoteScript -Uri "https://fnm.vercel.app/install.ps1" -Label "fnm")
         }
         $fnmExe = Resolve-NonStubExe @("fnm.exe", "fnm")
     }
@@ -171,9 +209,10 @@ function Ensure-UvAndPython {
             Write-TdqLog "[dry-run] Would install uv from https://astral.sh/uv/install.ps1 into $LocalBin"
         } else {
             Write-TdqLog "Installing uv into user-space..."
-            Invoke-RestMethod -Uri "https://astral.sh/uv/install.ps1" | Invoke-Expression
-            Ensure-UserPathFront @($LocalBin)
-            $uvExe = Resolve-NonStubExe @("uv.exe", "uv")
+            if (Invoke-VerifiedRemoteScript -Uri "https://astral.sh/uv/install.ps1" -Label "uv") {
+                Ensure-UserPathFront @($LocalBin)
+                $uvExe = Resolve-NonStubExe @("uv.exe", "uv")
+            }
         }
     }
     $pyExe = Resolve-RealPython
@@ -219,9 +258,10 @@ function Ensure-AgyCli {
     }
     Write-TdqLog "Attempting user-space agy CLI installation..."
     try {
-        Invoke-RestMethod -Uri "https://antigravity.google/cli/install.ps1" | Invoke-Expression
-        Ensure-UserPathFront @($agyDir)
-        $agyExe = Resolve-NonStubExe @("agy.exe", "agy")
+        if (Invoke-VerifiedRemoteScript -Uri "https://antigravity.google/cli/install.ps1" -Label "agy CLI") {
+            Ensure-UserPathFront @($agyDir)
+            $agyExe = Resolve-NonStubExe @("agy.exe", "agy")
+        }
     } catch {
         Write-TdqLog "agy CLI automatic install unavailable ($($_.Exception.Message)). Install manually from https://antigravity.google/download"
     }
@@ -254,15 +294,40 @@ function Resolve-OrSyncRepo {
         & "$GitExe" -C "$targetRepo" pull --ff-only
     } else {
         Write-TdqLog "Cloning $RepoUrl into $targetRepo..."
-        & "$GitExe" clone --branch "$Branch" "$RepoUrl" "$targetRepo"
+        & "$GitExe" clone --branch "$Branch" -- "$RepoUrl" "$targetRepo"
     }
     return $targetRepo
 }
 
+function Invoke-BootstrapSetupScript {
+    param([string]$RepoRoot, [string]$PyExe, [string]$TargetStateDir)
+    $setupScript = Join-Path $RepoRoot "scripts\tdq_setup.py"
+    $setupArgs = @("--setupfully")
+    if (-not [string]::IsNullOrWhiteSpace($TargetStateDir)) {
+        $setupArgs += @("--state-dir", $TargetStateDir)
+    }
+    if (Test-DryMode) {
+        Write-TdqLog "[dry-run] Would invoke: python -X utf8 `"$setupScript`" $($setupArgs -join ' ')"
+        return 0
+    }
+    if (-not $PyExe) {
+        throw "No usable real Python 3 interpreter found (WindowsApps Store stub rejected)."
+    }
+    if ($PyExe -like "*\py.exe") {
+        & "$PyExe" -3 -X utf8 "$setupScript" @setupArgs
+    } else {
+        & "$PyExe" -X utf8 "$setupScript" @setupArgs
+    }
+    return $LASTEXITCODE
+}
+
 function Invoke-Main {
     if ($Help) {
-        Write-Output "Usage: bootstrap.ps1 [-DryRun] [-StateDir <path>] [-KhongChamMay] [-RepoUrl <url>] [-Branch <branch>]"
+        Write-Output "Usage: bootstrap.ps1 [-DryRun] [-StateDir <path>] [-KhongChamMay] [-RepoUrl <url>] [-Branch <branch>] [-Yes]"
         return 0
+    }
+    if (-not (Test-AllowedRepoUrl -Url $RepoUrl)) {
+        throw "Rejected untrusted RepoUrl (must match https://github.com/<owner>/<repo>.git): $RepoUrl"
     }
     $localBin = Join-Path $env:USERPROFILE ".local\bin"
     $cargoBin = Join-Path $env:USERPROFILE ".cargo\bin"
@@ -279,7 +344,6 @@ function Invoke-Main {
         Write-TdqLog "Running Node pre-flight probe..."
         & "$nodeExe" "$probeScript" --json | Out-Null
     }
-
     $pluginBundle = Join-Path $repoRoot "plugins\tdq-workflow-agy"
     if ($agyExe -and (Test-Path -LiteralPath $pluginBundle)) {
         if (Test-DryMode) {
@@ -289,25 +353,7 @@ function Invoke-Main {
             & "$agyExe" plugin enable tdq-workflow-agy
         }
     }
-
-    $setupScript = Join-Path $repoRoot "scripts\tdq_setup.py"
-    $setupArgs = @("--setupfully")
-    if (-not [string]::IsNullOrWhiteSpace($StateDir)) {
-        $setupArgs += @("--state-dir", $StateDir)
-    }
-    if (Test-DryMode) {
-        Write-TdqLog "[dry-run] Would invoke: python -X utf8 `"$setupScript`" $($setupArgs -join ' ')"
-        return 0
-    }
-    if (-not $pyExe) {
-        throw "No usable real Python 3 interpreter found (WindowsApps Store stub rejected)."
-    }
-    if ($pyExe -like "*\py.exe") {
-        & "$pyExe" -3 -X utf8 "$setupScript" @setupArgs
-    } else {
-        & "$pyExe" -X utf8 "$setupScript" @setupArgs
-    }
-    return $LASTEXITCODE
+    return Invoke-BootstrapSetupScript -RepoRoot $repoRoot -PyExe $pyExe -TargetStateDir $StateDir
 }
 
 if ($MyInvocation.InvocationName -ne '.') {

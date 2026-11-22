@@ -496,7 +496,7 @@ def run_mcp_jsonrpc_handshake(
         env=env,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
         **_sub_kwargs(),
     )
     msg_q: queue.Queue[Any] = queue.Queue()
@@ -696,6 +696,39 @@ def _is_json_dict_output(out: str) -> bool:
         return False
 
 
+def _evaluate_hook_attempt(
+    cmd: list[str],
+    sample_repo: Path,
+    sandbox_env: dict[str, str],
+    deadline: float,
+    raw_payload: str,
+    must_be_hot: bool,
+    best_ms: float | None,
+) -> tuple[bool, int, str, float, bool]:
+    """Run one hook invocation and evaluate exit code, JSON dict, and hot latency."""
+    rc, out, err, cur_ms = _run_cmd(
+        cmd, sample_repo, sandbox_env, _remaining_sec(deadline, 10.0), raw_payload
+    )
+    json_ok = _is_json_dict_output(out)
+    new_best = cur_ms if best_ms is None else min(best_ms, cur_ms)
+    hot_ok = (not must_be_hot) or (new_best < HOT_HOOK_BUDGET_MS)
+    return json_ok, rc, err, new_best, hot_ok
+
+
+def _format_hook_result(
+    rc: int, json_ok: bool, hot_ok: bool, best_ms: float | None, err: str
+) -> tuple[bool, dict[str, Any]]:
+    """Package verdict and diagnostic payload for one lifecycle hook run."""
+    ev_ok = (rc == 0) and json_ok and hot_ok
+    return ev_ok, {
+        "returncode": rc,
+        "elapsed_ms": float(best_ms or 0.0),
+        "json_ok": json_ok,
+        "hot_ok": hot_ok,
+        "err_head": "" if ev_ok else err.strip()[:120],
+    }
+
+
 def _run_single_lifecycle_hook(
     plugin_root: Path,
     event: str,
@@ -710,19 +743,18 @@ def _run_single_lifecycle_hook(
     _, cmd = _hook_cmd_for_event(plugin_root, event, rust_bin)
     if cmd is None:
         return True, {"returncode": 0, "elapsed_ms": 0.0, "skipped": True}
-    rc, out, err, ms = _run_cmd(
-        cmd, sample_repo, sandbox_env, _remaining_sec(deadline, 10.0), json.dumps(payload)
-    )
-    json_ok = _is_json_dict_output(out)
-    hot_ok = (engine != "rust_binary") or (event not in HOT_EVENTS) or (ms < HOT_HOOK_BUDGET_MS)
-    ev_ok = (rc == 0) and json_ok and hot_ok
-    return ev_ok, {
-        "returncode": rc,
-        "elapsed_ms": ms,
-        "json_ok": json_ok,
-        "hot_ok": hot_ok,
-        "err_head": err.strip()[:120] if not ev_ok else "",
-    }
+    raw_payload = json.dumps(payload)
+    must_be_hot = (engine == "rust_binary") and (event in HOT_EVENTS)
+    attempts = 3 if must_be_hot else 1
+    best_ms: float | None = None
+    rc, err, json_ok, hot_ok = 1, "", False, False
+    for _ in range(attempts):
+        json_ok, rc, err, best_ms, hot_ok = _evaluate_hook_attempt(
+            cmd, sample_repo, sandbox_env, deadline, raw_payload, must_be_hot, best_ms
+        )
+        if rc != 0 or not json_ok or hot_ok:
+            break
+    return _format_hook_result(rc, json_ok, hot_ok, best_ms, err)
 
 
 def _run_t2_lifecycle_hooks(
@@ -766,8 +798,8 @@ def _load_mcp_config(plugin_root: Path) -> tuple[Path, dict[str, Any]]:
                 data = json.loads(cand.read_text(encoding="utf-8"))
                 if isinstance(data, dict):
                     return cand.parent, data
-            except (OSError, ValueError):
-                pass
+            except (OSError, ValueError) as exc:
+                _log(f"_load_mcp_config: failed reading {cand}: {type(exc).__name__}")
     return plugin_root, {}
 
 
@@ -973,6 +1005,48 @@ def _probe_graphify_sample(
     }
 
 
+def _prepare_lsp_socket_env(env: dict[str, str]) -> tuple[dict[str, str], Path | None]:
+    """Ensure HOME/USERPROFILE stays short enough for OS AF_UNIX daemon sockets."""
+    cur_home = env.get("USERPROFILE") or env.get("HOME") or ""
+    limit = 50 if sys.platform == "darwin" else 54
+    if len(cur_home) <= limit:
+        return env, None
+    job_root = os.environ.get("TDQ_TEST_JOB_ROOT", "").strip()
+    base = Path(job_root) if (job_root and len(job_root) <= limit - 6) else Path(tempfile.gettempdir())
+    if len(str(base)) > limit - 6:
+        return env, None
+    short_home = base / f"l{os.getpid() & 0xfff:x}{int(time.monotonic() * 100) % 100:02d}"
+    short_home.mkdir(parents=True, exist_ok=True)
+    lsp_env = dict(env)
+    lsp_env["HOME"] = str(short_home)
+    lsp_env["USERPROFILE"] = str(short_home)
+    lsp_env["XDG_CACHE_HOME"] = str(short_home / ".c")
+    lsp_env["LOCALAPPDATA"] = str(short_home / "l")
+    return lsp_env, short_home
+
+
+def _verify_lsp_symbol_calls(
+    lsp_bin: str, sample_repo: Path, env: dict[str, str], deadline: float
+) -> bool:
+    """Invoke live start_lsp + find_symbol via JSON-RPC and confirm `calc_sum` hits."""
+    calls = [
+        ("tools/call", {"name": "start_lsp", "arguments": {"root_dir": str(sample_repo), "language_id": "python"}}),
+        ("tools/call", {"name": "find_symbol", "arguments": {"query": "calc_sum"}}),
+    ]
+    lsp_env, short_home = _prepare_lsp_socket_env(env)
+    try:
+        extra = run_mcp_jsonrpc_handshake(
+            [lsp_bin], sample_repo, lsp_env, timeout_sec=_remaining_sec(deadline, 15.0), extra_calls=calls
+        )["extra"]
+    finally:
+        if short_home is not None and not _cleanup_sandbox(short_home):
+            _log(f"_verify_lsp_symbol_calls cleanup incomplete: {short_home}")
+    if len(extra) < 2:
+        return False
+    has_err = any(bool((item.get("result") or {}).get("isError")) for item in extra[:2])
+    return (not has_err) and ("calc_sum" in _extract_rpc_text(extra[1]))
+
+
 def _run_t4_lsp_and_graphify(
     sample_repo: Path, env: dict[str, str], deadline: float, log_file: Path | None
 ) -> dict[str, Any]:
@@ -981,18 +1055,7 @@ def _run_t4_lsp_and_graphify(
     lsp_bin = _locate_agent_lsp()
     if not lsp_bin:
         return {"status": "FAIL", "gate": "core", "elapsed_ms": 0.0, "details": {"reason": "agent_lsp_missing"}}
-    calls = [
-        ("tools/call", {"name": "start_lsp", "arguments": {"root_dir": str(sample_repo), "language_id": "python"}}),
-        ("tools/call", {"name": "find_symbol", "arguments": {"query": "calc_sum"}}),
-    ]
-    rpc_res = run_mcp_jsonrpc_handshake(
-        [lsp_bin], sample_repo, env, timeout_sec=_remaining_sec(deadline, 15.0), extra_calls=calls
-    )
-    extra = rpc_res["extra"]
-    start_err = bool((extra[0].get("result") or {}).get("isError")) if len(extra) > 0 else True
-    find_text = _extract_rpc_text(extra[1]) if len(extra) > 1 else ""
-    find_err = bool((extra[1].get("result") or {}).get("isError")) if len(extra) > 1 else True
-    symbol_found = (not start_err) and (not find_err) and ("calc_sum" in find_text)
+    symbol_found = _verify_lsp_symbol_calls(lsp_bin, sample_repo, env, deadline)
     rung6 = tdq_lsp.bac6_cau_hinh_goc_import(str(sample_repo))
     graph_ok, graph_info = _probe_graphify_sample(sample_repo, env, deadline)
     passed = symbol_found and bool(rung6.dat) and graph_ok

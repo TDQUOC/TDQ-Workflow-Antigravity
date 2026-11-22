@@ -340,6 +340,29 @@ def test_mcp_launcher_path_expansion_and_secrets_env(tmp_path: Path):
     assert data["childEnv"]["EMPTY_OVERRIDE_TARGET"] == "fill-me-in"
     assert data["isolatedEnv"] == {}
 
+    res_scope = _run_node_eval(
+        mcp_mjs,
+        f"""(() => {{
+            const lspEnv = m.buildChildEnv(
+                {{ PATH: '/usr/bin', TAVILY_API_KEY: 'parent-leak', TDQ_SETUP_STATE_DIR: {json.dumps(str(state_dir))} }},
+                {json.dumps(posix_home)},
+                'linux',
+                'lsp'
+            );
+            const tavilyEnv = m.buildChildEnv(
+                {{ PATH: '/usr/bin', TDQ_SETUP_STATE_DIR: {json.dumps(str(state_dir))} }},
+                {json.dumps(posix_home)},
+                'linux',
+                'npx -y tavily-mcp@latest'
+            );
+            return {{ lspHas: 'TAVILY_API_KEY' in lspEnv, tavilyVal: tavilyEnv.TAVILY_API_KEY || '' }};
+        }})()""",
+    )
+    assert res_scope.returncode == 0, res_scope.stderr
+    scoped = json.loads(res_scope.stdout)
+    assert scoped["lspHas"] is False
+    assert scoped["tavilyVal"] == "tvly-secret=abc==123"
+
 
 def test_mcp_launcher_caveman_end_to_end_shrink_and_secrets_non_leak(tmp_path: Path):
     agy_launchers.generate_launchers(tmp_path)

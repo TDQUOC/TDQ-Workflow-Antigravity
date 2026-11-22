@@ -213,6 +213,13 @@ def kiem_can_setup_lan_dau(cwd):
     return False
 
 
+def _log_session_warn(context: str, exc: Exception) -> None:
+    """Emit timestamped stderr diagnostic unless TDQ_LOG=0."""
+    if os.environ.get("TDQ_LOG", "1") != "0":
+        stamp = datetime.now().isoformat(timespec="seconds")
+        sys.stderr.write(f"[{stamp}] session_start: {context} failed: {type(exc).__name__}\n")
+
+
 def main():
     payload = read_payload()
     cwd = payload_cwd(payload)
@@ -238,13 +245,13 @@ def main():
     thong_bao_update_nen = ""
     try:
         thong_bao_update_nen = tdq_setup.doc_thong_bao_update_moi()
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as exc:  # noqa: BLE001
+        _log_session_warn("update notice", exc)
     if not is_agy():
         try:
             tdq_setup.kich_hoat_kiem_tra_remote_nen()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            _log_session_warn("remote update probe", exc)
     da_cap_nhat_ver = False
     loi_cap_nhat = ""
     try:
@@ -256,8 +263,8 @@ def main():
     can_setup = False
     try:
         can_setup = kiem_can_setup_lan_dau(cwd)
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as exc:  # noqa: BLE001
+        _log_session_warn("first-setup check", exc)
     dung_nen = (can_khoi_tao(cwd) or can_setup) and kich_hoat_nen(cwd)
     nhac_devtool = ""
     if not is_agy():
@@ -281,8 +288,8 @@ def main():
                 "[TDQ:SETUP] Pending post-restart verification — restart Antigravity if Phase 1 "
                 "just finished, then send any message to run 6-layer verify."
             )
-    except Exception:  # noqa: BLE001
-        pass
+    except Exception as exc:  # noqa: BLE001
+        _log_session_warn("pending setup check", exc)
     nhac_rtk = ""
     try:
         import rtk_integration

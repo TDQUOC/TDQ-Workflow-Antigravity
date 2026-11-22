@@ -376,7 +376,14 @@ def test_e2e_compiled_post_restart_simulate_verify(
     import tdq_simulate_verify  # type: ignore[import-not-found]
 
     sim_res = tdq_simulate_verify.run_simulate_verify(plugin_root=compiled, data_dir=state_dir)
-    assert sim_res["core_gate"] == "PASS", sim_res
+    failing_layers = {
+        k: v for k, v in (sim_res.get("layers") or {}).items() if v.get("status") != "PASS"
+    }
+    assert sim_res["core_gate"] == "PASS", (
+        f"core_gate={sim_res.get('core_gate')} temp_cleaned={sim_res.get('temp_cleaned')} "
+        f"config_untouched={sim_res.get('config_untouched')} elapsed={sim_res.get('elapsed_sec')} "
+        f"errors={sim_res.get('errors')} failing={failing_layers}"
+    )
     assert sim_res["temp_cleaned"] is True
     assert sim_res["config_untouched"] is True
     assert sim_res["errors"] == []

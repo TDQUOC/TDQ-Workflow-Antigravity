@@ -6,8 +6,8 @@ This reference holds the cross-OS Gate-0 bootstrap, Antigravity host configurati
 
 | Trigger / Mode | Consent Scope | Execution Flow | State Artifact (`${PLUGIN_DATA}`) |
 |---|---|---|---|
-| `"setupfully tdq-workflow"` | Explicit user-space consent (`0 sudo`) | Phase 1 (`tdq_setup.py --setupfully`) -> prompt IDE restart -> auto `[TDQ:SETUP]` -> `--post-restart-verify` | `tdq-setup-state.json` + `setup-pending.flag` |
-| Standard `/tdq-setup` | Prints One-Shot Manifest first (`--scan-json`) | Single user approval (optional Tavily key) -> `--apply-manifest` -> restart -> verify | `tdq-setup-state.json` + `setup-pending.flag` |
+| `"setupfully tdq-workflow"` | Explicit user-space consent (`0 sudo`) | Phase 1 (`tdq_setup.py --setupfully`) -> prompt IDE restart -> auto `[TDQ:SETUP]` -> `--post-restart-verify` | `setup-state.json` + `setup-pending.flag` |
+| Standard `/tdq-setup` | Prints One-Shot Manifest first (`--scan-json`) | Single user approval (optional Tavily key) -> `--apply-manifest` -> restart -> verify | `setup-state.json` + `setup-pending.flag` |
 
 - State files stay strictly inside `${PLUGIN_DATA}` (`TDQ_SETUP_STATE_DIR` overrides for isolated tests; `TDQ_KHONG_CHAM_MAY=1` switches writes to in-memory dry-run).
 - Optional `TAVILY_API_KEY` is saved via `python3 scripts/tdq_setup.py --set-tavily-key "<key>"` into private `secrets.env` (`0600` on POSIX, user ACL on Windows) and is NEVER echoed in stdout, stderr, logs, or state JSON.
@@ -21,7 +21,7 @@ Run Gate-0 before Python hooks/CLI if Python `>= 3.10` or Node.js `>= 18` is not
 
 | Component | Purpose | Antigravity Location / Behavior | Verification Check |
 |---|---|---|---|
-| **3-Tier Search (`agent-lsp`, LS, `graphify`)** | Compiler symbols, blast radius, import roots (`pyrightconfig.json`, `tsconfig.json`) | User binary path + `lsp` entry in `~/.gemini/antigravity/mcp_config.json` | `python3 scripts/tdq_lsp.py check` exits `0` |
+| **3-Tier Search (`agent-lsp`, LS, `graphify`)** | Compiler symbols, blast radius, import roots (`pyrightconfig.json`, `tsconfig.json`) | User binary path + `lsp` entry in `~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json` | `python3 scripts/tdq_lsp.py check` exits `0` |
 | **RTK + ripgrep (`rg`)** | CLI output compression & exact search | User bin path + config via `rtk_integration.py` (Collision Guard safe) | `python3 scripts/tdq_setup.py --check-rtk` |
 | **Caveman Token Shrink** | MCP JSON compaction & terse style | Node `scripts/tdq_mcp_launcher.mjs` wraps installed `mcp_config.json` (never `sys.executable`) | `python3 scripts/tdq_setup.py --check-caveman` |
 | **Archify HTML Engine** | Interactive spec/plan/report diagrams & Master Map | Auto-cloned from `https://github.com/tt-a1i/archify.git` into `~/.local/share/archify` (Node `>= 18`) | `python3 scripts/tdq_setup.py --kiem-archify` |

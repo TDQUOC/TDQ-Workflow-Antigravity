@@ -464,3 +464,23 @@ def test_install_py_chmods_sh_and_mjs_on_posix(tmp_path: Path, monkeypatch):
     install._adjust_hooks_for_platform(plugin_dir)
     assert ("bootstrap.sh", 0o755) in chmod_calls
     assert ("tdq_hook_launcher.mjs", 0o755) in chmod_calls
+
+
+def test_bootstrap_security_guards_reject_untrusted_repo_and_blind_pipes(tmp_path: Path):
+    ps1_text = BOOTSTRAP_PS1.read_text(encoding="utf-8")
+    sh_text = BOOTSTRAP_SH.read_text(encoding="utf-8")
+    assert "Invoke-RestMethod" not in ps1_text or "Invoke-Expression" not in ps1_text
+    assert "| sh" not in sh_text and "| bash" not in sh_text
+    assert "--proto '=https'" in sh_text and "--tlsv1.2" in sh_text
+    assert "Tls12" in ps1_text
+
+    if shutil.which("powershell"):
+        bad_ps = _run_cmd([
+            "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(BOOTSTRAP_PS1),
+            "-DryRun", "-RepoUrl", "http://evil.example/repo.git",
+        ])
+        assert bad_ps.returncode != 0
+    bash_bin = _find_usable_bash()
+    if bash_bin:
+        bad_sh = _run_cmd([bash_bin, str(BOOTSTRAP_SH), "--dry-run", "--repo-url", "file:///tmp/evil.git"])
+        assert bad_sh.returncode != 0

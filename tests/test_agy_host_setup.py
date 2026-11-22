@@ -529,3 +529,48 @@ def test_default_agy_main_caveman_node_wrap_fail_closed_verify_and_logging(
     assert rc_fail == 1
     assert (state_dir / tdq_setup_state.PENDING_FLAG_FILENAME).is_file()
     assert tdq_setup_state.load_setup_state(data_dir=state_dir)["status"] == "verify_failed"
+
+
+def test_archify_origin_validation_and_stdin_tavily_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Verify --set-tavily-key - reads stdin and Archify refuses untrusted git origins."""
+    home = _make_agy_home(tmp_path)
+    state_dir = tmp_path / "sec_state"
+    project = tmp_path / "sec_proj"
+    project.mkdir()
+    _isolate_agy_env(monkeypatch, home, state_dir, project, dry=False)
+
+    monkeypatch.setattr(sys, "stdin", __import__("io").StringIO("tvly-stdin-secret-888\n"))
+    rc_stdin = tdq_setup.main(["--khong-log", "--state-dir", str(state_dir), "--set-tavily-key", "-"])
+    assert rc_stdin == 0
+    out_stdin = capsys.readouterr().out
+    assert "tvly-stdin-secret-888" not in out_stdin
+    assert tdq_setup_state.load_secrets_env(data_dir=state_dir)["TAVILY_API_KEY"] == "tvly-stdin-secret-888"
+
+    # Combined --setupfully --set-tavily-key - must also read stdin instead of saving "-"
+    monkeypatch.setattr(sys, "stdin", __import__("io").StringIO("tvly-setupfully-stdin-999\n"))
+    with mock.patch.object(tdq_setup, "_apply_core_agy_tools", return_value={}), mock.patch.object(
+        tdq_setup, "_apply_addons_agy", return_value={}
+    ), mock.patch.object(
+        tdq_setup, "_apply_optional_companions_agy", return_value={}
+    ):
+        rc_combo = tdq_setup.main(
+            ["--khong-log", "--state-dir", str(state_dir), "--setupfully", "--set-tavily-key", "-", "--json"]
+        )
+    assert rc_combo == 0
+    out_combo = capsys.readouterr().out
+    assert "tvly-setupfully-stdin-999" not in out_combo
+    assert tdq_setup_state.load_secrets_env(data_dir=state_dir)["TAVILY_API_KEY"] == "tvly-setupfully-stdin-999"
+
+    existing = home / ".local" / "share" / "archify"
+    (existing / ".git").mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(tdq_setup.shutil, "which", lambda cmd: "git" if cmd == "git" else None)
+    monkeypatch.setattr(
+        tdq_setup,
+        "_run_git_cmd",
+        lambda args: (0, "https://evil.example/archify.git") if "get-url" in args else (0, ""),
+    )
+    ok_origin, msg_origin = tdq_setup._clone_or_update_archify(existing, existing)
+    assert ok_origin is False
+    assert "origin" in msg_origin.lower()

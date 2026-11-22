@@ -267,14 +267,23 @@ export function loadSecretsEnv(
 export function buildChildEnv(
   baseEnv = process.env,
   homeDir = os.homedir(),
-  platform = process.platform
+  platform = process.platform,
+  targetHint = null
 ) {
   const env = { ...baseEnv };
   const secrets = loadSecretsEnv(baseEnv, homeDir);
+  const allowTavily =
+    targetHint === null ||
+    targetHint === undefined ||
+    String(targetHint).toLowerCase().includes("tavily");
   for (const [key, val] of Object.entries(secrets)) {
+    if (key === "TAVILY_API_KEY" && !allowTavily) continue;
     if (!(key in env) || env[key] === undefined || env[key] === "") {
       env[key] = val;
     }
+  }
+  if (!allowTavily) {
+    delete env.TAVILY_API_KEY;
   }
   env.PATH = expandUserPath(env.PATH || "", homeDir, platform, env);
   return env;
@@ -350,7 +359,8 @@ export function main(argv = process.argv.slice(2)) {
   const [mode = "lsp", ...forwarded] = argv;
   const here = path.dirname(fileURLToPath(import.meta.url));
   const pluginRoot = path.resolve(here, "..");
-  const childEnv = buildChildEnv(process.env, os.homedir(), process.platform);
+  const targetHint = [mode, ...forwarded].join(" ");
+  const childEnv = buildChildEnv(process.env, os.homedir(), process.platform, targetHint);
   const resolvedArgs = expandTemplateArgs(forwarded, pluginRoot, childEnv);
   try {
     ensureUserDataDir(resolvedArgs);

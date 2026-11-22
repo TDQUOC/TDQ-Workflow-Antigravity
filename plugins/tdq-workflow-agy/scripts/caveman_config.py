@@ -168,6 +168,18 @@ def _script_basename(token: str) -> str:
     return str(token).replace("\\", "/").rsplit("/", 1)[-1]
 
 
+def _wrap_mode_from_prefix(prefix: list[str]) -> str | None:
+    """Identify Caveman wrapper mode from args preceding `--`."""
+    if any(_script_basename(item) == PROXY_SCRIPT_NAME for item in prefix):
+        return "python_proxy"
+    is_node_wrap = (
+        len(prefix) >= 2
+        and _script_basename(prefix[0]) == LAUNCHER_SCRIPT_NAME
+        and "caveman" in prefix[1:]
+    )
+    return "node_launcher" if is_node_wrap else None
+
+
 def _parse_wrapped_entry(entry: dict[str, Any]) -> tuple[str, str, list[str]] | None:
     """Return `(mode, orig_cmd, orig_args)` for node or python wrapped entries."""
     args = entry.get("args")
@@ -178,15 +190,8 @@ def _parse_wrapped_entry(entry: dict[str, Any]) -> tuple[str, str, list[str]] | 
     tail = [str(item) for item in args[dash_idx + 1 :]]
     if not tail:
         return None
-    if any(_script_basename(item) == PROXY_SCRIPT_NAME for item in prefix):
-        return "python_proxy", tail[0], tail[1:]
-    if (
-        len(prefix) >= 2
-        and _script_basename(prefix[0]) == LAUNCHER_SCRIPT_NAME
-        and "caveman" in prefix[1:]
-    ):
-        return "node_launcher", tail[0], tail[1:]
-    return None
+    mode = _wrap_mode_from_prefix(prefix)
+    return (mode, tail[0], tail[1:]) if mode else None
 
 
 def _split_wrapped_args(entry: dict[str, Any]) -> tuple[str, list[str]] | None:
@@ -202,7 +207,9 @@ def _is_agy_node_launcher(orig_args: list[str]) -> bool:
     return bool(orig_args) and _script_basename(orig_args[0]) == LAUNCHER_SCRIPT_NAME
 
 
-def _wrap_server_entry(entry: dict[str, Any], proxy_script: Path) -> bool:
+def _wrap_server_entry(
+    entry: dict[str, Any], proxy_script: Path, use_agy_launcher: bool = False
+) -> bool:
     """Wrap one MCP server entry in-place; return False if skipped/already wrapped."""
     if _split_wrapped_args(entry) is not None:
         return False
@@ -214,6 +221,15 @@ def _wrap_server_entry(entry: dict[str, Any], proxy_script: Path) -> bool:
     if _is_agy_node_launcher(orig_args):
         entry["command"] = orig_cmd
         entry["args"] = [orig_args[0], "caveman", "--", orig_cmd, *orig_args]
+    elif use_agy_launcher:
+        entry["command"] = "node"
+        entry["args"] = [
+            f"${{PLUGIN_ROOT}}/scripts/{LAUNCHER_SCRIPT_NAME}",
+            "caveman",
+            "--",
+            orig_cmd,
+            *orig_args,
+        ]
     else:
         entry["command"] = sys.executable
         entry["args"] = ["-u", str(proxy_script), "--", orig_cmd, *orig_args]
@@ -241,6 +257,17 @@ def _unwrap_server_entry(entry: dict[str, Any]) -> bool:
     return True
 
 
+def _assert_agy_node_wrapped(entry: dict[str, Any], name: str, require_node: bool) -> None:
+    """Fail closed when an Antigravity plugin server would wrap via sys.executable."""
+    if not require_node or _is_agy_node_launcher(list(entry.get("args") or [])):
+        return
+    cmd = str(entry.get("command") or "")
+    if cmd and Path(cmd).resolve() == Path(sys.executable).resolve():
+        raise RuntimeError(
+            f"Antigravity server '{name}' must wrap via Node tdq_mcp_launcher.mjs"
+        )
+
+
 def wrap_mcp_config(mcp_file: Path, proxy_script: Path) -> list[str]:
     """Idempotently wrap target MCP servers through `tdq_mcp_shrink.py` with backup."""
     mcp_path = Path(mcp_file)
@@ -253,9 +280,16 @@ def wrap_mcp_config(mcp_file: Path, proxy_script: Path) -> list[str]:
     if not isinstance(servers, dict):
         return []
     wrapped: list[str] = []
+    require_node = (mcp_path.parent / "plugin.json").is_file()
+    use_agy_launcher = (
+        require_node and (mcp_path.parent / "scripts" / LAUNCHER_SCRIPT_NAME).is_file()
+    )
     for name in CAVEMAN_MCP_SERVERS:
         entry = servers.get(name)
-        if isinstance(entry, dict) and _wrap_server_entry(entry, proxy_path):
+        if isinstance(entry, dict) and _wrap_server_entry(
+            entry, proxy_path, use_agy_launcher=use_agy_launcher
+        ):
+            _assert_agy_node_wrapped(entry, name, require_node)
             wrapped.append(name)
     if not wrapped:
         _log(f"wrap_mcp_config: no changes needed for {mcp_path}")

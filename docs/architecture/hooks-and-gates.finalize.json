@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "workflow",
   "quality": "showcase",
-  "startedAt": "2026-11-18T16:35:22.017Z",
+  "startedAt": "2026-11-22T13:37:09.054Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
     "sha256": "5b12b2f2fedafeffcde07d1b25eb29d67404861eb772552481ce503dd8b2e7cd",
     "bytes": 4898
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
     "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
     "bytes": 823078
   },
@@ -23,12 +23,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "workflow",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -56,14 +56,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 606,
+      "durationMs": 588,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "workflow",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -72,12 +72,12 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "d24eab42-94b2-48ff-80b8-3d59387c2b5f",
+        "receiptId": "54ceaa34-d69f-43d1-ac63-ee51f33d4ecb",
         "ok": true,
         "command": "deliver",
         "type": "workflow",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "specification": {
           "sha256": "5b12b2f2fedafeffcde07d1b25eb29d67404861eb772552481ce503dd8b2e7cd",
           "bytes": 4898
@@ -110,17 +110,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 223,
+      "durationMs": 212,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "artifact": {
           "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
           "bytes": 823078
@@ -240,18 +240,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "d24eab42-94b2-48ff-80b8-3d59387c2b5f"
+        "deliveryReceiptId": "54ceaa34-d69f-43d1-ac63-ee51f33d4ecb"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1856,
+      "durationMs": 1749,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "browser-check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
         "--json",
         "--require-provenance"
       ],
@@ -264,9 +264,9 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "d24eab42-94b2-48ff-80b8-3d59387c2b5f",
+        "deliveryReceiptId": "54ceaa34-d69f-43d1-ac63-ee51f33d4ecb",
         "artifact": {
-          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.html",
+          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
           "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
           "bytes": 823078
         },
@@ -1453,13 +1453,13 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-18T16:35:25.266Z",
-  "durationMs": 3249,
+  "finishedAt": "2026-11-22T13:37:12.225Z",
+  "durationMs": 3171,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

@@ -2264,7 +2264,7 @@ _ORIG_GHIM_HUONG_DAN = ghim_huong_dan_tool
 
 def is_antigravity_host():
     """Return True when running inside Antigravity plugin/agent context."""
-    return tdq_lsp._is_antigravity_host()
+    return tdq_lsp._is_antigravity_host(caller_file=__file__)
 
 
 def _sync_agy_guard_ghim(duong, goc=None, khoi_fn=None):
@@ -2287,11 +2287,14 @@ def _resolve_home(home: Optional[str] = None) -> Path:
 
 
 def _is_temp_path(path: Path) -> bool:
-    """Return True when `path` resides inside the system temporary directory."""
+    """Return True when `path` resides inside system temp or active test job root."""
     try:
         resolved = Path(path).resolve()
-        temp_root = Path(tempfile.gettempdir()).resolve()
-        return resolved == temp_root or temp_root in resolved.parents
+        roots = [Path(tempfile.gettempdir()).resolve()]
+        job_root = os.environ.get("TDQ_TEST_JOB_ROOT", "").strip()
+        if job_root:
+            roots.append(Path(job_root).resolve())
+        return any(resolved == root or root in resolved.parents for root in roots)
     except OSError:
         return False
 
@@ -2398,11 +2401,28 @@ def _run_git_cmd(args: list[str], timeout: int = 120) -> tuple[int, str]:
         return 1, str(exc)
 
 
+def _validate_archify_origin(repo_dir: Path) -> tuple[bool, str]:
+    """Verify existing Archify git checkout points strictly at upstream tt-a1i/archify."""
+    rc, url_out = _run_git_cmd(["git", "-C", str(repo_dir), "remote", "get-url", "origin"])
+    if rc != 0:
+        return False, "unable to verify archify git origin remote"
+    norm = url_out.strip().rstrip("/")
+    if norm.lower().endswith(".git"):
+        norm = norm[:-4]
+    expected = ARCHIFY_REPO_URL[:-4] if ARCHIFY_REPO_URL.lower().endswith(".git") else ARCHIFY_REPO_URL
+    if norm.lower() != expected.lower():
+        return False, f"unexpected archify git origin: {url_out.strip()[:80]}"
+    return True, "ok"
+
+
 def _clone_or_update_archify(existing: Optional[Path], install_dir: Path) -> tuple[bool, str]:
-    """Clone or fast-forward pull Archify via git."""
+    """Clone or fast-forward pull Archify via git after verifying official origin."""
     git_bin = shutil.which("git")
     if existing is not None:
         if (existing / ".git").is_dir() and git_bin:
+            ok_orig, msg_orig = _validate_archify_origin(existing)
+            if not ok_orig:
+                return False, msg_orig
             rc, out = _run_git_cmd([git_bin, "-C", str(existing), "pull", "--ff-only"])
             if rc != 0:
                 _log(f"WARN archify git pull failed: {out[:120]}")
@@ -2411,7 +2431,7 @@ def _clone_or_update_archify(existing: Optional[Path], install_dir: Path) -> tup
         return False, "git executable not found in PATH"
     install_dir.parent.mkdir(parents=True, exist_ok=True)
     rc, out = _run_git_cmd(
-        [git_bin, "clone", "--branch", "main", "--depth", "1", ARCHIFY_REPO_URL, str(install_dir)]
+        [git_bin, "clone", "--branch", "main", "--depth", "1", "--", ARCHIFY_REPO_URL, str(install_dir)]
     )
     if rc != 0:
         detail = out.splitlines()[0][:120] if out else str(rc)
@@ -2419,19 +2439,27 @@ def _clone_or_update_archify(existing: Optional[Path], install_dir: Path) -> tup
     return True, str(install_dir)
 
 
-def ensure_archify_installed(home: Optional[str] = None) -> tuple[bool, str]:
+def _local_archify_result(existing: Optional[Path]) -> tuple[bool, str]:
+    """Return local-only Archify status without touching network."""
+    if existing is not None:
+        _log(f"archify ready at {existing} (local-only)")
+        return True, str(existing)
+    reason = "TDQ_KHONG_CHAM_MAY=1" if _khong_cham_may() else "opt_in_required"
+    _log(f"archify missing; skipped network clone because {reason}")
+    return False, f"skipped: {reason}"
+
+
+def ensure_archify_installed(
+    home: Optional[str] = None, allow_network: bool = True
+) -> tuple[bool, str]:
     """Ensure Archify is installed at ~/.local/share/archify; respect TDQ_KHONG_CHAM_MAY=1."""
     env_root = os.environ.get("ARCHIFY_ROOT", "").strip()
     target_home = _resolve_home(home)
     existing = _find_archify_for_home(target_home)
     if env_root and existing is None:
         return False, f"ARCHIFY_ROOT is invalid: {env_root}"
-    if _khong_cham_may():
-        if existing is not None:
-            _log(f"archify ready at {existing} (dry-mode)")
-            return True, str(existing)
-        _log("archify missing; skipped network clone because TDQ_KHONG_CHAM_MAY=1")
-        return False, "skipped: dry-mode (TDQ_KHONG_CHAM_MAY=1)"
+    if _khong_cham_may() or not allow_network:
+        return _local_archify_result(existing)
     ok_git, target_or_err = _clone_or_update_archify(existing, target_home / ".local" / "share" / "archify")
     if not ok_git:
         return False, target_or_err
@@ -2455,28 +2483,27 @@ def _agy_cli_env(home: Path) -> dict[str, str]:
     return env
 
 
-def _probe_agy_plugins(home: Optional[str] = None) -> list[dict[str, Any]]:
-    """Probe installed Antigravity plugins via `agy plugin list --json` with disk fallback."""
-    resolved_home = _resolve_home(home)
+def _probe_agy_cli_plugins(resolved_home: Path) -> Optional[list[dict[str, Any]]]:
+    """Query `agy plugin list --json`; return None when CLI absent or failed."""
     agy_bin = shutil.which("agy")
-    if agy_bin:
-        try:
-            proc = tdq_ten_lenh.chay_subprocess(
-                [agy_bin, "plugin", "list", "--json"],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                env=_agy_cli_env(resolved_home),
-                timeout=10,
-            )
-            if proc.returncode == 0:
-                parsed = json.loads(proc.stdout or "[]")
-                if isinstance(parsed, list):
-                    return [p for p in parsed if isinstance(p, dict)]
-        except (OSError, subprocess.SubprocessError, ValueError) as exc:
-            _log(f"agy plugin list failed: {type(exc).__name__}")
-    plugins_dir = resolved_home / ".gemini" / "config" / "plugins"
+    if not agy_bin:
+        return None
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            [agy_bin, "plugin", "list", "--json"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=_agy_cli_env(resolved_home), timeout=10,
+        )
+        parsed = json.loads(proc.stdout or "[]") if proc.returncode == 0 else None
+        if isinstance(parsed, list):
+            return [p for p in parsed if isinstance(p, dict)]
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        _log(f"agy plugin list failed: {type(exc).__name__}")
+    return None
+
+
+def _scan_agy_plugin_dirs(plugins_dir: Path) -> list[dict[str, Any]]:
+    """Collect installed plugin metadata directly from ~/.gemini/config/plugins."""
     if not plugins_dir.is_dir():
         return []
     disk: list[dict[str, Any]] = []
@@ -2495,6 +2522,15 @@ def _probe_agy_plugins(home: Optional[str] = None) -> list[dict[str, Any]]:
             "path": str(pdir),
         })
     return disk
+
+
+def _probe_agy_plugins(home: Optional[str] = None) -> list[dict[str, Any]]:
+    """Probe installed Antigravity plugins via `agy plugin list --json` with disk fallback."""
+    resolved_home = _resolve_home(home)
+    cli_plugins = _probe_agy_cli_plugins(resolved_home)
+    if cli_plugins is not None:
+        return cli_plugins
+    return _scan_agy_plugin_dirs(resolved_home / ".gemini" / "config" / "plugins")
 
 
 def _run_agy_plugin_cmd(args: list[str], home: Path) -> tuple[bool, str]:
@@ -2777,7 +2813,9 @@ def _apply_addons_agy(
     """Apply RTK, Caveman Node launcher wrapping, and Archify installation."""
     rtk_status = _apply_rtk_addon(project, setupfully, dry_run, applied, skipped)
     caveman_status = _apply_caveman_addon(home, setupfully, applied, skipped)
-    archify_ok, archify_detail = ensure_archify_installed(home=str(home))
+    archify_ok, archify_detail = ensure_archify_installed(
+        home=str(home), allow_network=bool(setupfully and not dry_run)
+    )
     if archify_ok:
         applied.append(f"archify:{archify_detail}")
     else:
@@ -2853,8 +2891,9 @@ def apply_setup_manifest(
     home, state_dir = _resolve_home(), tdq_setup_state.resolve_plugin_data_dir()
     dry_run = _khong_cham_may()
     applied, skipped = [], []
-    if tavily_key and tavily_key.strip() and _can_write_state(state_dir):
-        tdq_setup_state.save_tavily_secret(tavily_key, data_dir=state_dir)
+    resolved_tavily = _read_secret_arg(tavily_key) if tavily_key else ""
+    if resolved_tavily and resolved_tavily.strip() and _can_write_state(state_dir):
+        tdq_setup_state.save_tavily_secret(resolved_tavily, data_dir=state_dir)
         applied.append("tavily_secret_saved")
     with _antigravity_host_context():
         core_res = _apply_core_agy_tools(project, dry_run, applied, skipped)
@@ -2878,14 +2917,22 @@ def apply_setup_manifest(
     }
 
 
+def _read_secret_arg(raw_arg: str) -> str:
+    """Resolve API key from stdin when '-' is passed so secrets avoid process argv."""
+    if raw_arg == "-":
+        return sys.stdin.read().strip()
+    return raw_arg
+
+
 def _handle_set_tavily_key(
     api_key: str, state_dir: Optional[Path], as_json: bool
 ) -> int:
     """Validate and save TAVILY_API_KEY into secrets.env without echoing the key."""
     target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
+    resolved_key = _read_secret_arg(api_key)
     try:
-        saved_path = tdq_setup_state.save_tavily_secret(api_key, data_dir=target_dir)
-    except ValueError as exc:
+        saved_path = tdq_setup_state.save_tavily_secret(resolved_key, data_dir=target_dir)
+    except (ValueError, PermissionError) as exc:
         print(f"tavily-key error: {exc}", file=sys.stderr)
         return 1
     _write_setup_log(target_dir, "saved TAVILY_API_KEY via --set-tavily-key (redacted)")
@@ -2928,6 +2975,33 @@ def _handle_post_restart_verify(
     return 0 if core_pass else 1
 
 
+def _run_antigravity_apply_cli(args: argparse.Namespace, project: str) -> int:
+    """Apply Phase-1 setup manifest and format either JSON or summary output."""
+    receipt = apply_setup_manifest(
+        project, setupfully=bool(args.setupfully), tavily_key=args.set_tavily_key
+    )
+    if args.json:
+        print(json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(
+        f"setupfully · host=antigravity status={receipt['status']} "
+        f"pending={receipt['pending']} claude_debt={receipt['claude_debt_count']} "
+        f"state_dir={receipt['state_dir']}"
+    )
+    print("Phase 1 complete. Please restart Antigravity IDE, then send any message to run --post-restart-verify.")
+    return 0
+
+
+def _print_confirm_restarted(state_dir: Optional[Path]) -> int:
+    """Confirm manual IDE restart transition and print resulting resume JSON."""
+    target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
+    res = tdq_setup_state.evaluate_restart_resume(
+        is_new_turn=True, confirm_manual=True, data_dir=target_dir
+    )
+    print(json.dumps(res, ensure_ascii=False))
+    return 0
+
+
 def _handle_antigravity_cli(
     args: argparse.Namespace, project: str, state_dir: Optional[Path]
 ) -> Optional[int]:
@@ -2940,26 +3014,9 @@ def _handle_antigravity_cli(
     if args.post_restart_verify:
         return _handle_post_restart_verify(args.confirm_restarted, state_dir, args.json)
     if args.confirm_restarted:
-        target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
-        res = tdq_setup_state.evaluate_restart_resume(
-            is_new_turn=True, confirm_manual=True, data_dir=target_dir
-        )
-        print(json.dumps(res, ensure_ascii=False))
-        return 0
+        return _print_confirm_restarted(state_dir)
     if args.setupfully or args.apply_manifest or is_antigravity_host():
-        receipt = apply_setup_manifest(
-            project, setupfully=bool(args.setupfully), tavily_key=args.set_tavily_key
-        )
-        if args.json:
-            print(json.dumps(receipt, indent=2, ensure_ascii=False))
-        else:
-            print(
-                f"setupfully · host=antigravity status={receipt['status']} "
-                f"pending={receipt['pending']} claude_debt={receipt['claude_debt_count']} "
-                f"state_dir={receipt['state_dir']}"
-            )
-            print("Phase 1 complete. Please restart Antigravity IDE, then send any message to run --post-restart-verify.")
-        return 0
+        return _run_antigravity_apply_cli(args, project)
     return None
 
 

@@ -47,4 +47,4 @@ Two supported setup entries exist (both pure user-space, `0 sudo`, never reading
 5. On a machine without Python/Node yet, bootstrap Gate-0 first per [references/zero-to-full-agy.md](references/zero-to-full-agy.md).
 
 Done when: `Core Gate == "PASS"` in `--post-restart-verify`, `tdq_lsp.py check` exits `0`, and `setup-pending.flag` is cleared.
-Next step: Return to the calling phase and route search calls per [references/uu-tien-tim-kiem.md](references/uu-tien-tim-kiem.md).
+Next step: Return to the calling phase (phase does not change) and route search calls per [references/uu-tien-tim-kiem.md](references/uu-tien-tim-kiem.md).

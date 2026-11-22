@@ -444,6 +444,20 @@ def _agy_mcp_servers():
     return merged
 
 
+def _collect_agy_server_state(plugins: list) -> tuple[set, object]:
+    """Collect enabled MCP server names and tdq-workflow-agy enabled state."""
+    enabled_servers = set()
+    plugin_enabled = None
+    for item in plugins:
+        if not isinstance(item, dict):
+            continue
+        if item.get("name") == "tdq-workflow-agy":
+            plugin_enabled = bool(item.get("enabled"))
+        if item.get("enabled"):
+            enabled_servers.update(str(s) for s in (item.get("mcpServers") or []))
+    return enabled_servers, plugin_enabled
+
+
 def _parse_agy_enabled_servers(agy_res):
     """Extract enabled MCP server names and tdq-workflow-agy enabled state from agy JSON."""
     if not (agy_res["co"] and agy_res["chay_duoc"] and agy_res["ma"] == 0):
@@ -454,16 +468,23 @@ def _parse_agy_enabled_servers(agy_res):
         return set(), None, "unparseable `agy plugin list --json` output"
     if not isinstance(plugins, list):
         return set(), None, ""
-    enabled_servers = set()
-    plugin_enabled = None
-    for item in plugins:
-        if not isinstance(item, dict):
-            continue
-        if item.get("name") == "tdq-workflow-agy":
-            plugin_enabled = bool(item.get("enabled"))
-        if item.get("enabled"):
-            enabled_servers.update(str(s) for s in (item.get("mcpServers") or []))
+    enabled_servers, plugin_enabled = _collect_agy_server_state(plugins)
     return enabled_servers, plugin_enabled, ""
+
+
+def _format_agy_server_row(name, entry, enabled_servers, plugin_enabled):
+    """Format one Antigravity MCP server status row with secret masking."""
+    cmd = str(entry.get("command") or "")
+    args_str = " ".join(str(a) for a in (entry.get("args") or []))
+    connected = bool(cmd) and (
+        name in enabled_servers or plugin_enabled is True or plugin_enabled is None
+    )
+    return {
+        "ten": name,
+        "dich": mask_secrets(f"{cmd} {args_str}".strip()),
+        "trang_thai": "✔ Enabled" if connected else "disabled",
+        "noi_duoc": connected,
+    }
 
 
 def _thu_mcp_agy():
@@ -472,20 +493,10 @@ def _thu_mcp_agy():
                         goi_y="install Antigravity CLI (`agy`)")
     enabled_servers, plugin_enabled, chi_tiet = _parse_agy_enabled_servers(agy_res)
     servers_map = _agy_mcp_servers()
-    rows = []
-    for name, entry in servers_map.items():
-        cmd = str(entry.get("command") or "")
-        args_str = " ".join(str(a) for a in (entry.get("args") or []))
-        target = mask_secrets(f"{cmd} {args_str}".strip())
-        connected = bool(cmd) and (
-            name in enabled_servers or plugin_enabled is True or plugin_enabled is None
-        )
-        rows.append({
-            "ten": name,
-            "dich": target,
-            "trang_thai": "✔ Enabled" if connected else "disabled",
-            "noi_duoc": connected,
-        })
+    rows = [
+        _format_agy_server_row(name, entry, enabled_servers, plugin_enabled)
+        for name, entry in servers_map.items()
+    ]
     if not rows and not chi_tiet:
         chi_tiet = "no MCP servers found in Antigravity mcp_config.json"
     return rows, chi_tiet

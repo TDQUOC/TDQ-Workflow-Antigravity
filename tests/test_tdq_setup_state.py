@@ -456,3 +456,22 @@ def test_logging_iso_timestamp_and_tdq_log_mute(
     assert proc_off.returncode == 0
     assert proc_off.stderr == ""
     assert json.loads(proc_off.stdout)["state"]["status"] == "idle"
+
+
+def test_windows_icacls_failure_fails_closed_before_writing_secret(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Failing icacls ACL hardening on Windows must raise PermissionError and delete temp secret."""
+    data_dir = tmp_path / "acl_state"
+    monkeypatch.setattr(setup_state.os, "name", "nt")
+    monkeypatch.setenv("USERNAME", "tester")
+    monkeypatch.setenv("USERDOMAIN", "LOCAL")
+
+    fake_proc = subprocess.CompletedProcess(args=["icacls"], returncode=1, stdout="", stderr="denied")
+    monkeypatch.setattr(setup_state, "_run_quiet_command", lambda *_a, **_kw: fake_proc)
+
+    with pytest.raises(PermissionError, match="icacls"):
+        setup_state.save_tavily_secret("tvly-fail-closed-999", data_dir=data_dir)
+    assert not (data_dir / setup_state.SECRETS_FILENAME).exists()
+    leftover = [p.name for p in data_dir.glob("*.tmp")] if data_dir.exists() else []
+    assert leftover == []

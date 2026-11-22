@@ -6,9 +6,62 @@ set -euo pipefail
 
 DRY_RUN=0
 KHONG_CHAM_MAY="${TDQ_KHONG_CHAM_MAY:-0}"
+AUTO_YES="${TDQ_BOOTSTRAP_APPROVE:-0}"
 STATE_DIR=""
 REPO_URL="https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git"
 BRANCH="dev"
+
+validate_repo_url() {
+  local url="${1:-}"
+  if [[ -z "$url" || "$url" == -* ]]; then
+    printf 'Rejected empty or option-like --repo-url\n' >&2
+    exit 2
+  fi
+  if [[ ! "$url" =~ ^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\.git)?$ ]]; then
+    printf 'Rejected untrusted --repo-url (must use https://github.com/<owner>/<repo>.git): %s\n' "$url" >&2
+    exit 2
+  fi
+}
+
+confirm_remote_installer() {
+  local label="$1" url="$2"
+  if [[ "$AUTO_YES" == "1" ]]; then
+    return 0
+  fi
+  if [[ -t 0 ]]; then
+    local ans=""
+    printf 'Install %s from %s? [y/N] ' "$label" "$url" >&2
+    read -r ans || true
+    [[ "$ans" =~ ^([yY]|[yY][eE][sS])$ ]] && return 0
+  fi
+  log_info "Remote installer skipped for $label without --yes consent. Official URL: $url"
+  return 1
+}
+
+run_https_installer() {
+  local label="$1" url="$2" interpreter="$3"
+  shift 3
+  if [[ ! "$url" =~ ^https://[A-Za-z0-9.-]+/ ]]; then
+    printf 'Refusing non-HTTPS installer URL: %s\n' "$url" >&2
+    return 1
+  fi
+  confirm_remote_installer "$label" "$url" || return 1
+  local tmp_file=""
+  tmp_file="$(mktemp -t tdq-bs.XXXXXX)"
+  if ! curl --proto '=https' --tlsv1.2 -fsSL "$url" -o "$tmp_file"; then
+    rm -f "$tmp_file"
+    return 1
+  fi
+  if [[ ! -s "$tmp_file" ]] || head -n 1 "$tmp_file" | grep -qiE '^\s*<(!doctype|html)\b'; then
+    rm -f "$tmp_file"
+    printf 'Refusing empty or HTML response from %s\n' "$url" >&2
+    return 1
+  fi
+  local rc=0
+  "$interpreter" "$tmp_file" "$@" || rc=$?
+  rm -f "$tmp_file"
+  return "$rc"
+}
 
 log_info() {
   if [[ "${TDQ_LOG:-1}" == "0" ]]; then
@@ -25,7 +78,7 @@ is_dry() {
 
 usage() {
   cat <<'EOF'
-Usage: bootstrap.sh [--dry-run] [--state-dir <path>] [--khong-cham-may] [--repo-url <url>] [--branch <branch>]
+Usage: bootstrap.sh [--dry-run] [--state-dir <path>] [--khong-cham-may] [--repo-url <url>] [--branch <branch>] [--yes]
 EOF
 }
 
@@ -38,6 +91,10 @@ parse_args() {
         ;;
       --khong-cham-may)
         KHONG_CHAM_MAY=1
+        shift
+        ;;
+      --yes|-y)
+        AUTO_YES=1
         shift
         ;;
       --state-dir)
@@ -147,7 +204,7 @@ ensure_uv_and_python() {
       log_info "[dry-run] Would install uv via https://astral.sh/uv/install.sh"
     else
       log_info "Installing uv in user-space..."
-      curl -LsSf "https://astral.sh/uv/install.sh" | sh
+      run_https_installer "uv" "https://astral.sh/uv/install.sh" "sh" || true
       prepend_path_dir "$HOME/.local/bin"
     fi
   fi
@@ -188,7 +245,7 @@ ensure_fnm_and_node() {
     return 0
   fi
   log_info "Installing fnm and Node.js LTS in user-space..."
-  curl -fsSL "https://fnm.vercel.app/install" | bash -s -- --skip-shell
+  run_https_installer "fnm" "https://fnm.vercel.app/install" "bash" -s -- --skip-shell || true
   local fnm_bin=""
   for cand in "$HOME/.local/share/fnm/fnm" "$HOME/.fnm/fnm" "$(command -v fnm 2>/dev/null || true)"; do
     if [[ -n "$cand" && -x "$cand" ]]; then
@@ -213,7 +270,7 @@ ensure_agy_cli() {
     return 0
   fi
   log_info "Attempting user-space agy CLI installation..."
-  if ! curl -fsSL "https://antigravity.google/cli/install.sh" | bash; then
+  if ! run_https_installer "agy CLI" "https://antigravity.google/cli/install.sh" "bash"; then
     log_info "agy CLI auto-install unavailable. Download from https://antigravity.google/download"
   fi
 }
@@ -241,13 +298,14 @@ resolve_repo_root() {
     git -C "$target" pull --ff-only
   else
     log_info "Cloning $REPO_URL into $target..."
-    git clone --branch "$BRANCH" "$REPO_URL" "$target"
+    git clone --branch "$BRANCH" -- "$REPO_URL" "$target"
   fi
   printf '%s\n' "$target"
 }
 
 main() {
   parse_args "$@"
+  validate_repo_url "$REPO_URL"
   require_git
   update_shell_profiles
   ensure_uv_and_python
