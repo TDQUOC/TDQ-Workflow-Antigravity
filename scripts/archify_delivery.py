@@ -101,9 +101,20 @@ def _gather_candidate_roots() -> list[Path]:
     """Collect standard candidate root directories when ARCHIFY_ROOT is unset."""
     candidates: list[Path] = []
     try:
-        candidates.append(Path.home() / "Documents" / "archify")
+        home_dir = Path.home()
+        candidates.append(home_dir / ".local" / "share" / "archify")
+        candidates.append(home_dir / "Documents" / "archify")
     except Exception:
         pass
+
+    env_home = os.environ.get("HOME", "").strip()
+    if env_home:
+        try:
+            env_home_path = Path(env_home).expanduser()
+            candidates.append(env_home_path / ".local" / "share" / "archify")
+            candidates.append(env_home_path / "Documents" / "archify")
+        except Exception:
+            pass
 
     try:
         current_file = Path(__file__).resolve()

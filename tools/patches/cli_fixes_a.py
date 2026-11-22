@@ -90,6 +90,7 @@ def _agy_mcp_candidate_files():
     plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return [
         os.path.join(plugin_root, "mcp_config.json"),
+        os.path.expanduser("~/.gemini/config/mcp_config.json"),
         os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
         os.path.expanduser("~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json"),
         os.path.expanduser("~/.gemini/config/plugins/tdq-workflow/mcp_config.json"),
@@ -97,7 +98,18 @@ def _agy_mcp_candidate_files():
 '''
     if "_agy_mcp_candidate_files" not in text:
         text += "\n" + helper
-    write_utf8(path, text)
+        write_utf8(path, text)
+    else:
+        replace_exact(
+            path,
+            '        os.path.join(plugin_root, "mcp_config.json"),\n'
+            '        os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),',
+            '        os.path.join(plugin_root, "mcp_config.json"),\n'
+            '        os.path.expanduser("~/.gemini/config/mcp_config.json"),\n'
+            '        os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),',
+            label="NEW-02 lsp_module ~/.gemini/config/mcp_config.json",
+            sentinel="~/.gemini/config/mcp_config.json",
+        )
 
 
 _RTK_WIN_RE_SNIPPET = r'''_WIN_PATH_OR_QUOTE = re.compile(
