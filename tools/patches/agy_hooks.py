@@ -2535,25 +2535,25 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
             '    write_turn_meta(cwd, sid, {"last_user_sig": sig, "turn_closed": keep_closed, "prompt_sha": _prompt_sha(payload), "phase_anchor": str(prev_meta.get("phase_anchor") or ""), "mode": str(st_cur.get("implement_mode") or ""), "git_grants": grants})\n'
             "    if grants:\n"
             '        _info(f"prompt_context: git_grant minted sid={sid} grants={grants}")\n\n\n'
-            "def _agy_pre_invocation_hook(payload, cwd):\n"
-            "    sid = session_id(payload)\n"
-            "    model_text, user_md = flush_pending_channels(cwd, sid)\n"
-            "    if model_text:\n"
-            "        emit_context([model_text])\n"
-            "    if user_md:\n"
-            "        emit_user_markdown(user_md)\n"
-            "    sub = detect_subagent(payload, cwd)\n"
+            'def _agy_pre_invocation_hook(payload, cwd):\n'
+            '    sid = session_id(payload)\n'
+            '    model_text, user_md = flush_pending_channels(cwd, sid)\n'
+            '    if model_text:\n'
+            '        emit_context([model_text])\n'
+            '    if user_md:\n'
+            '        emit_user_markdown(user_md)\n'
+            '    sub = detect_subagent(payload, cwd)\n'
             '    if sub.get("is_subagent"):\n'
             '        _RUNTIME_STATE["new_user_turn"] = False\n'
-            "        anc = _subagent_anchor_line(cwd, payload, sub)\n"
-            "        if anc:\n"
-            "            emit_context([anc])\n"
-            "        return True, False\n"
-            "    is_new, sig = _detect_new_user_turn(cwd, payload, sid)\n"
+            '        anc = _subagent_anchor_line(cwd, payload, sub)\n'
+            '        if anc:\n'
+            '            emit_context([anc])\n'
+            '        return True, False\n'
+            '    is_new, sig = _detect_new_user_turn(cwd, payload, sid)\n'
             '    _RUNTIME_STATE["new_user_turn"] = is_new\n'
-            "    if is_new:\n"
-            "        _mint_agy_turn_meta(cwd, payload, sid, sig)\n"
-            "    return False, is_new\n\n\n"
+            '    if is_new:\n'
+            '        _mint_agy_turn_meta(cwd, payload, sid, sig)\n'
+            '    return False, is_new\n\n\n'
             "def _agy_phase_anchor(cwd, state, payload, sid):\n"
             '    """Inject 1-line [TDQ:GON], [TDQ:QC], or [TDQ:PLAIN] once per phase entry or post-compaction."""\n'
             '    req = str((state or {}).get("active_request") or "")\n'
@@ -2607,7 +2607,8 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         '        turn_log_append(cwd, "signal", session=sid, event="git_grant",\n'
         '                        target="git_grant", grants=git_grants)\n'
         '        _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
-        "    _nhac_worktree(cwd)",
+        "    _nhac_worktree(cwd)\n"
+        "    _emit_setup_hooks(cwd, prompt, is_new_turn=True)",
         "    sid = session_id(payload)\n"
         "    agy_mode = is_agy()\n"
         "    is_new_turn = True\n"
@@ -2634,7 +2635,8 @@ def _patch_prompt_context(hooks_scripts_dir: Path) -> None:
         '                            target="git_grant", grants=git_grants)\n'
         "            if not agy_mode:\n"
         '                _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")\n'
-        "        _nhac_worktree(cwd)",
+        "        _nhac_worktree(cwd)\n"
+        "        _emit_setup_hooks(cwd, prompt, is_new_turn=is_new_turn, user_md_fn=emit_user_markdown if agy_mode else None)",
         label="prompt_context_conditional_snapshot",
         sentinel="should_stop, is_new_turn = _agy_pre_invocation_hook",
     )

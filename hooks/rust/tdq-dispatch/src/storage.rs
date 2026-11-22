@@ -90,6 +90,65 @@ pub fn get_runtime_dir(workspace_root: &Path) -> PathBuf {
     dir
 }
 
+/// Resolve Antigravity persistent setup-state dir matching `tdq_setup_state.resolve_plugin_data_dir`.
+pub fn resolve_setup_state_dir_with(
+    state_dir_env: Option<&str>,
+    khong_cham_may: Option<&str>,
+    plugin_data: Option<&str>,
+    gemini_cfg: Option<&str>,
+    home_dir: Option<&Path>,
+) -> Option<PathBuf> {
+    if let Some(dir) = state_dir_env.map(str::trim).filter(|s| !s.is_empty()) {
+        return Some(PathBuf::from(dir));
+    }
+    let no_touch = khong_cham_may.map(str::trim) == Some("1");
+    if !no_touch {
+        if let Some(pd) = plugin_data.map(str::trim).filter(|s| !s.is_empty()) {
+            return Some(PathBuf::from(pd));
+        }
+    }
+    if let Some(cfg) = gemini_cfg.map(str::trim).filter(|s| !s.is_empty()) {
+        let p = PathBuf::from(cfg);
+        let base = if p.file_name().and_then(|n| n.to_str()) == Some("config") {
+            p.parent().unwrap_or(&p).to_path_buf()
+        } else {
+            p
+        };
+        return Some(
+            base.join("antigravity")
+                .join("plugin_data")
+                .join("tdq-workflow-agy"),
+        );
+    }
+    home_dir.map(|h| {
+        h.join(".gemini")
+            .join("antigravity")
+            .join("plugin_data")
+            .join("tdq-workflow-agy")
+    })
+}
+
+/// O(1) stat check for `setup-pending.flag` without touching disk if absent.
+pub fn setup_pending_flag_exists() -> bool {
+    let state_env = std::env::var("TDQ_SETUP_STATE_DIR").ok();
+    let no_touch = std::env::var("TDQ_KHONG_CHAM_MAY").ok();
+    let plugin_data = std::env::var("PLUGIN_DATA").ok();
+    let gemini_cfg = std::env::var("GEMINI_CONFIG_DIR").ok();
+    let home = std::env::var_os("HOME")
+        .filter(|v| !v.is_empty())
+        .or_else(|| std::env::var_os("USERPROFILE").filter(|v| !v.is_empty()))
+        .map(PathBuf::from);
+    resolve_setup_state_dir_with(
+        state_env.as_deref(),
+        no_touch.as_deref(),
+        plugin_data.as_deref(),
+        gemini_cfg.as_deref(),
+        home.as_deref(),
+    )
+    .map(|dir| dir.join("setup-pending.flag").is_file())
+    .unwrap_or(false)
+}
+
 /// Return canonical `turns-<sid>.jsonl` path inside `docs/tdq/.tdq-runtime/`.
 pub fn shard_turn_path(workspace_root: &Path, sid: &str) -> PathBuf {
     get_runtime_dir(workspace_root).join(format!("turns-{}.jsonl", sid))
@@ -890,5 +949,24 @@ mod tests {
         assert!(cleaned.git_grants.is_empty());
 
         let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_resolve_setup_state_dir_precedence() {
+        let home = PathBuf::from("/fake/home");
+        assert_eq!(
+            resolve_setup_state_dir_with(Some("/override"), Some("1"), Some("/pd"), None, Some(&home)),
+            Some(PathBuf::from("/override"))
+        );
+        // TDQ_KHONG_CHAM_MAY=1 ignores PLUGIN_DATA cleanly
+        assert_eq!(
+            resolve_setup_state_dir_with(None, Some("1"), Some("/real/plugin_data"), Some("/fake/home/.gemini/config"), Some(&home)),
+            Some(PathBuf::from("/fake/home/.gemini/antigravity/plugin_data/tdq-workflow-agy"))
+        );
+        // Normal host mode honors PLUGIN_DATA
+        assert_eq!(
+            resolve_setup_state_dir_with(None, None, Some("/real/plugin_data"), None, Some(&home)),
+            Some(PathBuf::from("/real/plugin_data"))
+        );
     }
 }
