@@ -178,8 +178,8 @@
     "semantic_hash": "e06685646593bc431ec958294dc26b24"
   },
   "scripts/build_portable.py": {
-    "mtime": 1795326940.7709055,
-    "seen": 1795327395.775788,
+    "mtime": 1795328601.294256,
+    "seen": 1795336059.098323,
     "ast_hash": "0fd8481564bceed91e5580d00787a640",
     "semantic_hash": "0fd8481564bceed91e5580d00787a640"
   },
@@ -757,8 +757,8 @@
     "semantic_hash": "1be5226280b0d79f045823a78a7f81a2"
   },
   "install.py": {
-    "mtime": 1795327268.1683524,
-    "seen": 1795327395.7678938,
+    "mtime": 1795328601.242005,
+    "seen": 1795336059.085115,
     "ast_hash": "a1ef8186ddc85d8ff2ad062de0fba199",
     "semantic_hash": "a1ef8186ddc85d8ff2ad062de0fba199"
   },
@@ -769,10 +769,10 @@
     "semantic_hash": "f736cf2b48718c86ac0d33812f0964dd"
   },
   "plugins/tdq-workflow-agy/hooks.json": {
-    "mtime": 1795327192.5672138,
-    "seen": 1795327395.7680242,
-    "ast_hash": "28bd07b7694dc9ae7d76deb8ce89eb1e",
-    "semantic_hash": "28bd07b7694dc9ae7d76deb8ce89eb1e"
+    "mtime": 1795328601.2894797,
+    "seen": 1795336059.0852551,
+    "ast_hash": "8dcdd88cb3b9a7be9e82d04e79638819",
+    "semantic_hash": "8dcdd88cb3b9a7be9e82d04e79638819"
   },
   "plugins/tdq-workflow-agy/hooks/scripts/_common.py": {
     "mtime": 1795327192.6084845,
@@ -859,16 +859,16 @@
     "semantic_hash": "8fda46d96401373ceceb386e2b7790aa"
   },
   "plugins/tdq-workflow-agy/manifest.json": {
-    "mtime": 1795327204.9859972,
-    "seen": 1795327395.768053,
-    "ast_hash": "22652f9c72490f4560e6a263129890d3",
-    "semantic_hash": "22652f9c72490f4560e6a263129890d3"
+    "mtime": 1795328601.2905283,
+    "seen": 1795336059.0881748,
+    "ast_hash": "5121994a46c96db1300081c60481bfee",
+    "semantic_hash": "5121994a46c96db1300081c60481bfee"
   },
   "plugins/tdq-workflow-agy/mcp_config.json": {
-    "mtime": 1795327192.5682142,
-    "seen": 1795327395.7680542,
-    "ast_hash": "276d6d96dbfd90c5d4639807e92e5732",
-    "semantic_hash": "276d6d96dbfd90c5d4639807e92e5732"
+    "mtime": 1795328601.291056,
+    "seen": 1795336059.0881765,
+    "ast_hash": "4a253295d9e4e561ba9bc03f01af36be",
+    "semantic_hash": "4a253295d9e4e561ba9bc03f01af36be"
   },
   "plugins/tdq-workflow-agy/plugin.json": {
     "mtime": 1795327192.5672138,
@@ -1237,14 +1237,14 @@
     "semantic_hash": "a2b03918c7d9184d0c67439876f033bd"
   },
   "tools/build_agy_plugin.py": {
-    "mtime": 1795327183.3556216,
-    "seen": 1795327395.7852974,
+    "mtime": 1795328601.299539,
+    "seen": 1795336059.1076484,
     "ast_hash": "e98a58f4b1e2da1e2fa28f5738e5ec51",
     "semantic_hash": "e98a58f4b1e2da1e2fa28f5738e5ec51"
   },
   "tools/install_agy_plugin.py": {
-    "mtime": 1795327264.0662632,
-    "seen": 1795327395.7852993,
+    "mtime": 1795328601.3005948,
+    "seen": 1795336059.1076498,
     "ast_hash": "73257b1d9fbfff59301acc4e16fdf4d2",
     "semantic_hash": "73257b1d9fbfff59301acc4e16fdf4d2"
   },
@@ -1261,8 +1261,8 @@
     "semantic_hash": "3bd10efa6fa24479b9994cf646dc8b75"
   },
   "tools/patches/agy_manifests.py": {
-    "mtime": 1795327173.3019357,
-    "seen": 1795327395.7855706,
+    "mtime": 1795328601.3016558,
+    "seen": 1795336059.108047,
     "ast_hash": "33f156c19721bd4e853aeb2b4e3cc10e",
     "semantic_hash": "33f156c19721bd4e853aeb2b4e3cc10e"
   },
@@ -1549,21 +1549,21 @@
     "semantic_hash": "de871347ad1d3ecc50daef5d3554b0da"
   },
   "plugins/tdq-workflow-agy/scripts/tdq_hook_launcher.mjs": {
-    "mtime": 1795327193.056681,
-    "seen": 1795327395.772163,
-    "ast_hash": "d626c1a3bb797405fc5533304585c1bd",
-    "semantic_hash": "d626c1a3bb797405fc5533304585c1bd"
+    "mtime": 1795328601.2926354,
+    "seen": 1795336059.0938754,
+    "ast_hash": "21da53aca6439a71e95c13821f97fb50",
+    "semantic_hash": "21da53aca6439a71e95c13821f97fb50"
   },
   "plugins/tdq-workflow-agy/scripts/tdq_mcp_launcher.mjs": {
-    "mtime": 1795327193.056681,
-    "seen": 1795327395.7723088,
-    "ast_hash": "f46dad7408d01ab6e6049fe7bd10c8e8",
-    "semantic_hash": "f46dad7408d01ab6e6049fe7bd10c8e8"
+    "mtime": 1795328601.2932024,
+    "seen": 1795336059.0941477,
+    "ast_hash": "43572549eb0bf5f0b1fcee8b0aedb487",
+    "semantic_hash": "43572549eb0bf5f0b1fcee8b0aedb487"
   },
   "tools/patches/agy_launchers.py": {
-    "mtime": 1795326839.0588715,
-    "seen": 1795327395.7855687,
-    "ast_hash": "2f12ffa8f779c6f22f8975e04f8c76ab",
-    "semantic_hash": "2f12ffa8f779c6f22f8975e04f8c76ab"
+    "mtime": 1795328601.3011286,
+    "seen": 1795336059.108045,
+    "ast_hash": "c4e50f5cf3732c22525e6c272e318ac1",
+    "semantic_hash": "c4e50f5cf3732c22525e6c272e318ac1"
   }
 }
