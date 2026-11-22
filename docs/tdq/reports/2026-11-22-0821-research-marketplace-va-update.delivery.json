@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "37a0f52c-ab81-47c7-a6a3-248eea82fd87",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0821-research-marketplace-va-update\\.tmp.bao-cao.archify.9f084e9e09a849a48e1f5dbad8993ba4.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0821-research-marketplace-va-update.6c0455c122094eab9582d0869da3bf9a.html",
+  "specification": {
+    "sha256": "f066b6d0b31c43019e3bbc8f00c5981c839b80ffe57f21d2104373d1d50e8b5f",
+    "bytes": 2032
+  },
+  "artifact": {
+    "sha256": "b94850da50a8b012c79b9e04d9b32c7f8307a5627c82c32e0d14492cbe68dab7",
+    "bytes": 887407
+  },
+  "explainer": {
+    "preparedSha256": "198c7d986fb44f86a289a708452c67cb43a965ea82363fb77ab017adc9aeca75",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-agy-git-lifecycle",
+        "inline": true,
+        "sha256": "0b46fe024a80eb5f1b2e027661d4ee4f139e911def50d8f7637ec7cd1c2f8953",
+        "bytes": 1521
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-repo-readiness-gaps",
+        "inline": true,
+        "sha256": "ca27eb3b11c9867a49699aec7e13effdb8763a4e4e6bd3afe6095d956c557e01",
+        "bytes": 1285
+      }
+    ]
+  }
+}

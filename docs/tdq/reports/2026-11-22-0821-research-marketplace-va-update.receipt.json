@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0821-research-marketplace-va-update\\.tmp.bao-cao.archify.9f084e9e09a849a48e1f5dbad8993ba4.md",
+    "sha256": "f066b6d0b31c43019e3bbc8f00c5981c839b80ffe57f21d2104373d1d50e8b5f",
+    "bytes": 2032
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0821-research-marketplace-va-update.6c0455c122094eab9582d0869da3bf9a.html",
+    "sha256": "b94850da50a8b012c79b9e04d9b32c7f8307a5627c82c32e0d14492cbe68dab7",
+    "bytes": 887407
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 39 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0821-research-marketplace-va-update\\.tmp.bao-cao.archify.9f084e9e09a849a48e1f5dbad8993ba4.md",
+        "line": 5,
+        "component": "answer"
+      },
+      "evidence": {
+        "reason": "Sentence has 39 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 39,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0821-research-marketplace-va-update.6c0455c122094eab9582d0869da3bf9a.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0821-research-marketplace-va-update.6c0455c122094eab9582d0869da3bf9a.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1845,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

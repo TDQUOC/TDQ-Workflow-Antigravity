@@ -1,19 +1,19 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-22T07:51:11+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-22T10:35:13+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-22-0023-hook-duyet-thao-tac-git |
-| Work kind | build |
+| Request | 2026-11-22-0821-research-marketplace-va-update |
+| Work kind | investigate |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-22-0023-hook-duyet-thao-tac-git.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-22-0023-hook-duyet-thao-tac-git.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-22-0821-research-marketplace-va-update.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-22-0821-research-marketplace-va-update.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
 | QC level | full |
-| Run mode | subagent |
+| Run mode | main |
 
 ## Where we are
 Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.
