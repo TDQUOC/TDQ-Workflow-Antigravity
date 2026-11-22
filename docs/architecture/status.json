@@ -5666,11 +5666,12 @@
     "Source file added: scripts/tdq_config.py",
     "Source file added: scripts/tdq_meta_gate.py",
     "Source file added: scripts/tdq_plan_scaffold.py",
+    "Source file added: scripts/tdq_setup_state.py",
     "Source file added: skills/tdq-browser-test/references/scenario-template.md",
     "Source file added: skills/tdq-build/references/qc-vong-fix.md",
     "Source file added: skills/tdq-conventions/references/investigate-mode.md",
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-22T09:54:04Z"
+  "checked_at": "2026-11-22T10:07:16Z"
 }
