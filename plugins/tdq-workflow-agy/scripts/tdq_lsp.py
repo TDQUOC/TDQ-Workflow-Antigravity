@@ -284,9 +284,10 @@ def bac1_binary():
     if not duong_dan:
         return Bac(1, "binary agent-lsp", False,
                    "không thấy trên PATH", INSTALL_AGENT_LSP)
+    cfg_inputs = _agy_mcp_configs() if _is_antigravity_host() else [os.path.expanduser("~/.claude.json")]
     rc, out = tdq_readiness.static_probe(
         "binary-version", lambda: _run(["agent-lsp", "--version"]),
-        [duong_dan, __file__, os.path.expanduser("~/.claude.json")],
+        [duong_dan, __file__, *cfg_inputs],
         environment={"PATH": os.environ.get("PATH", "")})
     ban = out.splitlines()[0].strip() if rc == 0 and out else "không đọc được bản"
     return Bac(1, "binary agent-lsp", True, ban)
@@ -296,11 +297,109 @@ def bac1_binary():
 TUONG_DUONG_MCP = {"javascript": "typescript"}
 
 
+def _runtime_host_is_agy(caller_file: str = "") -> bool:
+    """Return True when file location or active PLUGIN_DATA signals Antigravity."""
+    candidates = [os.path.abspath(p).replace("\\", "/").lower() for p in (caller_file, __file__) if p]
+    markers = (
+        "/.gemini/config/plugins/",
+        "/plugins/tdq-workflow-agy/",
+        "/plugins/tdq-workflow/",
+        "/antigravity_portable/",
+    )
+    if any(marker in norm for norm in candidates for marker in markers):
+        return True
+    if os.environ.get("TDQ_KHONG_CHAM_MAY") == "1":
+        return False
+    return ".gemini" in os.environ.get("PLUGIN_DATA", "").replace("\\", "/").lower()
+
+
+def _disk_layout_is_agy() -> bool:
+    """Detect pure Antigravity home directory layout without Claude Code footprint."""
+    home = os.environ.get("HOME") or os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    gemini_dir = os.path.join(home, ".gemini")
+    has_gemini = any(os.path.isdir(os.path.join(gemini_dir, sub)) for sub in ("config", "antigravity"))
+    has_claude = os.path.exists(os.path.join(home, ".claude.json")) or os.path.isdir(
+        os.path.join(home, ".claude")
+    )
+    return bool(has_gemini and not has_claude)
+
+
+def _is_antigravity_host(caller_file: str = ""):
+    """Return True when running inside Google Antigravity host/plugin context."""
+    host_env = os.environ.get("TDQ_HOST", "").strip().lower()
+    if host_env in ("antigravity", "agy"):
+        return True
+    if host_env == "claude":
+        return False
+    return _runtime_host_is_agy(caller_file) or _disk_layout_is_agy()
+
+
+def _agy_mcp_configs():
+    """Return ordered Antigravity mcp_config.json candidate paths."""
+    plugin_cfg = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "mcp_config.json",
+    )
+    raw = [
+        os.path.expanduser("~/.gemini/config/mcp_config.json"),
+        os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
+        os.path.expanduser("~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json"),
+        plugin_cfg,
+    ]
+    seen, out = set(), []
+    for item in raw:
+        norm = os.path.normcase(os.path.abspath(item))
+        if norm not in seen:
+            seen.add(norm)
+            out.append(item)
+    return out
+
+
 def _all_mcp_configs(duong="~/.claude.json"):
+    if _is_antigravity_host():
+        cands = _agy_mcp_configs()
+        if duong != "~/.claude.json" and duong not in cands:
+            return [duong] + cands
+        return cands
     plugin_cfg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp_config.json")
-    if os.environ.get("TDQ_HOST") == "antigravity" or os.path.isfile(plugin_cfg):
-        return [duong, os.path.expanduser("~/.gemini/antigravity/mcp_config.json"), plugin_cfg]
+    if os.path.isfile(plugin_cfg):
+        return [duong] + _agy_mcp_configs()
     return [duong]
+
+
+def _uses_node_lsp_launcher(args):
+    """Return True when `lsp` delegates to tdq_mcp_launcher.mjs in lsp or caveman mode."""
+    if not args:
+        return False
+    tokens = [str(a) for a in args]
+    for idx, tok in enumerate(tokens):
+        if "tdq_mcp_launcher.mjs" in tok and idx + 1 < len(tokens):
+            if tokens[idx + 1] in ("lsp", "caveman"):
+                return True
+    return False
+
+
+def _is_valid_doctor_lang_arg(token):
+    """Return True if token is a `<lang>:<bin>[,flags]` declaration, not a path/launcher."""
+    text = str(token).strip()
+    if not text or ":" not in text:
+        return False
+    if "tdq_mcp_launcher.mjs" in text or "tdq_mcp_shrink.py" in text:
+        return False
+    lang, _, rest = text.partition(":")
+    if not lang or not rest or rest.startswith("//"):
+        return False
+    if len(lang) == 1 and rest[:1] in ("\\", "/"):
+        return False
+    return bool(re.fullmatch(r"[A-Za-z][A-Za-z0-9_+-]*", lang))
+
+
+def _filter_doctor_args(args):
+    """Filter raw MCP `args` down to `<lang>:<bin>` declarations safe for `agent-lsp doctor`."""
+    tokens = [str(a) for a in (args or []) if isinstance(a, str)]
+    if _uses_node_lsp_launcher(tokens):
+        return []
+    return [tok for tok in tokens if _is_valid_doctor_lang_arg(tok)]
 
 
 def mcp_args(duong="~/.claude.json"):
@@ -332,6 +431,10 @@ def bac2_mcp():
         servers = _doc_json(cand).get("mcpServers") or {}
         if MCP_SERVER_NAME in servers:
             return Bac(2, f"MCP `{MCP_SERVER_NAME}`", True, f"{len(servers)} server đã đăng ký")
+    if _is_antigravity_host():
+        return Bac(2, f"MCP `{MCP_SERVER_NAME}`", False,
+                   "not registered in Antigravity mcp_config.json",
+                   "agy plugin enable tdq-workflow-agy")
     return Bac(2, f"MCP `{MCP_SERVER_NAME}`", False,
                "chưa đăng ký trong ~/.claude.json", "agent-lsp init")
 
@@ -344,9 +447,12 @@ def do_ngon_ngu(project):
 
 
 def _readiness_inputs(project):
-    inputs = [__file__, os.path.expanduser("~/.claude.json"),
-              os.path.expanduser("~/.claude/settings.json"),
-              os.path.join(project, "graphify-out", "graph.json")]
+    if _is_antigravity_host():
+        inputs = [__file__, *_agy_mcp_configs(), os.path.join(project, "graphify-out", "graph.json")]
+    else:
+        inputs = [__file__, os.path.expanduser("~/.claude.json"),
+                  os.path.expanduser("~/.claude/settings.json"),
+                  os.path.join(project, "graphify-out", "graph.json")]
     for goc, files in _language_files(project):
         inputs.extend(os.path.join(goc, name) for name in files
                       if os.path.splitext(name)[1] in EXT_LANG or os.path.abspath(goc) == os.path.abspath(project))
@@ -399,15 +505,14 @@ def _chay_doctor(project):
     """Start the language servers for real via `agent-lsp doctor` in the project.
 
     Returns (parsed, reason): `parsed` is doc_doctor's dict, or None with a reason when the
-    probe could not run or printed nothing parseable. The binary is called by its resolved
-    path, and with the same server arguments Claude Code registered, so the probe exercises
-    the exact setup the MCP server uses.
+    probe could not run or printed nothing parseable. Node launcher tokens are stripped so
+    `agent-lsp doctor` receives only valid `<lang>:<bin>` declarations (or empty args).
     """
     agent_lsp = shutil.which("agent-lsp")
     if not agent_lsp:
         return None, "không thấy agent-lsp trên PATH"
     server = next(((_doc_json(c).get("mcpServers") or {}).get(MCP_SERVER_NAME) for c in _all_mcp_configs() if (_doc_json(c).get("mcpServers") or {}).get(MCP_SERVER_NAME)), {})
-    args = [str(a) for a in (server.get("args") or []) if isinstance(a, str)]
+    args = _filter_doctor_args(server.get("args") or [])
     rc, out = _run([agent_lsp, "doctor"] + args, cwd=project, timeout=TIMEOUT_DOCTOR)
     parsed = doc_doctor(out)
     if parsed:
@@ -420,10 +525,8 @@ def bac3_language_server(project):
     """Rung 3 — one language server per language the project uses, and it really starts.
 
     Gate 1: the server binary is on PATH. Gate 3: the `lsp` MCP server declares it in its `args`
-    (checked before gate 2, which is slow). Gate 2: `agent-lsp doctor` actually starts it; a
-    `failed` status fails the rung with the server's own error. Languages doctor does not
-    report (e.g. CSS) are judged by gate 1 alone; when doctor itself cannot run, the gate-1
-    verdict stands and the detail says the start was not tried.
+    (exempt when delegating to `tdq_mcp_launcher.mjs` in `lsp` or `caveman` mode).
+    Gate 2: `agent-lsp doctor` actually starts it.
     """
     dung = do_ngon_ngu(project)
     if not dung:
@@ -438,15 +541,14 @@ def bac3_language_server(project):
         lenh = " ; ".join(sorted({lenh for _, _, lenh in thieu}))
         return Bac(3, "language server theo project", False, chi_tiet, lenh)
     du = f"đủ cho {len(dung)} ngôn ngữ: " + ", ".join(LANG_SERVER[l][0] for l in sorted(dung))
-    # Gate 3 (0.59.0): a server on PATH is useless until the `lsp` MCP server declares it — a
-    # language added to the project later (Python, then JS + HTML) lands exactly in this gap.
     args = mcp_args()
-    chua_khai = [l for l in sorted(dung) if args is not None and not lang_mcp(args, l)]
-    if chua_khai:
-        return Bac(3, "language server theo project", False,
-                   "MCP `lsp` chưa khai server cho " + ", ".join(LANG_SERVER[l][0] for l in chua_khai),
-                   _lenh_cho("python3 scripts/tdq_setup.py  (tự thêm vào MCP `lsp`, rồi gõ /mcp để kết nối lại)",
-                             project))
+    if args is not None and not _uses_node_lsp_launcher(args):
+        chua_khai = [l for l in sorted(dung) if not lang_mcp(args, l)]
+        if chua_khai:
+            return Bac(3, "language server theo project", False,
+                       "MCP `lsp` chưa khai server cho " + ", ".join(LANG_SERVER[l][0] for l in chua_khai),
+                       _lenh_cho("python3 scripts/tdq_setup.py  (tự thêm vào MCP `lsp`, rồi gõ /mcp để kết nối lại)",
+                                 project))
     doctor, ly_do = _chay_doctor(project)
     if doctor is None:
         return Bac(3, "language server theo project", True,
@@ -466,9 +568,13 @@ def bac3_language_server(project):
 
 def bac4_quyen_tool():
     """Rung 4 — the mcp__lsp__* tools allowed without a prompt each time."""
-    plugin_cfg = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp_config.json")
-    if MCP_SERVER_NAME in (_doc_json(plugin_cfg).get("mcpServers") or {}):
-        return Bac(4, f"quyền tool `{TOOL_PATTERN}*`", True, "Antigravity plugin mcp_config.json")
+    for cand in _agy_mcp_configs():
+        if MCP_SERVER_NAME in (_doc_json(cand).get("mcpServers") or {}):
+            return Bac(4, f"quyền tool `{TOOL_PATTERN}*`", True, f"Antigravity mcp_config.json ({cand})")
+    if _is_antigravity_host():
+        return Bac(4, f"quyền tool `{TOOL_PATTERN}*`", False,
+                   "lsp not registered in Antigravity mcp_config.json",
+                   f"register `{MCP_SERVER_NAME}` in ~/.gemini/config/mcp_config.json ({TOOL_PATTERN}*)")
     cau_hinh = _doc_json("~/.claude/settings.json")
     allow = (cau_hinh.get("permissions") or {}).get("allow") or []
     khop = [m for m in allow if isinstance(m, str) and (TOOL_PATTERN in m or "mcp__plugin_tdq-workflow_lsp__" in m)]
@@ -532,17 +638,24 @@ def bac7_graphify(project):
     return Bac(7, ten, True, "đồ thị mới hơn mọi file mã nguồn")
 
 
-def _plugin_dang_bat():
-    """The install paths Claude Code actually loads — the cache also holds stale older versions.
+def _agy_plugins_installed():
+    """List Antigravity plugins under ~/.gemini/config/plugins/* plus user config hooks."""
+    duong_dan = []
+    plugins_dir = os.path.expanduser("~/.gemini/config/plugins")
+    if os.path.isdir(plugins_dir):
+        for entry in sorted(glob.glob(os.path.join(plugins_dir, "*"))):
+            if os.path.isdir(entry):
+                duong_dan.append((os.path.basename(entry), entry))
+    user_hooks = os.path.expanduser("~/.gemini/config/hooks.json")
+    if os.path.isfile(user_hooks):
+        duong_dan.append(("gemini-config", os.path.expanduser("~/.gemini/config")))
+    return duong_dan
 
-    Two sources, because one of them is not always there. `installed_plugins.json` covers what
-    was installed on this machine; it is missing entirely on a machine that never ran
-    `plugin install`, and even when present it does not list the plugins Claude Code syncs from
-    the account into `~/.claude/plugins/synced/<uuid>/<name>/`. Measured on the user's machine:
-    the file named one plugin while a second sat, unlisted, under `synced/`. Rung 5 asks
-    "does another plugin push a different search order" — a plugin it cannot see is a plugin it
-    cannot answer for.
-    """
+
+def _plugin_dang_bat():
+    """The install paths host actually loads (Antigravity plugins or Claude Code)."""
+    if _is_antigravity_host():
+        return _agy_plugins_installed()
     duong_dan = []
     data = _doc_json("~/.claude/plugins/installed_plugins.json")
     for ten, ban_ghi in (data.get("plugins") or {}).items():
@@ -561,25 +674,53 @@ def _plugin_dang_bat():
     return duong_dan
 
 
-def hook_xung_dot():
-    """-> [(tên plugin, file hooks.json, matcher)] của mọi hook ngoài đang đè thứ tự tìm kiếm.
+def _extract_pretooluse_blocks(raw):
+    """Extract PreToolUse matcher entries from both Claude and Antigravity hooks.json schemas."""
+    if not isinstance(raw, dict):
+        return []
+    blocks = []
+    hooks_section = raw.get("hooks")
+    if isinstance(hooks_section, dict) and isinstance(hooks_section.get("PreToolUse"), list):
+        blocks.extend(hooks_section["PreToolUse"])
+    if isinstance(raw.get("PreToolUse"), list):
+        blocks.extend(raw["PreToolUse"])
+    for val in raw.values():
+        if isinstance(val, dict) and val.get("enabled", True) is not False:
+            if isinstance(val.get("PreToolUse"), list):
+                blocks.extend(val["PreToolUse"])
+    return blocks
 
-    Tách riêng khỏi bậc 5 để `tdq_setup.py` dùng lại đúng PHÉP DÒ này khi nó đi vá. Hai nơi cùng
-    một danh sách thì không bao giờ có chuyện bậc thang báo một đằng, lệnh vá làm một nẻo.
-    """
+
+def _is_tdq_hook_block(muc):
+    """Return True if a PreToolUse block clearly invokes TDQ's own hook dispatcher."""
+    serialized = json.dumps(muc, ensure_ascii=False)
+    return "tdq_hook_launcher" in serialized or "tdq-dispatch" in serialized
+
+
+def _find_plugin_hook_conflict(goc):
+    """Return `(hooks_file, matcher)` for the first conflicting PreToolUse block, else None."""
+    for cand in (os.path.join(goc, "hooks", "hooks.json"), os.path.join(goc, "hooks.json")):
+        if not os.path.isfile(cand):
+            continue
+        for muc in _extract_pretooluse_blocks(_doc_json(cand)):
+            if not isinstance(muc, dict) or _is_tdq_hook_block(muc):
+                continue
+            matcher = str(muc.get("matcher", ""))
+            if any(t in matcher for t in TOOL_TIM_KIEM):
+                return cand, matcher
+        return None
+    return None
+
+
+def hook_xung_dot():
+    """-> [(tên plugin, file hooks.json, matcher)] của mọi hook ngoài đang đè thứ tự tìm kiếm."""
     xung_dot = []
     for ten, goc in _plugin_dang_bat():
         if ten.startswith(PLUGIN_NHA):
             continue
-        f = os.path.join(goc, "hooks", "hooks.json")
-        if not os.path.exists(f):
-            continue
-        khoi = (_doc_json(f).get("hooks") or {}).get("PreToolUse") or []
-        for muc in khoi if isinstance(khoi, list) else []:
-            matcher = str(muc.get("matcher", ""))
-            if any(t in matcher for t in TOOL_TIM_KIEM):
-                xung_dot.append((ten, f, matcher))
-                break
+        conflict = _find_plugin_hook_conflict(goc)
+        if conflict is not None:
+            xung_dot.append((ten, conflict[0], conflict[1]))
     return xung_dot
 
 

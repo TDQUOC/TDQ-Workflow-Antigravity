@@ -5,15 +5,15 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-18T16:35:34.465Z",
+  "startedAt": "2026-11-22T13:37:20.797Z",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\master.candidate.json",
-    "sha256": "3fb5be901ac7adb1dd852870886bb6c345ebe3e128e15a8e94050b770ee2223c",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\master.candidate.json",
+    "sha256": "5c3a0601f4f11609ebd18af891a5a3e7258b88af397e31170ea4b9ef93be76ac",
     "bytes": 10979
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
-    "sha256": "2f5f7f0c1421b2445f0691cba45f1cfe046a9f0af07fb5c0972c6c1e8b155217",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
+    "sha256": "8d6721d80d43f1349cdb58d66993b7098be7fd337b50c8ce5420546d1c76f535",
     "bytes": 2615737
   },
   "stages": {
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\master.candidate.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\master.candidate.json",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -44,7 +44,7 @@
         "ok": true,
         "command": "validate",
         "specification": {
-          "sha256": "3fb5be901ac7adb1dd852870886bb6c345ebe3e128e15a8e94050b770ee2223c",
+          "sha256": "5c3a0601f4f11609ebd18af891a5a3e7258b88af397e31170ea4b9ef93be76ac",
           "bytes": 10979
         },
         "validation": {
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1925,
+      "durationMs": 1856,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\master.candidate.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\master.candidate.json",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,19 +76,19 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "382b5ffa-fec9-4ee4-82ca-8461d1f626f4",
+        "receiptId": "31a1ace4-25c1-4bcc-88d2-ce181ccabfe3",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
-        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\master.candidate.json",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\master.candidate.json",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
         "explainer": {
-          "preparedSha256": "1413dedb23e86aea32e86dc4ea86b740728997ed0ac20535e1517f7f61d10672",
+          "preparedSha256": "393c1eb90702962a14f7a840274d74a181f7b3c0dbf140e0391f508e9a3ec334",
           "dependencies": [
             {
               "kind": "diagram-spec",
               "id": "overview",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\overview.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\overview.candidate.json",
               "relativePath": "overview.candidate.json",
               "sha256": "36422966c09ac48c600469ed0ceb2646dc6de7506a1397018ea71ed0da95b746",
               "bytes": 6456
@@ -96,7 +96,7 @@
             {
               "kind": "diagram-spec",
               "id": "pipeline-lifecycle",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\pipeline-lifecycle.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\pipeline-lifecycle.candidate.json",
               "relativePath": "pipeline-lifecycle.candidate.json",
               "sha256": "d447db272ea7c74d39e334f5a6083f8554ecd271d52917a6a7be24a35eae2a43",
               "bytes": 4207
@@ -104,7 +104,7 @@
             {
               "kind": "diagram-spec",
               "id": "search-and-archify",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\search-and-archify.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.candidate.json",
               "relativePath": "search-and-archify.candidate.json",
               "sha256": "d002eb22caba2406d1659b77167231ae20f40ab2dcd350a91dbee02c4ceb0e0e",
               "bytes": 4803
@@ -112,7 +112,7 @@
             {
               "kind": "diagram-spec",
               "id": "hooks-and-gates",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\hooks-and-gates.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.candidate.json",
               "relativePath": "hooks-and-gates.candidate.json",
               "sha256": "8f3b214ab5cae9c0af654e355a424ae35aeb3d6425912b971e7ec7dc0155567c",
               "bytes": 4982
@@ -120,7 +120,7 @@
             {
               "kind": "diagram-spec",
               "id": "runtime-verification",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\runtime-verification.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\runtime-verification.candidate.json",
               "relativePath": "runtime-verification.candidate.json",
               "sha256": "24278842a4c68cfec74761449ac521c22259f8bc7f375e2ec67e070df15fb234",
               "bytes": 4924
@@ -128,7 +128,7 @@
             {
               "kind": "diagram-spec",
               "id": "optimization-report",
-              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\optimization-report.candidate.json",
+              "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\optimization-report.candidate.json",
               "relativePath": "optimization-report.candidate.json",
               "sha256": "ef83b7effbcb1c3b7062f61cad2b58a9a3f657ee3b5add9ed9d4b2fc4acce2ac",
               "bytes": 4466
@@ -136,11 +136,11 @@
           ]
         },
         "specification": {
-          "sha256": "3fb5be901ac7adb1dd852870886bb6c345ebe3e128e15a8e94050b770ee2223c",
+          "sha256": "5c3a0601f4f11609ebd18af891a5a3e7258b88af397e31170ea4b9ef93be76ac",
           "bytes": 10979
         },
         "artifact": {
-          "sha256": "2f5f7f0c1421b2445f0691cba45f1cfe046a9f0af07fb5c0972c6c1e8b155217",
+          "sha256": "8d6721d80d43f1349cdb58d66993b7098be7fd337b50c8ce5420546d1c76f535",
           "bytes": 2615737
         },
         "validation": {
@@ -151,6 +151,32 @@
           "errors": 0,
           "warnings": 0
         },
+        "diagnostics": [
+          {
+            "code": "i18n/locale-fallback",
+            "severity": "warning",
+            "message": "meta.locale \"vi\" has no bundled catalog and no usable meta.translations; the Viewer chrome and <html lang> fall back to English.",
+            "subject": {
+              "diagramType": "explainer",
+              "path": "/meta/locale"
+            },
+            "evidence": {
+              "locale": "vi",
+              "bundledLocales": [
+                "en",
+                "zh-CN",
+                "zh-TW",
+                "es",
+                "ko",
+                "ar"
+              ]
+            },
+            "supportedFixes": [
+              "Supply meta.translations for this locale.",
+              "Use a bundled locale: en, zh-CN, zh-TW, es, ko, ar."
+            ]
+          }
+        ],
         "update": {
           "status": "unavailable",
           "installedVersion": null,
@@ -162,25 +188,26 @@
           "noticeText": null,
           "reason": "disabled"
         }
-      }
+      },
+      "stderr": "archify: meta.locale \"vi\" has no bundled catalog and no usable meta.translations; the Viewer chrome and <html lang> fall back to English."
     },
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1045,
+      "durationMs": 1015,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\33092_1795019705288\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.html",
         "family": "explainer",
         "artifact": {
-          "sha256": "2f5f7f0c1421b2445f0691cba45f1cfe046a9f0af07fb5c0972c6c1e8b155217",
+          "sha256": "8d6721d80d43f1349cdb58d66993b7098be7fd337b50c8ce5420546d1c76f535",
           "bytes": 2615737
         },
         "checks": [
@@ -230,7 +257,7 @@
               "id": "overview",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-7FegT2\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-a34CUl\\child.html",
                 "artifact": {
                   "sha256": "4372081ce53baebbb84cafbbe973154e7e04a5c9017d5e0cb0149ff903ce9dcc",
                   "bytes": 826497
@@ -366,7 +393,7 @@
               "id": "pipeline-lifecycle",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ENa1YI\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-vIzA87\\child.html",
                 "artifact": {
                   "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
                   "bytes": 824757
@@ -491,7 +518,7 @@
               "id": "search-and-archify",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-PlYGOg\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Unh4hF\\child.html",
                 "artifact": {
                   "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
                   "bytes": 824633
@@ -627,7 +654,7 @@
               "id": "hooks-and-gates",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-LSW5s3\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-R6wmAw\\child.html",
                 "artifact": {
                   "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
                   "bytes": 823078
@@ -752,7 +779,7 @@
               "id": "runtime-verification",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-x8I1O5\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-0AJjmv\\child.html",
                 "artifact": {
                   "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
                   "bytes": 822816
@@ -901,7 +928,7 @@
               "id": "optimization-report",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-gDdyld\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-R0N33R\\child.html",
                 "artifact": {
                   "sha256": "25e0219714bb2065bc3b7394b6f06a8ec4af1c8ac1b7b6c0521a39db0cda34f5",
                   "bytes": 820910
@@ -1037,7 +1064,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "382b5ffa-fec9-4ee4-82ca-8461d1f626f4"
+        "deliveryReceiptId": "31a1ace4-25c1-4bcc-88d2-ce181ccabfe3"
       }
     }
   },
@@ -1045,14 +1072,44 @@
     "requested": false,
     "ran": false
   },
-  "diagnostics": [],
+  "diagnostics": [
+    {
+      "code": "i18n/locale-fallback",
+      "severity": "warning",
+      "message": "meta.locale \"vi\" has no bundled catalog and no usable meta.translations; the Viewer chrome and <html lang> fall back to English.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\master.candidate.json",
+        "line": 7,
+        "component": "document",
+        "diagramType": "explainer",
+        "path": "/meta/locale"
+      },
+      "evidence": {
+        "reason": "i18n/locale-fallback",
+        "example": "Supply meta.translations for this locale.",
+        "locale": "vi",
+        "bundledLocales": [
+          "en",
+          "zh-CN",
+          "zh-TW",
+          "es",
+          "ko",
+          "ar"
+        ]
+      },
+      "supportedFixes": [
+        "Supply meta.translations for this locale.",
+        "Use a bundled locale: en, zh-CN, zh-TW, es, ko, ar."
+      ]
+    }
+  ],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.0fb25ea436304143807f0ff8a38fc463\\index.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\index.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-18T16:35:37.883Z",
-  "durationMs": 3417,
+  "finishedAt": "2026-11-22T13:37:24.134Z",
+  "durationMs": 3337,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

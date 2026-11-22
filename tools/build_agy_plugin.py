@@ -38,6 +38,11 @@ _BINARY_TARGETS: tuple[tuple[str, str], ...] = (
 _OPTIONAL_BINARY_TARGETS: tuple[tuple[str, str], ...] = (
     ("darwin", "tdq-dispatch-darwin-x64"),
 )
+_LEAKED_PATH_NEEDLES: tuple[str, ...] = (
+    "Users\\admin",
+    "Users/admin",
+    "Add_on_for_claude",
+)
 _MAGIC_PREFIXES: dict[str, tuple[bytes, ...]] = {
     "windows": (b"MZ",),
     "linux": (b"\x7fELF",),
@@ -140,6 +145,35 @@ def _resolve_binary_source(
     return None
 
 
+def _stage_optional_binaries(
+    staged: dict[str, Path],
+    stage_bin: Path,
+    host_os: str,
+    rust_exe: Path,
+    prebuilt_dir: Path,
+    existing_output_bin: Path,
+    upstream_plugin_bin: Path,
+) -> None:
+    """Stage optional cross-architecture Rust binaries when available."""
+    for target_os, bin_name in _OPTIONAL_BINARY_TARGETS:
+        source = _resolve_binary_source(
+            target_os,
+            bin_name,
+            host_os,
+            rust_exe,
+            prebuilt_dir,
+            existing_output_bin,
+            upstream_plugin_bin=upstream_plugin_bin,
+        )
+        if source is None:
+            continue
+        dest = stage_bin / bin_name
+        shutil.copy2(source, dest)
+        if os.name != "nt":
+            os.chmod(dest, 0o755)
+        staged[f"{target_os}_optional_{bin_name}"] = dest
+
+
 def _stage_rust_binaries(
     upstream: Path, stage_bin: Path, existing_output_bin: Path
 ) -> dict[str, Path]:
@@ -155,13 +189,8 @@ def _stage_rust_binaries(
     failures: list[str] = []
     for target_os, bin_name in _BINARY_TARGETS:
         source = _resolve_binary_source(
-            target_os,
-            bin_name,
-            host_os,
-            rust_exe,
-            prebuilt_dir,
-            existing_output_bin,
-            upstream_plugin_bin=upstream_plugin_bin,
+            target_os, bin_name, host_os, rust_exe, prebuilt_dir,
+            existing_output_bin, upstream_plugin_bin=upstream_plugin_bin,
         )
         if source is None:
             failures.append(
@@ -182,19 +211,9 @@ def _stage_rust_binaries(
         _log(f"staged {target_os} binary {bin_name} from {source}")
         staged[target_os] = dest
 
-    for target_os, bin_name in _OPTIONAL_BINARY_TARGETS:
-        source = _resolve_binary_source(
-            target_os, bin_name, host_os, rust_exe, prebuilt_dir, existing_output_bin,
-            upstream_plugin_bin=upstream_plugin_bin,
-        )
-        if source is None:
-            continue
-        dest = stage_bin / bin_name
-        shutil.copy2(source, dest)
-        if os.name != "nt":
-            os.chmod(dest, 0o755)
-        staged[f"{target_os}_optional_{bin_name}"] = dest
-
+    _stage_optional_binaries(
+        staged, stage_bin, host_os, rust_exe, prebuilt_dir, existing_output_bin, upstream_plugin_bin
+    )
     if failures:
         detail = "; ".join(failures)
         raise RuntimeError(
@@ -216,83 +235,149 @@ def _upstream_sha(upstream: Path) -> str:
     return res.stdout.strip() if res.returncode == 0 else "unknown"
 
 
+def check_reference_md_budgets(root: Path, limit_bytes: int = 24000) -> tuple[int, list[str]]:
+    """Verify every skills/*/references/**/*.md file stays strictly below limit_bytes."""
+    checked = 0
+    violations: list[str] = []
+    for path in sorted(root.glob("skills/*/references/**/*.md")):
+        checked += 1
+        size = len(path.read_bytes())
+        if size >= limit_bytes:
+            rel = path.relative_to(root).as_posix()
+            violations.append(f"{rel}: {size} bytes >= {limit_bytes}")
+    return checked, violations
+
+
+def _scan_text_leaks(path: Path, root: Path, needles: tuple[str, ...]) -> list[str]:
+    """Return portability violation messages for any forbidden substring found in path."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    rel = path.relative_to(root).as_posix()
+    return [f"{rel}: leaked {needle!r}" for needle in needles if needle in text]
+
+
+def _check_unwrapped_mcp_servers(mcp_file: Path) -> list[str]:
+    """Ensure staged mcp_config.json entries do not pre-bake Caveman wrappers."""
+    if not mcp_file.is_file():
+        return []
+    mcp_data = json.loads(mcp_file.read_text(encoding="utf-8"))
+    violations: list[str] = []
+    for srv_name, entry in (mcp_data.get("mcpServers") or {}).items():
+        raw_args = entry.get("args") if isinstance(entry, dict) else []
+        if "caveman" in [str(item) for item in (raw_args or [])]:
+            violations.append(f"mcp_config.json: server {srv_name} must remain unwrapped")
+    return violations
+
+
+def check_bundle_portability(root: Path) -> list[str]:
+    """Check runtime manifests, Node launchers, and skills for leaked paths or pre-baked wrappers."""
+    violations: list[str] = []
+    runtime_files = [
+        p for p in (root / "mcp_config.json", root / "hooks.json") if p.is_file()
+    ] + sorted((root / "scripts").glob("*.mjs"))
+    for path in runtime_files:
+        violations.extend(_scan_text_leaks(path, root, (*_LEAKED_PATH_NEEDLES, "sys.executable")))
+    for path in sorted((root / "skills").rglob("*")):
+        if path.is_file():
+            violations.extend(_scan_text_leaks(path, root, _LEAKED_PATH_NEEDLES))
+    violations.extend(_check_unwrapped_mcp_servers(root / "mcp_config.json"))
+    return violations
+
+
+def _check_node_scripts(stage: Path) -> int:
+    """Validate Node ESM syntax of every staged scripts/*.mjs file when Node is present."""
+    mjs_files = sorted((stage / "scripts").glob("*.mjs"))
+    if not shutil.which("node"):
+        return 0
+    kw_node: dict[str, object] = {"capture_output": True, "text": True}
+    if os.name == "nt":
+        kw_node["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    for mjs in mjs_files:
+        chk = subprocess.run(["node", "--check", str(mjs)], check=False, **kw_node)
+        if chk.returncode != 0:
+            raise RuntimeError(f"Node syntax error in {mjs.name}: {chk.stderr}")
+    return len(mjs_files)
+
+
+def _copy_upstream_assets(upstream: Path, stage: Path) -> dict[str, int]:
+    """Copy runtime scripts, hooks, skills, agents, and config from upstream into stage."""
+    n_scripts = common_utils.copy_clean_tree(
+        upstream / "scripts", stage / "scripts", exclude_names=common_utils.EXCLUDED_SCRIPTS
+    )
+    n_hooks = common_utils.copy_clean_tree(
+        upstream / "hooks" / "scripts",
+        stage / "hooks" / "scripts",
+        exclude_names=common_utils.EXCLUDED_AGY_HOOKS,
+    )
+    n_skills = common_utils.copy_clean_tree(upstream / "skills", stage / "skills")
+    cp_skill = upstream / "portable_src" / "skills" / "tdq-checkportable"
+    if cp_skill.is_dir():
+        n_skills += common_utils.copy_clean_tree(cp_skill, stage / "skills" / "tdq-checkportable")
+    n_agents = common_utils.copy_clean_tree(upstream / "agents", stage / "agents")
+    config_src = upstream / "tdq-config.json"
+    if config_src.is_file():
+        shutil.copy2(config_src, stage / "tdq-config.json")
+    return {"scripts": n_scripts, "hooks": n_hooks, "skills_files": n_skills, "agents": n_agents}
+
+
+def _verify_staged_bundle(stage: Path) -> tuple[int, int, int, int]:
+    """Run AST, Node ESM syntax, markdown budget, and portability checks before syncing."""
+    py_count, ast_errors = common_utils.verify_all_py_ast(stage)
+    if ast_errors:
+        raise RuntimeError("Python AST errors:\n" + "\n".join(ast_errors))
+    mjs_count = _check_node_scripts(stage)
+    md_count, md_violations = common_utils.check_md_byte_budgets(stage)
+    if md_violations:
+        raise RuntimeError("Markdown byte budget exceeded:\n" + "\n".join(md_violations))
+    ref_count, ref_violations = check_reference_md_budgets(stage)
+    if ref_violations:
+        raise RuntimeError("Reference markdown byte budget exceeded:\n" + "\n".join(ref_violations))
+    portability_errors = check_bundle_portability(stage)
+    if portability_errors:
+        raise RuntimeError("Bundle portability errors:\n" + "\n".join(portability_errors))
+    return py_count, mjs_count, md_count, ref_count
+
+
 def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
     """Compile the full standalone Antigravity native plugin and return verification stats."""
     if not (upstream / "scripts").is_dir() or not (upstream / "skills").is_dir():
         raise FileNotFoundError(f"Upstream TDQ-Workflow repo not found at {upstream}")
 
     sha = _upstream_sha(upstream)
+    _log(f"compiling bundle upstream={upstream} sha={sha} -> {output}")
     with tempfile.TemporaryDirectory() as tmpdir:
         stage = Path(tmpdir)
-
-        # 1. Copy runtime assets cleanly from upstream read-only source
-        n_scripts = common_utils.copy_clean_tree(
-            upstream / "scripts", stage / "scripts", exclude_names=common_utils.EXCLUDED_SCRIPTS
-        )
-        n_hooks = common_utils.copy_clean_tree(
-            upstream / "hooks" / "scripts",
-            stage / "hooks" / "scripts",
-            exclude_names=common_utils.EXCLUDED_AGY_HOOKS,
-        )
-        n_skills = common_utils.copy_clean_tree(upstream / "skills", stage / "skills")
-        cp_skill = upstream / "portable_src" / "skills" / "tdq-checkportable"
-        if cp_skill.is_dir():
-            n_skills += common_utils.copy_clean_tree(cp_skill, stage / "skills" / "tdq-checkportable")
-        n_agents = common_utils.copy_clean_tree(upstream / "agents", stage / "agents")
-        config_src = upstream / "tdq-config.json"
-        if config_src.is_file():
-            shutil.copy2(config_src, stage / "tdq-config.json")
-
-        # 2. Apply CLI & host fixes (NEW-01..NEW-28 + hotfix + AGY parsers)
+        copied = _copy_upstream_assets(upstream, stage)
         cli_fixes_a.apply_all(stage / "scripts")
         cli_fixes_b.apply_all(stage / "scripts")
-
-        # 3. Generate Antigravity native plugin manifests, hooks.json, mcp_config.json, 2-tier rules
         agy_manifests.generate_plugin_json(stage)
         agy_manifests.generate_logo_svg(stage)
         agy_manifests.generate_hooks_json(stage)
         agy_manifests.generate_mcp_config(stage)
         agy_manifests.generate_two_tier_rules(stage)
-
-        # 4. Translate 12 skills (M01-M20), 8 subagents, and relock token-budget.json
         skills_and_agents.transform_skills(stage)
         skills_and_agents.transform_agents(stage)
         agy_hooks.apply_all(stage / "hooks" / "scripts")
         agy_dispatch.apply_dispatch(stage / "hooks" / "scripts")
         skills_and_agents.relock_token_budget(stage)
-
-        # 4b. Generate cross-platform Node launchers & embed standalone Rust binaries
         agy_launchers.generate_launchers(stage)
         _stage_rust_binaries(upstream, stage / "bin", output / "bin")
-
-        # 5. Emit final manifest.json & README.md
         agy_manifests.generate_manifest_and_readme(stage, sha)
-
-        # 6. Immediate AST, Node syntax & Markdown byte-budget checks before syncing
-        py_count, ast_errors = common_utils.verify_all_py_ast(stage)
-        if ast_errors:
-            raise RuntimeError("Python AST errors:\n" + "\n".join(ast_errors))
-        if shutil.which("node"):
-            for mjs in sorted((stage / "scripts").glob("*.mjs")):
-                kw_node = {"capture_output": True, "text": True, "check": False}
-                if os.name == "nt":
-                    kw_node["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
-                chk = subprocess.run(["node", "--check", str(mjs)], **kw_node)
-                if chk.returncode != 0:
-                    raise RuntimeError(f"Node syntax error in {mjs.name}: {chk.stderr}")
-        md_count, md_violations = common_utils.check_md_byte_budgets(stage)
-        if md_violations:
-            raise RuntimeError("Markdown byte budget exceeded:\n" + "\n".join(md_violations))
-
+        py_count, mjs_count, md_count, ref_count = _verify_staged_bundle(stage)
         common_utils.sync_tree_inplace(stage, output)
 
+    _log(
+        f"build ok sha={sha} py={py_count} mjs={mjs_count} "
+        f"md={md_count} ref_md={ref_count}"
+    )
     return {
         "upstream": str(upstream),
         "upstream_sha": sha,
         "output": str(output),
-        "copied": {"scripts": n_scripts, "hooks": n_hooks, "skills_files": n_skills, "agents": n_agents},
+        "copied": copied,
         "ast_checked_py": py_count,
+        "mjs_checked": mjs_count,
         "md_checked_budget": md_count,
+        "ref_md_checked_budget": ref_count,
         "status": "OK",
     }
 

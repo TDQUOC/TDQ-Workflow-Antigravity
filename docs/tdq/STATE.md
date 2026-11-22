@@ -1,19 +1,19 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-22T15:20:35+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-22T20:41:10+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-22-1424-phan-tich-setup-may-trong |
-| Work kind | investigate |
+| Request | 2026-11-22-1521-trien-khai-setup-fully-agy |
+| Work kind | build |
 | Lane | full |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-22-1424-phan-tich-setup-may-trong.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-22-1424-phan-tich-setup-may-trong.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-22-1521-trien-khai-setup-fully-agy.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-22-1521-trien-khai-setup-fully-agy.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | full |
-| Run mode | main |
+| QC level | ultra |
+| Run mode | subagent |
 
 ## Where we are
 Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.

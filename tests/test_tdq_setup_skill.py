@@ -144,5 +144,26 @@ class BaLopGanDungLoaiTruyVan(unittest.TestCase):
         self.assertNotIn("BẮT BUỘC gọi song song", self.cau)
 
 
+class ZeroToFullSetupSkill(unittest.TestCase):
+    def test_skill_md_bounds_dual_entry_and_no_personal_path(self):
+        skill_path = os.path.join(ROOT, "skills", "tdq-setup", "SKILL.md")
+        skill_text = doc(skill_path)
+        skill_lines = skill_text.splitlines()
+        self.assertLessEqual(len(skill_lines), 132, f"SKILL.md too long: {len(skill_lines)} lines")
+        self.assertNotIn("Add_on_for_claude", skill_text)
+        self.assertIn("setupfully tdq-workflow", skill_text)
+        self.assertIn("--post-restart-verify", skill_text)
+        self.assertIn("zero-to-full-agy.md", skill_text)
+
+    def test_zero_to_full_reference_size_and_sections(self):
+        ref_path = os.path.join(ROOT, "skills", "tdq-setup", "references", "zero-to-full-agy.md")
+        self.assertTrue(os.path.isfile(ref_path), "zero-to-full-agy.md missing")
+        ref_bytes = os.path.getsize(ref_path)
+        self.assertLess(ref_bytes, 24000, f"zero-to-full-agy.md too large: {ref_bytes} bytes")
+        ref_text = doc(ref_path)
+        for token in ("--setupfully", "--scan-json", "--apply-manifest", "--set-tavily-key", "T1", "T6"):
+            self.assertIn(token, ref_text)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "dfd8ec83-621f-40df-bee2-eeb4ce8e72a5",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1521-trien-khai-setup-fully-agy\\.tmp.bao-cao.archify.974c9aadc5274a8981760ded56876332.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1521-trien-khai-setup-fully-agy.27e50e4f01ea49508adfdff6d03254bc.html",
+  "specification": {
+    "sha256": "9fd0df5c101a43b04c80e588b68f550ea3abb7d7b2580a57a42162581155b1c6",
+    "bytes": 2104
+  },
+  "artifact": {
+    "sha256": "10535a66f407cc00d078707f00c55c31d2986345d0b7b04f443d43e794336f1a",
+    "bytes": 891282
+  },
+  "explainer": {
+    "preparedSha256": "1e81269926cc3663c65c02e403763dbd5d45470b5caa66164eb4e2b778459f08",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-setupfully-flow",
+        "inline": true,
+        "sha256": "ab3077cb1b3e1ee33f79e70e9bc2ad6bdc13728147a704320afc98eb47420da0",
+        "bytes": 1460
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-ultra-qc-results",
+        "inline": true,
+        "sha256": "551cd573a4ea17fc449443d4cdcdea6d7cd3b056ff388b07ac6f50c20f61a16a",
+        "bytes": 1254
+      }
+    ]
+  }
+}

@@ -187,6 +187,18 @@ fn subagent_resume_decision(payload: &HookPayload, workspace_root: &Path, sid: &
 
 /// Route `PreInvocation`: flush subagent/mid-turn in Rust or delegate new turns to Python.
 pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> RouteOutcome {
+    handle_pre_invocation_with_flag(
+        payload,
+        workspace_root,
+        crate::storage::setup_pending_flag_exists(),
+    )
+}
+
+pub fn handle_pre_invocation_with_flag(
+    payload: &HookPayload,
+    workspace_root: &Path,
+    setup_pending: bool,
+) -> RouteOutcome {
     let sid = payload.canonical_session_id();
     let is_subagent = payload
         .agent_type
@@ -199,6 +211,9 @@ pub fn handle_pre_invocation(payload: &HookPayload, workspace_root: &Path) -> Ro
         || read_sessions_role(workspace_root, &sid).is_some();
     if is_subagent {
         return RouteOutcome::Decided(subagent_resume_decision(payload, workspace_root, &sid));
+    }
+    if setup_pending {
+        return RouteOutcome::DelegatePython;
     }
     let Some(meta) = read_turn_meta(workspace_root, &sid) else {
         return RouteOutcome::DelegatePython;
@@ -261,6 +276,12 @@ mod tests {
         write_turn_meta(&tmp, "conv-pre", &closed).unwrap();
         assert!(matches!(
             handle_pre_invocation(&p, &tmp),
+            RouteOutcome::DelegatePython
+        ));
+
+        // Open turn with setup_pending = true must delegate to Python so post-restart verify runs.
+        assert!(matches!(
+            handle_pre_invocation_with_flag(&p, &tmp, true),
             RouteOutcome::DelegatePython
         ));
 

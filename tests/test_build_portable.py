@@ -38,6 +38,8 @@ APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_test_report", "tdq_eval_contract", "tdq_eval_hosts", "tdq_skill_eval",
     "rtk_integration", "tdq_mcp_shrink", "tdq_ccr", "caveman_config",
     "tdq_plan_scaffold", "tdq_config", "tdq_meta_gate",
+    # Approved 2026-11-22-1521-trien-khai-setup-fully-agy state & 6-layer verifier
+    "tdq_setup_state", "tdq_simulate_verify",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -58,6 +60,11 @@ APPROVED_RELEASE_DOCS = {
     "skills/tdq-conventions/references/investigate-mode.md",
     # Approved 2026-11-21-1536-nang-cap-qc-tester-e2e Wave 3 E2E scenario template
     "skills/tdq-browser-test/references/scenario-template.md",
+    # Approved 2026-11-22-1521-trien-khai-setup-fully-agy Gate-0 & Zero-to-Full deliverables
+    "scripts/bootstrap.ps1",
+    "scripts/bootstrap.sh",
+    "scripts/tdq_setup_probe.mjs",
+    "skills/tdq-setup/references/zero-to-full-agy.md",
 }
 
 

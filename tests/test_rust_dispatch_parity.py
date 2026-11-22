@@ -66,6 +66,8 @@ def _isolated_env(
     """Build isolated environment anchored to tmp_path without touching user home."""
     fake_home.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ)
+    env.pop("PLUGIN_DATA", None)
+    env.pop("TDQ_SETUP_STATE_DIR", None)
     py_dir = os.path.dirname(sys.executable)
     env["PATH"] = py_dir + os.pathsep + env.get("PATH", "")
     env.update({
@@ -75,6 +77,7 @@ def _isolated_env(
         "LOCALAPPDATA": str(fake_home / "AppData" / "Local"),
         "XDG_CONFIG_HOME": str(fake_home / ".config"),
         "GEMINI_CONFIG_DIR": str(fake_home / ".gemini"),
+        "TDQ_SETUP_STATE_DIR": str(fake_home / ".gemini" / "antigravity" / "plugin_data" / "tdq-workflow-agy"),
         "TDQ_PROJECT_DIR": str(repo),
         "TDQ_KHONG_CHAM_MAY": "1",
         "TDQ_KHOI_TAO_NEN": "0",

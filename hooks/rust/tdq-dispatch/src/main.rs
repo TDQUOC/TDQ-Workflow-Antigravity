@@ -159,6 +159,10 @@ fn spawn_python_dispatch(
     child.wait_with_output()
 }
 
+fn should_retry_python_fallback(output: &std::process::Output) -> bool {
+    !output.status.success() && output.stdout.is_empty()
+}
+
 fn execute_python_fallback(
     event_name: &str,
     raw_stdin: &str,
@@ -173,7 +177,8 @@ fn execute_python_fallback(
     let primary = if cfg!(windows) { "python" } else { "python3" };
     let output = match spawn_python_dispatch(primary, &[], &dispatch_script, event_name, raw_stdin)
     {
-        Ok(out) => out,
+        Ok(out) if !(cfg!(windows) && should_retry_python_fallback(&out)) => out,
+        Ok(_) => spawn_python_dispatch("py", &["-3"], &dispatch_script, event_name, raw_stdin)?,
         Err(err) if cfg!(windows) && err.kind() == io::ErrorKind::NotFound => {
             spawn_python_dispatch("py", &["-3"], &dispatch_script, event_name, raw_stdin)?
         }

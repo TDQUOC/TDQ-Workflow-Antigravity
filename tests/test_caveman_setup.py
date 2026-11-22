@@ -305,6 +305,27 @@ class TestProbeAndLogging(unittest.TestCase):
         self.assertEqual(proc_off.returncode, 0)
         self.assertEqual(proc_off.stderr, "")
 
+    def test_wrap_agy_plugin_raw_synced_server_uses_node_launcher(self) -> None:
+        agy_dir = self.tmp / "agy-plugin"
+        (agy_dir / "scripts").mkdir(parents=True)
+        (agy_dir / "plugin.json").write_text('{"name":"tdq-workflow-agy"}\n', encoding="utf-8")
+        (agy_dir / "scripts" / "tdq_mcp_launcher.mjs").write_text("// launcher\n", encoding="utf-8")
+        mcp_path = agy_dir / "mcp_config.json"
+        mcp_path.write_text(json.dumps(SAMPLE_MCP_CONFIG, indent=2), encoding="utf-8")
+        wrapped = caveman_config.wrap_mcp_config(mcp_path, self.tmp / "tdq_mcp_shrink.py")
+        self.assertEqual(wrapped, ["lsp", "chrome-devtools", "tavily-primary"])
+        cfg = json.loads(mcp_path.read_text(encoding="utf-8"))
+        self.assertEqual(cfg["mcpServers"]["lsp"]["command"], "node")
+        self.assertIn("tdq_mcp_launcher.mjs", cfg["mcpServers"]["lsp"]["args"][0])
+        self.assertEqual(cfg["mcpServers"]["lsp"]["args"][1:4], ["caveman", "--", "C:/bin/agent-lsp.exe"])
+        self.assertNotIn(sys.executable, mcp_path.read_text(encoding="utf-8"))
+        restored = caveman_config.unwrap_mcp_config(mcp_path)
+        self.assertEqual(restored, ["lsp", "chrome-devtools", "tavily-primary"])
+        self.assertEqual(
+            json.loads(mcp_path.read_text(encoding="utf-8"))["mcpServers"]["lsp"]["command"],
+            "C:/bin/agent-lsp.exe",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ Compliance:
   - Safe backup (.bak) on configuration edits.
   - Isolated Chrome User Data Profile (ChromeDevProfile).
 """
+from datetime import datetime
 import json
 import os
 import platform
@@ -20,11 +21,19 @@ import time
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import tdq_ten_lenh  # noqa: E402
 import utf8_io  # noqa: E402, F401
 
 DEVTOOL_SERVER_NAME = "chrome-devtools"
 DEFAULT_CDP_PORT = 9222
 DEFAULT_CDP_HOST = "127.0.0.1"
+
+
+def _log(message: str) -> None:
+    """Emit an ISO-timestamped diagnostic line to stderr unless TDQ_LOG=0."""
+    if os.environ.get("TDQ_LOG", "1") != "0":
+        stamp = datetime.now().isoformat(timespec="seconds")
+        print(f"[{stamp}] tdq_devtool_mcp: {message}", file=sys.stderr)
 
 
 def is_enabled(cwd=None) -> bool:
@@ -92,6 +101,9 @@ def verify_cdp_endpoint(host=DEFAULT_CDP_HOST, port=DEFAULT_CDP_PORT, timeout=0.
 
 def get_chrome_executable() -> str:
     """Detect the Google Chrome executable path for the current OS."""
+    chrome_env = os.environ.get("CHROME_PATH", "").strip()
+    if chrome_env and os.path.isfile(chrome_env):
+        return chrome_env
     system = platform.system().lower()
     if "windows" in system:
         candidates = [
@@ -123,69 +135,161 @@ def get_dev_profile_dir() -> str:
     return os.path.join(os.path.expanduser("~"), "ChromeDevProfile")
 
 
-def check_devtool_setup(claude_json_path=None, settings_json_path=None) -> dict:
-    """Check the setup status across all layers.
+def _is_antigravity_host() -> bool:
+    """Return True when running inside Antigravity host/plugin context."""
+    host_env = os.environ.get("TDQ_HOST", "").strip().lower()
+    if host_env in ("antigravity", "agy"):
+        return True
+    if host_env == "claude":
+        return False
+    norm = os.path.abspath(__file__).replace("\\", "/").lower()
+    if any(m in norm for m in (
+        "/.gemini/config/plugins/",
+        "/plugins/tdq-workflow-agy/",
+        "/plugins/tdq-workflow/",
+        "/antigravity_portable/",
+    )):
+        return True
+    home = os.environ.get("HOME") or os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    has_gemini = os.path.isdir(os.path.join(home, ".gemini", "config")) or os.path.isdir(
+        os.path.join(home, ".gemini", "antigravity")
+    )
+    has_claude = os.path.exists(os.path.join(home, ".claude.json")) or os.path.isdir(
+        os.path.join(home, ".claude")
+    )
+    return bool(has_gemini and not has_claude)
 
-    Returns:
-      {
-        "mcp_registered": bool,
-        "permission_allowed": bool,
-        "chrome_available": bool,
-        "profile_exists": bool,
-        "cdp_listening": bool,
-        "all_ready": bool
-      }
-    """
+
+def _probe_agy_plugins() -> list:
+    """Query `agy plugin list --json` cleanly when CLI is available."""
+    agy_bin = shutil.which("agy")
+    if not agy_bin:
+        return []
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            [agy_bin, "plugin", "list", "--json"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+        if proc.returncode != 0:
+            return []
+        parsed = json.loads(proc.stdout or "[]")
+        return parsed if isinstance(parsed, list) else []
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        _log(f"agy plugin list failed: {type(exc).__name__}")
+        return []
+
+
+def _has_devtool_in_mcp(path: str) -> bool:
+    """Return True if mcp_config file at `path` registers chrome-devtools."""
+    if not os.path.isfile(path):
+        return False
+    try:
+        with open(path, encoding="utf-8") as fh:
+            servers = json.load(fh).get("mcpServers") or {}
+        return isinstance(servers, dict) and DEVTOOL_SERVER_NAME in servers
+    except (OSError, ValueError):
+        return False
+
+
+def _agy_plugin_flags(plugins: list) -> tuple[bool, bool]:
+    """Return `(installed, enabled)` for Antigravity chrome-devtools-plugin."""
+    for item in plugins or []:
+        if isinstance(item, dict) and item.get("name") == "chrome-devtools-plugin":
+            return True, bool(item.get("enabled"))
+    disk_plugin = os.path.expanduser("~/.gemini/config/plugins/chrome-devtools-plugin/plugin.json")
+    if os.path.isfile(disk_plugin):
+        return True, False
+    return False, False
+
+
+def _check_devtool_agy(
+    mcp_registered: bool,
+    permission_allowed: bool,
+    agy_plugins_probe,
+) -> tuple[bool, bool, dict]:
+    """Inspect Antigravity mcp_config.json paths and chrome-devtools-plugin state."""
+    for cand in (
+        os.path.expanduser("~/.gemini/config/mcp_config.json"),
+        os.path.expanduser("~/.gemini/antigravity/mcp_config.json"),
+        os.path.expanduser("~/.gemini/config/plugins/tdq-workflow-agy/mcp_config.json"),
+    ):
+        if _has_devtool_in_mcp(cand):
+            mcp_registered = True
+            permission_allowed = True
+    plugins = agy_plugins_probe() if agy_plugins_probe is not None else _probe_agy_plugins()
+    cdp_installed, cdp_enabled = _agy_plugin_flags(plugins)
+    if cdp_enabled:
+        mcp_registered = True
+        permission_allowed = True
+    return mcp_registered, permission_allowed, {
+        "chrome_devtools_plugin_installed": cdp_installed,
+        "chrome_devtools_plugin_enabled": cdp_enabled,
+    }
+
+
+def _check_devtool_claude(
+    mcp_registered: bool,
+    permission_allowed: bool,
+    claude_json_path,
+    settings_json_path,
+) -> tuple[bool, bool]:
+    """Inspect legacy Claude Code ~/.claude.json and ~/.claude/settings.json."""
     c_json = claude_json_path or os.path.expanduser("~/.claude.json")
     s_json = settings_json_path or os.path.expanduser("~/.claude/settings.json")
-
-    # 1. Check MCP registration & AGY plugin manifest
-    plugin_mcp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp_config.json")
-    mcp_registered = False
-    permission_allowed = False
-    if os.path.isfile(plugin_mcp):
-        try:
-            with open(plugin_mcp, encoding="utf-8") as pf:
-                mcp_registered = DEVTOOL_SERVER_NAME in (json.load(pf).get("mcpServers") or {})
-                if mcp_registered:
-                    permission_allowed = True
-        except (OSError, ValueError):
-            pass
-    if os.path.isfile(c_json):
-        try:
-            with open(c_json, encoding="utf-8") as f:
-                data = json.load(f)
-                servers = data.get("mcpServers", {})
-                mcp_registered = mcp_registered or (DEVTOOL_SERVER_NAME in servers)
-        except (OSError, ValueError):
-            pass
-
-    # 2. Check Permission allow list
+    if _has_devtool_in_mcp(c_json):
+        mcp_registered = True
     if os.path.isfile(s_json):
         try:
-            with open(s_json, encoding="utf-8") as f:
-                data = json.load(f)
-                allows = data.get("permissions", {}).get("allow", [])
-                permission_allowed = permission_allowed or any(
-                    "chrome-devtools" in a or "chrome_devtools" in a for a in allows
-                )
+            with open(s_json, encoding="utf-8") as fh:
+                allows = json.load(fh).get("permissions", {}).get("allow", [])
+            if any("chrome-devtools" in a or "chrome_devtools" in a for a in allows):
+                permission_allowed = True
         except (OSError, ValueError):
             pass
+    return mcp_registered, permission_allowed
 
+
+def check_devtool_setup(
+    claude_json_path=None,
+    settings_json_path=None,
+    agy_plugins_probe=None,
+) -> dict:
+    """Check Chrome DevTools MCP readiness for Claude Code or Antigravity."""
+    plugin_mcp = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mcp_config.json"
+    )
+    mcp_registered = _has_devtool_in_mcp(plugin_mcp)
+    permission_allowed = mcp_registered
+    use_agy = (claude_json_path is None and settings_json_path is None) and (
+        agy_plugins_probe is not None or _is_antigravity_host()
+    )
+    extra: dict = {}
+    if use_agy:
+        mcp_registered, permission_allowed, extra = _check_devtool_agy(
+            mcp_registered, permission_allowed, agy_plugins_probe
+        )
+    else:
+        mcp_registered, permission_allowed = _check_devtool_claude(
+            mcp_registered, permission_allowed, claude_json_path, settings_json_path
+        )
     chrome_exe = get_chrome_executable()
     chrome_available = bool(chrome_exe and os.path.isfile(chrome_exe))
     profile_exists = os.path.isdir(get_dev_profile_dir())
     cdp_listening = is_port_open()
-
     all_ready = mcp_registered and permission_allowed and chrome_available
-
+    _log(f"check_devtool_setup agy={use_agy} ready={all_ready}")
     return {
         "mcp_registered": mcp_registered,
         "permission_allowed": permission_allowed,
         "chrome_available": chrome_available,
         "profile_exists": profile_exists,
         "cdp_listening": cdp_listening,
-        "all_ready": all_ready
+        "all_ready": all_ready,
+        **extra,
     }
 
 
