@@ -326,7 +326,13 @@ DAU_NOI_DUOC = ("✔", "✓", "connected")
 
 
 def _cau_hinh_lsp():
-    """The `lsp` entry of ~/.claude.json — the DECLARED language servers plus their env."""
+    """The `lsp` entry of active host MCP config — DECLARED language servers plus env."""
+    if tdq_lsp._is_antigravity_host():
+        for cand in tdq_lsp._agy_mcp_configs():
+            entry = (tdq_lsp._doc_json(cand).get("mcpServers") or {}).get(MCP_LSP)
+            if isinstance(entry, dict):
+                return entry
+        return {}
     with open(CAU_HINH_CLAUDE, encoding="utf-8") as f:
         return (json.load(f).get("mcpServers") or {}).get(MCP_LSP) or {}
 
@@ -361,7 +367,7 @@ def _doc_mcp(ket_qua):
 def _doc_khai_bao(args):
     """Split the declared `<lang>:<binary>,<flags>` arguments into (lang, binary) pairs."""
     khai = []
-    for arg in args or []:
+    for arg in tdq_lsp._filter_doctor_args(args):
         lang, dau, phan_con_lai = str(arg).partition(":")
         if dau:
             khai.append({"lang": lang, "binary": phan_con_lai.split(",")[0]})
@@ -426,17 +432,73 @@ def _ghep_lsp(khai_bao, trang_thai, chi_tiet):
     }
 
 
-def thu_thuc_nhan():
-    """The "declared versus received" block: MCP servers and language servers, probed live.
+def _agy_mcp_servers():
+    """Collect configured MCP servers across Antigravity mcp_config.json files."""
+    merged = {}
+    for cand in reversed(tdq_lsp._agy_mcp_configs()):
+        servers = tdq_lsp._doc_json(cand).get("mcpServers")
+        if isinstance(servers, dict):
+            for name, entry in servers.items():
+                if isinstance(entry, dict):
+                    merged[str(name)] = entry
+    return merged
 
-    Nothing here is read off a config file alone. `claude mcp list` is the only authority on
-    what Claude Code registered, and `agent-lsp doctor` starts every declared language server
-    for real — the case that motivated this page was a server declared fine and dead on the
-    first request.
-    """
-    mcp_ket_qua = _run_tool("claude", ["mcp", "list"],
-                            goi_y="cài Claude Code CLI để đọc danh sách MCP")
-    server, mcp_chi_tiet = _doc_mcp(mcp_ket_qua)
+
+def _parse_agy_enabled_servers(agy_res):
+    """Extract enabled MCP server names and tdq-workflow-agy enabled state from agy JSON."""
+    if not (agy_res["co"] and agy_res["chay_duoc"] and agy_res["ma"] == 0):
+        return set(), None, ""
+    try:
+        plugins = json.loads(agy_res["ra"] or "[]")
+    except ValueError:
+        return set(), None, "unparseable `agy plugin list --json` output"
+    if not isinstance(plugins, list):
+        return set(), None, ""
+    enabled_servers = set()
+    plugin_enabled = None
+    for item in plugins:
+        if not isinstance(item, dict):
+            continue
+        if item.get("name") == "tdq-workflow-agy":
+            plugin_enabled = bool(item.get("enabled"))
+        if item.get("enabled"):
+            enabled_servers.update(str(s) for s in (item.get("mcpServers") or []))
+    return enabled_servers, plugin_enabled, ""
+
+
+def _thu_mcp_agy():
+    """Read Antigravity MCP servers from mcp_config.json and `agy plugin list --json`."""
+    agy_res = _run_tool("agy", ["plugin", "list", "--json"],
+                        goi_y="install Antigravity CLI (`agy`)")
+    enabled_servers, plugin_enabled, chi_tiet = _parse_agy_enabled_servers(agy_res)
+    servers_map = _agy_mcp_servers()
+    rows = []
+    for name, entry in servers_map.items():
+        cmd = str(entry.get("command") or "")
+        args_str = " ".join(str(a) for a in (entry.get("args") or []))
+        target = mask_secrets(f"{cmd} {args_str}".strip())
+        connected = bool(cmd) and (
+            name in enabled_servers or plugin_enabled is True or plugin_enabled is None
+        )
+        rows.append({
+            "ten": name,
+            "dich": target,
+            "trang_thai": "✔ Enabled" if connected else "disabled",
+            "noi_duoc": connected,
+        })
+    if not rows and not chi_tiet:
+        chi_tiet = "no MCP servers found in Antigravity mcp_config.json"
+    return rows, chi_tiet
+
+
+def thu_thuc_nhan():
+    """The "declared versus received" block: MCP servers and language servers, probed live."""
+    if tdq_lsp._is_antigravity_host():
+        server, mcp_chi_tiet = _thu_mcp_agy()
+    else:
+        mcp_ket_qua = _run_tool("claude", ["mcp", "list"],
+                                goi_y="cài Claude Code CLI để đọc danh sách MCP")
+        server, mcp_chi_tiet = _doc_mcp(mcp_ket_qua)
 
     try:
         cau_hinh = _cau_hinh_lsp()
@@ -444,8 +506,9 @@ def thu_thuc_nhan():
     except (OSError, ValueError) as err:
         cau_hinh, loi_cau_hinh = {}, f"không đọc được {CAU_HINH_CLAUDE}: {err}"
 
-    khai_bao = _doc_khai_bao(cau_hinh.get("args"))
-    doctor = _run_tool("agent-lsp", ["doctor"] + list(cau_hinh.get("args") or []),
+    doctor_args = tdq_lsp._filter_doctor_args(cau_hinh.get("args"))
+    khai_bao = _doc_khai_bao(doctor_args)
+    doctor = _run_tool("agent-lsp", ["doctor"] + doctor_args,
                        goi_y="cài agent-lsp để dò sống language server",
                        env=cau_hinh.get("env") or None)
     if not doctor["co"]:
