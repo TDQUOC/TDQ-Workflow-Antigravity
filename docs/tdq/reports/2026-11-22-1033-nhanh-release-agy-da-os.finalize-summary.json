@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1033-nhanh-release-agy-da-os\\.tmp.bao-cao.archify.bfc8a560b61c4b5cb8e6e27e699e5e5e.md",
+    "sha256": "8819d753e9ea23ae3d520a74efaed4d84cde28a5c6593954e7e28156d46ebdac",
+    "bytes": 1657
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os.e3f179de27dd460fb56a602f927d44ef.html",
+    "sha256": "724befe45386901d2538219ad57ff0069a9f34dcff1f38fb07af4d219a3a2ba0",
+    "bytes": 869579
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 30 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1033-nhanh-release-agy-da-os\\.tmp.bao-cao.archify.bfc8a560b61c4b5cb8e6e27e699e5e5e.md",
+        "line": 33,
+        "component": "prose",
+        "panelId": "da-he-dieu-hanh"
+      },
+      "evidence": {
+        "reason": "Sentence has 30 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 30,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os.e3f179de27dd460fb56a602f927d44ef.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os.e3f179de27dd460fb56a602f927d44ef.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1849,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

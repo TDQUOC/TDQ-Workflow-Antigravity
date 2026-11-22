@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d83d0326-a693-4c33-89f7-51e32e588530",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-1033-nhanh-release-agy-da-os\\.tmp.bao-cao.archify.bfc8a560b61c4b5cb8e6e27e699e5e5e.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-1033-nhanh-release-agy-da-os.e3f179de27dd460fb56a602f927d44ef.html",
+  "specification": {
+    "sha256": "8819d753e9ea23ae3d520a74efaed4d84cde28a5c6593954e7e28156d46ebdac",
+    "bytes": 1657
+  },
+  "artifact": {
+    "sha256": "724befe45386901d2538219ad57ff0069a9f34dcff1f38fb07af4d219a3a2ba0",
+    "bytes": 869579
+  },
+  "explainer": {
+    "preparedSha256": "e58df36b1ca5dde6fe16b65c5ae8d632decf1b783daa9234c6a80ed213dd9eb7",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-release-flow",
+        "inline": true,
+        "sha256": "63f79714a0478a0d1fbb9e0a165fb42def114525c3cfca13e3c70c35fe550f24",
+        "bytes": 1223
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-multi-os-runtime",
+        "inline": true,
+        "sha256": "6bf184eb7f157bea05b3a481be16faec353186455af64201a567bc09a449544f",
+        "bytes": 991
+      }
+    ]
+  }
+}
