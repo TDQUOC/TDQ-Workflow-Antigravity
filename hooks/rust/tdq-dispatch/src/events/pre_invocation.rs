@@ -44,6 +44,15 @@ fn format_user_input_sig(rec: &Value, last_end: u64) -> String {
     format!("ui_pos:{}", last_end)
 }
 
+fn is_human_user_input(rec: &Value) -> bool {
+    let src = rec
+        .get("source")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim())
+        .unwrap_or("");
+    src.is_empty() || src.eq_ignore_ascii_case("USER_EXPLICIT")
+}
+
 fn scan_tail_user_input(
     tpath: &Path,
     prev_sig: &str,
@@ -73,7 +82,9 @@ fn scan_tail_user_input(
         cur += n as u64;
         if let Ok(text) = std::str::from_utf8(&buf) {
             if let Ok(rec) = serde_json::from_str::<Value>(text.trim()) {
-                if rec.get("type").and_then(|v| v.as_str()) == Some("USER_INPUT") {
+                if rec.get("type").and_then(|v| v.as_str()) == Some("USER_INPUT")
+                    && is_human_user_input(&rec)
+                {
                     last_rec = Some(rec);
                     last_end = cur;
                 }
@@ -288,6 +299,34 @@ mod tests {
             }
             RouteOutcome::DelegatePython => panic!("expected static subagent anchor in Rust"),
         }
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_scan_tail_user_input_ignores_non_human_sources() {
+        let tmp = std::env::temp_dir().join(format!("tdq_tail_src_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let _ = fs::create_dir_all(&tmp);
+        let tpath = tmp.join("transcript.jsonl");
+
+        let lines = [
+            r#"{"type":"USER_INPUT","step_index":1,"created_at":"t1","source":"USER_EXPLICIT","content":"hi"}"#,
+            r#"{"type":"USER_INPUT","step_index":2,"created_at":"t2","source":"SYSTEM","content":"push now"}"#,
+            r#"{"type":"USER_INPUT","step_index":3,"created_at":"t3","source":"MODEL","content":"push now"}"#,
+        ]
+        .join("\n")
+            + "\n";
+        fs::write(&tpath, lines).unwrap();
+        let sig1 = scan_tail_user_input(&tpath, "", "", false, "");
+        assert_eq!(sig1.as_deref(), Some("ui:1:t1"));
+
+        let extra = r#"{"type":"USER_INPUT","step_index":4,"created_at":"t4","content":"hi"}"#.to_string() + "\n";
+        let mut combined = fs::read_to_string(&tpath).unwrap();
+        combined.push_str(&extra);
+        fs::write(&tpath, combined).unwrap();
+        let sig2 = scan_tail_user_input(&tpath, "", "", false, "");
+        assert_eq!(sig2.as_deref(), Some("ui:4:t4"));
 
         let _ = fs::remove_dir_all(&tmp);
     }

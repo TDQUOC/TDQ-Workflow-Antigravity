@@ -478,6 +478,213 @@ class TestAgySmartHardeningStaged(unittest.TestCase):
         msg_qc = str(p_qc.get("injectSteps", [{}])[0].get("systemMessage", {}).get("systemMessage", ""))
         self.assertIn("[TDQ:QC]", msg_qc)
 
+    def _load_staged_module(self, mod_name):
+        import importlib.util
+
+        scripts_dir = str(self.plugin / "scripts")
+        hooks_dir = str(self.plugin / "hooks" / "scripts")
+        saved_path = list(sys.path)
+        saved_mods = {k: sys.modules.get(k) for k in ("utf8_io", "tdq_state", "search_rules", "_common", mod_name)}
+        try:
+            for key in list(saved_mods):
+                sys.modules.pop(key, None)
+            sys.path[:0] = [hooks_dir, scripts_dir]
+            spec = importlib.util.spec_from_file_location(mod_name, self.plugin / "hooks" / "scripts" / f"{mod_name}.py")
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[mod_name] = mod
+            spec.loader.exec_module(mod)
+            return mod
+        finally:
+            for key, old in saved_mods.items():
+                if old is None:
+                    sys.modules.pop(key, None)
+                else:
+                    sys.modules[key] = old
+            sys.path[:] = saved_path
+
+    def test_extract_git_grants_positive_and_blockers(self):
+        pc = self._load_staged_module("prompt_context")
+        self.assertEqual(pc.extract_git_grants("ok push lên origin đi"), ["push"])  # i18n-allow
+        self.assertEqual(pc.extract_git_grants("chạy git reset --hard"), ["reset_hard"])  # i18n-allow
+        self.assertEqual(pc.extract_git_grants("cho phép git clean -fd"), ["clean_f"])  # i18n-allow
+        self.assertEqual(
+            pc.extract_git_grants("cho phép git reset --hard và git clean -fd rồi push lên origin"),  # i18n-allow
+            ["clean_f", "push", "reset_hard"],
+        )
+        for blocked in (
+            "không push nhé",  # i18n-allow
+            "don't git reset --hard",
+            "never clean -fd",
+            "có nên git push không?",  # i18n-allow
+            '"git push origin dev"',
+            'the user said: "git push"',
+            'người dùng nói: "git reset --hard"',  # i18n-allow
+            "mở request update hook cho phép git push",  # i18n-allow
+        ):
+            with self.subTest(blocked=blocked):
+                self.assertEqual(pc.extract_git_grants(blocked), [])
+
+    def test_transcript_user_input_sources_and_mark_turn_closed(self):
+        from pathlib import Path
+
+        self._init_implement(plan_text="- [x] **T1** a\n")
+        tr_sys = Path(self._tmp.name) / "tr_sys.jsonl"
+        tr_sys.write_text(
+            json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "SYSTEM", "created_at": "2026-11-22T01:00:00Z", "content": "git push origin dev"}) + "\n"
+            + json.dumps({"step_index": 2, "type": "USER_INPUT", "source": "MODEL", "created_at": "2026-11-22T01:01:00Z", "content": "git reset --hard"}) + "\n",
+            encoding="utf-8",
+        )
+        self._run_staged("PreInvocation", {"conversationId": "conv-tr-sys", "transcriptPath": str(tr_sys)})
+        meta_sys = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-conv-tr-sys.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta_sys["git_grants"], [])
+
+        tr_exp = Path(self._tmp.name) / "tr_exp.jsonl"
+        tr_exp.write_text(
+            json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T01:02:00Z", "content": "ok push lên origin đi"}) + "\n"  # i18n-allow
+            + json.dumps({"step_index": 2, "type": "USER_INPUT", "source": "SYSTEM", "created_at": "2026-11-22T01:03:00Z", "content": "git reset --hard"}) + "\n",
+            encoding="utf-8",
+        )
+        self._run_staged("PreInvocation", {"conversationId": "conv-tr-exp", "transcriptPath": str(tr_exp)})
+        meta_exp = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-conv-tr-exp.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta_exp["git_grants"], ["push"])
+
+        tr_blank = Path(self._tmp.name) / "tr_blank.jsonl"
+        tr_blank.write_text(
+            json.dumps({"step_index": 1, "type": "USER_INPUT", "content": "git clean -fd"}) + "\n",
+            encoding="utf-8",
+        )
+        self._run_staged("PreInvocation", {"conversationId": "conv-tr-blank", "transcriptPath": str(tr_blank)})
+        meta_blank = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-conv-tr-blank.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta_blank["git_grants"], ["clean_f"])
+
+        common_mod = self._load_staged_module("_common")
+        common_mod.mark_turn_closed(str(self.project), "conv-tr-exp")
+        closed_meta = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-conv-tr-exp.json").read_text(encoding="utf-8"))
+        self.assertTrue(closed_meta["turn_closed"])
+        self.assertEqual(closed_meta["git_grants"], [])
+
+    def test_runtime_dir_lock_on_agy_pretooluse_and_edit_gate(self):
+        import agy_pretooluse_gate
+
+        self.assertTrue(agy_pretooluse_gate._writes_state("echo {} > docs/tdq/.tdq-runtime/turn-meta-s1.json"))
+        self.assertTrue(agy_pretooluse_gate._writes_state(r"echo {} > docs\tdq\.tdq-runtime\turn-meta-s1.json"))
+        self.assertFalse(agy_pretooluse_gate._writes_state("cat docs/tdq/.tdq-runtime/turn-meta-s1.json"))
+
+        rc, out, _ = agy("agy_pretooluse_gate.py", {"tool_input": {"command": r"echo {} > docs\tdq\.tdq-runtime\turn-meta-s1.json"}})
+        self.assertEqual(rc, 0)
+        self.assertEqual(parsed(out).get("decision"), "deny")
+        self.assertIn("TDQ:STATE", parsed(out).get("reason", ""))
+
+        rc_ed, out_ed, _ = agy("edit_gate.py", {"cwd": str(self.project), "tool_input": {"file_path": str(self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-s1.json")}})
+        self.assertEqual(rc_ed, 0)
+        self.assertEqual(parsed(out_ed).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+        self.assertIn("TDQ:STATE", out_ed)
+
+        self._init_implement(plan_text="- [~] **T1** a\n")
+        for tool_name, target in (
+            ("edit_file", str(self.project / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-s1.json")),
+            ("write_to_file", r"docs\tdq\.tdq-runtime\turns-s1.jsonl"),
+        ):
+            res = self._run_staged("PreToolUse", {"tool_name": tool_name, "tool_input": {"TargetFile": target}})
+            self.assertEqual(res.get("decision"), "deny")
+            self.assertIn("TDQ:STATE", res.get("reason", ""))
+
+    def test_patched_prompt_context_and_bash_gate_tdq_log_1_vs_0(self):
+        pc_script = str(self.plugin / "hooks" / "scripts" / "prompt_context.py")
+        bg_script = str(self.plugin / "hooks" / "scripts" / "bash_gate.py")
+        self._init_implement(plan_text="- [~] **T1** a\n")
+
+        for log_val in ("1", "0"):
+            env = dict(os.environ, TDQ_PROJECT_DIR=str(self.project), TDQ_LOG=log_val, TDQ_RTK="0", RTK_DISABLED="1")
+            pc_proc = subprocess.run(
+                [sys.executable, "-X", "utf8", pc_script, "--event", "PreInvocation"],
+                input=json.dumps({"cwd": str(self.project), "conversationId": f"conv-log-{log_val}", "prompt": "ok push lên origin đi"}, ensure_ascii=False),  # i18n-allow
+                capture_output=True, text=True, encoding="utf-8", env=env, timeout=30, check=False,
+            )
+            self.assertEqual(pc_proc.returncode, 0, pc_proc.stderr)
+            bg_proc = subprocess.run(
+                [sys.executable, "-X", "utf8", bg_script, "--event", "PreToolUse"],
+                input=json.dumps({"cwd": str(self.project), "conversationId": f"conv-log-{log_val}", "toolName": "run_command", "toolInput": {"CommandLine": "git push origin dev"}}, ensure_ascii=False),
+                capture_output=True, text=True, encoding="utf-8", env=env, timeout=30, check=False,
+            )
+            self.assertEqual(bg_proc.returncode, 0, bg_proc.stderr)
+            self.assertEqual(json.loads(bg_proc.stdout.strip()).get("decision"), "allow")
+            if log_val == "1":
+                self.assertIn("[20", pc_proc.stderr)
+                self.assertIn("[20", bg_proc.stderr)
+            else:
+                self.assertEqual(pc_proc.stderr, "")
+                self.assertEqual(bg_proc.stderr, "")
+
+    def test_qc1_stale_sig_no_remint_and_windows_case_and_agentid(self):
+        from pathlib import Path
+
+        self._init_implement(plan_text="- [x] **T1** a\n")
+        sid = "conv-qc1-stale"
+        tr = Path(self._tmp.name) / "tr_qc1.jsonl"
+        tr.write_text(json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:00:00Z", "content": "ok push lên origin đi"}) + "\n", encoding="utf-8")  # i18n-allow
+        self._run_staged("PreInvocation", {"conversationId": sid, "transcriptPath": str(tr)})
+        common_mod = self._load_staged_module("_common")
+        common_mod.mark_turn_closed(str(self.project), sid)
+
+        for replay in (
+            {"conversationId": sid, "transcriptPath": str(tr)},
+            {"conversationId": sid, "transcriptPath": str(tr), "source": "resume"},
+            {"conversationId": sid, "transcriptPath": str(tr), "source": "compact"},
+        ):
+            self._run_staged("PreInvocation", replay)
+            meta = json.loads((self.project / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json").read_text(encoding="utf-8"))
+            self.assertEqual(meta["git_grants"], [])
+            deny = self._run_staged("PreToolUse", {"conversationId": sid, "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+            self.assertEqual(deny.get("decision"), "deny")
+
+        tr.write_text(tr.read_text(encoding="utf-8") + json.dumps({"step_index": 2, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:02:00Z", "content": "ok push lên origin đi"}) + "\n", encoding="utf-8")  # i18n-allow
+        self._run_staged("PreInvocation", {"conversationId": sid, "transcriptPath": str(tr)})
+        allow = self._run_staged("PreToolUse", {"conversationId": sid, "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+        self.assertEqual(allow.get("decision"), "allow")
+        sub_deny = self._run_staged("PreToolUse", {"conversationId": sid, "agentId": "sub-camel", "tool_name": "run_command", "tool_input": {"CommandLine": "git push origin dev"}})
+        self.assertEqual(sub_deny.get("decision"), "deny")
+
+        rc_win, out_win, _ = agy("edit_gate.py", {"cwd": str(self.project), "tool_input": {"file_path": str(self.project / "Docs" / "Tdq" / ".tdq-runtime" / "turn-meta-s1.json")}})
+        self.assertEqual(rc_win, 0)
+        self.assertEqual(parsed(out_win).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+        res_st = self._run_staged("PreToolUse", {"tool_name": "edit_file", "tool_input": {"TargetFile": str(self.project / "DOCS" / "TDQ" / "STATE.JSON")}})
+        self.assertEqual(res_st.get("decision"), "deny")
+
+    def test_qc2_agy_pretooluse_fd_cd_branch_and_unpatched_edit_agentid(self):
+        for cmd, code in (
+            ("1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}", "TDQ:STATE"),
+            ("cd docs/tdq/.tdq-runtime && echo {} > sessions.json", "TDQ:STATE"),
+            ("git switch -C claude-x", "TDQ:GIT"),
+            ("git checkout -B gemini-x", "TDQ:GIT"),
+        ):
+            with self.subTest(cmd=cmd):
+                rc, out, _ = agy("agy_pretooluse_gate.py", {"tool_input": {"command": cmd}})
+                self.assertEqual(rc, 0)
+                self.assertEqual(parsed(out).get("decision"), "deny")
+                self.assertIn(code, parsed(out).get("reason", ""))
+
+        rc_ed, out_ed, _ = agy("edit_gate.py", {
+            "cwd": str(self.project),
+            "agentId": "sub-raw-1",
+            "tool_input": {"file_path": str(self.project / "docs" / "tdq" / "state.json")},
+        })
+        self.assertEqual(rc_ed, 0)
+        self.assertEqual(parsed(out_ed).get("hookSpecificOutput", {}).get("permissionDecision"), "deny")
+        self.assertIn("TDQ:STATE", out_ed)
+
+    def test_qc3_agy_pretooluse_git_dir_and_block_comment_guards(self):
+        for cmd, code in (
+            ("git --git-dir /tmp/g switch -C claude-x", "TDQ:GIT"),
+            ("git --work-tree /tmp/w checkout -B gemini-x", "TDQ:GIT"),
+            ("<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json", "TDQ:STATE"),
+        ):
+            with self.subTest(cmd=cmd):
+                rc, out, _ = agy("agy_pretooluse_gate.py", {"tool_input": {"command": cmd}})
+                self.assertEqual(rc, 0)
+                self.assertEqual(parsed(out).get("decision"), "deny")
+                self.assertIn(code, parsed(out).get("reason", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

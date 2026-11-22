@@ -1,5 +1,6 @@
 """Golden Parity Test Suite: verify 1-1 behavioral parity across 22 AGY gates x 6 events."""
 import atexit
+import base64
 import json
 import os
 import re
@@ -1068,4 +1069,279 @@ def test_fallback_python_engine_clean_stdout_parity(tmp_path: Path) -> None:
         assert any(ISO_TS_RE.match(ln) and "cold-forced" in ln for ln in proc_py.stderr.splitlines())
         rust_out = run_rust_hook(event, payload_fn(r_ctx[0]), *r_ctx)
         assert_full_json_parity(rust_out, py_out)
+
+
+def _cmd_payload(repo: Path, sid: str, cmd: str, **extra) -> dict:
+    """Build a PreToolUse run_command payload for twin parity assertions."""
+    body = {"cwd": str(repo), "conversationId": sid, "toolName": "run_command", "toolInput": {"CommandLine": cmd}}
+    body.update(extra)
+    return body
+
+
+def _assert_cmd_deny_git(r_ctx: tuple[Path, Path], p_ctx: tuple[Path, Path], sid: str, cmd: str, **extra) -> None:
+    """Verify both Rust and Python deny a run_command call with [TDQ:GIT]."""
+    r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, sid, cmd, **extra))
+    assert_full_json_parity(r_out, p_out, expected_code="GIT")
+    assert r_out["decision"] == "deny", f"Expected GIT deny for {cmd!r}, got {r_out}"
+
+
+def _assert_cmd_allow_with_grant(r_ctx: tuple[Path, Path], p_ctx: tuple[Path, Path], sid: str, cmd: str, grant: str) -> None:
+    """Verify both engines allow the granted git command and observe git_grant_used."""
+    r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, sid, cmd))
+    assert_full_json_parity(r_out, p_out)
+    assert r_out == {"decision": "allow"}, f"Expected allow for {cmd!r}, got {r_out}"
+    for repo, _ in (r_ctx, p_ctx):
+        turns_file = repo / "docs" / "tdq" / ".tdq-runtime" / f"turns-{sid}.jsonl"
+        rows = [json.loads(ln) for ln in turns_file.read_text(encoding="utf-8").splitlines() if ln.strip()]
+        assert any(
+            row.get("kind") == "observe" and row.get("event") == "git_grant_used" and grant in (row.get("grants") or [])
+            for row in rows
+        ), f"Missing git_grant_used={grant!r} in {turns_file}"
+
+
+def _write_turn_meta_twin(r_ctx: tuple[Path, Path], p_ctx: tuple[Path, Path], sid: str, raw_text: str) -> None:
+    """Write identical turn-meta-<sid>.json bytes into both twin repositories."""
+    for repo, _ in (r_ctx, p_ctx):
+        meta_path = repo / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json"
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        meta_path.write_text(raw_text, encoding="utf-8")
+
+
+def test_git_approval_default_and_single_turn_push_grant_parity(tmp_path: Path) -> None:
+    """Verify default git deny and single-turn push grant enforcement across Rust and Python."""
+    r_def, p_def = _setup_twin_repos(tmp_path / "def", "2026-11-22-0101-gitdef")
+    for cmd in ("git push origin dev", "git reset --hard HEAD~1", "git clean -fd"):
+        _assert_cmd_deny_git(r_def, p_def, "c-git-def", cmd)
+
+    r_push, p_push = _setup_twin_repos(tmp_path / "push", "2026-11-22-0102-gitpush")
+    sid = "c-git-push"
+    _run_twin(r_push, p_push, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "prompt": "ok push lên origin đi"})  # i18n-allow
+    for repo, _ in (r_push, p_push):
+        meta = json.loads((repo / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json").read_text(encoding="utf-8"))
+        assert meta["turn_closed"] is False and meta["git_grants"] == ["push"]
+
+    _assert_cmd_allow_with_grant(r_push, p_push, sid, "git push origin dev", "push")
+    for blocked in (
+        "git reset --hard HEAD~1",
+        "git push origin dev && git reset --hard HEAD~1",
+        "git push --force origin dev",
+        "git push -f origin dev",
+        "git push --force-with-lease origin dev",
+        "git push origin +HEAD:dev",
+        'git commit -m "feat: ok" -m "Co-Authored-By: Claude <noreply@anthropic.com>"',
+        "git checkout -b gemini-bad",
+    ):
+        _assert_cmd_deny_git(r_push, p_push, sid, blocked)
+
+
+def test_git_separate_grants_reset_hard_and_clean_f_parity(tmp_path: Path) -> None:
+    """Verify reset_hard and clean_f grants remain isolated per command across both engines."""
+    r_rst, p_rst = _setup_twin_repos(tmp_path / "rst", "2026-11-22-0103-gitrst")
+    _run_twin(r_rst, p_rst, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": "c-rst", "prompt": "chạy git reset --hard"})  # i18n-allow
+    _assert_cmd_allow_with_grant(r_rst, p_rst, "c-rst", "git reset --hard HEAD~1", "reset_hard")
+    _assert_cmd_deny_git(r_rst, p_rst, "c-rst", "git clean -fd")
+    _assert_cmd_deny_git(r_rst, p_rst, "c-rst", "git push origin dev")
+
+    r_cln, p_cln = _setup_twin_repos(tmp_path / "cln", "2026-11-22-0104-gitcln")
+    _run_twin(r_cln, p_cln, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": "c-cln", "prompt": "cho phép git clean -fd"})  # i18n-allow
+    _assert_cmd_allow_with_grant(r_cln, p_cln, "c-cln", "git clean -fd", "clean_f")
+    _assert_cmd_deny_git(r_cln, p_cln, "c-cln", "git reset --hard HEAD~1")
+    _assert_cmd_deny_git(r_cln, p_cln, "c-cln", "git push origin dev")
+
+
+def test_git_closed_turn_subagent_and_corrupt_meta_deny_parity(tmp_path: Path) -> None:
+    """Verify closed turn, subagent role, and corrupt turn-meta JSON all deny protected git."""
+    r_cls, p_cls = _setup_twin_repos(tmp_path / "cls", "2026-11-22-0105-gitcls")
+    _write_turn_meta_twin(r_cls, p_cls, "c-cls", json.dumps({"last_user_sig": "s1", "turn_closed": True, "git_grants": ["push"]}))
+    _assert_cmd_deny_git(r_cls, p_cls, "c-cls", "git push origin dev")
+
+    r_sub, p_sub = _setup_twin_repos(tmp_path / "sub", "2026-11-22-0106-gitsub")
+    _write_turn_meta_twin(r_sub, p_sub, "c-sub", json.dumps({"last_user_sig": "s2", "turn_closed": False, "git_grants": ["push"]}))
+    _assert_cmd_deny_git(r_sub, p_sub, "c-sub", "git push origin dev", agent_type="tdq-implementer")
+
+    r_bad, p_bad = _setup_twin_repos(tmp_path / "bad", "2026-11-22-0107-gitbad")
+    _write_turn_meta_twin(r_bad, p_bad, "c-bad", "{not-valid-json")
+    _assert_cmd_deny_git(r_bad, p_bad, "c-bad", "git push origin dev")
+
+
+def test_git_false_positives_and_nested_wrapper_parity(tmp_path: Path) -> None:
+    """Verify harmless CLI/commit args allow while nested bash -c force-push denies."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path, "2026-11-22-0108-gitfp")
+    for safe_cmd in (
+        'py -3 scripts/skill_inventory.py --loc "hook git push"',
+        'git commit -m "docs: git push"',
+    ):
+        r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r, c=safe_cmd: _cmd_payload(r, "c-fp", c))
+        assert_full_json_parity(r_out, p_out)
+        assert r_out == {"decision": "allow"}
+
+    _assert_cmd_deny_git(r_ctx, p_ctx, "c-fp", 'bash -c "git -C repo push --force origin dev"')
+
+
+def test_tdq_runtime_lock_edit_and_redirect_parity(tmp_path: Path) -> None:
+    """Verify edit/write tools and shell redirects targeting .tdq-runtime/ deny with [TDQ:STATE]."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path, "2026-11-22-0109-rtlock")
+    for tool_name in ("write_to_file", "edit_file"):
+        r_out, p_out = _run_twin(
+            r_ctx,
+            p_ctx,
+            "PreToolUse",
+            lambda r, tn=tool_name: {
+                "cwd": str(r),
+                "conversationId": "c-rtlock",
+                "toolName": tn,
+                "toolInput": {"TargetFile": str(r / "docs" / "tdq" / ".tdq-runtime" / "turn-meta-s1.json")},
+            },
+        )
+        assert_full_json_parity(r_out, p_out, expected_code="STATE")
+        assert r_out["decision"] == "deny"
+
+    r_sh, p_sh = _run_twin(
+        r_ctx,
+        p_ctx,
+        "PreToolUse",
+        lambda r: _cmd_payload(r, "c-rtlock", "echo {} > docs/tdq/.tdq-runtime/turn-meta-s1.json"),
+    )
+    assert_full_json_parity(r_sh, p_sh, expected_code="STATE")
+    assert r_sh["decision"] == "deny"
+
+
+def test_step3b_intake_branch_exemption_parity(tmp_path: Path) -> None:
+    """Verify pure Step-3b branch creation is exempt in analyze but blocked when chained or in spec."""
+    r_an, p_an = _setup_twin_repos(tmp_path / "an", "2026-11-22-0110-s3b", phase="analyze", spec_approved=False, plan_approved=False)
+    r_ok, p_ok = _run_twin(r_an, p_an, "PreToolUse", lambda r: _cmd_payload(r, "c-s3b", "git switch -c feature/demo"))
+    assert_full_json_parity(r_ok, p_ok)
+    assert r_ok == {"decision": "allow"}
+
+    r_ch, p_ch = _run_twin(r_an, p_an, "PreToolUse", lambda r: _cmd_payload(r, "c-s3b", "git switch -c feature/demo; echo a > src/x.py"))
+    assert_full_json_parity(r_ch, p_ch, expected_code="APPROVE")
+    assert r_ch["decision"] == "deny"
+
+    r_sp, p_sp = _setup_twin_repos(tmp_path / "sp", "2026-11-22-0111-s3bsp", phase="spec", spec_approved=False, plan_approved=False)
+    for repo, fake_home in (r_sp, p_sp):
+        (repo / "docs" / "tdq" / "spec" / "x.md").write_text("# Spec X\n", encoding="utf-8")
+        _run_state_cli(repo, fake_home, "set", "spec_file=docs/tdq/spec/x.md")
+    r_den, p_den = _run_twin(r_sp, p_sp, "PreToolUse", lambda r: _cmd_payload(r, "c-s3bsp", "git switch -c feature/demo"))
+    assert_full_json_parity(r_den, p_den, expected_code="APPROVE")
+    assert r_den["decision"] == "deny"
+
+
+def test_git_grant_tdq_log_1_vs_0_rust_and_python_dispatch(tmp_path: Path) -> None:
+    """Verify TDQ_LOG=1 emits ISO timestamp ([20...) and TDQ_LOG=0 mutes stderr on Rust and Python."""
+    repo, fake_home = _setup_request_repo(tmp_path / "log_git", "2026-11-22-0112-loggit")
+    sid = "c-log-git"
+    meta_path = repo / "docs" / "tdq" / ".tdq-runtime" / f"turn-meta-{sid}.json"
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
+    meta_path.write_text(json.dumps({"last_user_sig": "s1", "turn_closed": False, "git_grants": ["push"]}), encoding="utf-8")
+    payload = _cmd_payload(repo, sid, "git push origin dev")
+
+    for cmd in (
+        [str(RUST_BIN), "--event", "PreToolUse"],
+        [sys.executable, "-X", "utf8", str(PYTHON_DISPATCH), "--event", "PreToolUse"],
+    ):
+        env_on = _isolated_env(repo, fake_home, keep_log=True, extra_env={"TDQ_LOG": "1"})
+        proc_on, out_on = _invoke_hook_raw(cmd, payload, repo, env_on)
+        assert out_on == {"decision": "allow"}
+        assert "[20" in proc_on.stderr, f"Missing ISO timestamp on stderr for {cmd}: {proc_on.stderr!r}"
+
+        env_off = _isolated_env(repo, fake_home, keep_log=False, extra_env={"TDQ_LOG": "0"})
+        proc_off, out_off = _invoke_hook_raw(cmd, payload, repo, env_off)
+        assert out_off == {"decision": "allow"}
+        assert proc_off.stderr == "", f"Expected empty stderr for {cmd} with TDQ_LOG=0, got {proc_off.stderr!r}"
+
+
+def test_qc1_security_command_and_state_parity(tmp_path: Path) -> None:
+    """Verify Findings #1-#3 state, herestring, wrapper, and branch parity on real binaries."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "sec1", "2026-11-22-0201-qc1cmd")
+    for state_cmd in (
+        "echo {} > docs/tdq/sub/../.tdq-runtime/turn-meta-1.json",
+        "cd docs/tdq && echo {} > state.json",
+        "sc docs/tdq/state.json x",
+        "python -c \"import shutil; shutil.copy('a', 'docs/tdq/.tdq-runtime/x')\"",
+    ):
+        r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r, c=state_cmd: _cmd_payload(r, "c-sec-st", c))
+        assert_full_json_parity(r_out, p_out, expected_code="STATE")
+        assert r_out["decision"] == "deny"
+
+    enc = base64.b64encode("git push origin dev".encode("utf-16-le")).decode("ascii")
+    for wrapped_cmd in (
+        '/bin/bash -c "git push origin dev"',
+        f"pwsh -enc {enc}",
+        'cmd /c"git push origin dev"',
+        '@"\n$(git push origin dev)\n"@',
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-sec-def", wrapped_cmd)
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": "c-sec-gr", "prompt": "ok push lên origin đi"})  # i18n-allow
+    for hard_deny in (
+        'echo "@\'\n$(git push --force origin dev)\n\'@"',
+        'git push -o "" --force origin dev',
+        "git -C repo switch -c claude-a",
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-sec-gr", hard_deny)
+
+
+def test_qc1_security_stale_sig_and_camel_agent_parity(tmp_path: Path) -> None:
+    """Verify Findings #4 stale closed-turn replay and #5 camelCase agentId deny parity."""
+    r_ctx, p_ctx = _setup_twin_repos(
+        tmp_path / "sec2", "2026-11-22-0202-qc1stale", plan_body="- [x] **T1.1** Done\n", with_today_log=True,
+    )
+    sid = "c-qc1-stale"
+    tr_r, tr_p = tmp_path / "tr_qc1_r.jsonl", tmp_path / "tr_qc1_p.jsonl"
+    row1 = json.dumps({"step_index": 1, "type": "USER_INPUT", "source": "USER_EXPLICIT", "created_at": "2026-11-22T02:05:00Z", "content": "ok push lên origin đi"}) + "\n"  # i18n-allow
+    for tr in (tr_r, tr_p):
+        tr.write_text(row1, encoding="utf-8")
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p)})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev", agentId="sub-camel-1")
+    _run_twin(r_ctx, p_ctx, "Stop", lambda r: {"cwd": str(r), "conversationId": sid})
+
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p)})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev")
+    _run_twin(r_ctx, p_ctx, "PreInvocation", lambda r: {"cwd": str(r), "conversationId": sid, "transcriptPath": str(tr_r if r == r_ctx[0] else tr_p), "source": "resume"})
+    _assert_cmd_deny_git(r_ctx, p_ctx, sid, "git push origin dev")
+
+
+def test_qc2_fd_redirect_cd_runtime_and_herestring_parity(tmp_path: Path) -> None:
+    """Verify QC2 round-2 fd-redirect, cd .tdq-runtime, and herestring guards across both engines."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "qc2", "2026-11-22-0301-qc2sec")
+    for state_cmd in (
+        "1> docs/tdq/.tdq-runtime/turn-meta-1.json echo {}",
+        "echo {} 1>> docs/tdq/state.json",
+        "cd docs/tdq/.tdq-runtime && echo {} > sessions.json",
+    ):
+        r_out, p_out = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r, c=state_cmd: _cmd_payload(r, "c-qc2-st", c))
+        assert_full_json_parity(r_out, p_out, expected_code="STATE")
+        assert r_out["decision"] == "deny"
+
+    r_ok, p_ok = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc2-ok", "cd docs/tdq/.tdq-runtime && cat sessions.json"))
+    assert_full_json_parity(r_ok, p_ok)
+    assert r_ok == {"decision": "allow"}
+
+    for hs_cmd in (
+        "@'\n'@; git push --force origin dev; @'\nx\n'@",
+        "echo @'\n' && git push --force origin dev && echo '\n'@",
+        "$x = @'\n' ; git push --force origin dev ; echo '\n'@",
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-qc2-hs", hs_cmd)
+
+
+def test_qc3_comment_injection_and_herestring_delimiter_parity(tmp_path: Path) -> None:
+    """Verify QC3 comment quote neutralization and safe PS comment parity on real binaries."""
+    r_ctx, p_ctx = _setup_twin_repos(tmp_path / "qc3", "2026-11-22-0401-qc3sec")
+    for bad_cmd in (
+        "Write-Output ok # @'\ngit push --force origin dev\n'@\n",
+        "<# ' #> git push --force origin dev # '",
+        'cmd /c "echo ok # & git push --force origin dev"',
+    ):
+        _assert_cmd_deny_git(r_ctx, p_ctx, "c-qc3-git", bad_cmd)
+
+    r_st, p_st = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc3-st", "<# ' #> 1> docs/tdq/.tdq-runtime/turn-meta-1.json"))
+    assert_full_json_parity(r_st, p_st, expected_code="STATE")
+    assert r_st["decision"] == "deny"
+
+    r_ok, p_ok = _run_twin(r_ctx, p_ctx, "PreToolUse", lambda r: _cmd_payload(r, "c-qc3-ok", "<# note #> echo ok"))
+    assert_full_json_parity(r_ok, p_ok)
+    assert r_ok == {"decision": "allow"}
+
 

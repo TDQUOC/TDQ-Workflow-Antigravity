@@ -36,6 +36,7 @@ def _record_spawn_metadata(cwd, payload, tinput, prompt, role):
         or tinput.get("agentId")
         or tinput.get("agent_id")
         or payload.get("agent_id")
+        or payload.get("agentId")
         or ""
     ).strip()
     if role and target_sid:

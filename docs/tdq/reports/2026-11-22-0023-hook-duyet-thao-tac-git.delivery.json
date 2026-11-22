@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "84512231-95b1-4c6e-a87f-b46f2ba37245",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.html",
+  "specification": {
+    "sha256": "91de9eb79319518fcb63d7324744394b8ad0b81ea3896ba4e6c4a87f26f59819",
+    "bytes": 1986
+  },
+  "artifact": {
+    "sha256": "413d11e733f347354b98f387a4b7c8611cb59963086027015434e0f84aef9363",
+    "bytes": 877076
+  },
+  "explainer": {
+    "preparedSha256": "aced30751ea138dfe80cced892d9dfcb9c4792f5add041d1adf8fc8ed6fd391b",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-git-before-after",
+        "inline": true,
+        "sha256": "21618631f53abd188fad46edc83eb9ea065d6518d52ab3f0323cc7e72f7d2f92",
+        "bytes": 1319
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-security-three-rounds",
+        "inline": true,
+        "sha256": "d53402521b9b0443307da90a4a3ebc18a01335e92fca19ccbbcb0ee50b70af9c",
+        "bytes": 1038
+      }
+    ]
+  }
+}

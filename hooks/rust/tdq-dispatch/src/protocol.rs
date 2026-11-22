@@ -363,9 +363,9 @@ pub struct HookPayload {
     pub termination_reason: Option<String>,
     #[serde(rename = "message", default)]
     pub notification_message: Option<String>,
-    #[serde(default)]
+    #[serde(alias = "agentType", default)]
     pub agent_type: Option<String>,
-    #[serde(default)]
+    #[serde(alias = "agentId", default)]
     pub agent_id: Option<String>,
     #[serde(rename = "hookEventName", alias = "hook_event_name", default)]
     pub hook_event_name: Option<String>,
@@ -761,5 +761,13 @@ mod tests {
         assert!(card.contains("- **Chuyện gì:**"));
         let clipped = cap_chars("Tiếng Việt có dấu rất dài vượt ngưỡng cắt ký tự", 15);
         assert!(clipped.chars().count() <= 15);
+    }
+
+    #[test]
+    fn test_payload_agent_camel_case_aliases() {
+        let raw = r#"{"agentType":"tdq-implementer","agentId":"agent-42"}"#;
+        let payload = HookPayload::from_json_str(raw);
+        assert_eq!(payload.agent_type.as_deref(), Some("tdq-implementer"));
+        assert_eq!(payload.agent_id.as_deref(), Some("agent-42"));
     }
 }
