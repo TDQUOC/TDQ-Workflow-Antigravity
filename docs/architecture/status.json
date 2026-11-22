@@ -16,6 +16,7 @@
     "Source file modified: hooks/scripts/session_start.py",
     "Source file modified: hooks/scripts/stop_gate.py",
     "Source file modified: scripts/build_portable.py",
+    "Source file modified: scripts/caveman_config.py",
     "Source file modified: scripts/doc_lint.py",
     "Source file modified: scripts/search_rules.py",
     "Source file modified: scripts/tdq_archify.py",
@@ -5663,9 +5664,12 @@
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
     "Source file added: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb",
     "Source file added: hooks/scripts/subagent_stop.py",
+    "Source file added: scripts/bootstrap.ps1",
+    "Source file added: scripts/bootstrap.sh",
     "Source file added: scripts/tdq_config.py",
     "Source file added: scripts/tdq_meta_gate.py",
     "Source file added: scripts/tdq_plan_scaffold.py",
+    "Source file added: scripts/tdq_setup_probe.mjs",
     "Source file added: scripts/tdq_setup_state.py",
     "Source file added: skills/tdq-browser-test/references/scenario-template.md",
     "Source file added: skills/tdq-build/references/qc-vong-fix.md",
@@ -5673,5 +5677,5 @@
     "Source file added: skills/tdq-plan/references/plan-examples.md",
     "Source file added: skills/tdq-plan/references/planner-rules.md"
   ],
-  "checked_at": "2026-11-22T10:07:16Z"
+  "checked_at": "2026-11-22T10:28:32Z"
 }
