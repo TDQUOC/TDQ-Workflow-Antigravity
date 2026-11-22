@@ -412,7 +412,23 @@ def test_apply_setup_manifest_set_tavily_key_and_post_restart_verify(
     assert len(saved["host_fingerprint"]) == 64
 
     # 3. Verify tdq_setup does NOT import tdq_simulate_verify at top level (created in Wave 4 T2.3)
-    assert "tdq_simulate_verify" not in sys.modules
+    kw_imp: dict = {"capture_output": True, "text": True, "encoding": "utf-8", "timeout": 15}
+    if os.name == "nt":
+        kw_imp["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    probe_imp = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "utf8",
+            "-c",
+            "import sys; sys.path.insert(0, sys.argv[1]); import tdq_setup; "
+            "assert 'tdq_simulate_verify' not in sys.modules",
+            str(SCRIPTS_DIR),
+        ],
+        check=False,
+        **kw_imp,
+    )
+    assert probe_imp.returncode == 0, f"tdq_setup eagerly imported tdq_simulate_verify: {probe_imp.stderr}"
     top_src = (SCRIPTS_DIR / "tdq_setup.py").read_text(encoding="utf-8")
     assert "\nimport tdq_simulate_verify" not in top_src
 
