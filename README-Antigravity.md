@@ -10,8 +10,9 @@ Trên bất kỳ máy nào đã cài `agy` (Antigravity CLI) và `Node.js`:
 agy plugin install https://github.com/TDQUOC/TDQ-Workflow-Antigravity/tree/release/antigravity
 ```
 
-- **Hooks & MCP đa nền tảng:** `hooks.json` chạy qua `node scripts/tdq_hook_launcher.mjs` (tự chọn binary Rust theo OS/arch kèm fallback Python) và `mcp_config.json` chạy qua `node ${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs` cùng `${PLUGIN_DATA}/chrome-devtools-profile`, không còn đường dẫn cứng máy cá nhân.
-- **Khởi tạo công cụ tìm kiếm (LSP / Graphify):** Sau khi bật plugin, chạy `/tdq-setup` hoặc `tdq_setup.py` để kiểm tra `agent-lsp`, Node (`npx`) và Python.
+- **Hooks & MCP đa nền tảng:** `hooks.json` chạy qua `node scripts/tdq_hook_launcher.mjs` (tự chọn binary Rust theo OS/arch kèm fallback Python, hỗ trợ `setup-pending.flag` nối tiếp hậu Restart) và `mcp_config.json` chạy qua `node ${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs` (tích hợp bọc Caveman thuần Node, không dùng `sys.executable`) cùng `${PLUGIN_DATA}/chrome-devtools-profile`, không còn đường dẫn cứng máy cá nhân.
+- **Thiết lập Zero-to-Full (`setupfully tdq-workflow` & `/tdq-setup`):** Trên máy mới chạy Gate-0 (`.\scripts\bootstrap.ps1` hoặc `./scripts/bootstrap.sh`), sau đó gõ `setupfully tdq-workflow` trong Antigravity hoặc chạy `tdq_setup.py --setupfully` / `--scan-json` → restart Antigravity → `--post-restart-verify` để kiểm chứng 6 tầng `T1`–`T6` (`scripts/tdq_simulate_verify.py`, tách `Core Gate` và `Optional Add-on Gate`).
+- **Khởi tạo tìm kiếm 3 tầng & bí mật:** Chạy `py -3 scripts/tdq_lsp.py check` cho LSP/Graphify và `py -3 scripts/tdq_setup.py --set-tavily-key "<key>"` để lưu `TAVILY_API_KEY` vào `secrets.env` riêng tư.
 - **Cập nhật phiên bản mới:** Antigravity không tự kiểm tra hay tự cập nhật plugin cài từ GitHub URL; khi có phiên bản mới trên `release/antigravity`, chạy lại đúng lệnh `agy plugin install` ở trên để ghi đè bản mới.
 
 ## Cấu Trúc Workspace & Công Cụ Dành Cho Nhà Phát Triển

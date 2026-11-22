@@ -83,21 +83,30 @@ Gõ kèm từ khóa "_tdq_direct" trong prompt ──► Tự động khảo sá
 
 ## 4. Hướng Dẫn Setup & Cài Đặt Dependencies Từ A–Z
 
-### 4.1. Thiết lập tự động chỉ với 1 câu lệnh (Khuyên dùng)
+### 4.1. Thiết lập Zero-to-Full tự động (Antigravity & Đa nền tảng)
 
-`TDQ-Workflow` cung cấp công cụ tự phục hồi môi trường (`Self-healing Setup`). Sau khi tải kho mã về máy, bạn chỉ cần chạy:
+`TDQ-Workflow` cung cấp chế độ thiết lập tự phục hồi (`Self-healing Setup`) qua cả lệnh chat **`setupfully tdq-workflow`** (tự cấp quyền user-space chạy Phase 1 → nhắc Restart Antigravity → tự chạy kiểm chứng 6 tầng `--post-restart-verify`) lẫn lệnh `/tdq-setup` (in bảng kê 1 lần để duyệt). Trên máy mới chưa có Python/Node, chạy trước Gate-0 bootstrap:
 
-```bash
-python3 scripts/tdq_setup.py
-# Trên Windows nếu chưa có lệnh python3, chạy bằng:
-python scripts/tdq_setup.py
+```powershell
+# Windows (Gate-0) → tải/kiểm tra Python >= 3.10, Node >= 18 & Rust dispatch
+.\scripts\bootstrap.ps1
+
+# Hoặc chạy trực tiếp phase setup / quét bảng kê JSON:
+py -3 scripts/tdq_setup.py --setupfully
 ```
 
-Lệnh trên sẽ **tự động kiểm tra và cài đặt cả 8 bậc công cụ** mà không cần cấu hình thủ công:
+```bash
+# macOS / Linux (Gate-0) →
+./scripts/bootstrap.sh && python3 scripts/tdq_setup.py --setupfully
+```
+
+Luồng thiết lập tự động kiểm tra và cấu hình đồng bộ cho host Antigravity (`0` nợ cấu hình Claude), RTK + `rg`, Caveman Node MCP wrapper, Archify (`~/.local/share/archify`), ghim `~/.gemini/GEMINI.md` (`< 24 KB`), lưu bí mật `TAVILY_API_KEY` vào `secrets.env` (`--set-tavily-key`), và chạy trình nghiệm thu sandbox 6 tầng `scripts/tdq_simulate_verify.py`.
+
+Lệnh chuẩn cho cả môi trường truyền thống (`python3 scripts/tdq_setup.py`):
 1. Tạo shim `python3` trên Windows nếu máy chỉ có `python` hoặc `py -3`.
-2. Kiểm tra và cài đặt binary `agent-lsp` cùng cấu hình MCP server `lsp` trong `~/.claude.json` và `.codex/config.toml`.
+2. Kiểm tra và cài đặt binary `agent-lsp` cùng cấu hình MCP server `lsp`.
 3. Dò ngôn ngữ của dự án hiện tại và cài đặt Language Server tương ứng (`pyright`, `typescript-language-server`...).
-4. Cấp quyền `mcp__lsp__*` vào danh sách cho phép để không bật thông báo hỏi quyền mỗi lần tra cứu.
+4. Cấp quyền/cấu hình non-interactive để không bật thông báo hỏi quyền mỗi lần tra cứu.
 5. Kiểm tra xung đột hook với các plugin bên ngoài.
 6. Kiểm tra tệp mốc cấu hình gốc import (`pyproject.toml`, `tsconfig.json`, `package.json`...).
 7. Kiểm tra công cụ đồ thị `graphify` và độ mới của `graphify-out/graph.json`.
@@ -114,7 +123,8 @@ Nếu bạn muốn tự chuẩn bị môi trường trên máy mới hoặc máy
 | **agent-lsp** | `>= 0.19.0` | Máy chủ MCP nối AI với Language Server của 30+ ngôn ngữ | `curl -fsSL https://raw.githubusercontent.com/blackwell-systems/agent-lsp/main/install.sh \| sh` (hoặc chạy `python scripts/tdq_setup.py`) |
 | **Language Servers** | Theo ngôn ngữ dự án | Cung cấp định nghĩa, nơi gọi và kiểm tra kiểu chính xác | Python: `npm i -g pyright`<br>TS/JS: `npm i -g typescript typescript-language-server` |
 | **graphify** | Bản mới nhất | Dựng đồ thị AST cục bộ và tính bán kính vỡ lan `affected --depth 2` | `pip install graphifyy` (hoặc `uv tool install graphifyy`), sau đó chạy `graphify extract . --code-only` |
-| **archify** | `>= 3.2.0` | Động cơ kiểm định bố cục và xuất bản sơ đồ HTML tương tác | Đặt gói `archify` tại `~/Documents/archify` hoặc khai biến môi trường `ARCHIFY_ROOT=/đường/dẫn/tới/archify` trong `.env` |
+| **archify** | `>= 3.2.0` | Động cơ kiểm định bố cục và xuất bản sơ đồ HTML tương tác | Tự động clone từ `tt-a1i/archify` về `~/.local/share/archify` hoặc khai biến `ARCHIFY_ROOT` |
+| **Simulate Verify (6 tầng)** | Tích hợp sẵn | Nghiệm thu sandbox `T1`–`T6` hậu Restart sạch rác `< 90s` | `python3 scripts/tdq_setup.py --post-restart-verify` (hoặc `python3 scripts/tdq_simulate_verify.py`) |
 | **Chrome DevTools MCP** | Tuỳ chọn (cho UI/UX Audit) | Kiểm thử giao diện 5 lớp trực tiếp trên trình duyệt thật qua cổng 9222 | Tự động cấu hình và khởi chạy bằng `python3 scripts/tdq_devtool_mcp.py setup` và `python3 scripts/tdq_devtool_mcp.py launch` |
 
 ### 4.3. Các lệnh kiểm tra sức khỏe hệ thống
