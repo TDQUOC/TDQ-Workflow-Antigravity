@@ -72,11 +72,13 @@ def _adjust_hooks_for_platform(installed_dir: Path) -> None:
     if not hooks_file.is_file():
         return
     if platform.system() != "Windows":
-        for script_path in (installed_dir / "scripts").glob("*.mjs"):
-            try:
-                script_path.chmod(0o755)
-            except OSError:
-                pass
+        scripts_dir = installed_dir / "scripts"
+        for pattern in ("*.mjs", "*.sh"):
+            for script_path in scripts_dir.glob(pattern):
+                try:
+                    script_path.chmod(0o755)
+                except OSError:
+                    pass
         arch = platform.machine().lower()
         target_name = (
             ("tdq-dispatch-darwin-arm64" if arch in ("arm64", "aarch64") else "tdq-dispatch-darwin-x64")

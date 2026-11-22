@@ -432,3 +432,35 @@ def test_build_portable_loc_muc_agy_release_sets_0755_on_sh():
     assert "100755 blob " + ("c" * 40) + "\tscripts/bootstrap.sh" in kept
     assert "100644 blob " + ("d" * 40) + "\tscripts/tdq_setup.py" in kept
     assert "100755 blob " + ("e" * 40) + "\tbin/tdq-dispatch-linux-x86_64" in kept
+
+
+def test_install_py_chmods_sh_and_mjs_on_posix(tmp_path: Path, monkeypatch):
+    import install
+
+    plugin_dir = tmp_path / "plugin"
+    scripts_dir = plugin_dir / "scripts"
+    scripts_dir.mkdir(parents=True)
+    sh_file = scripts_dir / "bootstrap.sh"
+    mjs_file = scripts_dir / "tdq_hook_launcher.mjs"
+    sh_file.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    mjs_file.write_text("export {};\n", encoding="utf-8")
+    (plugin_dir / "hooks.json").write_text(
+        '{"hooks":{"PreToolUse":[{"command":"node scripts/tdq_hook_launcher.mjs --event PreToolUse"}]}}',
+        encoding="utf-8",
+    )
+
+    chmod_calls = []
+    orig_chmod = Path.chmod
+
+    def spy_chmod(self: Path, mode: int, *args, **kwargs):
+        chmod_calls.append((self.name, mode))
+        return orig_chmod(self, mode, *args, **kwargs)
+
+    monkeypatch.setattr(install.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(install.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(install.shutil, "which", lambda name: "/usr/bin/node" if name == "node" else None)
+    monkeypatch.setattr(Path, "chmod", spy_chmod)
+
+    install._adjust_hooks_for_platform(plugin_dir)
+    assert ("bootstrap.sh", 0o755) in chmod_calls
+    assert ("tdq_hook_launcher.mjs", 0o755) in chmod_calls
