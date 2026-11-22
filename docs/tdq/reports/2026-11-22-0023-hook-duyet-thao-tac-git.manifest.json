@@ -9,7 +9,7 @@
   "candidate_path": "docs/tdq/artifacts/2026-11-22-0023-hook-duyet-thao-tac-git/bao-cao.archify.md",
   "candidate_digest": "9d362ca8a90bb2d302e4333b0a6ddfe69f9c09f3e1e1bcb5746390c5392af670",
   "artifact_path": "docs/tdq/reports/2026-11-22-0023-hook-duyet-thao-tac-git.html",
-  "artifact_digest": "5a2692e0c8ea97e86d6518483206708006434b9ea9f2ddfb88c2887a60f1e7f1",
+  "artifact_digest": "780b8d7f631825c2ee247700f49793a3bfc7c9cf874edc6854e02b62aeea2f4b",
   "source_paths": [
     ".agents/plugins.json",
     ".agents/plugins/marketplace.json",
@@ -12546,26 +12546,26 @@
     "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe": "cccde5a46d2e5e869c9a4bcda711fd0cbe1cb762a0a719ab42dc8adfcdeedfe8",
     "plugins/tdq-workflow-agy/docs/tdq/token-budget.json": "3b84a2df225d7c581fa49279fd2ed5cca7c931dad4e37d9ec88829fdbc61afad",
     "plugins/tdq-workflow-agy/hooks.json": "d5a8308fd7d330f52860036f370ee799c13de42c98346669a86da7c5282f2f75",
-    "plugins/tdq-workflow-agy/hooks/scripts/_common.py": "eadb983fccba50b4650550c42d3d72bf9d022f11eb296b16adc4b048e755a19e",
+    "plugins/tdq-workflow-agy/hooks/scripts/_common.py": "d983aa485aa6ae47268b76188c389ed574700c348255e7615da68b1960e0aab8",
     "plugins/tdq-workflow-agy/hooks/scripts/ask_gate.py": "3933830602caf8d2e6b52e4282129f7485743b30c237297a9f175c502bdb3666",
-    "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py": "3fa7654aeae0297a4be7b064109c95ccd04237ebe19549b115c40e03412fba18",
+    "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py": "de16c21ca9eefcc51c77126b3825d80007fe06112e76c7d2d526657a6105b28e",
     "plugins/tdq-workflow-agy/hooks/scripts/command_gate.py": "fc5729b1a284ed8ffd2163baf1763530ace0943b712786e998fdcae20a9bb9d1",
     "plugins/tdq-workflow-agy/hooks/scripts/dispatch.py": "2b0985496ec28f4bc92d037acec585e0e724aaa0e40a08b3f3c8fd9b72a5347d",
-    "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py": "3440e9315992adc1f5c03b5b8f40f59b7c298aa71e9e02eec109fa859d01a666",
-    "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json": "7ee9a85e920be2c7b4b502c5872c10eff0fe9126dec076ba59cc439d119c6a2c",
+    "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py": "840f2a92041f151f64342bbb960c33ece8db5221ee6f66ca048609183e8eec84",
+    "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json": "5633c8d9eb74d8f2f0b0c6586cec716a521a34dfd9bea94e3e3bcb5c8630c6ba",
     "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.py": "f6bcb9f1cc7e04472f72b46434bb2ce11a6735f1a96f61f2291830968a60c8c2",
     "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py": "0a97207a015b7a1a347beabfa440cc3eef87fd71af8303f44ca080975d6d0d5a",
     "plugins/tdq-workflow-agy/hooks/scripts/luat_gon.py": "4e269c69f702229187aa1ba53c0de630111eb17c2bed9f66955eee949f5134fb",
     "plugins/tdq-workflow-agy/hooks/scripts/post_invocation.py": "eb6d615d9a71ad7cd9252a205b2aee232074da3f43a58996ae8c944594207b86",
-    "plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py": "299cff8be8735cab406ed3f6922cf43f0ffb042edbacebc6f5d900b7b64b0aa9",
+    "plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py": "76405474d92e9b7c77ac46eee7df0102c226d5726358cfc0e870b667f0e88eb0",
     "plugins/tdq-workflow-agy/hooks/scripts/read_gate.py": "438da2596335056408d5c6c5c8c0a7e95e5bf2ded2670b971a9989b12ed7a06c",
     "plugins/tdq-workflow-agy/hooks/scripts/search_gate.py": "e44be38fe83959973105dc58343017bbb870d8210d7c2f5cdd39adfd5263a8bd",
     "plugins/tdq-workflow-agy/hooks/scripts/search_observe.py": "a9b4f6fc417ca37860b260dd1ac65f03cc81793dfb803227c60d103ff8fd5ed4",
     "plugins/tdq-workflow-agy/hooks/scripts/session_start.py": "5cad98364148d0d9cb6586580f6da921abf4ff5ab97f6b81c99823071812289c",
     "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py": "0bcd8ef054c7507b51e2d4d1de4481db0f77a0edf7e10aff11de1ac77c18b76a",
-    "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "fe34c689f956599a738425dbd2be432d8ba20334eb75ded442059eb47f71fb59",
+    "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "b9d141a9b01c16985bdbb156a9138601c23e57ff706373d147434232f4ec044c",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_stop.py": "232e6118b647194390799b48667c5f867ae20f34cda1a8ab998f325017008767",
-    "plugins/tdq-workflow-agy/manifest.json": "0ada4460fdcc8e321e6dc228b2d9b92cef0f78c881b7f33e9e404683239e9f69",
+    "plugins/tdq-workflow-agy/manifest.json": "00f317be8debf2f952efd2ad070b9b78287a4b0ef984e84110328a69d99f8fed",
     "plugins/tdq-workflow-agy/mcp_config.json": "a57528098063231b167df408b63da1469b2435fc2a3ecebeefe76e9e966b6d2c",
     "plugins/tdq-workflow-agy/plugin.json": "ea1fb6bbd6ee8ea5084f2ecc052a89009d161f5e01393eb1486484681a3afcbf",
     "plugins/tdq-workflow-agy/rules/AGENTS.md": "b384d78a1f219080e81cefa1228b6520325c0f28427d7527be5c83d8d855be0a",
@@ -13186,13 +13186,13 @@
     "type": "explainer",
     "quality": "showcase",
     "specification": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
       "sha256": "91de9eb79319518fcb63d7324744394b8ad0b81ea3896ba4e6c4a87f26f59819",
       "bytes": 1986
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.html",
-      "sha256": "413d11e733f347354b98f387a4b7c8611cb59963086027015434e0f84aef9363",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.html",
+      "sha256": "98c04741d6664e6d56fc16eb39688b9bb861ad3bdb4b6c9bd35e685255e72b85",
       "bytes": 877076
     },
     "gates": {
@@ -13207,7 +13207,7 @@
         "severity": "warning",
         "message": "Sentence has 48 reading units, above the configured en limit of 28.",
         "subject": {
-          "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+          "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
           "line": 5,
           "component": "answer"
         },
@@ -13227,7 +13227,7 @@
         "severity": "warning",
         "message": "Sentence has 34 reading units, above the configured en limit of 28.",
         "subject": {
-          "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+          "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
           "line": 21,
           "component": "prose",
           "panelId": "git-approval-before-after"
@@ -13250,11 +13250,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 1828,
+    "durationMs": 1859,
     "browserCheck": {
       "requested": false,
       "ran": false

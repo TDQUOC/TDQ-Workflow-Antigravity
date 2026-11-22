@@ -6,13 +6,13 @@
   "type": "explainer",
   "quality": "showcase",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
     "sha256": "91de9eb79319518fcb63d7324744394b8ad0b81ea3896ba4e6c4a87f26f59819",
     "bytes": 1986
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.html",
-    "sha256": "413d11e733f347354b98f387a4b7c8611cb59963086027015434e0f84aef9363",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.html",
+    "sha256": "98c04741d6664e6d56fc16eb39688b9bb861ad3bdb4b6c9bd35e685255e72b85",
     "bytes": 877076
   },
   "gates": {
@@ -27,7 +27,7 @@
       "severity": "warning",
       "message": "Sentence has 48 reading units, above the configured en limit of 28.",
       "subject": {
-        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
         "line": 5,
         "component": "answer"
       },
@@ -47,7 +47,7 @@
       "severity": "warning",
       "message": "Sentence has 34 reading units, above the configured en limit of 28.",
       "subject": {
-        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.c835eadf55f84abcb8bafe5ac7213dbf.md",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-22-0023-hook-duyet-thao-tac-git\\.tmp.bao-cao.archify.4039a0ef27a74e8a84bbef86be1924bc.md",
         "line": 21,
         "component": "prose",
         "panelId": "git-approval-before-after"
@@ -70,11 +70,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.f5600b06874043168ca82f18a0842df1.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-22-0023-hook-duyet-thao-tac-git.b0f27783e9e24c63bf1aee357955d934.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 1828,
+  "durationMs": 1859,
   "browserCheck": {
     "requested": false,
     "ran": false

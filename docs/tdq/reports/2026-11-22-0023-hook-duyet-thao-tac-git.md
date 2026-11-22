@@ -96,5 +96,5 @@ Host metrics unavailable (5 hidden: api_request_seconds, tool_call_seconds, back
 **Rủi ro hồi quy:** Chạm sâu vào bộ phân tích lệnh shell/PowerShell và vòng đời vé `turn-meta-<sid>.json` trên cả Rust lẫn Python; đã khóa bằng bộ parity hai động cơ (`173` ca pytest + `38` test Rust) và xác nhận miễn nhiễu từ comment `#`/`<#...#>`, quote here-string, `1>` redirect và replay chữ ký lượt đã đóng.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-22-0023-hook-duyet-thao-tac-git.manifest.json -->
-<!-- manifest_digest: 5a6d4ad1c038a055743c36803d388e44dc8af8dd131de4cbd257737062fcb2a9 -->
+<!-- manifest_digest: 62169d1948ebf1e11ae8d9a497b4522a79e31013d7a501f7cca3ea473d0f5b22 -->
 <!-- tdq-archify-binding:end -->
