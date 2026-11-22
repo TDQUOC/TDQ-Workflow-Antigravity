@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from patches import (
     agy_dispatch,
     agy_hooks,
+    agy_launchers,
     agy_manifests,
     cli_fixes_a,
     cli_fixes_b,
@@ -22,17 +23,20 @@ from patches import (
 )
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent.parent
-_EXTERNAL_UPSTREAM = Path(r"C:\Users\admin\Documents\Projects\ForAgentCode\TDQ-Workflow")
+_EXTERNAL_UPSTREAM_ENV = os.environ.get("TDQ_EXTERNAL_UPSTREAM", "").strip()
 DEFAULT_UPSTREAM = (
     WORKSPACE_ROOT
     if (WORKSPACE_ROOT / "portable_src").is_dir() and (WORKSPACE_ROOT / "hooks" / "scripts").is_dir()
-    else _EXTERNAL_UPSTREAM
+    else (Path(_EXTERNAL_UPSTREAM_ENV) if _EXTERNAL_UPSTREAM_ENV else WORKSPACE_ROOT)
 )
 PLUGIN_OUT = WORKSPACE_ROOT / "plugins" / "tdq-workflow-agy"
 _BINARY_TARGETS: tuple[tuple[str, str], ...] = (
     ("windows", "tdq-dispatch.exe"),
     ("linux", "tdq-dispatch-linux-x86_64"),
     ("darwin", "tdq-dispatch-darwin-arm64"),
+)
+_OPTIONAL_BINARY_TARGETS: tuple[tuple[str, str], ...] = (
+    ("darwin", "tdq-dispatch-darwin-x64"),
 )
 _MAGIC_PREFIXES: dict[str, tuple[bytes, ...]] = {
     "windows": (b"MZ",),
@@ -178,6 +182,19 @@ def _stage_rust_binaries(
         _log(f"staged {target_os} binary {bin_name} from {source}")
         staged[target_os] = dest
 
+    for target_os, bin_name in _OPTIONAL_BINARY_TARGETS:
+        source = _resolve_binary_source(
+            target_os, bin_name, host_os, rust_exe, prebuilt_dir, existing_output_bin,
+            upstream_plugin_bin=upstream_plugin_bin,
+        )
+        if source is None:
+            continue
+        dest = stage_bin / bin_name
+        shutil.copy2(source, dest)
+        if os.name != "nt":
+            os.chmod(dest, 0o755)
+        staged[f"{target_os}_optional_{bin_name}"] = dest
+
     if failures:
         detail = "; ".join(failures)
         raise RuntimeError(
@@ -244,16 +261,25 @@ def build(upstream: Path = DEFAULT_UPSTREAM, output: Path = PLUGIN_OUT) -> dict:
         agy_dispatch.apply_dispatch(stage / "hooks" / "scripts")
         skills_and_agents.relock_token_budget(stage)
 
-        # 4b. Embed standalone Rust binaries in bin/
+        # 4b. Generate cross-platform Node launchers & embed standalone Rust binaries
+        agy_launchers.generate_launchers(stage)
         _stage_rust_binaries(upstream, stage / "bin", output / "bin")
 
         # 5. Emit final manifest.json & README.md
         agy_manifests.generate_manifest_and_readme(stage, sha)
 
-        # 6. Immediate AST & Markdown byte-budget checks before syncing to live output dir
+        # 6. Immediate AST, Node syntax & Markdown byte-budget checks before syncing
         py_count, ast_errors = common_utils.verify_all_py_ast(stage)
         if ast_errors:
             raise RuntimeError("Python AST errors:\n" + "\n".join(ast_errors))
+        if shutil.which("node"):
+            for mjs in sorted((stage / "scripts").glob("*.mjs")):
+                kw_node = {"capture_output": True, "text": True, "check": False}
+                if os.name == "nt":
+                    kw_node["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+                chk = subprocess.run(["node", "--check", str(mjs)], **kw_node)
+                if chk.returncode != 0:
+                    raise RuntimeError(f"Node syntax error in {mjs.name}: {chk.stderr}")
         md_count, md_violations = common_utils.check_md_byte_budgets(stage)
         if md_violations:
             raise RuntimeError("Markdown byte budget exceeded:\n" + "\n".join(md_violations))

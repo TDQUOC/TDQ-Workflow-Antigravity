@@ -30,6 +30,10 @@ jobs:
             target: aarch64-apple-darwin
             binary_src: hooks/rust/tdq-dispatch/target/aarch64-apple-darwin/release/tdq-dispatch
             binary_name: tdq-dispatch-darwin-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_src: hooks/rust/tdq-dispatch/target/x86_64-apple-darwin/release/tdq-dispatch
+            binary_name: tdq-dispatch-darwin-x64
 
     steps:
       - name: Checkout repository

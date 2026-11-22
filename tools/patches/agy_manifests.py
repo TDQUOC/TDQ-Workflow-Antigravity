@@ -1,46 +1,12 @@
 """Generate Antigravity-native plugin manifests, hooks.json, mcp_config.json, and 2-tier rules."""
 import json
-import os
-import shutil
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
 PLUGIN_VERSION = "0.105.0"
-
-
-def _default_lsp_args() -> List[str]:
-    """Resolve persistent agent-lsp server args on this machine without baking secrets."""
-    claude_json = Path.home() / ".claude.json"
-    if claude_json.is_file():
-        try:
-            data = json.loads(claude_json.read_text(encoding="utf-8"))
-            lsp = (data.get("mcpServers") or {}).get("lsp") or {}
-            args = lsp.get("args")
-            if isinstance(args, list) and args:
-                return [str(a) for a in args]
-        except (OSError, ValueError):
-            pass
-    default_fnm = Path(os.environ.get("APPDATA", "")) / "fnm" / "aliases" / "default"
-    ts = str(default_fnm / "typescript-language-server.cmd")
-    py = str(default_fnm / "pyright-langserver.cmd")
-    js = str(default_fnm / "vscode-json-language-server.cmd")
-    return [
-        f"typescript:{ts},--stdio",
-        f"python:{py},--stdio",
-        f"json:{js},--stdio",
-    ]
-
-
-def _default_lsp_command() -> str:
-    """Locate installed agent-lsp binary cleanly or use binary name on PATH."""
-    local_bin = Path.home() / ".local" / "bin" / ("agent-lsp.exe" if os.name == "nt" else "agent-lsp")
-    if local_bin.is_file():
-        return str(local_bin)
-    found = shutil.which("agent-lsp")
-    return found or "agent-lsp"
 
 
 def generate_plugin_json(plugin_root: Path) -> None:
@@ -88,15 +54,11 @@ def generate_logo_svg(plugin_root: Path) -> None:
 
 
 def _hook_cmd(script_name: str, event_name: str) -> Dict[str, str]:
-    """Return Antigravity dispatch hook entry using unquoted relative path for Windows cmd /c safety."""
+    """Return cross-platform unquoted Node.js launcher command for hooks.json."""
     _ = script_name
-    if os.name == "nt":
-        cmd = f"bin\\tdq-dispatch.exe --event {event_name}"
-    else:
-        cmd = f"./bin/tdq-dispatch --event {event_name}"
     return {
         "type": "command",
-        "command": cmd,
+        "command": f"node scripts/tdq_hook_launcher.mjs --event {event_name}",
     }
 
 
@@ -149,22 +111,31 @@ def generate_hooks_json(plugin_root: Path) -> None:
 
 
 def generate_mcp_config(plugin_root: Path) -> None:
-    """Write warning-free default mcp_config.json (raw commands; Caveman proxy is opt-in)."""
-    profile_dir = str((Path.home() / ".gemini" / "chrome-devtools-profile")).replace("\\", "/")
-    npx_cmd = "npx.cmd" if os.name == "nt" else "npx"
+    """Write portable multi-OS mcp_config.json without personal machine paths."""
     cfg = {
         "mcpServers": {
             "lsp": {
-                "command": _default_lsp_command(),
-                "args": _default_lsp_args(),
+                "command": "node",
+                "args": ["${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs", "lsp"],
             },
             "chrome-devtools": {
-                "command": npx_cmd,
-                "args": ["-y", "chrome-devtools-mcp@latest", f"--userDataDir={profile_dir}"],
+                "command": "node",
+                "args": [
+                    "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs",
+                    "npx",
+                    "-y",
+                    "chrome-devtools-mcp@latest",
+                    "--userDataDir=${PLUGIN_DATA}/chrome-devtools-profile",
+                ],
             },
             "tavily-primary": {
-                "command": npx_cmd,
-                "args": ["-y", "tavily-mcp@latest"],
+                "command": "node",
+                "args": [
+                    "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs",
+                    "npx",
+                    "-y",
+                    "tavily-mcp@latest",
+                ],
             },
         }
     }
@@ -185,7 +156,7 @@ def generate_two_tier_rules(plugin_root: Path) -> None:
 - Full pipeline: `analyze -> spec -> [approve spec] -> plan -> [approve plan] -> mode -> implement (red -> green per task) -> qc -> report -> [set phase=idle]`.
 - Express lane (`quick`): `analyze -> quick_analyze -> mini-plan -> [approve quick] -> implement -> report -> [set phase=idle]`.
 - Zero-Popup UI Policy (`ask_question` blocked mid-request): Ask numbered options (`1a 2b 3c`) and receive approvals directly in chat text. Use `--by "<exact user words>"` when recording approvals via CLI.
-- All Python helpers use `py -3 -X utf8 "<plugin_dir>/scripts/<script>.py"` (or `python3 scripts/<script>.py` inside TDQ repos).
+- All Python helpers use `python3 -X utf8 "<plugin_dir>/scripts/<script>.py"` on macOS/Linux or `py -3 -X utf8 "<plugin_dir>/scripts/<script>.py"` on Windows.
 
 ## 2. Clean Code Invariants & 7-Rung `TDQ:GON` Ladder
 Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-build/references/rules/chung.md`):

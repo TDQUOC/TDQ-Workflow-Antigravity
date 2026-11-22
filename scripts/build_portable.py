@@ -735,17 +735,33 @@ def _tao_tree_release(repo, kept_entries):
         return proc.stdout.strip()
 
 
-def sinh_nhanh_main(repo, nguon="dev", nhanh_dich="main", dry_run=False):
-    """Build or update the clean release branch from `nguon` without touching the working tree."""
-    source_sha = _git_text(repo, "rev-parse", "--verify", f"{nguon}^{{commit}}")
-    ls_proc = subprocess.run(
-        ["git", "-C", repo, "ls-tree", "-r", "-z", source_sha],
-        capture_output=True, check=True, timeout=60,
-    )
-    all_entries = [e for e in ls_proc.stdout.split(b"\0") if e and b"\t" in e]
-    kept_entries = loc_muc_ls_tree(ls_proc.stdout)
+def loc_muc_agy_release(raw_bytes, prefix="plugins/tdq-workflow-agy/"):
+    """Filter NUL-delimited ls-tree output to plugin root paths and chmod executables 0755."""
+    norm_prefix = prefix.replace("\\", "/").strip("/") + "/"
+    kept = []
+    for entry in raw_bytes.split(b"\0"):
+        if not entry or b"\t" not in entry:
+            continue
+        meta, raw_rel = entry.split(b"\t", 1)
+        rel = raw_rel.decode("utf-8")
+        if not rel.startswith(norm_prefix):
+            continue
+        inner = rel[len(norm_prefix):]
+        parts = inner.split("/")
+        if not inner or "__pycache__" in parts or inner.endswith((".pyc", ".pyo")):
+            continue
+        if parts[0] == "bin" or (parts[0] == "scripts" and inner.endswith(".mjs")):
+            mode_and_rest = meta.split(b" ", 1)
+            if len(mode_and_rest) == 2 and mode_and_rest[0] in (b"100644", b"100755"):
+                meta = b"100755 " + mode_and_rest[1]
+        kept.append(meta + b"\t" + inner.encode("utf-8"))
+    return kept
+
+
+def _publish_filtered_branch(repo, nguon, source_sha, nhanh_dich, kept_entries, all_count, dry_run, msg_prefix, version):
+    """Write a clean commit from filtered ls-tree entries onto `nhanh_dich` without touching worktree."""
     kept = len(kept_entries)
-    dropped = len(all_entries) - kept
+    dropped = all_count - kept
     if dry_run:
         log(f"build_portable: dry-run {nguon}@{source_sha[:7]} -> {nhanh_dich} · "
             f"kept={kept} dropped={dropped}")
@@ -767,8 +783,7 @@ def sinh_nhanh_main(repo, nguon="dev", nhanh_dich="main", dry_run=False):
             "kept": kept, "dropped": dropped, "source_sha": source_sha,
             "tree_sha": tree_sha, "commit_sha": parent_sha, "changed": False,
         }
-    version = plugin_version(repo) or "0.0.0"
-    msg = f"release: v{version} (from {nguon}@{source_sha[:7]})"
+    msg = f"{msg_prefix}: v{version} (from {nguon}@{source_sha[:7]})"
     cmd = ["commit-tree", tree_sha] + (["-p", parent_sha] if parent_sha else []) + ["-m", msg]
     commit_sha = _git_text(repo, *cmd)
     _git_text(repo, "update-ref", ref_name, commit_sha)
@@ -780,11 +795,64 @@ def sinh_nhanh_main(repo, nguon="dev", nhanh_dich="main", dry_run=False):
     }
 
 
+def sinh_nhanh_main(repo, nguon="dev", nhanh_dich="main", dry_run=False):
+    """Build or update the clean release branch from `nguon` without touching the working tree."""
+    source_sha = _git_text(repo, "rev-parse", "--verify", f"{nguon}^{{commit}}")
+    ls_proc = subprocess.run(
+        ["git", "-C", repo, "ls-tree", "-r", "-z", source_sha],
+        capture_output=True, check=True, timeout=60,
+    )
+    all_entries = [e for e in ls_proc.stdout.split(b"\0") if e and b"\t" in e]
+    kept_entries = loc_muc_ls_tree(ls_proc.stdout)
+    version = plugin_version(repo) or "0.0.0"
+    return _publish_filtered_branch(
+        repo, nguon, source_sha, nhanh_dich, kept_entries, len(all_entries), dry_run, "release", version
+    )
+
+
+def _read_agy_plugin_version(repo, source_sha, plugin_prefix):
+    """Read Antigravity plugin.json version from source_sha cleanly with fallback."""
+    norm_prefix = plugin_prefix.replace("\\", "/").strip("/") + "/"
+    raw_json = _git_text(repo, "show", f"{source_sha}:{norm_prefix}plugin.json", check=False)
+    if raw_json:
+        try:
+            ver = json.loads(raw_json).get("version")
+            if ver:
+                return str(ver)
+        except ValueError:
+            pass
+    return plugin_version(repo) or "0.0.0"
+
+
+def sinh_nhanh_release_agy(
+    repo,
+    nguon="dev",
+    nhanh_dich="release/antigravity",
+    plugin_prefix="plugins/tdq-workflow-agy/",
+    dry_run=False,
+):
+    """Publish clean Antigravity plugin tree at branch root without touching worktree."""
+    source_sha = _git_text(repo, "rev-parse", "--verify", f"{nguon}^{{commit}}")
+    ls_proc = subprocess.run(
+        ["git", "-C", repo, "ls-tree", "-r", "-z", source_sha],
+        capture_output=True, check=True, timeout=60,
+    )
+    all_entries = [e for e in ls_proc.stdout.split(b"\0") if e and b"\t" in e]
+    kept_entries = loc_muc_agy_release(ls_proc.stdout, prefix=plugin_prefix)
+    if not any(e.endswith(b"\tplugin.json") for e in kept_entries):
+        raise RuntimeError(f"Missing plugin.json under {plugin_prefix} at {nguon}@{source_sha[:7]}")
+    version = _read_agy_plugin_version(repo, source_sha, plugin_prefix)
+    return _publish_filtered_branch(
+        repo, nguon, source_sha, nhanh_dich, kept_entries, len(all_entries),
+        dry_run, "release(antigravity)", version,
+    )
+
+
 def _xay_parser():
     parser = argparse.ArgumentParser(
         prog="build_portable.py",
         description="Generate what a host cannot read straight from this repo: the Antigravity "
-                    "layout, hooks/hooks.json for the target OS, or the clean release branch. "
+                    "layout, hooks/hooks.json for the target OS, or clean release branches. "
                     "Pick one action.")
     parser.add_argument("--dest", help="build the Antigravity bundle into DEST/antigravity_portable "
                                        "(a release step; never the repo itself)")
@@ -801,12 +869,14 @@ def _xay_parser():
                         help=f"only with --sinh-agy: where to generate (default {GOC_AGY})")
     parser.add_argument("--sinh-main", action="store_true",
                         help="publish a clean release snapshot from --nguon onto --nhanh-dich")
+    parser.add_argument("--sinh-release-agy", action="store_true",
+                        help="publish clean Antigravity plugin root snapshot from --nguon onto --nhanh-dich")
     parser.add_argument("--nguon", default="dev",
-                        help="only with --sinh-main: source branch or ref (default: dev)")
-    parser.add_argument("--nhanh-dich", default="main",
-                        help="only with --sinh-main: target release branch (default: main)")
+                        help="with --sinh-main/--sinh-release-agy: source branch or ref (default: dev)")
+    parser.add_argument("--nhanh-dich", default="",
+                        help="with --sinh-main/--sinh-release-agy: target release branch")
     parser.add_argument("--dry-run", action="store_true",
-                        help="only with --sinh-main: compute kept/dropped counts without updating refs")
+                        help="with --sinh-main/--sinh-release-agy: compute counts without updating refs")
     return parser
 
 
@@ -842,15 +912,17 @@ def main(argv=None):
             log(f"ERROR {loi}")
             return EXIT_LOI
         return 0
-    if args.sinh_main:
+    if args.sinh_main or args.sinh_release_agy:
+        dich = args.nhanh_dich or ("main" if args.sinh_main else "release/antigravity")
+        fn = sinh_nhanh_main if args.sinh_main else sinh_nhanh_release_agy
         try:
-            sinh_nhanh_main(repo, nguon=args.nguon, nhanh_dich=args.nhanh_dich, dry_run=args.dry_run)
+            fn(repo, nguon=args.nguon, nhanh_dich=dich, dry_run=args.dry_run)
         except (OSError, RuntimeError, subprocess.CalledProcessError) as loi:
             log(f"ERROR {loi}")
             return EXIT_LOI
         return 0
     if not args.dest:
-        parser.error("pick an action: --sinh-agy, --sinh-hook-claude, --sinh-main or --dest DEST")
+        parser.error("pick an action: --sinh-agy, --sinh-hook-claude, --sinh-main, --sinh-release-agy or --dest DEST")
     return _chay_dest(parser, repo, args.dest)
 
 

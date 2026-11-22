@@ -1,38 +1,42 @@
 # TDQ-Workflow-Antigravity
 
-Hệ sinh thái đóng gói và kiểm chứng **TDQ-Workflow (`v0.97.0` — nhánh `dev @ b423ee06`)** chạy **100% Native** trên **Google Antigravity** (`Windows PowerShell 5.1` + MCP + 6 Lifecycle Hooks + 6 Subagents + 12 Skills + 10 Two-Tier Rules), được biên dịch sạch không chỉnh sửa kho gốc (`ForAgentCode/TDQ-Workflow` giữ nguyên Read-Only).
+Hệ sinh thái đóng gói và phân phối **TDQ-Workflow (`v0.105.0` — nhánh phát hành `release/antigravity`)** chạy **Native** trên **Google Antigravity** (`Windows`, `macOS`, `Linux`) với MCP, 6 Lifecycle Hooks, 8 Subagents, 12 Skills và 10 Two-Tier Rules.
 
-## Cấu Trúc Workspace & Công Cụ Chính
+## Cài đặt 1 lệnh từ GitHub (Windows / macOS / Linux)
 
-- **`plugins/tdq-workflow-agy/`** — Plugin Antigravity (`tdq-workflow-agy`) đã biên dịch hoàn chỉnh (`plugin.json`, `hooks.json`, `mcp_config.json`, `manifest.json`, `rules/`, `skills/`, `agents/`, `hooks/scripts/`, `scripts/`).
-- **`.agents/plugins.json`** — Cấu hình discovery cục bộ trỏ `./plugins` để thử nghiệm trong workspace mà không chạm `~/.gemini/config/config.json`.
-- **`tools/build_agy_plugin.py`** — Trình biên dịch sang `plugins/tdq-workflow-agy/` kèm toàn bộ bản vá tương thích Antigravity + Windows (`tools/patches/`).
-- **`tools/install_agy_plugin.py`** — Trình cài đặt an toàn vào `~/.gemini/config/plugins/tdq-workflow-agy` (hỗ trợ `--dry-run`, `--target`, `--sync-local-mcp`).
-- **`tools/run_full_verification.py`** — Bộ chạy kiểm chứng tổng lực `V1–V6` và xuất bằng chứng JSON thực nghiệm ra [`docs/verification_evidence.json`](./docs/verification_evidence.json).
-- **`tests/`** — Bộ test `pytest` xác thực validator chính chủ, `EC-01..14`, `NEW-01..28`, stress test NTFS 8 tiến trình (`320/320` zero-loss), live `agent-lsp.exe` stdio JSON-RPC và E2E 10 bước toàn vòng đời.
+Trên bất kỳ máy nào đã cài `agy` (Antigravity CLI) và `Node.js`:
 
-## Lệnh Build, Kiểm Chứng & Cài Đặt Nhanh (PowerShell)
+```bash
+agy plugin install https://github.com/TDQUOC/TDQ-Workflow-Antigravity/tree/release/antigravity
+```
+
+- **Hooks & MCP đa nền tảng:** `hooks.json` chạy qua `node scripts/tdq_hook_launcher.mjs` (tự chọn binary Rust theo OS/arch kèm fallback Python) và `mcp_config.json` chạy qua `node ${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs` cùng `${PLUGIN_DATA}/chrome-devtools-profile`, không còn đường dẫn cứng máy cá nhân.
+- **Khởi tạo công cụ tìm kiếm (LSP / Graphify):** Sau khi bật plugin, chạy `/tdq-setup` hoặc `tdq_setup.py` để kiểm tra `agent-lsp`, Node (`npx`) và Python.
+- **Cập nhật phiên bản mới:** Antigravity không tự kiểm tra hay tự cập nhật plugin cài từ GitHub URL; khi có phiên bản mới trên `release/antigravity`, chạy lại đúng lệnh `agy plugin install` ở trên để ghi đè bản mới.
+
+## Cấu Trúc Workspace & Công Cụ Dành Cho Nhà Phát Triển
+
+- **`plugins/tdq-workflow-agy/`** — Gói plugin Antigravity (`tdq-workflow-agy`) biên dịch từ `dev` (`plugin.json`, `hooks.json`, `mcp_config.json`, `manifest.json`, `rules/`, `skills/`, `agents/`, `hooks/scripts/`, `scripts/`).
+- **`.agents/plugins.json`** — Cấu hình discovery cục bộ trỏ `./plugins` khi phát triển trực tiếp trong repo.
+- **`tools/build_agy_plugin.py`** — Biên dịch sang `plugins/tdq-workflow-agy/` kèm bản vá đa OS (`tools/patches/`, trong đó có `agy_launchers.py` & `agy_manifests.py`).
+- **`scripts/build_portable.py --sinh-release-agy`** — Xuất bản nhánh sạch `release/antigravity` trực tiếp từ `plugins/tdq-workflow-agy/` bằng Git plumbing mà không chạm thư mục làm việc hoặc nhánh `main` (Claude Code).
+- **`tools/install_agy_plugin.py`** — Trình cài đặt cục bộ vào `~/.gemini/config/plugins/tdq-workflow-agy` (hỗ trợ `--dry-run`, `--target`, `--sync-local-mcp`).
+- **`tools/run_full_verification.py`** & **`tests/`** — Bộ kiểm chứng tổng lực, kiểm định `agy plugin validate --strict --json`, launcher đa OS và E2E xuất bản/cài đặt nhánh release.
+
+## Lệnh Build, Xuất Bản & Kiểm Chứng (PowerShell)
 
 ```powershell
 # 1. Biên dịch lại plugin sạch từ mã nguồn hiện tại
 $env:PYTHONDONTWRITEBYTECODE='1'; py -3 -B tools/build_agy_plugin.py
 
-# 2. Chạy trình kiểm định chính chủ Antigravity & bộ test kiểm chứng Antigravity
+# 2. Sinh / cập nhật nhánh release Antigravity sạch (không đổi working tree)
+py -3 -X utf8 scripts/build_portable.py --sinh-release-agy --nguon dev --nhanh-dich release/antigravity
+
+# 3. Kiểm định nghiêm ngặt Antigravity & chạy bộ test đa OS
 agy.EXE plugin validate plugins/tdq-workflow-agy --strict --json
-py -3 -B -m pytest tests/test_agy_plugin_validate.py tests/test_cli_fixes_new01_28.py tests/test_e2e_workflow.py tests/test_hooks_dual_protocol.py tests/test_ntfs_concurrency.py -v --basetemp=.pytest_tmp
+py -3 -B -m pytest tests/test_agy_launchers.py tests/test_agy_plugin_validate.py tests/test_agy_release_e2e.py tests/test_build_portable.py -v --basetemp=.pytest_tmp
 
-# 3. Sinh báo cáo bằng chứng thực nghiệm JSON
-$env:PYTHONDONTWRITEBYTECODE='1'; py -3 -B tools/run_full_verification.py
-
-# 4. Cài đặt / cập nhật User-Level vào ~/.gemini/config/plugins/tdq-workflow-agy
+# 4. Cài đặt cục bộ có tùy chọn đồng bộ MCP cá nhân
 py -3 tools/install_agy_plugin.py --dry-run
-# py -3 install.py --update
+# py -3 tools/install_agy_plugin.py --sync-local-mcp
 ```
-
-## Tài Liệu Kiểm Chứng & Báo Cáo Thực Nghiệm (`docs/`)
-
-- **[docs/MASTER-VERIFICATION-CHECKLIST-AND-EVIDENCE.md](./docs/MASTER-VERIFICATION-CHECKLIST-AND-EVIDENCE.md)** — **Master Checklist 10 Phân Hệ (Đã Kiểm Chứng Thực Nghiệm):** Đối chiếu đầy đủ `7` companion extensions (live `65` Agent-LSP tools), host addons/manifests, `Soul` + `R1–R15` + `10` rules, `12` skills (`75` files) + `M01–M20`, `6` subagents, `6` hook events + `24` mã `TDQ:*`, `EC-01..EC-14` + `320/320` NTFS, `60+1` scripts + `7` excluded + `NEW-01..NEW-28`, chuỗi E2E 10 bước và bằng chứng bất biến upstream/global config.
-- **[docs/TDQ-Antigravity-Audit-Dashboard.html](./docs/TDQ-Antigravity-Audit-Dashboard.html)** — **Dashboard Trực Quan v3.0 (Live Verified, Offline-Safe):** Nhúng trực tiếp số liệu từ `verification_evidence.json` với bộ lọc tìm kiếm nhanh và tra cứu 65 tools `agent-lsp`, `EC-01..14`, `NEW-01..28`, `M01..20`.
-- **[docs/verification_evidence.json](./docs/verification_evidence.json)** — Dữ liệu bằng chứng JSON thô thu thập trực tiếp từ máy thật.
-- **[docs/AUDIT-AND-PORTING-PLAN.md](./docs/AUDIT-AND-PORTING-PLAN.md)** — Đặc tả kiến trúc & lộ trình porting gốc v2.0.
-- **`docs/research/` (`01` → `10`)** — 10 hồ sơ phân tích chuyên sâu và Deep Rescan 100% trước khi đóng gói.

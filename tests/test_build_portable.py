@@ -792,6 +792,70 @@ class TestSinhNhanhRelease(TempDest):
         self.assertEqual(ma_loi, 1)
         self.assertIn("ERROR", err_loi)
 
+    def test_release_agy_loc_muc_va_sinh_nhanh_idempotent(self):
+        raw = (
+            b"100644 blob " + (b"a" * 40) + b"\tplugins/tdq-workflow-agy/plugin.json\0"
+            b"100644 blob " + (b"b" * 40) + b"\tplugins/tdq-workflow-agy/scripts/tdq_hook_launcher.mjs\0"
+            b"100644 blob " + (b"c" * 40) + b"\tplugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64\0"
+            b"100644 blob " + (b"d" * 40) + b"\tplugins/tdq-workflow-agy/scripts/__pycache__/x.pyc\0"
+            b"100644 blob " + (b"e" * 40) + b"\tdocs/tdq/STATE.md\0"
+        )
+        kept = build_portable.loc_muc_agy_release(raw)
+        kept_lines = [e.decode("utf-8") for e in kept]
+        self.assertEqual(len(kept_lines), 3)
+        self.assertIn("100644 blob " + ("a" * 40) + "\tplugin.json", kept_lines)
+        self.assertIn("100755 blob " + ("b" * 40) + "\tscripts/tdq_hook_launcher.mjs", kept_lines)
+        self.assertIn("100755 blob " + ("c" * 40) + "\tbin/tdq-dispatch-linux-x86_64", kept_lines)
+
+        repo = self._tao_repo_dev_gia()
+        with self.assertRaisesRegex(RuntimeError, "plugin.json"):
+            build_portable.sinh_nhanh_release_agy(repo, nguon="dev", nhanh_dich="release/antigravity")
+
+        agy_files = {
+            "plugins/tdq-workflow-agy/plugin.json": json.dumps({"name": "tdq-workflow-agy", "version": "0.105.0"}),
+            "plugins/tdq-workflow-agy/hooks.json": json.dumps({"tdq-stop-gate": {"enabled": True}}),
+            "plugins/tdq-workflow-agy/scripts/tdq_hook_launcher.mjs": "console.log('{}');\n",
+            "plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64": "elf-stub",
+            "plugins/tdq-workflow-agy/scripts/__pycache__/x.pyc": "pyc",
+        }
+        for rel, content in agy_files.items():
+            full = os.path.join(repo, *rel.split("/"))
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w", encoding="utf-8") as f:
+                f.write(content)
+        self._git(repo, "add", "-f", "plugins/tdq-workflow-agy")
+        self._git(repo, "commit", "-m", "add agy bundle")
+
+        kq_dry = build_portable.sinh_nhanh_release_agy(repo, nguon="dev", nhanh_dich="release/antigravity", dry_run=True)
+        self.assertTrue(kq_dry["changed"])
+        self.assertIsNone(kq_dry["commit_sha"])
+        self.assertEqual(kq_dry["kept"], 4)
+
+        kq1 = build_portable.sinh_nhanh_release_agy(repo, nguon="dev", nhanh_dich="release/antigravity", dry_run=False)
+        self.assertTrue(kq1["changed"])
+        tree_files = self._git(repo, "ls-tree", "-r", "--name-only", "release/antigravity").splitlines()
+        self.assertEqual(
+            sorted(tree_files),
+            ["bin/tdq-dispatch-linux-x86_64", "hooks.json", "plugin.json", "scripts/tdq_hook_launcher.mjs"],
+        )
+        ls_full = self._git(repo, "ls-tree", "-r", "release/antigravity").splitlines()
+        self.assertTrue(any(ln.startswith("100755 blob ") and ln.endswith("\tbin/tdq-dispatch-linux-x86_64") for ln in ls_full))
+        self.assertTrue(any(ln.startswith("100755 blob ") and ln.endswith("\tscripts/tdq_hook_launcher.mjs") for ln in ls_full))
+
+        kq2 = build_portable.sinh_nhanh_release_agy(repo, nguon="dev", nhanh_dich="release/antigravity", dry_run=False)
+        self.assertFalse(kq2["changed"])
+        self.assertEqual(kq2["commit_sha"], kq1["commit_sha"])
+
+        ma_on, _, err_on = chay("--repo", repo, "--sinh-release-agy", "--nguon", "dev", "--nhanh-dich", "release/antigravity")
+        self.assertEqual(ma_on, 0, err_on)
+        self.assertRegex(err_on, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+        ma_off, _, err_off = chay(
+            "--repo", repo, "--sinh-release-agy", "--nguon", "dev", "--nhanh-dich", "release/antigravity",
+            env={"TDQ_LOG": "0"},
+        )
+        self.assertEqual(ma_off, 0)
+        self.assertEqual(err_off.strip(), "")
+
 
 if __name__ == "__main__":
     unittest.main()

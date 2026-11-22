@@ -66,22 +66,23 @@ def _copy_tree(src: Path, dst: Path) -> int:
 
 
 def _adjust_hooks_for_platform(installed_dir: Path) -> None:
-    """Ensure hooks.json uses binary path on Windows/Unix or fallback to python."""
+    """Keep Node launcher when available, ensure POSIX +x bits, or fall back to Python."""
     hooks_file = installed_dir / "hooks.json"
     bin_dir = installed_dir / "bin"
     if not hooks_file.is_file():
         return
-    text = hooks_file.read_text(encoding="utf-8").replace("\r\n", "\n")
-    if platform.system() == "Windows":
-        exe = bin_dir / "tdq-dispatch.exe"
-        if exe.is_file():
-            text = text.replace("./bin/tdq-dispatch --event", "bin\\tdq-dispatch.exe --event")
-            text = text.replace("bin/tdq-dispatch --event", "bin\\tdq-dispatch.exe --event")
-        else:
-            text = text.replace("bin\\tdq-dispatch.exe --event", "py -3 -X utf8 hooks/scripts/dispatch.py --event")
-            text = text.replace("./bin/tdq-dispatch --event", "py -3 -X utf8 hooks/scripts/dispatch.py --event")
-    else:
-        target_name = "tdq-dispatch-darwin-arm64" if platform.system() == "Darwin" else "tdq-dispatch-linux-x86_64"
+    if platform.system() != "Windows":
+        for script_path in (installed_dir / "scripts").glob("*.mjs"):
+            try:
+                script_path.chmod(0o755)
+            except OSError:
+                pass
+        arch = platform.machine().lower()
+        target_name = (
+            ("tdq-dispatch-darwin-arm64" if arch in ("arm64", "aarch64") else "tdq-dispatch-darwin-x64")
+            if platform.system() == "Darwin"
+            else "tdq-dispatch-linux-x86_64"
+        )
         unix_bin = bin_dir / "tdq-dispatch"
         specific_bin = bin_dir / target_name
         if specific_bin.is_file() and not unix_bin.exists():
@@ -91,10 +92,22 @@ def _adjust_hooks_for_platform(installed_dir: Path) -> None:
                 unix_bin.chmod(0o755)
             except OSError:
                 pass
-            text = text.replace("bin\\tdq-dispatch.exe --event", "./bin/tdq-dispatch --event")
-        else:
-            text = text.replace("bin\\tdq-dispatch.exe --event", "python3 -X utf8 hooks/scripts/dispatch.py --event")
-            text = text.replace("./bin/tdq-dispatch --event", "python3 -X utf8 hooks/scripts/dispatch.py --event")
+        has_binary = unix_bin.is_file()
+    else:
+        has_binary = (bin_dir / "tdq-dispatch.exe").is_file()
+
+    has_node = bool(shutil.which("node")) and (installed_dir / "scripts" / "tdq_hook_launcher.mjs").is_file()
+    text = hooks_file.read_text(encoding="utf-8").replace("\r\n", "\n")
+    if "node scripts/tdq_hook_launcher.mjs --event" in text and (has_node or has_binary):
+        return
+    if not has_binary and not has_node:
+        py_cmd = "py -3 -X utf8 hooks/scripts/dispatch.py --event" if platform.system() == "Windows" else "python3 -X utf8 hooks/scripts/dispatch.py --event"
+        for old_prefix in (
+            "node scripts/tdq_hook_launcher.mjs --event",
+            "bin\\tdq-dispatch.exe --event",
+            "./bin/tdq-dispatch --event",
+        ):
+            text = text.replace(old_prefix, py_cmd)
     with open(hooks_file, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(text)
 

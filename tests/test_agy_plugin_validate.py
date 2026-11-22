@@ -61,15 +61,25 @@ def test_v1_hooks_json_windows_cmd_c_no_quotes_and_protojson():
     _walk(hooks_data)
     assert commands, "hooks.json must contain hook commands"
     valid_prefixes = (
+        "node scripts/tdq_hook_launcher.mjs --event ",
         "bin\\tdq-dispatch.exe --event ",
         "./bin/tdq-dispatch --event ",
         "python -X utf8 hooks/scripts/dispatch.py --event ",
     )
     for cmd in commands:
         assert '"' not in cmd, f"Windows cmd /c escapes double quotes in command: {cmd!r}"
+        assert cmd.startswith("node scripts/tdq_hook_launcher.mjs --event "), (
+            f"Compiled plugin hooks.json must use multi-OS launcher, got: {cmd!r}"
+        )
         assert any(cmd.startswith(prefix) for prefix in valid_prefixes), (
             f"Unexpected hook command: {cmd!r}"
         )
+
+    mcp_raw = (PLUGIN_DIR / "mcp_config.json").read_text(encoding="utf-8")
+    for leaked in ("Users\\admin", "Users/admin", "npx.cmd"):
+        assert leaked not in mcp_raw, f"Portable mcp_config.json leaked {leaked!r}"
+    assert "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs" in mcp_raw
+    assert "${PLUGIN_DATA}/chrome-devtools-profile" in mcp_raw
 
     post_entries = hooks_data["tdq-post-tool-observe"]["PostToolUse"]
     assert len(post_entries) == 1
@@ -111,6 +121,21 @@ def test_v1_install_dry_run_and_staged_validate(tmp_path):
     val = _run(["agy.EXE", "plugin", "validate", str(staged), "--strict", "--json"])
     assert val.returncode == 0, val.stdout
     assert json.loads(val.stdout)["findings"] == []
+
+    # Repo portable mcp_config must stay untouched by --sync-local-mcp
+    assert "${PLUGIN_ROOT}/scripts/tdq_mcp_launcher.mjs" in (PLUGIN_DIR / "mcp_config.json").read_text(encoding="utf-8")
+
+    # Test offline fallback when BOTH OS binary and node are unavailable
+    import install_agy_plugin
+    from unittest import mock
+
+    no_rt = tmp_path / "no-rt"
+    (no_rt / "scripts").mkdir(parents=True)
+    (no_rt / "hooks.json").write_text((PLUGIN_DIR / "hooks.json").read_text(encoding="utf-8"), encoding="utf-8")
+    with mock.patch.object(install_agy_plugin.shutil, "which", return_value=None):
+        st = install_agy_plugin._ensure_binary_executable_and_hooks(no_rt)
+    assert st["engine"] == "python_fallback"
+    assert "hooks/scripts/dispatch.py --event" in (no_rt / "hooks.json").read_text(encoding="utf-8")
 
     stale_marker = staged / "stale_obsolete.txt"
     stale_marker.write_text("stale", encoding="utf-8")
