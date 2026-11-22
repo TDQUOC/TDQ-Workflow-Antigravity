@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
 """Safe installer for the compiled plugins/tdq-workflow-agy Antigravity plugin."""
 import argparse
-from datetime import datetime
 import json
 import os
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 TOOLS_DIR = Path(__file__).resolve().parent
 ROOT_DIR = TOOLS_DIR.parent
 if str(TOOLS_DIR) not in sys.path:
     sys.path.insert(0, str(TOOLS_DIR))
-from patches.common_utils import (  # noqa: E402
-    import_rtk_integration,
-    sync_tree_inplace,
-)
-
+from patches.common_utils import import_rtk_integration, sync_tree_inplace
 
 DEFAULT_SRC = ROOT_DIR / "plugins" / "tdq-workflow-agy"
 DEFAULT_DST = Path.home() / ".gemini" / "config" / "plugins" / "tdq-workflow-agy"
@@ -33,12 +29,14 @@ def _log(message: str) -> None:
 def probe_python_path_command(timeout: float = 5.0) -> dict:
     """Verify `python -X utf8` on PATH executes real Python 3 rather than a WindowsApps stub."""
     resolved = shutil.which("python")
-    kw = {"capture_output": True, "text": True, "timeout": timeout, "check": False}
+    kw = {"capture_output": True, "text": True, "timeout": timeout}
     if os.name == "nt":
         kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
     err_note = ""
     try:
-        proc = subprocess.run(["python", "-X", "utf8", "-c", "pass"], **kw)
+        proc = subprocess.run(
+            ["python", "-X", "utf8", "-c", "pass"], check=False, **kw
+        )
         rc = proc.returncode
     except (OSError, subprocess.SubprocessError) as exc:
         rc = -1
@@ -78,6 +76,49 @@ def _unix_target_binary_name() -> str:
     return "tdq-dispatch-linux-x86_64"
 
 
+def _chmod_executable_scripts(scripts_dir: Path) -> None:
+    """Mark .mjs and .sh scripts executable on POSIX hosts."""
+    for pattern in ("*.mjs", "*.sh"):
+        for script_path in scripts_dir.glob(pattern):
+            try:
+                script_path.chmod(0o755)
+            except OSError:
+                pass
+
+
+def _prepare_unix_binary(bin_dir: Path) -> str | None:
+    """Copy arch-specific tdq-dispatch binary into bin/tdq-dispatch and chmod 0755."""
+    target_name = _unix_target_binary_name()
+    unix_bin = bin_dir / "tdq-dispatch"
+    specific_bin = bin_dir / target_name
+    if specific_bin.is_file() and not unix_bin.exists():
+        shutil.copy2(specific_bin, unix_bin)
+    if not unix_bin.is_file():
+        return None
+    try:
+        unix_bin.chmod(0o755)
+    except OSError:
+        pass
+    return str(unix_bin)
+
+
+def _rewrite_hooks_python_fallback(hooks_file: Path) -> None:
+    """Rewrite hooks.json commands to invoke dispatch.py directly when binary/Node absent."""
+    py_cmd = (
+        "py -3 -X utf8 hooks/scripts/dispatch.py --event"
+        if os.name == "nt"
+        else "python3 -X utf8 hooks/scripts/dispatch.py --event"
+    )
+    new_content = hooks_file.read_text(encoding="utf-8")
+    for old_prefix in (
+        "node scripts/tdq_hook_launcher.mjs --event",
+        "bin\\tdq-dispatch.exe --event",
+        "./bin/tdq-dispatch --event",
+    ):
+        new_content = new_content.replace(old_prefix, py_cmd)
+    hooks_file.write_text(new_content, encoding="utf-8")
+
+
 def _ensure_binary_executable_and_hooks(dst: Path) -> dict:
     """Ensure binaries/launchers are executable on POSIX and fall back cleanly when missing."""
     bin_dir = dst / "bin"
@@ -89,22 +130,8 @@ def _ensure_binary_executable_and_hooks(dst: Path) -> dict:
         if exe.is_file():
             status["binary"] = str(exe)
     else:
-        for script_path in (dst / "scripts").glob("*.mjs"):
-            try:
-                script_path.chmod(0o755)
-            except OSError:
-                pass
-        target_name = _unix_target_binary_name()
-        unix_bin = bin_dir / "tdq-dispatch"
-        specific_bin = bin_dir / target_name
-        if specific_bin.is_file() and not unix_bin.exists():
-            shutil.copy2(specific_bin, unix_bin)
-        if unix_bin.is_file():
-            try:
-                unix_bin.chmod(0o755)
-            except OSError:
-                pass
-            status["binary"] = str(unix_bin)
+        _chmod_executable_scripts(dst / "scripts")
+        status["binary"] = _prepare_unix_binary(bin_dir)
 
     has_node = bool(shutil.which("node")) and (dst / "scripts" / "tdq_hook_launcher.mjs").is_file()
     if status["binary"] or has_node:
@@ -113,17 +140,53 @@ def _ensure_binary_executable_and_hooks(dst: Path) -> dict:
         return status
 
     if hooks_file.is_file():
-        py_cmd = "py -3 -X utf8 hooks/scripts/dispatch.py --event" if os.name == "nt" else "python3 -X utf8 hooks/scripts/dispatch.py --event"
-        new_content = hooks_file.read_text(encoding="utf-8")
-        for old_prefix in (
-            "node scripts/tdq_hook_launcher.mjs --event",
-            "bin\\tdq-dispatch.exe --event",
-            "./bin/tdq-dispatch --event",
-        ):
-            new_content = new_content.replace(old_prefix, py_cmd)
-        hooks_file.write_text(new_content, encoding="utf-8")
+        _rewrite_hooks_python_fallback(hooks_file)
         status["engine"] = "python_fallback"
     return status
+
+
+def _resolve_backup_base_dir(data_dir: Path | None = None) -> Path:
+    """Resolve persistent plugin data dir for backups outside plugins/."""
+    if data_dir is not None:
+        return Path(data_dir)
+    state_dir = os.environ.get("TDQ_SETUP_STATE_DIR", "").strip()
+    if state_dir:
+        return Path(state_dir).expanduser()
+    if os.environ.get("TDQ_KHONG_CHAM_MAY") != "1":
+        plugin_data = os.environ.get("PLUGIN_DATA", "").strip()
+        if plugin_data:
+            return Path(plugin_data).expanduser()
+    env_home = os.environ.get("HOME") or os.environ.get("USERPROFILE")
+    home = Path(env_home).expanduser() if env_home else Path.home()
+    return home / ".gemini" / "antigravity" / "plugin_data" / "tdq-workflow-agy"
+
+
+def backup_plugin_dir(dst: Path, data_dir: Path | None = None) -> Path | None:
+    """Back up an existing plugin dir into ${PLUGIN_DATA}/backups/<timestamp>/."""
+    dst_path = Path(dst)
+    if not dst_path.is_dir() or not any(dst_path.iterdir()):
+        return None
+    base_dir = _resolve_backup_base_dir(data_dir=data_dir)
+    backup_root = base_dir / "backups"
+    resolved_dst = dst_path.resolve()
+    resolved_parent = dst_path.parent.resolve()
+    resolved_root = backup_root.resolve()
+    if resolved_root == resolved_dst or resolved_dst in resolved_root.parents:
+        raise ValueError(f"Backup path {backup_root} must stay outside {dst_path}")
+    if dst_path.parent.name == "plugins" and (
+        resolved_root == resolved_parent or resolved_parent in resolved_root.parents
+    ):
+        raise ValueError(
+            f"Backup path {backup_root} must stay outside plugins dir {dst_path.parent}"
+        )
+    backup_root.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    target = backup_root / stamp
+    if target.exists():
+        target = backup_root / f"{stamp}-{datetime.now().strftime('%f')}"
+    shutil.copytree(dst_path, target)
+    _log(f"backed up plugin {dst_path} -> {target}")
+    return target
 
 
 def _copy_plugin(src: Path, dst: Path) -> int:
@@ -334,7 +397,32 @@ def parse_args(argv=None) -> argparse.Namespace:
     ap.add_argument("--with-caveman", action="store_true")
     ap.add_argument("--without-caveman", action="store_true")
     ap.add_argument("--skip-caveman", action="store_true")
+    ap.add_argument("--backup", action="store_true")
     return ap.parse_args(argv)
+
+
+def _run_dry_run(args: argparse.Namespace, python_probe: dict) -> int:
+    """Execute read-only dry-run probes and print JSON summary."""
+    rtk_rc, rtk_status = _handle_rtk(
+        args.src, args.with_rtk, args.skip_rtk, dry_run=True
+    )
+    caveman_rc, caveman_status = _handle_caveman(
+        args.src,
+        args.target,
+        args.with_caveman,
+        args.without_caveman,
+        args.skip_caveman,
+        dry_run=True,
+    )
+    print(json.dumps({
+        "dry_run": True,
+        "src": str(args.src),
+        "target": str(args.target),
+        "python_probe": python_probe,
+        "rtk": rtk_status,
+        "caveman": caveman_status,
+    }))
+    return rtk_rc or caveman_rc
 
 
 def main(argv=None) -> int:
@@ -346,26 +434,12 @@ def main(argv=None) -> int:
         )
     python_probe = probe_python_path_command()
     if args.dry_run:
-        rtk_rc, rtk_status = _handle_rtk(
-            args.src, args.with_rtk, args.skip_rtk, dry_run=True
-        )
-        caveman_rc, caveman_status = _handle_caveman(
-            args.src,
-            args.target,
-            args.with_caveman,
-            args.without_caveman,
-            args.skip_caveman,
-            dry_run=True,
-        )
-        print(json.dumps({
-            "dry_run": True,
-            "src": str(args.src),
-            "target": str(args.target),
-            "python_probe": python_probe,
-            "rtk": rtk_status,
-            "caveman": caveman_status,
-        }))
-        return rtk_rc or caveman_rc
+        return _run_dry_run(args, python_probe)
+    should_backup = args.backup or (
+        os.environ.get("TDQ_KHONG_CHAM_MAY") != "1"
+        and args.target.resolve() == DEFAULT_DST.resolve()
+    )
+    backup_path = backup_plugin_dir(args.target) if should_backup else None
     files_copied = _copy_plugin(args.src, args.target)
     mcp_res = (
         _sync_local_mcp(args.target)
@@ -383,14 +457,17 @@ def main(argv=None) -> int:
     rtk_rc, rtk_status = _handle_rtk(
         args.src, args.with_rtk, args.skip_rtk, dry_run=False
     )
-    print(json.dumps({
+    payload = {
         "installed_to": str(args.target),
         "files": files_copied,
         **mcp_res,
         "python_probe": python_probe,
         "rtk": rtk_status,
         "caveman": caveman_status,
-    }))
+    }
+    if backup_path is not None:
+        payload["backup_path"] = str(backup_path)
+    print(json.dumps(payload))
     return rtk_rc or caveman_rc
 
 
