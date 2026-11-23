@@ -1,19 +1,19 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-22T20:41:10+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-23T00:44:38+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-22-1521-trien-khai-setup-fully-agy |
-| Work kind | build |
-| Lane | full |
+| Request | 2026-11-23-0027-research-hook-remote-update |
+| Work kind | investigate |
+| Lane | quick |
 | Phase | idle |
-| Spec | docs/tdq/spec/2026-11-22-1521-trien-khai-setup-fully-agy.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-22-1521-trien-khai-setup-fully-agy.md — ✔ approved |
-| Quick approval | (not applicable) |
+| Spec | (none) |
+| Plan | docs/tdq/plan/2026-11-23-0027-research-hook-remote-update.md — ⏳ awaiting approval |
+| Quick approval | ✔ approved |
 | Doc language | vi |
 | Lean level | full |
-| QC level | ultra |
-| Run mode | subagent |
+| QC level | full |
+| Run mode | (not settled) |
 
 ## Where we are
 Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.
