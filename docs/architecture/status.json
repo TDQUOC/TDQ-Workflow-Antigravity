@@ -2,9 +2,13 @@
   "schema_version": 1,
   "status": "stale",
   "reasons": [
+    "Source file modified: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch.exe",
+    "Source file modified: hooks/rust/tdq-dispatch/target/release/deps/tdq_dispatch.pdb",
+    "Source file modified: hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe",
+    "Source file modified: hooks/rust/tdq-dispatch/target/release/tdq_dispatch.pdb",
     "Source file modified: skills/tdq-setup/SKILL.md",
     "Source file modified: skills/tdq-setup/references/chrome-devtools-mcp-guide.md",
     "Source file modified: skills/tdq-setup/references/zero-to-full-agy.md"
   ],
-  "checked_at": "2026-11-23T08:34:52Z"
+  "checked_at": "2026-11-23T16:17:28Z"
 }

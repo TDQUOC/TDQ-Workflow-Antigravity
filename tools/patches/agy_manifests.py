@@ -6,7 +6,7 @@ from typing import Dict
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
 
-PLUGIN_VERSION = "0.105.0"
+PLUGIN_VERSION = "0.106.0"
 
 
 def generate_plugin_json(plugin_root: Path) -> None:
