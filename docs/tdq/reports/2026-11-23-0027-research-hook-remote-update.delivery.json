@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "7caa0702-9ad0-4fe5-83dd-8d99176da93f",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-23-0027-research-hook-remote-update\\.tmp.bao-cao.archify.f77319b390c14195a5c9aef34367b7df.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-23-0027-research-hook-remote-update.00b1a04958804a49a4c8e499f410c805.html",
+  "specification": {
+    "sha256": "5ff973190292bfc7fb1c24ec0fca793f087ab39005fecb45dd792510656c5189",
+    "bytes": 2757
+  },
+  "artifact": {
+    "sha256": "3367e863e6346e324fe676a85fd8a8f9079e3cccae32ccb30add3435bd50ee9a",
+    "bytes": 1232524
+  },
+  "explainer": {
+    "preparedSha256": "41c95db81ec3d2200889e7d8af0505badfdca86be723094696a923bc25161e73",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-bg-check",
+        "inline": true,
+        "sha256": "715f2cd3ab02c8aca552e33f4b62e9317e81ca37750017757c139d342c75ba04",
+        "bytes": 969
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-consent-update",
+        "inline": true,
+        "sha256": "b384e51bb3ee74097e60de3f3f82d64caca3c5564a1e638e2274d444ac2f0f75",
+        "bytes": 1042
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-hypothesis-matrix",
+        "inline": true,
+        "sha256": "f8b206f9d58fef6f754a9f94c61088fbd3f67a1198498eaae13e453216f00c6a",
+        "bytes": 969
+      }
+    ]
+  }
+}
