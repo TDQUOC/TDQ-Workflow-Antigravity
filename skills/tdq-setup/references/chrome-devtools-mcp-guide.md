@@ -1,49 +1,31 @@
-# Hướng Dẫn: Cài Đặt & Cấu Hình Chrome DevTools MCP Cho Claude Code
+# Chrome DevTools MCP Setup & Antigravity Browser Guide
 
-Tài liệu tóm lược cách tích hợp **Google Chrome** với **Claude Code** qua **Chrome DevTools MCP**, cấu hình bypass quyền 2 tầng và cơ chế auto-launch. Chi tiết script nâng cao xem tại `scripts/tdq_devtool_mcp.py`.
+This reference summarizes Chrome DevTools MCP setup via `scripts/tdq_devtool_mcp.py` across Google Antigravity and Claude Code.
 
-## 1. Tổng Quan Kiến Trúc
-```
-Claude Code CLI <--(stdio)--> chrome-devtools-mcp <--(CDP WebSocket:9222)--> Google Chrome (ChromeDevProfile)
-```
+## 1. Architecture & Optional Gate Behavior
 
-## 2. Cài Đặt MCP Server
-Đăng ký server vào `~/.claude.json`:
-```json
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl=http://127.0.0.1:9222"]
-    }
-  }
-}
+```text
+Host Agent <--(stdio / plugin MCP)--> chrome-devtools-mcp <--(CDP 127.0.0.1:9222)--> Chrome (Isolated Profile)
 ```
 
-## 3. Bypass Quyền 2 Tầng (Zero-Prompt Setup)
+- On Google Antigravity, `chrome-devtools` is served via `chrome-devtools-plugin` (or optional `chrome_devtools` server config) using an isolated user data directory (`${PLUGIN_DATA}/chrome-devtools-profile`).
+- Under `tdq-setup`, Chrome & `chrome-devtools-plugin` belong to the **Optional Add-on Gate**: when absent or offline, verification records `SKIPPED` cleanly without blocking the `Core Gate`.
 
-### Tầng 1: Phía Claude Code CLI
-Thêm quyền vào `~/.claude/settings.json`:
-```json
-{
-  "permissions": {
-    "allow": ["mcp_tdq-workflow-agy_chrome-devtools_*", "mcp__chrome_devtools__*"]
-  }
-}
-```
+## 2. Host Registration
 
-### Tầng 2: Phía Google Chrome
-Khởi chạy Chrome với profile cách ly và mở origin:
-```cmd
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%USERPROFILE%\ChromeDevProfile" --remote-allow-origins=*
-```
+- **Antigravity:** Install/enable `chrome-devtools-plugin` via Antigravity Plugins or use `scripts/tdq_mcp_launcher.mjs chrome_devtools` with `--isolated`. Probe with `python3 scripts/tdq_devtool_mcp.py status`.
+- **Claude Code / Generic stdio:** Register `chrome-devtools` in `~/.claude.json` running `npx -y chrome-devtools-mcp@latest --browserUrl=http://127.0.0.1:9222` and add `"mcp_tdq-workflow-agy_chrome-devtools_*"` / `"mcp__chrome_devtools__*"` to `permissions.allow` in `~/.claude/settings.json`.
 
-## 4. Khắc Phục Sự Cố Thường Gặp
+## 3. Isolated Chrome Launch (Zero Personal Profile Mutation)
 
-| Hiện tượng | Nguyên nhân | Cách xử lý |
+- Automated setup NEVER closes personal Chrome windows or overwrites personal profiles.
+- Launch a dedicated debug instance via `python3 scripts/tdq_devtool_mcp.py launch` (defaults to port `9222` with `--user-data-dir` set to an isolated profile and `--remote-allow-origins=*`).
+
+## 4. Troubleshooting
+
+| Symptom | Cause | Resolution |
 |---|---|---|
-| `ECONNREFUSED 127.0.0.1:9222` | Chrome chưa bật cờ debug | Chạy lệnh `python3 scripts/tdq_devtool_mcp.py launch` |
-| Cảnh báo bảo mật màu cam | Thiếu cờ origin | Thêm cờ `--remote-allow-origins=*` vào lệnh Chrome |
-| Hỏi Allow/Deny liên tục | Chưa cấu hình wildcard | Thêm `"mcp_tdq-workflow-agy_chrome-devtools_*"` vào `settings.json` |
-| Profile bị lock | Tiến trình Chrome cũ chưa tắt | Tắt tiến trình Chrome trong Task Manager |
+| `ECONNREFUSED 127.0.0.1:9222` | Debug Chrome instance is not running | Run `python3 scripts/tdq_devtool_mcp.py launch` |
+| Profile lock error | Stale debug Chrome process holds lock | Close only the dedicated debug Chrome window |
+| Missing plugin in Antigravity | `chrome-devtools-plugin` not installed | Optional Add-on Gate skips cleanly; install in Plugins UI if UI audit needed |
+| Repeated permission prompts | Wildcard tool rule missing | Add `"mcp_tdq-workflow-agy_chrome-devtools_*"` to host allowlist |

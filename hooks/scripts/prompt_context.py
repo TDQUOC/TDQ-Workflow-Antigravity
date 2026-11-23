@@ -175,6 +175,70 @@ def extract_git_grants(prompt):
     return grants
 
 
+_SETUPFULLY_RE = re.compile(r"\bsetupfully\s+tdq-workflow\b", re.IGNORECASE)
+_SETUPFULLY_Q_PHRASE_RE = re.compile(
+    r"(?i)(?:\blà\s+gì\b|\bthế\s+nào\b|\bnhư\s+nào\b|\bcách\s+(?:chạy|dùng)\b|"  # i18n-allow
+    r"\bwhat\s+is\b|\bhow\s+to\b|\bexplain\b|\bdescribe\b|\btell\s+me\s+about\b|"
+    r"\bis\s+[^\n]{0,40}\bsafe\b)"
+)
+_SETUPFULLY_QUOTED_RE = re.compile(
+    r"""(["'`“])[^"'`”]*\bsetupfully\s+tdq-workflow\b[^"'`”]*\1"""
+)
+
+
+def extract_setupfully_trigger(prompt):
+    """Return True only when a genuine user prompt invokes `setupfully tdq-workflow`."""
+    trimmed = _tach_prompt_thuc(prompt)
+    if _has_prompt_grant_blockers(trimmed):
+        return False
+    if _SETUPFULLY_Q_PHRASE_RE.search(trimmed) or _SETUPFULLY_QUOTED_RE.search(trimmed):
+        return False
+    return bool(_SETUPFULLY_RE.search(trimmed))
+
+
+def _evaluate_setup_setup_line(prompt, is_new_turn, source=""):
+    """Return `[TDQ:SETUP]` directive when setupfully or restart resume applies, else ''."""
+    effective_new = bool(is_new_turn) and str(source or "").strip().lower() not in (
+        "compact",
+        "resume",
+        "system",
+    )
+    try:
+        import tdq_setup_state
+        res = tdq_setup_state.evaluate_restart_resume(is_new_turn=effective_new)
+        action = res.get("action")
+        if action == "run_verify":
+            return (
+                "[TDQ:SETUP] Antigravity restarted after Phase-1 setup — run NOW: "
+                "`py -3 -X utf8 scripts/tdq_setup.py --post-restart-verify` and close the loop."
+            )
+        if action == "remind_restart":
+            return (
+                "[TDQ:SETUP] Setup Phase 1 completed — close and restart Antigravity completely "
+                "(same IDE process detected), then send any message to run 6-layer verification."
+            )
+    except Exception as exc:  # noqa: BLE001
+        _info(f"prompt_context: setup state check skipped: {type(exc).__name__}: {exc}")
+    if effective_new and extract_setupfully_trigger(prompt):
+        return (
+            "[TDQ:SETUP] Explicit setupfully user consent received — run Phase-1 setup end-to-end "
+            "without asking manifest approval: `py -3 -X utf8 scripts/tdq_setup.py --setupfully`."
+        )
+    return ""
+
+
+def _emit_setup_hooks(cwd, prompt, is_new_turn, user_md_fn=None, source=""):
+    """Emit [TDQ:SETUP] directive line and optional Antigravity user_markdown card."""
+    line = _evaluate_setup_setup_line(prompt, is_new_turn, source=source)
+    if not line:
+        return False
+    final_line = lenh_cho_project(line, cwd)
+    emit_context([final_line])
+    if callable(user_md_fn):
+        user_md_fn(final_line)
+    return True
+
+
 def _an_toan_by(prompt):
     """Sanitize user prompt for --by flag to prevent command injection and quote breakage (O01)."""
     clean_p = _tach_prompt_thuc(prompt)
@@ -557,6 +621,8 @@ def main():
             if not agy_mode:
                 _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")
         _nhac_worktree(cwd)
+        hook_source = str(payload.get("source") or "")
+        _emit_setup_hooks(cwd, prompt, is_new_turn=is_new_turn, user_md_fn=emit_user_markdown if agy_mode else None, source=hook_source)
 
     # No OPEN request (open = active_request exists AND phase != idle) → point at intake.
     # The INTAKE line comes FIRST so _truncate (which cuts from the tail) never clips it.
