@@ -9,7 +9,7 @@
   "candidate_path": "docs/tdq/models/master.model.json",
   "candidate_digest": "2d36058b49f5c8e98566a97b45c93d84ed05953b28f0b21987e0da41a68c9afd",
   "artifact_path": "docs/architecture/index.html",
-  "artifact_digest": "3e7e87d0282bc285862b513d1c47280e270cd18877362bb1460160c8b66d4bb0",
+  "artifact_digest": "86386d0a89653167c1e46a19076d9ba7760b6ef719971785456fc6f37a23b284",
   "source_paths": [
     "scripts",
     "hooks",
@@ -75,11 +75,11 @@
     "docs/tdq/models/optimization-report.json": "ef83b7effbcb1c3b7062f61cad2b58a9a3f657ee3b5add9ed9d4b2fc4acce2ac",
     "docs/tdq/models/overview.json": "36422966c09ac48c600469ed0ceb2646dc6de7506a1397018ea71ed0da95b746",
     "docs/tdq/models/pipeline-lifecycle.json": "15c8bdede572f4eebed294b93d2c2a3545c85d87b9811dd1305b8bf4d2574bc1",
-    "docs/tdq/models/registry/index.json": "72ff643da1ac31798435aff13e775e2b39255addbe665145dd73e858705bab3b",
+    "docs/tdq/models/registry/index.json": "f70329fdb53006ff9f210511954bd00ebd6ea2b093945cd2df17c58d1bce69cc",
     "docs/tdq/models/registry/nodes/arch_incremental_sync.json": "e0689c7983bd444db04e6e3884467231ed1d95088ac507ab9b52dd1afa69a92d",
     "docs/tdq/models/registry/nodes/arch_lsp_ladder.json": "1fb80ea0a979ffefaf2d201f4b2a0136388ebafefbcfc9df97f703569495564c",
     "docs/tdq/models/registry/nodes/arch_model_validate.json": "410694a0827dcb17c4b1e3215dfccae02d36d9cc2fea8cc82cb4b89f782b3e20",
-    "docs/tdq/models/registry/nodes/arch_portal_build.json": "c6e3fee7fc6ef590272517326e6015c20bbefd65a0fec97eb8b0ce46621b08ed",
+    "docs/tdq/models/registry/nodes/arch_portal_build.json": "4b9acaed7478a90283198f1c0956ec8c258024abcf25235a142677712687562f",
     "docs/tdq/models/registry/nodes/detail_atomic_publish.json": "3d28d875972b06f19f2d2a5107465f774f3701c879d0b8b09a798bc01122f394",
     "docs/tdq/models/registry/nodes/detail_cycle_dfs_guard.json": "9f97fdeb3dcc93bce09eaf9a41c2db05003c559790c698a48d1e0894dad649bb",
     "docs/tdq/models/registry/nodes/detail_rtk_collision_guard.json": "6016fa1ee1980bb9969001b846d2a63e3c863c9093a11c0cc4acacff70a1716c",
@@ -100,6 +100,7 @@
     "docs/tdq/models/search-and-archify.json": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
     "hooks/hooks.json": "7a2b18dc62e3fca9eb08c9fa27de7ffb7a5020ccf2984e13cbca2b1ea5097dbb",
     "hooks/rust/tdq-dispatch/.cargo/config.toml": "e36953627875c7fb2dd175c5540807ba093659baf907c6a9723fa01b02b3b195",
+    "hooks/rust/tdq-dispatch/Cargo.lock": "6a6f79337c83e028358f332a59e042ae8f5dfc187ae92b7adc955fae42ff086a",
     "hooks/rust/tdq-dispatch/Cargo.toml": "88c57b0ec4d8f7798563f9b54dd974dc895525c5e184caf0cbefc402bad1e1f3",
     "hooks/rust/tdq-dispatch/src/command_parser.rs": "d2949aa28d2cadf513077a69275823ea9af9e5eccccce854f257c4aa2ef1c602",
     "hooks/rust/tdq-dispatch/src/events/mod.rs": "fc843df6f4b16a641c40f1a331c9f6c0db4d742e01223a5ba3262aee7a5095e1",
@@ -140,7 +141,7 @@
     "scripts/archify_artifacts.py": "3af0d0e8fe3d34f242fbd94509f42e742be75433ec89833f729a203ecff20b3b",
     "scripts/archify_delivery.py": "2f024bfd94061ba75561d2694e3d0dc38912f19daaecbd4ffb45f6370e1fac3c",
     "scripts/archify_model.py": "d7f3cbf30cd7dd4dd8c556320ff4fc84adc05793fc1d8ee2df34fb9caf6ec4a3",
-    "scripts/archify_portal.py": "29256e624c36d5ad81596a650f623edddf6296d5b7359d87ee9cc83d5439fb55",
+    "scripts/archify_portal.py": "5cb4d0fe44da6107de78237c3dc3e85b1c305207d1770f0b8d267d7563bf0d99",
     "scripts/archify_registry.py": "08467da9affad53c9ff64ffe0fafc9053b3e2b0d1bbd8fedb141ff849a44689a",
     "scripts/bootstrap.ps1": "9bc3a3644113f63f02884d72a78fe43b625a55ca2d32aff120aed12d44389fc3",
     "scripts/bootstrap.sh": "bc0f031262e77c87446f51d5fed21fc733a7dce28f8022f3da96faa57f08651f",
@@ -259,7 +260,7 @@
     "skills/tdq-conventions/references/phases.md": "48470c11557271455ef17d09f685ca6a011b22357f2ee9432b1dac824cf26a57",
     "skills/tdq-conventions/references/plugin-routing.md": "13185f3771a6cdf9fbb7f65ead5775e843622bb1ae8fceac5b68f34e3e7acd2a",
     "skills/tdq-conventions/references/reminder-codes.md": "e75c72f36cfa8df565ad67baf99e1099d49fbf85a46e3caaf71542d1a10b8a73",
-    "skills/tdq-conventions/references/soul.md": "a251c321d70d73e571cc4f8b8838eecdb77cd3095a4e17b9d73b0d4ba25b7f69",
+    "skills/tdq-conventions/references/soul.md": "46c9eea0b93a4d1873c06caa66c10d83747c806ba0f3d7bdcad9ca5e14a578ca",
     "skills/tdq-conventions/references/subagent-tuning.md": "b4a5e455394eb612fbb5fd359317b95ae2ca9c6cdd2ea8475814efed8bbcdb4d",
     "skills/tdq-conventions/references/tavily.md": "59de85e05bce17f0facb070f8e109fa8a7d71eba11d63f7a255a7766a1c3152b",
     "skills/tdq-conventions/references/ultracode.md": "2befd45ed793a1eb216b6e783ef7f22468aaa72259fb4e4daa05025cbebc482e",
@@ -381,7 +382,7 @@
     "nodes/arch_incremental_sync.json": "e0689c7983bd444db04e6e3884467231ed1d95088ac507ab9b52dd1afa69a92d",
     "nodes/arch_lsp_ladder.json": "1fb80ea0a979ffefaf2d201f4b2a0136388ebafefbcfc9df97f703569495564c",
     "nodes/arch_model_validate.json": "410694a0827dcb17c4b1e3215dfccae02d36d9cc2fea8cc82cb4b89f782b3e20",
-    "nodes/arch_portal_build.json": "c6e3fee7fc6ef590272517326e6015c20bbefd65a0fec97eb8b0ce46621b08ed",
+    "nodes/arch_portal_build.json": "4b9acaed7478a90283198f1c0956ec8c258024abcf25235a142677712687562f",
     "nodes/detail_atomic_publish.json": "3d28d875972b06f19f2d2a5107465f774f3701c879d0b8b09a798bc01122f394",
     "nodes/detail_cycle_dfs_guard.json": "9f97fdeb3dcc93bce09eaf9a41c2db05003c559790c698a48d1e0894dad649bb",
     "nodes/detail_rtk_collision_guard.json": "6016fa1ee1980bb9969001b846d2a63e3c863c9093a11c0cc4acacff70a1716c",
@@ -398,7 +399,7 @@
     "nodes/op_stage_slices_svg.json": "fd1a34514c24b0ac4cc04e34490de4ee40a771d0abdb993464bdccba913b504f",
     "nodes/rtk_probe_rewrite.json": "98caf9b1f68bdaf657f54fcc85831209155654331a8ec890cbe2ffe94a00f849",
     "nodes/stop_disk_diff_check.json": "45a465bc2a1c90c1c6ecc9c91b2a9afe50d5f4253a1bb1e26d58e99b552b3b49",
-    "registry-bundle.js": "6cbdf478ab7eae5e517493ca6145508e31f841906ffe3c6491a7048bac7200cf"
+    "registry-bundle.js": "669026b0e7ce79c8213a6724cdc958c7b98b280e64eb7feb6eaa1c5ee3124525"
   },
   "views": [
     {
@@ -494,12 +495,12 @@
       "type": "lifecycle",
       "quality": "showcase",
       "specification": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\pipeline-lifecycle.json",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\pipeline-lifecycle.json",
         "sha256": "15c8bdede572f4eebed294b93d2c2a3545c85d87b9811dd1305b8bf4d2574bc1",
         "bytes": 4128
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\pipeline-lifecycle.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.html",
         "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
         "bytes": 824757
       },
@@ -516,12 +517,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\pipeline-lifecycle.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\pipeline-lifecycle.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\pipeline-lifecycle.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2835,
+      "durationMs": 2756,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -535,12 +536,12 @@
       "type": "architecture",
       "quality": "showcase",
       "specification": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\search-and-archify.json",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
         "sha256": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
         "bytes": 4663
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.html",
         "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
         "bytes": 824633
       },
@@ -557,12 +558,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2859,
+      "durationMs": 2805,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -576,12 +577,12 @@
       "type": "workflow",
       "quality": "showcase",
       "specification": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\hooks-and-gates.json",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\hooks-and-gates.json",
         "sha256": "5b12b2f2fedafeffcde07d1b25eb29d67404861eb772552481ce503dd8b2e7cd",
         "bytes": 4898
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\hooks-and-gates.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.html",
         "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
         "bytes": 823078
       },
@@ -598,12 +599,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\hooks-and-gates.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\hooks-and-gates.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\hooks-and-gates.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3302,
+      "durationMs": 3331,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -617,12 +618,12 @@
       "type": "architecture",
       "quality": "showcase",
       "specification": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\runtime-verification.json",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
         "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
         "bytes": 4891
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.html",
         "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
         "bytes": 822816
       },
@@ -664,12 +665,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3150,
+      "durationMs": 2943,
       "browserCheck": {
         "requested": true,
         "ran": true

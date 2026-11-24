@@ -10,8 +10,8 @@
     "ast_symbol_sha256": "7ca7dfe1012f8f43041e80f4124780942b98496abbd18a1d5cceb9db54d18de3",
     "span_binding": {
       "path": "scripts/archify_portal.py",
-      "line": 858,
-      "end_line": 903
+      "line": 859,
+      "end_line": 904
     },
     "render_slice_sha256": null,
     "cache_status": "clean",
@@ -40,8 +40,8 @@
   "sources": [
     {
       "path": "scripts/archify_portal.py",
-      "line": 858,
-      "end_line": 903
+      "line": 859,
+      "end_line": 904
     }
   ],
   "reused_by": [

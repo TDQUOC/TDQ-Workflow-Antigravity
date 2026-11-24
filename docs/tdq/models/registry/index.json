@@ -107,8 +107,8 @@
       "hash_mode": "tree_sitter_ast",
       "span_binding": {
         "path": "scripts/archify_portal.py",
-        "line": 858,
-        "end_line": 903
+        "line": 859,
+        "end_line": 904
       },
       "summary_sha256": "305150a7e7782cf107a06c448bda622149b5708e1e5776afaa2041470c11700e",
       "sub_flow_slice_id": "slice-arch-portal-build",

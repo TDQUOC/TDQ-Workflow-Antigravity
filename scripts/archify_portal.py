@@ -826,6 +826,7 @@ def _render_portal_document(
         f"<head>\n"
         f'<meta charset="utf-8">\n'
         f'<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+        f'<link rel="icon" href="data:,">\n'
         f"<title>{safe_title}</title>\n"
         f"<style>{_PORTAL_CSS}</style>\n"
         f"</head>\n"
