@@ -574,3 +574,143 @@ def test_archify_origin_validation_and_stdin_tavily_key(
     ok_origin, msg_origin = tdq_setup._clone_or_update_archify(existing, existing)
     assert ok_origin is False
     assert "origin" in msg_origin.lower()
+
+
+def test_scan_manifest_and_apply_addons_tree_sitter(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """AGY manifest includes tree_sitter addon, action, and offline guard."""
+    home = _make_agy_home(tmp_path)
+    state_dir = tmp_path / "ts_state"
+    project = tmp_path / "ts_proj"
+    project.mkdir()
+    _isolate_agy_env(monkeypatch, home, state_dir, project, dry=True)
+
+    # 1. Missing tree-sitter-rust -> installed=False + install_tree_sitter action
+    with (
+        mock.patch.object(tdq_setup, "_probe_agy_plugins", return_value=[]),
+        mock.patch.object(tdq_devtool_mcp, "get_chrome_executable", return_value=""),
+        mock.patch.dict(sys.modules, {"tree_sitter_rust": None}),
+    ):
+        manifest_missing = tdq_setup.scan_setup_manifest(str(project))
+
+    for key in ("rtk", "caveman", "archify", "tree_sitter"):
+        assert key in manifest_missing["addons"]
+    ts_missing = manifest_missing["addons"]["tree_sitter"]
+    for key in ("installed", "missing", "languages", "version", "packages"):
+        assert key in ts_missing
+    assert ts_missing["installed"] is False
+    assert "tree-sitter-rust" in ts_missing["missing"]
+    assert ts_missing["packages"] == list(tdq_setup.TREE_SITTER_PACKAGES)
+    assert {
+        "id": "install_tree_sitter",
+        "category": "addon",
+        "blocking": False,
+    } in manifest_missing["actions"]
+
+    # 2. All 5 present -> installed=True and no install_tree_sitter action
+    with (
+        mock.patch.object(tdq_setup, "_probe_agy_plugins", return_value=[]),
+        mock.patch.object(tdq_devtool_mcp, "get_chrome_executable", return_value=""),
+    ):
+        rc = tdq_setup.main(["--khong-log", "--scan-json"])
+    assert rc == 0
+    manifest_ok = json.loads(capsys.readouterr().out)
+    ts_ok = manifest_ok["addons"]["tree_sitter"]
+    assert ts_ok["installed"] is True
+    assert ts_ok["missing"] == []
+    assert "python" in ts_ok["languages"]
+    assert ts_ok["version"]
+    assert not any(
+        a["id"] == "install_tree_sitter" for a in manifest_ok["actions"]
+    )
+
+    # 3. _apply_addons_agy honors dry_run/TDQ_KHONG_CHAM_MAY=1 and installs when allowed
+    applied: list[str] = []
+    skipped: list[str] = []
+    with (
+        mock.patch.dict(sys.modules, {"tree_sitter_rust": None}),
+        mock.patch.object(
+            tdq_setup,
+            "_apply_rtk_addon",
+            return_value={"ok": False, "installed": False},
+        ),
+        mock.patch.object(
+            tdq_setup,
+            "_apply_caveman_addon",
+            return_value={"wrapped": [], "enabled": False},
+        ),
+        mock.patch.object(
+            tdq_setup,
+            "ensure_archify_installed",
+            return_value=(False, "skipped: TDQ_KHONG_CHAM_MAY=1"),
+        ),
+        mock.patch.object(tdq_setup.tdq_ten_lenh, "chay_subprocess") as sub_dry,
+    ):
+        addons_dry = tdq_setup._apply_addons_agy(
+            str(project),
+            home,
+            setupfully=True,
+            dry_run=True,
+            applied=applied,
+            skipped=skipped,
+        )
+    sub_dry.assert_not_called()
+    assert addons_dry["tree_sitter"]["ok"] is False
+    assert "tree-sitter-rust" in addons_dry["tree_sitter"]["detail"]
+
+    monkeypatch.setenv("TDQ_KHONG_CHAM_MAY", "0")
+    state = {"fixed": False}
+
+    def fake_support():
+        if state["fixed"]:
+            return {
+                "available": True,
+                "missing": [],
+                "installed": list(tdq_setup.TREE_SITTER_PACKAGES),
+                "languages": ["python", "javascript", "typescript", "tsx", "rust"],
+                "version": "0.25.0",
+            }
+        return {
+            "available": False,
+            "missing": ["tree-sitter-rust"],
+            "installed": ["tree-sitter"],
+            "languages": [],
+            "version": "0.25.0",
+        }
+
+    def fake_pip(cmd, **_kw):
+        state["fixed"] = True
+        return mock.MagicMock(returncode=0, stdout="ok\n", stderr="")
+
+    with (
+        mock.patch.object(
+            tdq_setup,
+            "_apply_rtk_addon",
+            return_value={"ok": True, "installed": False},
+        ),
+        mock.patch.object(
+            tdq_setup,
+            "_apply_caveman_addon",
+            return_value={"wrapped": [], "enabled": False},
+        ),
+        mock.patch.object(
+            tdq_setup,
+            "ensure_archify_installed",
+            return_value=(True, str(home / ".local" / "share" / "archify")),
+        ),
+        mock.patch.object(
+            tdq_setup.archify_registry,
+            "check_tree_sitter_support",
+            side_effect=fake_support,
+        ),
+        mock.patch.object(
+            tdq_setup.tdq_ten_lenh, "chay_subprocess", side_effect=fake_pip
+        ) as sub_live,
+    ):
+        addons_live = tdq_setup._apply_addons_agy(
+            str(project), home, setupfully=True, dry_run=False, applied=[], skipped=[]
+        )
+    sub_live.assert_called_once()
+    assert addons_live["tree_sitter"]["ok"] is True
+    assert "0.25.0" in addons_live["tree_sitter"]["detail"]
