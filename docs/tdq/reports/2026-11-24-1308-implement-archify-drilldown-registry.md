@@ -105,5 +105,5 @@ Ghi chú phân rã đội: 10/12 task (`T1.1`–`T1.4`, `T2.1`–`T2.3`, `T3.1`,
 **Rủi ro hồi quy:** Thay đổi lớn nhất nằm ở luồng xuất bản `docs/architecture/` khi bật `master.registry` và việc cô lập `TDQ_LOG` trong `_isolate_agy_env`. Đã khóa bằng 362 test Archify (`>= 250` mục tiêu), 69 test Setup và 33 test log `TDQ_LOG=1/0`, vẫn giữ tương thích ngược hoàn toàn cho model không có `master.registry`.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-24-1308-implement-archify-drilldown-registry.manifest.json -->
-<!-- manifest_digest: cf1822f8211118e7b89936392d9cf67bcc137f948cf6c0f32582957ef084c164 -->
+<!-- manifest_digest: 8bb2cb7b1193dc1b219a5b879db6e97300cce9a56c33efeebf1aad9ec7553cd6 -->
 <!-- tdq-archify-binding:end -->

@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-24T09:04:43.589Z",
+  "startedAt": "2026-11-24T15:54:54.236Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\bao-cao.archify.md",
     "sha256": "d809a93e1b0cd89d050bd7e300748b3d161f4d2dfa94af8a68b390756d088649",
     "bytes": 2879
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
     "sha256": "3a1bd7b0cb7d37ba0c55039e847d7d77dd355eacf903e093886eb7d6014c9af1",
     "bytes": 1578150
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\26544_1795511081813\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\29212_1795535692545\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1349,
+      "durationMs": 1338,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\26544_1795511081813\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\29212_1795535692545\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "585fa92f-c573-4af2-b055-6f1c80b4975f",
+        "receiptId": "0db377f0-1480-47e8-a671-2650e8f0793f",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
         "explainer": {
-          "preparedSha256": "2c43438bb5284f9e144c2a99e06a56753e34379d451b83527ae3395082b269ca",
+          "preparedSha256": "2d9d18a29d88742159ce2ce884c8bac309f7712049b3db2e878656933e5d30e4",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -147,17 +147,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 709,
+      "durationMs": 718,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\26544_1795511081813\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\29212_1795535692545\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
         "family": "explainer",
         "artifact": {
           "sha256": "3a1bd7b0cb7d37ba0c55039e847d7d77dd355eacf903e093886eb7d6014c9af1",
@@ -208,7 +208,7 @@
               "id": "wf-report-before",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-nOpYNk\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-0C5zPN\\child.html",
                 "artifact": {
                   "sha256": "0d9e422b864dc5241d2b463c19ed658b50393ff34f043cadd4af536fc409f1af",
                   "bytes": 807680
@@ -335,7 +335,7 @@
               "id": "wf-report-after",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ZtqWpe\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-AvjtjH\\child.html",
                 "artifact": {
                   "sha256": "d1fa50fd7e0edbf22f71a90091d577ab94b8e95e480610f1ea84cb9ed131ac2c",
                   "bytes": 810065
@@ -462,7 +462,7 @@
               "id": "wf-report-tests",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-YoCO3a\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Z7L5do\\child.html",
                 "artifact": {
                   "sha256": "7670c1ed3ce46330a3e65f03bd31659755580a05928615ea18c22eaf9e98fd7c",
                   "bytes": 807921
@@ -589,7 +589,7 @@
               "id": "wf-report-results",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-OsE6WD\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-edPKsG\\child.html",
                 "artifact": {
                   "sha256": "52dfe8d36ddfc5b7da6f2ae3a9d09158b8506acf85a5e6da4c5d1ce70a9c944e",
                   "bytes": 807768
@@ -716,7 +716,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "585fa92f-c573-4af2-b055-6f1c80b4975f"
+        "deliveryReceiptId": "0db377f0-1480-47e8-a671-2650e8f0793f"
       }
     }
   },
@@ -726,12 +726,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-24T09:04:46.216Z",
-  "durationMs": 2626,
+  "finishedAt": "2026-11-24T15:54:56.826Z",
+  "durationMs": 2590,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "585fa92f-c573-4af2-b055-6f1c80b4975f",
+  "receiptId": "0db377f0-1480-47e8-a671-2650e8f0793f",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
   "specification": {
     "sha256": "d809a93e1b0cd89d050bd7e300748b3d161f4d2dfa94af8a68b390756d088649",
     "bytes": 2879
@@ -15,7 +15,7 @@
     "bytes": 1578150
   },
   "explainer": {
-    "preparedSha256": "2c43438bb5284f9e144c2a99e06a56753e34379d451b83527ae3395082b269ca",
+    "preparedSha256": "2d9d18a29d88742159ce2ce884c8bac309f7712049b3db2e878656933e5d30e4",
     "dependencies": [
       {
         "kind": "diagram-spec",

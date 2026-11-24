@@ -11,7 +11,7 @@
     "bytes": 2879
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.html",
     "sha256": "3a1bd7b0cb7d37ba0c55039e847d7d77dd355eacf903e093886eb7d6014c9af1",
     "bytes": 1578150
   },
@@ -28,11 +28,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.b6d5120e6c9e469abbc94f2762766a90.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry.13e38b62e285472ab1c540edb8bb7172.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2626,
+  "durationMs": 2590,
   "browserCheck": {
     "requested": false,
     "ran": false
