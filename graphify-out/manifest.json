@@ -637,16 +637,16 @@
     "semantic_hash": "277e8f7d1755243ab9cf599d00101066"
   },
   "scripts/archify_artifacts.py": {
-    "mtime": 1794595257.3536904,
-    "seen": 1794767258.321245,
-    "ast_hash": "175440f250bc6836bf7b38f398bc4587",
-    "semantic_hash": "175440f250bc6836bf7b38f398bc4587"
+    "mtime": 1795505575.8747585,
+    "seen": 1795505863.2376118,
+    "ast_hash": "3537e2e84e4b327994d5492b5e71fb11",
+    "semantic_hash": "3537e2e84e4b327994d5492b5e71fb11"
   },
   "scripts/archify_delivery.py": {
-    "mtime": 1795368217.7569802,
-    "seen": 1795450658.820958,
-    "ast_hash": "c54221421a3531ffd19124f2af792367",
-    "semantic_hash": "c54221421a3531ffd19124f2af792367"
+    "mtime": 1795505540.1637661,
+    "seen": 1795505863.2376149,
+    "ast_hash": "aae0f845202ba6bb4755d76c0f5b059c",
+    "semantic_hash": "aae0f845202ba6bb4755d76c0f5b059c"
   },
   "scripts/archify_model.py": {
     "mtime": 1794595257.3542123,
@@ -1625,5 +1625,11 @@
     "seen": 1795450658.816607,
     "ast_hash": "c9d73a21ae99f52f4bdf598bcb2670ad",
     "semantic_hash": "c9d73a21ae99f52f4bdf598bcb2670ad"
+  },
+  "scripts/archify_registry.py": {
+    "mtime": 1795505598.4760096,
+    "seen": 1795505863.2378013,
+    "ast_hash": "69b7d8afd3e656f4cbe63aa1771adca2",
+    "semantic_hash": "69b7d8afd3e656f4cbe63aa1771adca2"
   }
 }
