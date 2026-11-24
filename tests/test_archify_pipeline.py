@@ -1577,6 +1577,66 @@ class TestDrilldownRenderCli(unittest.TestCase):
             mock_fin.assert_not_called()
         self.assertEqual(self.out_html.read_text(encoding="utf-8"), "<html>PREVIOUS_DRILLDOWN</html>")
 
+    def test_render_single_slice_isolates_archify_sidecars_from_staging(self):
+        """_render_single_slice isolates temporary files and sidecars outside staging_dir."""
+        staging_dir = self.repo_dir / ".staging-slice-test"
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        captured_paths: list[Path] = []
+
+        def fake_finalize(diagram_type, candidate_path, output_path, **kwargs):
+            out_p = Path(output_path)
+            cand_p = Path(candidate_path)
+            captured_paths.extend([cand_p, out_p])
+            out_p.write_text('<html><svg viewBox="0 0 200 80"><g data-node-id="s1"></g></svg></html>', encoding="utf-8")
+            for ext in (".manifest.json", ".receipt.json", ".finalize.json", ".finalize-summary.json", ".delivery.json"):
+                out_p.with_suffix(ext).write_text("{}", encoding="utf-8")
+            return archify_delivery.FinalizeResult(
+                status=True,
+                receipt={
+                    "ok": True, "status": "pass", "artifact": str(out_p),
+                    "gates": {"validate": "pass", "deliver": "pass", "check": "pass", "browser-check": "pass"},
+                },
+            )
+
+        owner_nodes = [{
+            "node_id": "n-slice", "title": "Slice",
+            "sub_flow": {
+                "slice_id": "slice-very-long-pilot-name",
+                "max_cols": 2,
+                "steps": [{"step_id": "s1", "label": "One", "col": 0}],
+                "edges": [],
+            },
+        }]
+        with mock.patch("tdq_archify.run_finalize", side_effect=fake_finalize):
+            svg = tdq_archify._render_single_slice(
+                "slice-very-long-pilot-name", owner_nodes, staging_dir, self.repo_dir, "showcase", "en",
+            )
+        self.assertIn("<svg", svg)
+        self.assertEqual(list(staging_dir.iterdir()), [])
+        self.assertTrue(all(p.parent != staging_dir for p in captured_paths))
+        self.assertTrue(all(not p.exists() for p in captured_paths))
+
+    def test_atomic_swap_directory_cleans_temp_dest_on_copytree_failure(self):
+        """_atomic_swap_directory removes partial temp_dest if shutil.copytree fails."""
+        import archify_artifacts
+
+        dest_dir = self.repo_dir / "dest_bundle"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        staging_dir = self.repo_dir / "staging_fail"
+        staging_dir.mkdir(parents=True, exist_ok=True)
+
+        def fail_copytree(src, dst, **kwargs):
+            Path(dst).mkdir(parents=True, exist_ok=True)
+            raise OSError("Simulated WinError 3 MAX_PATH failure")
+
+        with (
+            mock.patch.object(archify_artifacts.shutil, "copytree", side_effect=fail_copytree),
+            self.assertRaises(OSError),
+        ):
+            archify_artifacts._atomic_swap_directory(staging_dir, dest_dir)
+        leaked = [p for p in self.repo_dir.iterdir() if p.name.startswith(f".{dest_dir.name}.tmp.")]
+        self.assertEqual(leaked, [])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import uuid
 from pathlib import Path
@@ -1298,9 +1299,10 @@ def _render_single_slice(
         return _extract_svg_from_html(view_html.read_text(encoding="utf-8"), owner_nodes, slice_id)
 
     cand_payload = _build_slice_workflow_candidate(owner_nodes, slice_id, quality, doc_lang)
-    tmp_cand = staging_dir / f".tmp.slice.{slice_id}.{uuid.uuid4().hex}.json"
-    tmp_html = staging_dir / f".tmp.slice.{slice_id}.{uuid.uuid4().hex}.html"
-    try:
+    with tempfile.TemporaryDirectory(prefix="tdq-slice-") as tmp_dir:
+        tmp_root = Path(tmp_dir)
+        tmp_cand = tmp_root / "cand.json"
+        tmp_html = tmp_root / "slice.html"
         tmp_cand.write_text(json.dumps(cand_payload, indent=2, ensure_ascii=False), encoding="utf-8")
         res = run_finalize(
             diagram_type="workflow",
@@ -1313,9 +1315,6 @@ def _render_single_slice(
             raise RuntimeError(f"Failed to finalize slice '{slice_id}': {res.receipt}")
         _log(f"rendered dirty slice_id={slice_id}")
         return _extract_svg_from_html(tmp_html.read_text(encoding="utf-8"), owner_nodes, slice_id)
-    finally:
-        tmp_cand.unlink(missing_ok=True)
-        tmp_html.unlink(missing_ok=True)
 
 
 def _should_render_slice(

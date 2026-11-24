@@ -1128,7 +1128,11 @@ def _atomic_swap_directory(
     temp_dest = dest_path.parent / f".{dest_path.name}.tmp.{uuid.uuid4().hex}"
     backup_dest = dest_path.parent / f".{dest_path.name}.bak.{uuid.uuid4().hex}"
 
-    shutil.copytree(staging_path, temp_dest, symlinks=False)
+    try:
+        shutil.copytree(staging_path, temp_dest, symlinks=False)
+    except Exception:
+        shutil.rmtree(temp_dest, ignore_errors=True)
+        raise
 
     if dest_path.exists():
         try:
