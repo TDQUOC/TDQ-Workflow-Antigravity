@@ -64,6 +64,7 @@ def _isolate_agy_env(
     monkeypatch.setenv("TDQ_SETUP_STATE_DIR", str(state_dir))
     monkeypatch.setenv("TDQ_PROJECT_DIR", str(project))
     monkeypatch.setenv("TDQ_HOST", "antigravity")
+    monkeypatch.setenv("TDQ_LOG", os.environ.get("TDQ_LOG", "1"))
     monkeypatch.setenv("TDQ_KHONG_CHAM_MAY", "1" if dry else "0")
 
 
