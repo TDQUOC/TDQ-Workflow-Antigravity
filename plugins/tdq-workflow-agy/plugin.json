@@ -1,7 +1,7 @@
 {
   "name": "tdq-workflow-agy",
   "displayName": "TDQ Workflow (Antigravity)",
-  "version": "0.106.0",
+  "version": "0.107.0",
   "repository": "https://github.com/TDQUOC/TDQ-Workflow-Antigravity",
   "description": "Spec-driven engineering workflow for Google Antigravity: intake -> spec -> plan -> implement -> QC -> report. Includes 23 [TDQ:*] lifecycle gates, LSP-first 3-tier search discipline, Chrome DevTools & Archify verification, and 8 domain subagents.",
   "logo": "assets/logo.svg",

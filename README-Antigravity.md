@@ -1,6 +1,6 @@
 # TDQ-Workflow-Antigravity
 
-Hệ sinh thái đóng gói và phân phối **TDQ-Workflow (`v0.106.0` — nhánh phát hành `release/antigravity`)** chạy **Native** trên **Google Antigravity** (`Windows`, `macOS`, `Linux`) với MCP, 6 Lifecycle Hooks, 8 Subagents, 12 Skills và 10 Two-Tier Rules.
+Hệ sinh thái đóng gói và phân phối **TDQ-Workflow (`v0.107.0` — nhánh phát hành `release/antigravity`)** chạy **Native** trên **Google Antigravity** (`Windows`, `macOS`, `Linux`) với MCP, 6 Lifecycle Hooks, 8 Subagents, 12 Skills và 10 Two-Tier Rules.
 
 ## Cài đặt 1 lệnh từ GitHub (Windows / macOS / Linux)
 
