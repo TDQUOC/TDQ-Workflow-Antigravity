@@ -34,6 +34,8 @@ Tests cover:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import shutil
@@ -42,6 +44,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 # Add scripts directory to path for imports
 _CURRENT_DIR = Path(__file__).resolve().parent
@@ -724,6 +727,187 @@ class TestMasterFlowContract(unittest.TestCase):
         self.model["master"]["overview"] = "overview\n"
         with self.assertRaisesRegex(ValueError, "id"):
             archify_model.validate_model(self.model)
+
+
+class TestMasterRegistryContract(unittest.TestCase):
+    """Test suite for optional master.registry schema validation."""
+
+    def setUp(self):
+        self.model = {
+            "schema_version": 1,
+            "title": "Master",
+            "evidence_kind": "working-tree",
+            "views": [
+                {
+                    "id": "overview",
+                    "type": "architecture",
+                    "candidate": "overview.json",
+                },
+                {"id": "detail", "type": "workflow", "candidate": "detail.json"},
+            ],
+            "master": {
+                "overview": "overview",
+                "flows": [
+                    {
+                        "id": "flow",
+                        "text": "Read source",
+                        "target": {"diagram": "detail"},
+                        "steps": [
+                            {
+                                "id": "read",
+                                "text": "Read file",
+                                "sources": [
+                                    {"path": "src/main.py", "line": 1, "end_line": 2}
+                                ],
+                            }
+                        ],
+                    }
+                ],
+            },
+        }
+
+    def test_legacy_v1_master_without_registry_unchanged(self):
+        """Legacy v1 master.model.json without registry passes identically."""
+        validated = archify_model.validate_model(self.model)
+        self.assertIs(validated, self.model)
+        self.assertNotIn("registry", validated["master"])
+
+    def test_valid_master_registry_minimal_and_full_preserves_values(self):
+        """Valid master.registry with path and optional fields passes unchanged."""
+        self.model["master"]["registry"] = {"path": "docs/tdq/models/registry"}
+        validated_min = archify_model.validate_model(self.model)
+        self.assertEqual(
+            validated_min["master"]["registry"],
+            {"path": "docs/tdq/models/registry"},
+        )
+
+        full_reg = {
+            "path": "docs/tdq/models/registry",
+            "root_flows": ["flow", "auth-login"],
+            "max_depth": 6,
+        }
+        self.model["master"]["registry"] = full_reg
+        validated_full = archify_model.validate_model(self.model)
+        self.assertIs(validated_full, self.model)
+        self.assertEqual(validated_full["master"]["registry"], full_reg)
+
+        for depth in (1, 8):
+            with self.subTest(depth=depth):
+                self.model["master"]["registry"] = {
+                    "path": "docs/tdq/models/registry",
+                    "root_flows": [],
+                    "max_depth": depth,
+                }
+                self.assertIs(archify_model.validate_model(self.model), self.model)
+
+    def test_master_unknown_key_rejected(self):
+        """Unknown keys inside master are rejected fail-closed."""
+        for extra_registry in (False, True):
+            with self.subTest(extra_registry=extra_registry):
+                model = json.loads(json.dumps(self.model))
+                if extra_registry:
+                    model["master"]["registry"] = {"path": "docs/tdq/models/registry"}
+                model["master"]["unknown_key"] = True
+                with self.assertRaises(ValueError):
+                    archify_model.validate_model(model)
+
+    def test_master_registry_non_dict_missing_path_and_unknown_key_rejected(self):
+        """Non-dict registry, missing path, and unknown keys raise ValueError."""
+        bad_registries = (
+            None,
+            [],
+            "docs/tdq/models/registry",
+            123,
+            {},
+            {"root_flows": ["flow"]},
+            {"path": "docs/tdq/models/registry", "extra_key": 1},
+        )
+        for bad_reg in bad_registries:
+            with self.subTest(registry=bad_reg):
+                model = json.loads(json.dumps(self.model))
+                model["master"]["registry"] = bad_reg
+                with self.assertRaisesRegex(ValueError, r"master\.registry"):
+                    archify_model.validate_model(model)
+
+    def test_master_registry_unsafe_paths_rejected(self):
+        """Unsafe or non-relative registry.path values raise ValueError."""
+        bad_paths = (
+            "",
+            "   ",
+            None,
+            123,
+            "../escape",
+            "docs/../../escape",
+            "/etc",
+            "\\etc",
+            "C:\\Windows\\reg",
+            "C:relative",
+            "docs/reg\n",
+        )
+        for bad_path in bad_paths:
+            with self.subTest(path=bad_path):
+                model = json.loads(json.dumps(self.model))
+                model["master"]["registry"] = {"path": bad_path}
+                with self.assertRaisesRegex(ValueError, r"master\.registry\.path"):
+                    archify_model.validate_model(model)
+
+    def test_master_registry_invalid_max_depth_rejected(self):
+        """Invalid max_depth values (0, 9, bool, str, float, None) raise ValueError."""
+        for bad_depth in (0, -1, 9, True, False, "6", 6.0, None):
+            with self.subTest(max_depth=bad_depth):
+                model = json.loads(json.dumps(self.model))
+                model["master"]["registry"] = {
+                    "path": "docs/tdq/models/registry",
+                    "max_depth": bad_depth,
+                }
+                with self.assertRaisesRegex(ValueError, "max_depth"):
+                    archify_model.validate_model(model)
+
+    def test_master_registry_invalid_root_flows_rejected(self):
+        """Non-list or invalid-element root_flows values raise ValueError."""
+        bad_flows = (
+            "flow",
+            None,
+            {},
+            123,
+            [""],
+            ["   "],
+            [123],
+            [None],
+            ["flow\n"],
+        )
+        for bad_root_flows in bad_flows:
+            with self.subTest(root_flows=bad_root_flows):
+                model = json.loads(json.dumps(self.model))
+                model["master"]["registry"] = {
+                    "path": "docs/tdq/models/registry",
+                    "root_flows": bad_root_flows,
+                }
+                with self.assertRaisesRegex(ValueError, "root_flows"):
+                    archify_model.validate_model(model)
+
+    def test_master_registry_tdq_log_toggle(self):
+        """ISO-timestamped stderr log emits and mutes cleanly via TDQ_LOG=0."""
+        self.model["master"]["registry"] = {"path": "docs/tdq/models/registry"}
+
+        buf_on = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"TDQ_LOG": "1"}),
+            contextlib.redirect_stderr(buf_on),
+        ):
+            archify_model.validate_model(self.model)
+        self.assertRegex(
+            buf_on.getvalue(),
+            r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] archify_model:",
+        )
+
+        buf_off = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"TDQ_LOG": "0"}),
+            contextlib.redirect_stderr(buf_off),
+        ):
+            archify_model.validate_model(self.model)
+        self.assertEqual(buf_off.getvalue(), "")
 
 
 class TestRealArchifySchemaValidation(unittest.TestCase):
