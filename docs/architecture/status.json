@@ -5591,11 +5591,13 @@
     "Source file modified: scripts/archify_artifacts.py",
     "Source file modified: scripts/archify_delivery.py",
     "Source file modified: scripts/archify_model.py",
+    "Source file modified: scripts/tdq_setup.py",
     "Source file modified: skills/tdq-setup/SKILL.md",
     "Source file modified: skills/tdq-setup/references/chrome-devtools-mcp-guide.md",
     "Source file modified: skills/tdq-setup/references/zero-to-full-agy.md",
     "Source file modified: tests/test_archify_model.py",
+    "Source file added: scripts/archify_portal.py",
     "Source file added: scripts/archify_registry.py"
   ],
-  "checked_at": "2026-11-24T07:44:02Z"
+  "checked_at": "2026-11-24T07:50:00Z"
 }
