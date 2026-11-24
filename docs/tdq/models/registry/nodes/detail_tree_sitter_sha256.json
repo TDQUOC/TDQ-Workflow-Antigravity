@@ -1,0 +1,50 @@
+{
+  "node_id": "detail_tree_sitter_sha256",
+  "title": "Bộ Băm AST Tree-Sitter Miễn Nhiễm Comment & Vị Trí Dòng",
+  "depth": 4,
+  "node_kind": "security_crypto",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_registry.py:extract_symbol_ast_hash",
+    "ast_symbol_sha256": "aea13ebd6c112d1f24b22a9b1196482ccae51cbcefc08d4f8f43c17a6044a510",
+    "span_binding": {
+      "path": "scripts/archify_registry.py",
+      "line": 523,
+      "end_line": 562
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Phân tích cây cú pháp Tree-Sitter, lọc bỏ comment/docstring và băm chuỗi token cấu trúc thành SHA-256.",
+    "what_goes_where": "Tải parser theo đuôi tệp (.py, .js, .ts, .tsx, .rs), định vị symbol và trả về cả ast_symbol_sha256 lẫn span_binding.",
+    "why_it_exists": "Cung cấp dấu vân tay cấu trúc ổn định bất kể đổi CRLF/LF, thêm chú thích hoặc dời số dòng trong tệp.",
+    "edge_cases": [
+      "Nếu grammar Tree-Sitter vắng mặt với Python thì rơi về Python stdlib AST vẫn loại docstring.",
+      "Không tìm thấy symbol cụ thể sẽ fallback sang băm toàn tệp minh bạch qua hash_mode='file_fallback'."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Đường dẫn tệp nguồn file_path và tên symbol (hỗ trợ Class.method hoặc ::)"
+    ],
+    "outputs": [
+      "Từ điển chứa ast_symbol_sha256, span_binding thực tế, hash_mode và symbol_found"
+    ],
+    "side_effects": [
+      "Ghi log khi rơi sang chế độ file_fallback"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_registry.py",
+      "line": 523,
+      "end_line": 562
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ]
+}

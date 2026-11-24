@@ -1,0 +1,76 @@
+{
+  "node_id": "op_ast_dirty_compute",
+  "title": "Tính Tập Node Bẩn & Tự Nối Lại Dải Dòng Dịch Chuyển",
+  "depth": 3,
+  "node_kind": "registry_op",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_registry.py:compute_dirty_set",
+    "ast_symbol_sha256": "795cad92ef1eb5d9e110776a21219b6ed8e79c5a9f101d36c48321a3a049bfb6",
+    "span_binding": {
+      "path": "scripts/archify_registry.py",
+      "line": 973,
+      "end_line": 1019
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Đối chiếu SHA-256 AST trực tiếp từ mã nguồn hiện hành để tách bạch node dirty, span_shifted_only và clean.",
+    "what_goes_where": "Đọc toàn bộ node trong registry/nodes/, gọi extract_symbol_ast_hash và tự động cập nhật span_binding khi chỉ lệch dòng.",
+    "why_it_exists": "Không re-render sơ đồ một cách lãng phí khi lập trình viên chỉ thêm comment, docstring hoặc dời vị trí hàm.",
+    "edge_cases": [
+      "Tệp nguồn bị xóa hoặc vượt ngoài project_root lập tức đánh dấu node là dirty.",
+      "Node ở trạng thái evidence_kind='planned' được phân nhóm planned_nodes riêng."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Đường dẫn thư mục registry_dir và thư mục gốc project_root"
+    ],
+    "outputs": [
+      "Từ điển dirty_nodes, dirty_slices, span_shifted_nodes, clean_nodes và node_statuses"
+    ],
+    "side_effects": [
+      "Ghi cập nhật span_binding và cache_status='span_shifted_only' khi hàm chỉ dịch dòng"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_registry.py",
+      "line": 973,
+      "end_line": 1019
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-op-ast-dirty-compute",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_hash",
+        "label": "Băm AST từng symbol thật",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "detail_tree_sitter_sha256"
+      },
+      {
+        "step_id": "st_cycle",
+        "label": "Chặn chu trình bằng DFS",
+        "col": 1,
+        "lane": "branch",
+        "target_node_id": "detail_cycle_dfs_guard"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_hash",
+        "to": "st_cycle"
+      }
+    ]
+  }
+}

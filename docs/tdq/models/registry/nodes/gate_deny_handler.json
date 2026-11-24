@@ -1,0 +1,51 @@
+{
+  "node_id": "gate_deny_handler",
+  "title": "Bộ Chuẩn Hóa Từ Chối & Giảm Trùng Lặp Denial",
+  "depth": 3,
+  "node_kind": "error_handler",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/_common.py:block",
+    "ast_symbol_sha256": "35364380690e6d1609cf0f8efb299ca6fab7b2a250a2168587e6952cc3194a95",
+    "span_binding": {
+      "path": "hooks/scripts/_common.py",
+      "line": 732,
+      "end_line": 774
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Định dạng thông điệp từ chối có mã TDQ chuẩn, rút gọn khi lặp lại cùng lý do và ghi vào sổ lượt.",
+    "what_goes_where": "Đếm số lần chặn trùng mã/lý do trong lượt, áp dụng format_denial và đặt deny_reason cho Antigravity/Claude.",
+    "why_it_exists": "Giữ thông điệp chặn nhất quán giữa các cổng và tiết kiệm token khi agent lặp lại cùng lỗi.",
+    "edge_cases": [
+      "Lần đầu phát đủ hướng dẫn sửa; từ lần thứ 2 trở đi rút gọn thành dòng Gỡ nhanh.",
+      "Tham số day_du=True bảo toàn toàn văn câu truy vấn thay thế cho search_gate."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "cwd, payload, mã lỗi code, danh sách dòng hướng dẫn và cờ day_du"
+    ],
+    "outputs": [
+      "Kết thúc hook với quyết định deny và lý do đã chuẩn hóa đường dẫn"
+    ],
+    "side_effects": [
+      "Ghi bản ghi kind='block' kèm repeat_count vào sổ lượt .tdq-turn.jsonl"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/_common.py",
+      "line": 732,
+      "end_line": 774
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates",
+    "flow_search_archify"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "node_id": "detail_rtk_collision_guard",
+  "title": "Lá Chắn Chống Nhầm Nhị Phân RTK (Collision Guard)",
+  "depth": 4,
+  "node_kind": "security_crypto",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/rtk_integration.py:_run_gain_check",
+    "ast_symbol_sha256": "37e287f3ccd1052e387005c7fe00123d1331211b0e71685e2212bfdae6e31883",
+    "span_binding": {
+      "path": "scripts/rtk_integration.py",
+      "line": 239,
+      "end_line": 254
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Chạy thử lệnh 'rtk gain' với cơ sở dữ liệu tạm cô lập để chắc chắn đó là Rust Token Killer thật.",
+    "what_goes_where": "Tạo thư mục tạm gán RTK_DB_PATH và chạy subprocess với timeout 8 giây.",
+    "why_it_exists": "Tránh viết lại nhầm lệnh shell bằng một công cụ khác cũng mang tên rtk như Rust Type Kit.",
+    "edge_cases": [
+      "Timeout hoặc lỗi OS trả về None để probe_rtk đánh dấu gain_probe_failed.",
+      "Tự động dọn sạch thư mục tạm TemporaryDirectory ngay sau khi kiểm tra."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Hàm thực thi exec_fn và đường dẫn tuyệt đối đến nhị phân rtk"
+    ],
+    "outputs": [
+      "Mã thoát integer của lệnh gain hoặc None nếu thực thi thất bại"
+    ],
+    "side_effects": [
+      "Tạo/xóa thư mục tạm và đặt RTK_DB_PATH cô lập trong môi trường con"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/rtk_integration.py",
+      "line": 239,
+      "end_line": 254
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ]
+}

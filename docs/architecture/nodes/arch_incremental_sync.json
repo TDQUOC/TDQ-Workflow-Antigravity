@@ -1,0 +1,76 @@
+{
+  "node_id": "arch_incremental_sync",
+  "title": "Điều Phối Đồng Bộ Master Gia Tăng Theo AST",
+  "depth": 2,
+  "node_kind": "registry_op",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/tdq_archify.py:sync_master",
+    "ast_symbol_sha256": "362654e81972621781a22db79ca261999a49fd233923acc536ef50c995658419",
+    "span_binding": {
+      "path": "scripts/tdq_archify.py",
+      "line": 1501,
+      "end_line": 1545
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Chạy quy trình đồng bộ từ kiểm chứng nguồn, băm AST node bẩn đến dựng staging và xuất bản nguyên tử.",
+    "what_goes_where": "Xác thực model & git revision, đồng bộ registry trước fingerprinting, dựng các view/slice vào staging rồi hoán đổi thư mục đích.",
+    "why_it_exists": "Chỉ render lại những lát cắt thực sự đổi AST, giữ nguyên bó bản đồ cũ nếu có lỗi giữa chừng.",
+    "edge_cases": [
+      "Phát hiện tệp nguồn bị sửa trong lúc đang render sẽ hủy xuất bản để chống manifest sai lệch.",
+      "Thư mục staging luôn được dọn sạch trong khối finally dù thành công hay thất bại."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Đường dẫn model, thư mục project, thư mục đích out và cờ incremental/full"
+    ],
+    "outputs": [
+      "Boolean True nếu xuất bản và kiểm tra readback đạt 'current', False nếu lỗi"
+    ],
+    "side_effects": [
+      "Cập nhật registry/index.json, tái tạo docs/architecture/ và ghi log stderr"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/tdq_archify.py",
+      "line": 1501,
+      "end_line": 1545
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-arch-incremental-sync",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_dirty",
+        "label": "Tính node bẩn AST",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "op_ast_dirty_compute"
+      },
+      {
+        "step_id": "st_stage",
+        "label": "Dựng & tái dùng SVG",
+        "col": 1,
+        "lane": "main",
+        "target_node_id": "op_stage_slices_svg"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_dirty",
+        "to": "st_stage"
+      }
+    ]
+  }
+}

@@ -86,6 +86,14 @@
   ],
   "master": {
     "overview": "overview",
+    "registry": {
+      "path": "docs/tdq/models/registry",
+      "root_flows": [
+        "flow_hooks_gates",
+        "flow_search_archify"
+      ],
+      "max_depth": 6
+    },
     "flows": [
       {
         "id": "flow-pipeline-lifecycle",
