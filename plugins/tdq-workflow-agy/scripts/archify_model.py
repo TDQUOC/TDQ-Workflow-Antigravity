@@ -7,8 +7,11 @@ Provides:
 """
 from __future__ import annotations
 
+import datetime
 import json
+import os
 import re
+import sys
 from pathlib import Path
 from typing import Any, Iterable, Optional, Union
 
@@ -37,6 +40,22 @@ VALID_VIEW_TYPES = frozenset({
     "waterfall",
     "explainer",
 })
+
+_MASTER_REQUIRED_KEYS = frozenset({"overview", "flows"})
+_MASTER_ALLOWED_KEYS = frozenset({"overview", "flows", "registry"})
+_MASTER_REGISTRY_ALLOWED_KEYS = frozenset({"path", "root_flows", "max_depth"})
+
+
+def _log_enabled() -> bool:
+    """Return True unless stderr logging is disabled via TDQ_LOG=0."""
+    return os.environ.get("TDQ_LOG", "1") != "0"
+
+
+def _log(message: str) -> None:
+    """Emit one ISO-timestamped log line to stderr."""
+    if _log_enabled():
+        stamp = datetime.datetime.now().replace(microsecond=0).isoformat()
+        print(f"[{stamp}] archify_model: {message}", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -725,18 +744,101 @@ def _validate_step_sources(step: dict) -> None:
             raise ValueError("Invalid step source line range")
 
 
+def _validate_registry_root_flows(root_flows: Any) -> None:
+    """Validate optional master.registry.root_flows as a list of non-empty IDs."""
+    if type(root_flows) is not list:
+        raise ValueError("master.registry.root_flows must be a list of strings")
+    for idx, flow_id in enumerate(root_flows):
+        if (
+            not isinstance(flow_id, str)
+            or not flow_id.strip()
+            or "\n" in flow_id
+            or "\r" in flow_id
+        ):
+            raise ValueError(
+                f"master.registry.root_flows[{idx}] must be a non-empty string"
+            )
+
+
+def _validate_master_registry(registry: Any) -> None:
+    """Validate optional master.registry configuration fail-closed."""
+    if type(registry) is not dict:
+        raise ValueError("master.registry must be a dictionary")
+    unknown = set(registry) - _MASTER_REGISTRY_ALLOWED_KEYS
+    if unknown:
+        raise ValueError(f"master.registry has unexpected keys: {sorted(unknown)}")
+    reg_path = registry.get("path")
+    if (
+        not isinstance(reg_path, str)
+        or "\n" in reg_path
+        or "\r" in reg_path
+        or not _is_safe_relative_path(reg_path)
+    ):
+        raise ValueError(
+            f"master.registry.path must be a safe relative path: {reg_path!r}"
+        )
+    if "root_flows" in registry:
+        _validate_registry_root_flows(registry["root_flows"])
+    if "max_depth" in registry:
+        max_depth = registry["max_depth"]
+        if (
+            isinstance(max_depth, bool)
+            or not isinstance(max_depth, int)
+            or not (1 <= max_depth <= 8)
+        ):
+            raise ValueError(
+                f"master.registry.max_depth must be an integer 1..8, got {max_depth!r}"
+            )
+    _log(
+        f"validated master.registry path={reg_path!r} "
+        f"max_depth={registry.get('max_depth')}"
+    )
+
+
+def _validate_master_flow(
+    flow: Any,
+    overview: str,
+    views: dict[str, Any],
+    seen_ids: set[str],
+) -> None:
+    """Validate one master flow card and its detail target/steps."""
+    _validate_flow_item(flow, seen_ids, {"id", "text", "detail", "target", "steps"})
+    if "target" not in flow:
+        if "steps" in flow or flow.get("detail", "").strip().casefold() != "chưa xác minh":
+            raise ValueError("Flow without target must say 'chưa xác minh' and omit steps")
+        return
+    target = flow["target"]
+    if not isinstance(target, dict) or set(target) != {"diagram"}:
+        raise ValueError("Flow target must contain only diagram")
+    diagram = target["diagram"]
+    if (not isinstance(diagram, str) or diagram not in views or diagram == overview
+            or views[diagram]["type"] == "explainer"):
+        raise ValueError("Flow target must reference a native detail view")
+    steps = flow.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError("Flow target requires non-empty steps")
+    for step in steps:
+        _validate_flow_item(step, seen_ids, {"id", "text", "detail", "sources"})
+        _validate_step_sources(step)
+
+
 def _validate_master(model: dict) -> None:
     """Optional master maps native card targets to views/candidates; legacy views stay valid.
 
     master = {overview: view_id, flows: [{id, text, detail?, target: {diagram: view_id},
-              steps: [{id, text, detail?, sources: [{path, line, end_line?}]}]}]}.
+              steps: [{id, text, detail?, sources: [{path, line, end_line?}]}]}],
+              registry?: {path, root_flows?, max_depth?}}.
     A flow without evidence has only id/text/detail='chưa xác minh', never a target.
     Sources are project-relative; filesystem checks happen before sync renders.
     """
     if "master" not in model:
         return
     master = model["master"]
-    if not isinstance(master, dict) or set(master) != {"overview", "flows"}:
+    if (
+        not isinstance(master, dict)
+        or not _MASTER_REQUIRED_KEYS.issubset(master)
+        or (set(master) - _MASTER_ALLOWED_KEYS)
+    ):
         raise ValueError("master requires overview and flows")
     views = {view["id"]: view for view in model["views"]}
     overview = master["overview"]
@@ -744,26 +846,11 @@ def _validate_master(model: dict) -> None:
         raise ValueError("master.overview must reference an architecture view")
     if not isinstance(master["flows"], list):
         raise ValueError("master.flows must be a list")
+    if "registry" in master:
+        _validate_master_registry(master["registry"])
     seen_ids = set(views)
     for flow in master["flows"]:
-        _validate_flow_item(flow, seen_ids, {"id", "text", "detail", "target", "steps"})
-        if "target" not in flow:
-            if "steps" in flow or flow.get("detail", "").strip().casefold() != "chưa xác minh":
-                raise ValueError("Flow without target must say 'chưa xác minh' and omit steps")
-            continue
-        target = flow["target"]
-        if not isinstance(target, dict) or set(target) != {"diagram"}:
-            raise ValueError("Flow target must contain only diagram")
-        diagram = target["diagram"]
-        if (not isinstance(diagram, str) or diagram not in views or diagram == overview
-                or views[diagram]["type"] == "explainer"):
-            raise ValueError("Flow target must reference a native detail view")
-        steps = flow.get("steps")
-        if not isinstance(steps, list) or not steps:
-            raise ValueError("Flow target requires non-empty steps")
-        for step in steps:
-            _validate_flow_item(step, seen_ids, {"id", "text", "detail", "sources"})
-            _validate_step_sources(step)
+        _validate_master_flow(flow, overview, views, seen_ids)
 
 
 def validate_model(model: dict) -> dict:

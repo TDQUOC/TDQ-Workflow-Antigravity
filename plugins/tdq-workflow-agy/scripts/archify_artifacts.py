@@ -14,6 +14,7 @@ Provides core functions for managing Archify artifacts, manifests, and lifecycle
 Strictly stdlib-only. No model or delivery imports.
 """
 
+import datetime
 import hashlib
 import json
 import os
@@ -21,9 +22,10 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 import time
 import uuid
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 BINDING_START = "<!-- tdq-archify-binding:start -->"
@@ -38,6 +40,8 @@ EXCLUDED_DIR_NAMES = {
     "logs",
     ".tdq-worktrees",
     ".claude",
+    "target",
+    ".pytest_cache",
 }
 
 EXCLUDED_PREFIXES = (
@@ -74,12 +78,28 @@ SENSITIVE_KEY_SUBSTRINGS = (
 )
 
 
+def _log_enabled() -> bool:
+    """Return True unless stderr logging is muted via TDQ_LOG=0."""
+    return os.environ.get("TDQ_LOG", "1") != "0"
+
+
+def _now_iso() -> str:
+    """Return local ISO-8601 timestamp without microseconds."""
+    return datetime.datetime.now().replace(microsecond=0).isoformat()
+
+
+def _log(message: str) -> None:
+    """Emit an ISO-timestamped diagnostic line to stderr unless TDQ_LOG=0."""
+    if _log_enabled():
+        print(f"[{_now_iso()}] archify_artifacts: {message}", file=sys.stderr)
+
+
 def _is_within(path: Path, parent: Path) -> bool:
     """Checks whether path resolves within parent directory."""
     try:
         path.resolve().relative_to(parent.resolve())
         return True
-    except (ValueError, OSError):
+    except (ValueError, OSError, RuntimeError):
         return False
 
 
@@ -367,9 +387,10 @@ def source_fingerprint(
 ) -> Dict[str, str]:
     """Generates map of relative POSIX path -> SHA-256 for source files.
 
-    Excludes .git, node_modules, .venv, __pycache__, graphify-out,
-    docs/architecture, docs/tdq, logs, docs/workinglog, and output candidates/receipts.
-    Confines explicit paths to project root and skips symlinks pointing outside.
+    Excludes .git, node_modules, .venv, __pycache__, graphify-out, target,
+    .pytest_cache, docs/architecture, docs/tdq, logs, docs/workinglog, and
+    output candidates/receipts. Confines explicit paths to project root and
+    skips symlinks pointing outside.
     """
     project_path = Path(project).resolve()
     if not project_path.is_dir():
@@ -402,6 +423,129 @@ def _resolve_and_relativize(
     return resolved, resolved.relative_to(project_path).as_posix()
 
 
+def _has_absolute_or_drive_prefix(rel_child: str) -> bool:
+    """Return True if rel_child starts with root slash or Windows drive prefix."""
+    if len(rel_child) >= 2 and rel_child[1] == ":":
+        return True
+    return PurePosixPath(rel_child).is_absolute() or PureWindowsPath(rel_child).is_absolute()
+
+
+def _validate_child_rel_path(rel_child: str) -> Optional[str]:
+    """Return an error reason if rel_child is not a safe canonical POSIX relative path."""
+    if not rel_child or rel_child != rel_child.strip() or "\x00" in rel_child:
+        return f"Child file {rel_child!r} has empty or invalid path (escapes allowed bundle)"
+    if "\\" in rel_child:
+        return f"Child file {rel_child} must use POSIX '/' separators (escapes bundle)"
+    if _has_absolute_or_drive_prefix(rel_child):
+        return f"Child file {rel_child} is an absolute path and escapes artifact directory"
+    if any(part in ("", ".", "..") for part in rel_child.split("/")):
+        return f"Child file {rel_child} has non-canonical segment or escapes artifact directory"
+    if PurePosixPath(rel_child).as_posix() != rel_child:
+        return f"Child file {rel_child} is not a canonical POSIX relative path"
+    return None
+
+
+def _symlink_escapes(link_path: Path, parent_a: Path, parent_b: Path) -> bool:
+    """Return True when link_path resolves or points outside allowed parents."""
+    if not _is_within(link_path, parent_a) or not _is_within(link_path, parent_b):
+        return True
+    try:
+        raw_target = Path(os.readlink(link_path))
+        target = raw_target if raw_target.is_absolute() else (link_path.parent / raw_target)
+        return not (_is_within(target, parent_a) and _is_within(target, parent_b))
+    except OSError:
+        return True
+
+
+def _child_escapes_bundle(
+    artifact_parent: Path,
+    rel_child: str,
+    project_path: Path,
+) -> bool:
+    """Check resolved path and intermediate symlinks stay within artifact_parent and project_path."""
+    cur = artifact_parent
+    for part in rel_child.split("/"):
+        cur = cur / part
+        if cur.is_symlink() and _symlink_escapes(cur, artifact_parent, project_path):
+            return True
+    child_abs = artifact_parent / rel_child
+    return not (_is_within(child_abs, artifact_parent) and _is_within(child_abs, project_path))
+
+
+def _validate_child_files_map(
+    child_files: Any,
+    artifact_parent: Path,
+    project_path: Path,
+) -> Dict[str, str]:
+    """Validate and copy child_files mapping passed directly to build_manifest."""
+    if not isinstance(child_files, dict):
+        raise TypeError(f"child_files must be a dict, got {type(child_files).__name__}")
+    validated: Dict[str, str] = {}
+    for rel_child, exp_hash in child_files.items():
+        if not isinstance(rel_child, str) or not isinstance(exp_hash, str):
+            raise TypeError("child_files keys and digests must be strings")
+        path_err = _validate_child_rel_path(rel_child)
+        if path_err:
+            _log(f"rejected invalid child_files key in build_manifest: {rel_child!r}")
+            raise ValueError(path_err)
+        if _child_escapes_bundle(artifact_parent, rel_child, project_path):
+            msg = f"Child file {rel_child} escapes artifact directory"
+            _log(f"rejected escaping child_files key in build_manifest: {rel_child}")
+            raise ValueError(msg)
+        if not exp_hash.strip():
+            raise ValueError(f"Child file {rel_child} digest cannot be empty")
+        validated[rel_child] = exp_hash
+    return validated
+
+
+def _build_manifest_payload(
+    *,
+    request: Optional[str],
+    lane: Optional[str],
+    evidence_kind: str,
+    revision: Optional[str],
+    doc_rel: str,
+    doc_digest: str,
+    cand_rel: str,
+    cand_digest: str,
+    art_rel: str,
+    art_digest: str,
+    source_paths_tuple: Optional[Tuple[Union[str, Path], ...]],
+    resolved_sources: Dict[str, str],
+    coverage: Optional[Dict[str, Any]],
+    receipt: Dict[str, Any],
+    child_files: Optional[Dict[str, str]],
+) -> Dict[str, Any]:
+    """Assemble the schema_version=1 manifest dictionary."""
+    source_paths_list = (
+        [Path(p).as_posix() for p in source_paths_tuple]
+        if source_paths_tuple is not None
+        else None
+    )
+    engine = receipt.get("engine") or receipt.get("generator") or "archify"
+    manifest: Dict[str, Any] = {
+        "schema_version": 1,
+        "request": request,
+        "lane": lane,
+        "evidence_kind": evidence_kind,
+        "revision": revision,
+        "document_path": doc_rel,
+        "document_digest": doc_digest,
+        "candidate_path": cand_rel,
+        "candidate_digest": cand_digest,
+        "artifact_path": art_rel,
+        "artifact_digest": art_digest,
+        "source_paths": source_paths_list,
+        "source_files": resolved_sources,
+        "coverage": coverage or {},
+        "engine": engine,
+        "receipt": _sanitize_secrets(receipt),
+    }
+    if child_files is not None:
+        manifest["child_files"] = child_files
+    return manifest
+
+
 def build_manifest(
     project: Union[str, Path],
     document: Union[str, Path],
@@ -418,62 +562,37 @@ def build_manifest(
     source_files: Optional[Dict[str, str]] = None,
     child_files: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
-    """Constructs schema_version=1 manifest with portable paths and hashes.
-
-    Sanitizes secrets from receipt and ensures path confinement.
-    Materializes source_paths once to avoid consuming generators twice.
-    """
+    """Constructs schema_version=1 manifest with portable paths and hashes."""
     project_path = Path(project).resolve()
     if not project_path.is_dir():
         raise FileNotFoundError(f"Project directory not found: {project}")
-
     if not isinstance(receipt, dict):
         raise TypeError(f"Receipt must be a dict, got {type(receipt).__name__}")
 
-    source_paths_tuple: Optional[Tuple[Union[str, Path], ...]] = None
-    if source_paths is not None:
-        source_paths_tuple = tuple(source_paths)
-
+    source_paths_tuple = tuple(source_paths) if source_paths is not None else None
     doc_abs, doc_rel = _resolve_and_relativize(document, "Document", project_path)
     cand_abs, cand_rel = _resolve_and_relativize(candidate, "Candidate", project_path)
     art_abs, art_rel = _resolve_and_relativize(artifact, "Artifact", project_path)
 
-    doc_digest = document_digest(doc_abs)
-    cand_digest = _hash_file(cand_abs)
-    art_digest = _hash_file(art_abs)
-
+    validated_children = (
+        _validate_child_files_map(child_files, art_abs.parent, project_path)
+        if child_files is not None
+        else None
+    )
     resolved_sources = (
         dict(source_files)
         if source_files is not None
         else source_fingerprint(project_path, paths=source_paths_tuple)
     )
-    clean_receipt = _sanitize_secrets(receipt)
-    engine = receipt.get("engine") or receipt.get("generator") or "archify"
-
-    source_paths_list = None
-    if source_paths_tuple is not None:
-        source_paths_list = [Path(p).as_posix() for p in source_paths_tuple]
-
-    manifest = {
-        "schema_version": 1,
-        "request": request,
-        "lane": lane,
-        "evidence_kind": evidence_kind,
-        "revision": revision,
-        "document_path": doc_rel,
-        "document_digest": doc_digest,
-        "candidate_path": cand_rel,
-        "candidate_digest": cand_digest,
-        "artifact_path": art_rel,
-        "artifact_digest": art_digest,
-        "source_paths": source_paths_list,
-        "source_files": resolved_sources,
-        "coverage": coverage or {},
-        "engine": engine,
-        "receipt": clean_receipt,
-    }
-    if child_files is not None:
-        manifest["child_files"] = child_files
+    manifest = _build_manifest_payload(
+        request=request, lane=lane, evidence_kind=evidence_kind, revision=revision,
+        doc_rel=doc_rel, doc_digest=document_digest(doc_abs),
+        cand_rel=cand_rel, cand_digest=_hash_file(cand_abs),
+        art_rel=art_rel, art_digest=_hash_file(art_abs),
+        source_paths_tuple=source_paths_tuple, resolved_sources=resolved_sources,
+        coverage=coverage, receipt=receipt, child_files=validated_children,
+    )
+    _log(f"built manifest for {art_rel} (children={len(validated_children or {})})")
     return manifest
 
 
@@ -682,15 +801,20 @@ def _check_single_child_file(
     """Validates one child file path, confinement, and hash."""
     if not isinstance(rel_child, str) or not isinstance(exp_hash, str):
         return "Child file path and hash must be strings", None
+    path_err = _validate_child_rel_path(rel_child)
+    if path_err:
+        _log(f"invalid child path in manifest: {rel_child!r}")
+        return path_err, None
     if not re.match(r"^[0-9a-fA-F]{64}$", exp_hash):
         return f"Child file {rel_child} digest must be 64-hex SHA-256", None
+    if _child_escapes_bundle(artifact_parent, rel_child, project_path):
+        msg = f"Child file {rel_child} escapes artifact directory"
+        _log(f"escaping child path in manifest: {rel_child}")
+        return msg, None
 
     child_abs = (artifact_parent / rel_child).resolve()
-    if not _is_within(child_abs, artifact_parent) or not _is_within(child_abs, project_path):
-        return f"Child file {rel_child} escapes artifact directory", None
     if not child_abs.is_file():
         return None, f"Child file missing: {rel_child}"
-
     try:
         curr_hash = _hash_file(child_abs)
         if curr_hash.lower() != exp_hash.lower():
@@ -711,10 +835,10 @@ def _check_child_files(
         return [], []
     if not isinstance(child_files, dict):
         return ["child_files must be a dictionary in manifest"], []
-    if not isinstance(artifact_path_str, str):
+    if not isinstance(artifact_path_str, str) or not artifact_path_str.strip():
         return [], []
 
-    artifact_parent = (project_path / artifact_path_str).parent
+    artifact_parent = (project_path / artifact_path_str).parent.resolve()
     invalid_reasons: List[str] = []
     stale_reasons: List[str] = []
 
@@ -739,10 +863,7 @@ def check_manifest(
     """
     project_path = Path(project).resolve()
     if not project_path.is_dir():
-        return {
-            "status": "invalid",
-            "reasons": [f"Project directory not found: {project}"],
-        }
+        return {"status": "invalid", "reasons": [f"Project directory not found: {project}"]}
 
     manifest_data, err = _load_manifest_data(manifest)
     if err or manifest_data is None:
@@ -771,11 +892,10 @@ def check_manifest(
     invalid_reasons.extend(inv_src)
     stale_reasons.extend(st_src)
 
-    if invalid_reasons:
-        return {"status": "invalid", "reasons": invalid_reasons + stale_reasons}
-    if stale_reasons:
-        return {"status": "stale", "reasons": stale_reasons}
-    return {"status": "current", "reasons": []}
+    status = "invalid" if invalid_reasons else ("stale" if stale_reasons else "current")
+    reasons = invalid_reasons + stale_reasons if invalid_reasons else stale_reasons
+    _log(f"checked manifest status={status} reasons={len(reasons)}")
+    return {"status": status, "reasons": reasons}
 
 
 def bind_document(
