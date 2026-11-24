@@ -1,0 +1,75 @@
+{
+  "node_id": "arch_lsp_ladder",
+  "title": "Kiểm Tra Bậc 1 Binary agent-lsp",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/tdq_lsp.py:bac1_binary",
+    "ast_symbol_sha256": "99c114a33491d357dbea8ea22a962431e7d56c61ca6a47dae2b30a2981df9fe6",
+    "span_binding": {
+      "path": "scripts/tdq_lsp.py",
+      "line": 281,
+      "end_line": 293
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Xác minh nhị phân agent-lsp có mặt trên PATH và thăm dò phiên bản qua cache tĩnh.",
+    "what_goes_where": "Dùng shutil.which kiểm tra PATH rồi chạy static_probe gắn dấu vân tay vào cấu hình MCP.",
+    "why_it_exists": "Là bậc nền đầu tiên trong thang 7 bậc tìm kiếm; thiếu nó thì mọi tra cứu symbol ngữ nghĩa đều thất bại.",
+    "edge_cases": [
+      "Không tìm thấy trên PATH trả về Bac(1, ..., False) kèm lệnh cài đặt chuẩn.",
+      "Tự động chọn tệp cấu hình MCP của Antigravity hoặc ~/.claude.json tùy host."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Biến môi trường PATH và cấu hình MCP của host hiện tại"
+    ],
+    "outputs": [
+      "Đối tượng Bac cho biết đạt hay thiếu và thông tin phiên bản agent-lsp"
+    ],
+    "side_effects": [
+      "Đọc/ghi cache thăm dò tĩnh trong tdq_readiness"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/tdq_lsp.py",
+      "line": 281,
+      "end_line": 293
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify",
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-arch-lsp-ladder",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_which",
+        "label": "Tìm binary trên PATH",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_probe",
+        "label": "Thăm dò phiên bản tĩnh",
+        "col": 1,
+        "lane": "branch"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_which",
+        "to": "st_probe"
+      }
+    ]
+  }
+}

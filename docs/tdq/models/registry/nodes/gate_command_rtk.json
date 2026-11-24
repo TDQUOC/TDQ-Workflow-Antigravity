@@ -1,0 +1,88 @@
+{
+  "node_id": "gate_command_rtk",
+  "title": "Cổng Gộp run_command & Viết Lại RTK",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/command_gate.py:process_payload",
+    "ast_symbol_sha256": "1f9fe432d38c139def8154d26f2f8e115e0f13b8df2303d2752cb6336822393c",
+    "span_binding": {
+      "path": "hooks/scripts/command_gate.py",
+      "line": 59,
+      "end_line": 98
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Gộp kiểm tra search_gate, bash_gate và viết lại lệnh qua RTK trong một tiến trình duy nhất.",
+    "what_goes_where": "Đọc CommandLine từ payload đã chuẩn hóa, chạy search_gate và bash_gate trước khi gọi rtk_integration.rewrite_command.",
+    "why_it_exists": "Giảm độ trễ khởi tạo Python lặp lại ở mỗi lệnh shell và tự động nén đầu ra dài qua overwrite.CommandLine.",
+    "edge_cases": [
+      "Khi TDQ_RTK=0 hoặc RTK_DISABLED=1 thì bỏ qua bước viết lại RTK.",
+      "Mọi ngoại lệ không mong muốn đều fail-open để không làm gãy lệnh hợp lệ."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Payload PreToolUse của công cụ run_command kèm CommandLine và cwd"
+    ],
+    "outputs": [
+      "Chuỗi CommandLine mới qua overwrite hoặc quyết định deny nếu vi phạm cổng"
+    ],
+    "side_effects": [
+      "Đặt cờ overwrite.CommandLine trong runtime state và ghi log stderr"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/command_gate.py",
+      "line": 59,
+      "end_line": 98
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-gate-command-rtk",
+    "max_cols": 3,
+    "steps": [
+      {
+        "step_id": "st_gates",
+        "label": "Chạy search & bash gate",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_rtk",
+        "label": "Thăm dò & viết lại RTK",
+        "col": 1,
+        "lane": "branch",
+        "target_node_id": "rtk_probe_rewrite"
+      },
+      {
+        "step_id": "st_deny",
+        "label": "Chặn lệnh vi phạm",
+        "col": 2,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_gates",
+        "to": "st_rtk",
+        "label": "cho phép"
+      },
+      {
+        "from": "st_gates",
+        "to": "st_deny",
+        "label": "từ chối"
+      }
+    ]
+  }
+}

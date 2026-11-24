@@ -1,0 +1,88 @@
+{
+  "node_id": "gate_search_order",
+  "title": "Cổng Kiểm Soát Thứ Tự Tìm Kiếm 3 Tầng",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/search_gate.py:eval_search",
+    "ast_symbol_sha256": "c7b817b6d82d888c9ab8bb1955c414b1bf7b2ea6cd4e55b887d71d4c576e91b7",
+    "span_binding": {
+      "path": "hooks/scripts/search_gate.py",
+      "line": 167,
+      "end_line": 198
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Buộc agent tra cứu tầng khái niệm (LSP hoặc Graphify) trước khi mở khóa lượt tìm kiếm Grep/shell.",
+    "what_goes_where": "Phân loại lệnh tìm code, đọc sổ quan sát search_observe và đối chiếu mốc sẵn sàng từ tdq_setup.",
+    "why_it_exists": "Ngăn việc quét grep mù tốn ngữ cảnh khi công cụ ngữ nghĩa LSP/Graphify đã có sẵn trên máy.",
+    "edge_cases": [
+      "Nếu mốc báo cả LSP lẫn Graphify chưa sẵn sàng hoặc vượt ngưỡng breaker 3 lần thì tự động nhường đường.",
+      "Lệnh không phải tìm code (như chạy test, git status) đi qua ngay lập tức."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Payload công cụ Grep hoặc shell command cùng session_id và cwd"
+    ],
+    "outputs": [
+      "True để cho phép tiếp tục hoặc chặn deny kèm mã TDQ:SEARCH"
+    ],
+    "side_effects": [
+      "Cập nhật sổ search_observe và phát nhắc nhở khi đứng xuống (stand down)"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/search_gate.py",
+      "line": 167,
+      "end_line": 198
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates",
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-gate-search-order",
+    "max_cols": 3,
+    "steps": [
+      {
+        "step_id": "st_classify",
+        "label": "Phân loại lệnh tìm code",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_lsp",
+        "label": "Kiểm tra tầng LSP",
+        "col": 1,
+        "lane": "branch",
+        "target_node_id": "arch_lsp_ladder"
+      },
+      {
+        "step_id": "st_block",
+        "label": "Chặn nếu nhảy cóc tầng",
+        "col": 2,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_classify",
+        "to": "st_lsp"
+      },
+      {
+        "from": "st_classify",
+        "to": "st_block",
+        "label": "vi phạm"
+      }
+    ]
+  }
+}

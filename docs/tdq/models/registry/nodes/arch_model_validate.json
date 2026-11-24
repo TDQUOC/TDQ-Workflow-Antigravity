@@ -1,0 +1,76 @@
+{
+  "node_id": "arch_model_validate",
+  "title": "Xác Thực Hợp Đồng Master Model & Registry",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_model.py:validate_model",
+    "ast_symbol_sha256": "8c06f4e88839494e63a50c59035dd8f062f7524932571a4485369cebb31317ff",
+    "span_binding": {
+      "path": "scripts/archify_model.py",
+      "line": 856,
+      "end_line": 867
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Kiểm tra fail-closed cấu trúc master.model.json, evidence_kind, views, flows và master.registry.",
+    "what_goes_where": "Xác thực header, revision committed, đường dẫn an toàn không vượt root, danh sách view và cấu hình registry.",
+    "why_it_exists": "Chặn sớm model sai hợp đồng, rò rỉ đường dẫn hoặc tham chiếu diagram lỗi trước khi tốn công render.",
+    "edge_cases": [
+      "Nếu evidence_kind='committed' bắt buộc revision 40 ký tự hex khớp repository.revision.",
+      "master.registry.max_depth bị giới hạn chặt trong khoảng 1..8."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Từ điển JSON đã phân tích từ master.model.json"
+    ],
+    "outputs": [
+      "Từ điển model đã qua kiểm chuẩn hợp đồng"
+    ],
+    "side_effects": [
+      "Ghi log xác thực master.registry ra stderr khi TDQ_LOG!=0"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_model.py",
+      "line": 856,
+      "end_line": 867
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-arch-model-validate",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_check",
+        "label": "Kiểm tra views & registry",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_reject",
+        "label": "Từ chối model sai",
+        "col": 1,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_check",
+        "to": "st_reject",
+        "label": "vi phạm"
+      }
+    ]
+  }
+}

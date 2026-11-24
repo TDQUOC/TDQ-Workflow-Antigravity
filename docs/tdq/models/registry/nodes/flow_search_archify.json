@@ -1,0 +1,109 @@
+{
+  "node_id": "flow_search_archify",
+  "title": "Luồng Tìm Kiếm 3 Tầng & Đồng Bộ Archify Portal",
+  "depth": 1,
+  "node_kind": "flow_root",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/tdq_archify.py:main",
+    "ast_symbol_sha256": "563875a76e6836c87885b09aea07a46f509f2ae8956db83cc0cff9676875a975",
+    "span_binding": {
+      "path": "scripts/tdq_archify.py",
+      "line": 2077,
+      "end_line": 2096
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Điều phối chuỗi tìm kiếm 3 tầng (LSP, Graphify, Grep), xác thực model và đồng bộ cổng Archify gia tăng.",
+    "what_goes_where": "Đi từ kiểm tra công cụ tìm kiếm (tdq_lsp, search_gate) tới validate_model, sync_master và build_portal_shell.",
+    "why_it_exists": "Giữ sơ đồ kiến trúc Master luôn đồng bộ từng phần theo mã nguồn thật với vỏ HTML dưới 300 KB.",
+    "edge_cases": [
+      "Lệnh con không hợp lệ in trợ giúp và thoát mã 2 (fail-closed).",
+      "Phát hiện node planned trong master registry sẽ từ chối xuất bản ngay từ đầu."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Tham số CLI tdq_archify (check, render, bridge, sync-master, status, verify, serve)"
+    ],
+    "outputs": [
+      "Mã thoát 0 khi thành công hoặc khác 0 kèm thông báo lỗi trên stderr"
+    ],
+    "side_effects": [
+      "Gọi các handler xuất bản HTML, SVG slice, registry-bundle.js và manifest.json"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/tdq_archify.py",
+      "line": 2077,
+      "end_line": 2096
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "search-and-archify",
+    "max_cols": 5,
+    "steps": [
+      {
+        "step_id": "st_lsp",
+        "label": "Bậc LSP & môi trường",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "arch_lsp_ladder"
+      },
+      {
+        "step_id": "st_gate",
+        "label": "Cổng thứ tự tìm kiếm",
+        "col": 1,
+        "lane": "main",
+        "target_node_id": "gate_search_order"
+      },
+      {
+        "step_id": "st_val",
+        "label": "Xác thực Master Model",
+        "col": 2,
+        "lane": "main",
+        "target_node_id": "arch_model_validate"
+      },
+      {
+        "step_id": "st_sync",
+        "label": "Đồng bộ gia tăng AST",
+        "col": 3,
+        "lane": "main",
+        "target_node_id": "arch_incremental_sync"
+      },
+      {
+        "step_id": "st_portal",
+        "label": "Dựng Portal & Bundle JS",
+        "col": 4,
+        "lane": "main",
+        "target_node_id": "arch_portal_build"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_lsp",
+        "to": "st_gate"
+      },
+      {
+        "from": "st_gate",
+        "to": "st_val"
+      },
+      {
+        "from": "st_val",
+        "to": "st_sync"
+      },
+      {
+        "from": "st_sync",
+        "to": "st_portal"
+      }
+    ]
+  }
+}

@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-11-22T13:37:06.091Z",
+  "startedAt": "2026-11-24T08:19:27.562Z",
   "specification": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\search-and-archify.json",
     "sha256": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
     "bytes": 4663
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
     "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
     "bytes": 824633
   },
@@ -23,16 +23,16 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\3512_1795508363017\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "architecture",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\search-and-archify.json",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "--quality",
         "showcase",
         "--repo-root",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1",
         "--json"
       ],
       "receipt": {
@@ -56,28 +56,28 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 498,
+      "durationMs": 526,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\3512_1795508363017\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "architecture",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\search-and-archify.json",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "--quality",
         "showcase",
         "--repo-root",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1",
         "--json"
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "a7808215-2bc2-4a43-af64-c539d80dbf53",
+        "receiptId": "28db10d2-0b9b-4d2b-96a0-496d3cad4af1",
         "ok": true,
         "command": "deliver",
         "type": "architecture",
-        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\search-and-archify.json",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "specification": {
           "sha256": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
           "bytes": 4663
@@ -110,17 +110,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 207,
+      "durationMs": 219,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\3512_1795508363017\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "artifact": {
           "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
           "bytes": 824633
@@ -251,18 +251,18 @@
           "issues": []
         },
         "provenance": "current",
-        "deliveryReceiptId": "a7808215-2bc2-4a43-af64-c539d80dbf53"
+        "deliveryReceiptId": "28db10d2-0b9b-4d2b-96a0-496d3cad4af1"
       }
     },
     "browser-check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1419,
+      "durationMs": 1360,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\16112_1795354607635\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\3512_1795508363017\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "browser-check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
         "--json",
         "--require-provenance"
       ],
@@ -275,9 +275,9 @@
         "status": "pass",
         "visualReview": "not-requested",
         "provenance": "current",
-        "deliveryReceiptId": "a7808215-2bc2-4a43-af64-c539d80dbf53",
+        "deliveryReceiptId": "28db10d2-0b9b-4d2b-96a0-496d3cad4af1",
         "artifact": {
-          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+          "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.html",
           "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
           "bytes": 824633
         },
@@ -996,13 +996,13 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.finalize-summary.json",
-    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.browser-check.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\search-and-archify.browser-check.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-22T13:37:08.803Z",
-  "durationMs": 2712,
+  "finishedAt": "2026-11-24T08:19:30.421Z",
+  "durationMs": 2859,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

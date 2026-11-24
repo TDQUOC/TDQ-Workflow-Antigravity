@@ -1,0 +1,77 @@
+{
+  "node_id": "detail_cycle_dfs_guard",
+  "title": "Bộ Phát Hiện Chu Trình DFS Có Giới Hạn Độ Sâu",
+  "depth": 4,
+  "node_kind": "decision_branch",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_registry.py:detect_cycles",
+    "ast_symbol_sha256": "0ee55518d6a282ed82e4bc2816ba0efd9ef5dc46b8bfbb1b847c04084fa09132",
+    "span_binding": {
+      "path": "scripts/archify_registry.py",
+      "line": 774,
+      "end_line": 818
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Duyệt đồ thị bằng DFS với visited_stack để phát hiện chu trình quay lui hoặc neo cycle_back_to mà không lặp vô hạn.",
+    "what_goes_where": "Xuất phát từ root_id, đối chiếu tập đỉnh đang trên ngăn xếp gọi và ghi nhận điểm neo về breadcrumb.",
+    "why_it_exists": "Cho phép các nút dùng lại (DAG) đi qua bình thường trong khi chặn đứng vòng lặp vô tận trên UI drill-down.",
+    "edge_cases": [
+      "Phân biệt tái sử dụng DAG (nút đã duyệt xong ở nhánh khác) với chu trình thật trên visited_stack.",
+      "Giới hạn chặt max_depth >= 1 và dừng mở rộng khi đạt trần độ sâu."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Bản đồ nodes, node gốc root_id và giới hạn max_depth (mặc định 6)"
+    ],
+    "outputs": [
+      "Danh sách mô tả chu trình gồm from_node, to_node, detected_at_depth, handling, step_id, via"
+    ],
+    "side_effects": [
+      "Ghi log nếu root_id không tồn tại trong registry"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_registry.py",
+      "line": 774,
+      "end_line": 818
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-detail-cycle-dfs-guard",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_dfs",
+        "label": "Duyệt DFS kiểm tra stack",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_anchor",
+        "label": "Neo chu trình -> cha",
+        "col": 1,
+        "lane": "error",
+        "target_node_id": "op_ast_dirty_compute",
+        "cycle_back_to": "op_ast_dirty_compute"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_dfs",
+        "to": "st_anchor",
+        "label": "gặp cạnh ngược"
+      }
+    ]
+  }
+}

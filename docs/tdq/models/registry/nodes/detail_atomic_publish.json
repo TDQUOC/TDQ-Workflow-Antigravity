@@ -1,0 +1,50 @@
+{
+  "node_id": "detail_atomic_publish",
+  "title": "Xuất Bản Nguyên Tử Có Khóa Độc Quyền & Rollback",
+  "depth": 4,
+  "node_kind": "storage_io",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_artifacts.py:publish_bundle",
+    "ast_symbol_sha256": "6f471b6057bf5c303c8b598e75696e742cbb2945c66f84696ebd9b919aed0419",
+    "span_binding": {
+      "path": "scripts/archify_artifacts.py",
+      "line": 1172,
+      "end_line": 1195
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Xác thực staging bundle không chứa symlink, khớp SHA-256 index.html rồi hoán đổi nguyên tử dưới khóa BundleLock.",
+    "what_goes_where": "Kiểm tra lồng thư mục và hash ở _validate_staging_bundle, giữ khóa .lock rồi chạy _atomic_swap_directory.",
+    "why_it_exists": "Đảm bảo docs/architecture/ không bao giờ rơi vào trạng thái nửa vời khi lỗi đĩa hoặc xung đột tiến trình.",
+    "edge_cases": [
+      "Nếu bước os.replace sang đích thất bại sẽ tự động khôi phục thư mục backup trước đó.",
+      "Từ chối fail-closed nếu phát hiện symlink hoặc staging lồng vào destination."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Thư mục staging đã dựng đủ index.html + manifest.json, thư mục đích và timeout khóa"
+    ],
+    "outputs": [
+      "Đường dẫn Path tới destination/index.html vừa xuất bản"
+    ],
+    "side_effects": [
+      "Tạo/xóa khóa BundleLock, hoán đổi thư mục đích và dọn backup"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_artifacts.py",
+      "line": 1172,
+      "end_line": 1195
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ]
+}

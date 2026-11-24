@@ -1,0 +1,90 @@
+{
+  "node_id": "gate_stop_verify",
+  "title": "Cổng Stop Verify-by-Effect & Vòng Lặp Sửa Lỗi",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/stop_gate.py:main",
+    "ast_symbol_sha256": "16927558414c492898c8a84b5478f17143473c664a6d43c79e406f5332538548",
+    "span_binding": {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 274,
+      "end_line": 387
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Đối chiếu bằng chứng thay đổi thực trên đĩa khi kết thúc lượt, chặn báo xong giả hoặc thiếu workinglog.",
+    "what_goes_where": "So sánh snapshot đầu lượt với đĩa thực, kiểm tra TDQ:LOG, TDQ:TICK và TDQ:UNFINISHED trước khi cho phép dừng.",
+    "why_it_exists": "Ngăn agent quên ghi nhật ký, tick plan hàng loạt cuối lượt hoặc bỏ dở task còn mở.",
+    "edge_cases": [
+      "Nếu kẹt quá MAX_STREAK=3 lần không tiến triển thì hạ xuống nhắc nhở TDQ:STUCK để tránh kẹt vô hạn.",
+      "Thay đổi bằng lệnh shell vẫn bị phát hiện nhờ đối chiếu SHA-256 git status với snapshot đầu lượt."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Payload sự kiện Stop kèm stop_hook_active và turn_start snapshot"
+    ],
+    "outputs": [
+      "Decision allow hoặc continue/block buộc sửa xong rồi mới kết thúc lượt"
+    ],
+    "side_effects": [
+      "Cập nhật bộ đếm stop_streak.json và hàng đợi nhắc nhở pending-reminders"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 274,
+      "end_line": 387
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-gate-stop-verify",
+    "max_cols": 3,
+    "steps": [
+      {
+        "step_id": "st_diff",
+        "label": "Đối chiếu đĩa & log",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "stop_disk_diff_check"
+      },
+      {
+        "step_id": "st_block",
+        "label": "Chặn dừng (stop_block)",
+        "col": 1,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      },
+      {
+        "step_id": "st_cycle",
+        "label": "Sửa -> chạy lại Hook",
+        "col": 2,
+        "lane": "error",
+        "target_node_id": "flow_hooks_gates",
+        "cycle_back_to": "flow_hooks_gates"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_diff",
+        "to": "st_block",
+        "label": "thiếu bằng chứng"
+      },
+      {
+        "from": "st_block",
+        "to": "st_cycle",
+        "label": "sửa và thử lại"
+      }
+    ]
+  }
+}

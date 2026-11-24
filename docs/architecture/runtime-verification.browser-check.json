@@ -6,9 +6,9 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "bb5072a3-6d23-4e1c-a5a4-c6523b4dbfa3",
+  "deliveryReceiptId": "83c93b81-bf65-4dcc-9481-60ae07756dd5",
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\runtime-verification.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.html",
     "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
     "bytes": 822816
   },

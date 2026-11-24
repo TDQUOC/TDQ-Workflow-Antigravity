@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "bb5072a3-6d23-4e1c-a5a4-c6523b4dbfa3",
+  "receiptId": "83c93b81-bf65-4dcc-9481-60ae07756dd5",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\runtime-verification.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\runtime-verification.html",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\tdq\\models\\runtime-verification.json",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\.tdq-worktrees\\2026-11-24-1308-implement-archify-drilldown-registry\\t3.1\\docs\\.staging.1b5ca928c8f74330810720f3b171caf2\\runtime-verification.html",
   "specification": {
     "sha256": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
     "bytes": 4891

@@ -1,0 +1,76 @@
+{
+  "node_id": "stop_disk_diff_check",
+  "title": "Đối Chiếu Dấu Vân Tay Repo Đầu/Cuối Lượt",
+  "depth": 3,
+  "node_kind": "gate_check",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/stop_gate.py:_repo_changed",
+    "ast_symbol_sha256": "81d2de050397160dc2d6a10d6149e8cc299293beb7e59f3e991a32ace703d10c",
+    "span_binding": {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 91,
+      "end_line": 101
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "So sánh digest git status hiện tại với snapshot lúc đầu lượt để phát hiện sửa tệp qua shell.",
+    "what_goes_where": "Đọc repo_sha từ turn_start snapshot và gọi repo_status_digest tại thời điểm Stop.",
+    "why_it_exists": "Bịt lỗ hổng khi agent dùng shell (như sed hoặc python) để sửa code mà không đi qua Edit/Write hook.",
+    "edge_cases": [
+      "Khi không đọc được digest ở cuối lượt thì ghi cảnh báo và rơi về sổ lượt thay vì chặn nhầm.",
+      "Thư mục không phải git repo (thiếu repo_sha) trả về False an toàn."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Thư mục dự án cwd và bản ghi snapshot đầu lượt"
+    ],
+    "outputs": [
+      "Boolean cho biết trạng thái git working tree có thay đổi so với đầu lượt hay không"
+    ],
+    "side_effects": [
+      "Phát log cảnh báo nếu mất khả năng đọc fingerprint ở cuối lượt"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 91,
+      "end_line": 101
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-stop-disk-diff-check",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_unfin",
+        "label": "Kiểm tra task còn mở",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "detail_stop_unfinished_check"
+      },
+      {
+        "step_id": "st_block",
+        "label": "Chặn thiếu log",
+        "col": 1,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_unfin",
+        "to": "st_block"
+      }
+    ]
+  }
+}
