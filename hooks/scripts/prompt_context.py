@@ -21,7 +21,7 @@ from _common import (INVESTIGATE_GON_TEXT, _shard_turn_path,
                      is_agy, payload_cwd, plan_mode, read_payload, session_id)
 # Keep this AFTER `from _common`: `_common` is what injects `scripts/` into sys.path. Use a
 # from-import (not module attribute access) so graphify can emit the cross-file `calls` edge.
-from tdq_state import (MODE_ALIASES, effective_lane,  # noqa: E402
+from tdq_state import (MODE_ALIASES, _info, effective_lane,  # noqa: E402
                        effective_mode, effective_phase, lenh_cho_project, liet_ke_modes, load,
                        muc_gat_hieu_luc, normalize_mode, phase_key,
                        prompt_context_last, prompt_context_save, render_next,
@@ -110,6 +110,124 @@ def _tach_prompt_thuc(prompt):
 QUOTED_SPEECH_RE = re.compile(
     r"""(?i)(?:the user said|claude asked|trích dẫn|người dùng nói)\s*:\s*["'“]"""
 )
+
+_GIT_GRANT_META_RE = re.compile(
+    r"(?i)(?:\bmở\s+request\b|\bopen\s+request\b|"  # i18n-allow
+    r"\b(?:update|cập\s*nhật|sửa|chỉnh)\b[^\n]{0,30}\bhook\b|"  # i18n-allow
+    r"\b(?:viết|duyệt|lập|sửa)\b[^\n]{0,20}\b(?:spec|plan|brief)\b|"  # i18n-allow
+    r"\btest\b[^\n]{0,20}\bhook\b)"
+)
+_GIT_GRANT_NEG_RE = re.compile(
+    r"(?i)\b(?:không|khong|ko|chưa|chua|đừng|not|don'?t|do\s+not|"  # i18n-allow
+    r"never|cancel|wait|hold\s+on|maybe|nope|no)\b"
+)
+_GIT_GRANT_PUSH_RE = re.compile(
+    r"(?i)(?:\bgit\s+push\b|"
+    r"\bpush\b[^\n]{0,40}\b(?:lên|len|origin|upstream|remote|dev|main|nhánh|nhanh|branch|code|đi|di|now|it|changes|này|nay)\b|"  # i18n-allow
+    r"\b(?:duyệt|duyet|cho\s*phép|cho\s*phep|allow|approve[sd]?|ok|okay|oke|đồng\s*ý|dong\s*y|chốt|chot|chạy|chay|run|thực\s*hiện|thuc\s*hien|giúp|giup|hãy|hay)\b[^\n]{0,40}\bpush\b|"  # i18n-allow
+    r"\bđẩy\b[^\n]{0,24}\b(?:code|lên|nhánh|origin|upstream|remote)\b)"  # i18n-allow
+)
+_GIT_GRANT_RESET_RE = re.compile(r"(?i)\b(?:git\s+)?reset\s+(?:--hard|hard)\b")
+_GIT_GRANT_CLEAN_RE = re.compile(
+    r"(?i)\b(?:git\s+)?clean\b[^\n]{0,24}(?:--force\b|-[a-z]*f[a-z]*\b)"
+)
+
+
+def _has_prompt_grant_blockers(trimmed):
+    """Reject quoted, system, question, negation, and meta-hook prompts before granting git."""
+    if not trimmed or "?" in trimmed:
+        return True
+    if len(trimmed) >= 2 and (
+        (trimmed[0] == '"' and trimmed[-1] == '"')
+        or (trimmed[0] == "'" and trimmed[-1] == "'")
+        or (trimmed[0] == "\u201c" and trimmed[-1] == "\u201d")
+    ):
+        return True
+    return bool(
+        NON_HUMAN_RE.search(trimmed)
+        or QUOTED_SPEECH_RE.search(trimmed)
+        or _GIT_GRANT_META_RE.search(trimmed)
+        or _GIT_GRANT_NEG_RE.search(trimmed)
+    )
+
+
+def extract_git_grants(prompt):
+    """Extract verified single-turn git grants (`clean_f`, `push`, `reset_hard`)."""
+    trimmed = _tach_prompt_thuc(prompt)
+    if _has_prompt_grant_blockers(trimmed):
+        return []
+    grants = []
+    if _GIT_GRANT_CLEAN_RE.search(trimmed):
+        grants.append("clean_f")
+    if _GIT_GRANT_PUSH_RE.search(trimmed):
+        grants.append("push")
+    if _GIT_GRANT_RESET_RE.search(trimmed):
+        grants.append("reset_hard")
+    return grants
+
+
+_SETUPFULLY_RE = re.compile(r"\bsetupfully\s+tdq-workflow\b", re.IGNORECASE)
+_SETUPFULLY_Q_PHRASE_RE = re.compile(
+    r"(?i)(?:\blà\s+gì\b|\bthế\s+nào\b|\bnhư\s+nào\b|\bcách\s+(?:chạy|dùng)\b|"  # i18n-allow
+    r"\bwhat\s+is\b|\bhow\s+to\b|\bexplain\b|\bdescribe\b|\btell\s+me\s+about\b|"
+    r"\bis\s+[^\n]{0,40}\bsafe\b)"
+)
+_SETUPFULLY_QUOTED_RE = re.compile(
+    r"""(["'`“])[^"'`”]*\bsetupfully\s+tdq-workflow\b[^"'`”]*\1"""
+)
+
+
+def extract_setupfully_trigger(prompt):
+    """Return True only when a genuine user prompt invokes `setupfully tdq-workflow`."""
+    trimmed = _tach_prompt_thuc(prompt)
+    if _has_prompt_grant_blockers(trimmed):
+        return False
+    if _SETUPFULLY_Q_PHRASE_RE.search(trimmed) or _SETUPFULLY_QUOTED_RE.search(trimmed):
+        return False
+    return bool(_SETUPFULLY_RE.search(trimmed))
+
+
+def _evaluate_setup_setup_line(prompt, is_new_turn, source=""):
+    """Return `[TDQ:SETUP]` directive when setupfully or restart resume applies, else ''."""
+    effective_new = bool(is_new_turn) and str(source or "").strip().lower() not in (
+        "compact",
+        "resume",
+        "system",
+    )
+    try:
+        import tdq_setup_state
+        res = tdq_setup_state.evaluate_restart_resume(is_new_turn=effective_new)
+        action = res.get("action")
+        if action == "run_verify":
+            return (
+                "[TDQ:SETUP] Antigravity restarted after Phase-1 setup — run NOW: "
+                "`py -3 -X utf8 scripts/tdq_setup.py --post-restart-verify` and close the loop."
+            )
+        if action == "remind_restart":
+            return (
+                "[TDQ:SETUP] Setup Phase 1 completed — close and restart Antigravity completely "
+                "(same IDE process detected), then send any message to run 6-layer verification."
+            )
+    except Exception as exc:  # noqa: BLE001
+        _info(f"prompt_context: setup state check skipped: {type(exc).__name__}: {exc}")
+    if effective_new and extract_setupfully_trigger(prompt):
+        return (
+            "[TDQ:SETUP] Explicit setupfully user consent received — run Phase-1 setup end-to-end "
+            "without asking manifest approval: `py -3 -X utf8 scripts/tdq_setup.py --setupfully`."
+        )
+    return ""
+
+
+def _emit_setup_hooks(cwd, prompt, is_new_turn, user_md_fn=None, source=""):
+    """Emit [TDQ:SETUP] directive line and optional Antigravity user_markdown card."""
+    line = _evaluate_setup_setup_line(prompt, is_new_turn, source=source)
+    if not line:
+        return False
+    final_line = lenh_cho_project(line, cwd)
+    emit_context([final_line])
+    if callable(user_md_fn):
+        user_md_fn(final_line)
+    return True
 
 
 def _an_toan_by(prompt):
@@ -310,11 +428,18 @@ def main():
     # even when the change went through the shell (the turn ledger only sees Edit/Write).
     # Written to the ledger, NOT printed into context → costs the model no tokens.
     turn_log_append(cwd, "turn_start", session=sid, **turn_snapshot(cwd))
+    prompt = payload.get("prompt") or payload.get("user_message") or ""
+    git_grants = extract_git_grants(prompt)
+    if git_grants:
+        turn_log_append(cwd, "signal", session=sid, event="git_grant",
+                        target="git_grant", grants=git_grants)
+        _info(f"prompt_context: git_grant minted sid={sid} grants={git_grants}")
     _nhac_worktree(cwd)
+    hook_source = str(payload.get("source") or "")
+    _emit_setup_hooks(cwd, prompt, is_new_turn=True, source=hook_source)
 
     # No OPEN request (open = active_request exists AND phase != idle) → point at intake.
     # The INTAKE line comes FIRST so _truncate (which cuts from the tail) never clips it.
-    prompt = payload.get("prompt") or ""
     if RE_DIRECT.search(prompt):
         intake = (
             "[TDQ:INTAKE] Yêu cầu chứa '_tdq_direct' → chạy chế độ direct: "  # i18n-allow
@@ -432,6 +557,25 @@ def main():
     # what pushes the NEXT line out of the 240-char ceiling.
     _nhac_gon(cwd, state, payload, sid)
     _nhac_qc(cwd, state, payload, sid)
+    _nhac_plain(cwd, state, payload, sid)
+
+
+def _nhac_plain(cwd, state, payload, session):
+    """At presentation phases, inject a concise [TDQ:PLAIN] Layer-1 recency reminder."""
+    pha = effective_phase(state, warn=False)
+    if pha not in ("spec", "plan", "report"):
+        return
+    ma_plain = "TDQ:PLAIN"
+    if already_reminded(cwd, payload, f"{ma_plain}:{pha}"):
+        return
+    dong = _truncate(
+        f"[{ma_plain}] ({pha}) Layer-1 front (chat & Tóm tắt dễ hiểu): 10-15s plain "  # i18n-allow
+        "prose (<=120w, <=6 backticks/100w, <=2 ·/line); push path:line below.",
+        MAX_CHARS,
+    )
+    turn_log_append(cwd, "remind", session=session, code=f"{ma_plain}:{pha}",
+                    event="UserPromptSubmit", so_dong=1)
+    emit_context([dong])
 
 
 def _nhac_qc(cwd, state, payload, session):

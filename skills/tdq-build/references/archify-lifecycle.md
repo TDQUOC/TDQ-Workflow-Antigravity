@@ -1,6 +1,6 @@
 # Archify artifact lifecycle
 <!-- muc-luc-dong:
-  Before code=8-17 · Refresh Master=18-30 · Evidence for report=31
+  Before code=8-17 · Refresh Master=18-32 · Evidence for report=33
 -->
 
 Load before implementation when the approved spec or mini-plan includes an Archify manifest, and again after source changes or merge. Do not create another approval gate.
@@ -21,8 +21,11 @@ Finish checks freshness and writes a separate status file; it does not call an A
 
 ```sh
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" status
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" sync-master --model "docs/tdq/models/master.model.json" --project "." --out "docs/architecture"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" sync-master --model "docs/tdq/models/master.model.json" --project "." --out "docs/architecture" --incremental
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" serve "docs/architecture" --port 8765
 ```
+
+When `master.registry` is configured (`archify_registry` + `archify_portal`), `--incremental` (or `--full` to rebuild all slices) AST-hashes Logic Nodes, relinks shifted spans without re-rendering clean slices, and rejects `planned` nodes fail-closed. It also publishes a lazy `< 300 KB` `index.html` with `slices/*.svg`, `nodes/*.json`, and `registry-bundle.js` fallback for `file://` (`serve` opens a local `127.0.0.1` HTTP portal).
 
 The model inventories modules and coverage, identifies unknown/excluded areas and lists views with relative candidate paths. Render each flow card beside overview so clicking opens a modal for detail diagram inside the same HTML (Escape/close returns focus), and verify diagram target IDs before publish; never inject onclick into native node or claim native node already links to child. Include only steps with a source-backed call edge, route or test (`path`/`line`), mark unknown details unverified (`chưa xác minh`), and do not invent password algorithm, HTTP endpoint or parameter lineage. Use `committed` only for a verified clean source snapshot at the declared Git revision, `working-tree` for uncommitted bytes and `planned` for proposed behavior; verify source fingerprint after sync and recheck after merge.
 
@@ -31,3 +34,5 @@ Retain and preserve last-good output if the engine is missing or any required vi
 ## Evidence for report
 
 Author `docs/tdq/reports/<slug>.html` from actual task, DoD, QC, outputs and limits in plain, visual, complete language (`đơn giản, dễ hiểu, trực quan, đầy đủ thông tin`), explicitly covering: (1) before-request state/flow, (2) after-request state/flow, (3) what was tested, and (4) actual test results. Render it with `tdq_archify.py render --type explainer --candidate docs/tdq/artifacts/<slug>/bao-cao.archify.md --out docs/tdq/reports/<slug>.html --document docs/tdq/reports/<slug>.md --request <slug> --lane <quick|full> --evidence-kind working-tree`; use `committed` only with a verified clean revision. The CLI accepts only `planned`, `working-tree`, `committed`, `partial` — never pass `actual`. In prose, describe verified outcomes as actual, not proposed; the manifest's evidence kind describes source provenance. Verify manifest binding before linking. Keep candidate, manifest, engine receipt, command exit and test evidence together. A missing, failed or stale Archify artifact is a disclosed fallback; never link it as current. Report static gates, native browser gates and visual review separately. Finish every background check before concluding PASS. Missing engine, native browser pipe failure or timeout is not success; give recovery instructions and preserve unresolved status. Never disable browser sandbox just to obtain a green receipt.
+
+When `doc_lang=vi`, `tdq_archify.py render` and `sync-master` inject fallback `@meta locale=en` if omitted and localize explainer HTML chrome plus `#explainer-reader-words` to Vietnamese before manifest hashing.

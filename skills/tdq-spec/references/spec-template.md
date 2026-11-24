@@ -10,11 +10,11 @@ that does not apply, but say **why** it does not apply.
 ```markdown
 # SPEC — <tên việc>
 
-Ngày: YYYY-MM-DD · Bản: 1.0 · Brief: ../brief/<slug>.md · Lane: full · Work kind: build | investigate
+Ngày: YYYY-MM-DD · Bản: 1.0 · Brief: ../brief/<slug>.md
 Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conventions/references/soul.md
-Trạng thái: CHỜ DUYỆT
+Chế độ: full · Loại: build | investigate · Trạng thái: CHỜ DUYỆT
 
-> **Tóm tắt dễ hiểu:** <2–3 câu: trước vướng gì → nay sửa gì → kết quả ra sao>.
+> **Tóm tắt dễ hiểu:** <2–3 câu (<= 120 từ, 0 bọc code quanh số hay đường dẫn): trước vướng gì → nay sửa gì → kết quả ra sao>.
 
 ## Mục lục
 
@@ -53,7 +53,7 @@ Chép từ brief mục `### Lộ trình`. User duyệt spec là duyệt luôn l�
 | 1 | | | |
 
 ## 2b. Ranh giới module
-Bắt buộc với lane full (lane quick BỎ). Một module = một vùng file không giao nhau.
+Bắt buộc ở lane full (lane quick BỎ). Một module = một vùng file tách rời.
 
 | Module | Vùng file | Phụ thuộc module | Đầu ra §2 nào <!-- i18n-allow: canonical spec section names --> |
 |---|---|---|---|
@@ -61,7 +61,7 @@ Bắt buộc với lane full (lane quick BỎ). Một module = một vùng file 
 
 ## 2c. Luồng hoạt động & Sơ đồ kiến trúc
 
-Trực quan hóa luồng dữ liệu và tương tác hệ thống. Mermaid dự phòng (Sequence/Flowchart) khi không có HTML Archify.
+Trực quan luồng hệ thống (Mermaid dự phòng khi thiếu HTML Archify).
 
 ```mermaid
 sequenceDiagram

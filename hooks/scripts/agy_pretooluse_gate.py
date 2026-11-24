@@ -22,6 +22,7 @@ find, is silently allowed. Silence on allow is deliberate — a malformed or bar
 makes agy deny EVERY tool call with `invalid_args` (source N6). The output side emits both
 documented deny spellings; see `_deny`.
 """
+import base64
 import datetime
 import json
 import os
@@ -35,13 +36,13 @@ import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stder
 
 BAN = re.compile(r"^(claude|antigravity|gemini|codex)", re.IGNORECASE)
 BRANCH_PATTERNS = [
-    re.compile(r"git\s+checkout\s+-b\s+(\S+)"),
-    re.compile(r"git\s+switch\s+(?:-c|--create)\s+(\S+)"),
+    re.compile(r"git\s+checkout\s+-[bB]\s+(\S+)"),
+    re.compile(r"git\s+switch\s+(?:-[cC]|--create|--force-create)\s+(\S+)"),
     re.compile(r"git\s+branch\s+(?!-)(\S+)"),
 ]
-WORKTREE = re.compile(r"git\s+worktree\s+add\s+(?:-b\s+(\S+)\s+)?(\S+)")
+WORKTREE = re.compile(r"git\s+worktree\s+add\s+(?:-[bB]\s+(\S+)\s+)?(\S+)")
 
-STATE = r"docs/tdq/(?:state\.json|STATE\.md)"
+STATE = r"docs/tdq/(?:state\.json|STATE\.md|\.tdq-runtime(?:/[^\s'\";&|<>()]*)?)"
 STATE_WRITES = [
     re.compile(r">{1,2}\s*['\"]?\S*" + STATE),
     re.compile(r"\btee\b[^|;&]*" + STATE),
@@ -90,23 +91,285 @@ def _clean(raw):
     return raw.strip("'\"")
 
 
-def _branch_names(cmd):
+def _collapse_path_token(tok):
+    if "/" not in tok and "\\" not in tok:
+        return tok
+    norm = tok.replace("\\", "/")
+    stack = []
+    for seg in norm.split("/"):
+        if not seg or seg == ".":
+            continue
+        if seg == "..":
+            if stack and stack[-1] != "..":
+                stack.pop()
+            else:
+                stack.append("..")
+        else:
+            stack.append(seg)
+    return ("/" if norm.startswith("/") else "") + "/".join(stack)
+
+
+def _collapse_cmd_paths(raw):
+    seps = set(" \t\r\n'\";&|><(){},=")
+    out, cur = [], []
+    for ch in raw:
+        if ch in seps:
+            if cur:
+                out.append(_collapse_path_token("".join(cur)))
+                cur = []
+            out.append(ch)
+        else:
+            cur.append(ch)
+    if cur:
+        out.append(_collapse_path_token("".join(cur)))
+    return "".join(out)
+
+
+def _extract_agy_cmd_subs(part):
+    out, i, n = [], 0, len(part)
+    in_s = in_d = esc = False
+    while i < n:
+        ch = part[i]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s:
+            esc = True
+        elif not in_s and ch == "$" and part[i:i + 2] == "$(":
+            depth, j, ins, ind, es2 = 1, i + 2, False, False, False
+            while j < n and depth > 0:
+                c2 = part[j]
+                if es2:
+                    es2 = False
+                elif c2 == "\\" and not ins:
+                    es2 = True
+                elif c2 == "'" and not ind:
+                    ins = not ins
+                elif c2 == '"' and not ins:
+                    ind = not ind
+                elif not ins and not ind:
+                    depth += 1 if c2 == "(" else (-1 if c2 == ")" else 0)
+                j += 1
+            if depth == 0:
+                out.append(part[i + 2:j - 1])
+                i = j
+                continue
+        elif not in_s and ch == "`":
+            end = part.find("`", i + 1)
+            if end != -1:
+                out.append(part[i + 1:end])
+                i = end + 1
+                continue
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        i += 1
+    return out
+
+
+_AGY_SH_WRAP = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:bash|sh|zsh|dash|ksh)\b[^\n;|&]*?\s-(?:[a-z]*c[a-z]*)\b\s*", re.IGNORECASE)
+_AGY_CMD_WRAP = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?cmd(?:\.exe)?\b[^\n;|&]*?\s+/[ck]", re.IGNORECASE)
+_AGY_PS_WRAP = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:c|co|com|comm|comma|comman|command)\b\s*", re.IGNORECASE)
+_AGY_ENC_WRAP = re.compile(r"(?:^|[\s;|&])(?:[^\s;|&\"'`]*[/\\])?(?:pwsh|powershell)(?:\.exe)?\b[^\n;|&]*?\s+-(?:e|en|enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand)\b\s*([^\s;|&]+)", re.IGNORECASE)
+_AGY_NON_WRITERS = frozenset({"git", "pytest", "cargo", "rg", "grep", "egrep", "fgrep", "findstr", "jq", "cat", "head", "tail", "type", "get-content", "gc"})
+_AGY_WRITE_OP_RE = re.compile(
+    r"(?:>{1,2}\s*\S+|\b(?:tee|mv|cp|truncate|rm|del|erase|rmdir|rd|copy|move|dd|install|ln|mklink|Set-Content|Add-Content|Out-File|Copy-Item|Move-Item|Remove-Item|New-Item|Set-Item|Clear-Content|sc|ac|cpi|mi|ri|ni|si|clc)\b|"
+    r"\bsed\b[^;|&]*\s-i\b|\[(?:System\.)?IO\.File\]::|\bopen\([^)]*['\"](?:w|a|x|r\+|w\+)|"
+    r"\b(?:write_text|write_bytes|os\.(?:remove|unlink|replace|rename)|shutil\.(?:copy|copy2|copyfile|move|rmtree)|json\.dump)\b|"
+    r"\.(?:unlink|rmdir)\b|writeFile|writeFileSync|appendFile|rmSync|unlinkSync|createWriteStream)",
+    re.IGNORECASE,
+)
+
+
+_AGY_COMMENT_DELIMS = frozenset(" \t\r\n;|&({")
+
+
+def _neutralize_agy_comment_quotes(cmd):
+    out, i, n = [], 0, len(cmd)
+    in_s = in_d = esc = False
+    while i < n:
+        if not in_s and not in_d:
+            if cmd.startswith("<#", i):
+                end_idx = cmd.find("#>", i + 2)
+                if end_idx != -1:
+                    inner = "".join(" " if c in "'\"@<>" else c for c in cmd[i + 2:end_idx])
+                    out.append(f"  {inner}  ")
+                    i = end_idx + 2
+                    continue
+            if cmd[i] == "#" and (i == 0 or cmd[i - 1] in _AGY_COMMENT_DELIMS):
+                nl = cmd.find("\n", i)
+                j = n if nl == -1 else nl
+                out.append("".join(" " if c in "'\"@" else c for c in cmd[i:j]))
+                i = j
+                continue
+        ch = cmd[i]
+        if esc:
+            esc = False
+        elif ch == "\\" and not in_s and in_d:
+            esc = True
+        elif ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _split_agy_segments(cmd):
+    cmd = _neutralize_agy_comment_quotes(cmd)
+    segs, buf = [], []
+    in_s = in_d = esc = False
+    for ch in cmd:
+        if esc:
+            buf.append(ch)
+            esc = False
+            continue
+        if ch == "\\" and not in_s:
+            esc = True
+            buf.append(ch)
+            continue
+        if ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        elif not in_s and not in_d and ch in ";\n&|":
+            s = "".join(buf).strip()
+            if s:
+                segs.append(s)
+            buf.clear()
+            continue
+        buf.append(ch)
+    tail = "".join(buf).strip()
+    if tail:
+        segs.append(tail)
+    return segs
+
+
+def _agy_extract_subs(part):
+    subs = _extract_agy_cmd_subs(part)
+    for pat in (_AGY_SH_WRAP, _AGY_PS_WRAP, _AGY_CMD_WRAP):
+        for m in pat.finditer(part):
+            rest = part[m.end():]
+            if pat is _AGY_CMD_WRAP and not rest.startswith((" ", "\t", "'", '"')):
+                continue
+            r = rest.lstrip()
+            if not r:
+                continue
+            if r[0] in ("'", '"'):
+                q, buf, esc = r[0], [], False
+                for c in r[1:]:
+                    if esc:
+                        buf.append(c)
+                        esc = False
+                    elif c == "\\" and q == '"':
+                        esc = True
+                    elif c == q:
+                        subs.append("".join(buf))
+                        break
+                    else:
+                        buf.append(c)
+            elif r[0] == "{":
+                end = r.rfind("}")
+                if end > 0:
+                    subs.append(r[1:end])
+            else:
+                subs.append(r)
+    for m in _AGY_ENC_WRAP.finditer(part):
+        try:
+            subs.append(base64.b64decode(m.group(1).strip("'\"")).decode("utf-16-le"))
+        except (ValueError, UnicodeDecodeError):
+            pass
+    return subs
+
+
+_AGY_REDIR_RE = re.compile(r"(?<![<=!-])(?:>>|(?<![>=])>(?![=&]))\s*(\S+)")
+
+
+def _mask_agy_quoted_ops(part):
+    part = _neutralize_agy_comment_quotes(part)
+    out, in_s, in_d, esc = [], False, False, False
+    for ch in part:
+        if esc:
+            out.append("_" if (in_s or in_d) and ch in ";|&><\n" else ch)
+            esc = False
+            continue
+        if ch == "\\" and not in_s:
+            esc = True
+            out.append(ch)
+            continue
+        if ch == "'" and not in_d:
+            in_s = not in_s
+        elif ch == '"' and not in_s:
+            in_d = not in_d
+        elif (in_s or in_d) and ch in ";|&><\n":
+            out.append("_")
+            continue
+        out.append(ch)
+    return "".join(out)
+
+
+def _has_agy_state_redir(col, seen_cd_tdq, seen_cd_runtime):
+    for tgt in _AGY_REDIR_RE.findall(_mask_agy_quoted_ops(col)):
+        clean_t = _collapse_path_token(tgt.strip("'\"")).lower()
+        if clean_t.startswith(("&", "=")) or clean_t in ("/dev/null", "$null", "nul"):
+            continue
+        if seen_cd_runtime or "docs/tdq/state.json" in clean_t or "docs/tdq/state.md" in clean_t or ".tdq-runtime" in clean_t:
+            return True
+        if seen_cd_tdq and any(k in clean_t for k in ("state.json", "state.md", "turn-meta-", "sessions.json", "turns-", "checkpoint-")):
+            return True
+    return False
+
+
+def _branch_names(cmd, _depth=0):
+    cmd = _neutralize_agy_comment_quotes(cmd)
     names = []
-    for pattern in BRANCH_PATTERNS:
-        names += [_clean(m) for m in pattern.findall(cmd)]
-    for b_name, path in WORKTREE.findall(cmd):
-        if b_name:
-            names.append(_clean(b_name))
-        if path:
-            names.append(_clean(path).replace("\\", "/").rstrip("/").rsplit("/", 1)[-1])
+    norm = re.sub(
+        r"\bgit\b(?:\s+(?:-(?:[Cc]|-git-dir|-work-tree)\s+(?:\"[^\"]*\"|'[^']*'|\S+)|--(?:git-dir|work-tree)=\S+))+",
+        "git",
+        cmd,
+    )
+    for target in (cmd, norm):
+        for pattern in BRANCH_PATTERNS:
+            names += [_clean(m) for m in pattern.findall(target)]
+        for b_name, path in WORKTREE.findall(target):
+            if b_name:
+                names.append(_clean(b_name))
+            if path:
+                names.append(_clean(path).replace("\\", "/").rstrip("/").rsplit("/", 1)[-1])
+    if _depth < 4:
+        for sub in _agy_extract_subs(cmd):
+            names += _branch_names(sub, _depth + 1)
     return names
 
 
+def _writes_state_depth(cmd, depth, seen_cd, seen_cd_runtime=False):
+    for seg in _split_agy_segments(cmd):
+        col = _collapse_cmd_paths(seg)
+        low = col.lower()
+        first = low.split(None, 1)[0].rsplit("/", 1)[-1].removesuffix(".exe") if low else ""
+        if first in ("cd", "chdir", "set-location", "sl", "pushd"):
+            if ".tdq-runtime" in low:
+                seen_cd = True
+                seen_cd_runtime = True
+            elif "docs/tdq" in low:
+                seen_cd = True
+        has_tgt = (
+            seen_cd_runtime
+            or "docs/tdq/state.json" in low
+            or "docs/tdq/state.md" in low
+            or ".tdq-runtime" in low
+            or (seen_cd and any(k in low for k in ("state.json", "state.md", "turn-meta-", "sessions.json", "turns-", "checkpoint-")))
+        )
+        if _has_agy_state_redir(col, seen_cd, seen_cd_runtime) or (has_tgt and first not in _AGY_NON_WRITERS and _AGY_WRITE_OP_RE.search(col)):
+            return True
+        if depth < 4 and any(_writes_state_depth(sub, depth + 1, seen_cd, seen_cd_runtime) for sub in _agy_extract_subs(seg)):
+            return True
+    return False
+
+
 def _writes_state(cmd):
-    norm = cmd.replace("\\", "/")
-    if not re.search(STATE, norm):
-        return False
-    return any(pattern.search(norm) for pattern in STATE_WRITES)
+    return _writes_state_depth(cmd, 0, False, False)
 
 
 def _log(msg):

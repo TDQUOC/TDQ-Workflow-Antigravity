@@ -14,5 +14,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" render --type explainer -
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" verify --document "docs/tdq/plan/<slug>.md" --manifest "docs/tdq/plan/<slug>-flow.manifest.json"
 ```
 
+For multi-level interactive flows (`<= 4` levels), `--type drilldown` produces a self-contained HTML artifact (`archify_portal`) and `tdq_archify.py serve <dir>` opens a safe local `127.0.0.1` preview.
+
 Always render Archify preview for express pipeline; for a brand-new feature with nothing before, write `Hiện trạng: chưa có` after diagrams only.
 `approve quick` enforces that `docs/tdq/plan/<slug>-flow.manifest.json` is `current` for requests opened after mốc `2026-11-09-0143`. If the flow manifest is missing or stale, `approve quick` refuses approval. Bypass via `--bo-qua-archify "<reason>"` is available only with user agreement.

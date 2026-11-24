@@ -8,6 +8,7 @@ Contract responsibilities:
 - build_finalize_command: construct safe CLI invocation arguments.
 - atomic_delivery: safe exclusive atomic file delivery with fsync and symlink rejection.
 - open_artifact: safely open HTML artifacts in default browser without shell interpolation.
+- serve_directory: safely serve a local directory over loopback HTTP for Portal and Spec/Report.
 - run_finalize / execute_finalize: execute finalize CLI, parse receipt, verify artifact and gates.
 
 Strictly stdlib-only.
@@ -17,14 +18,19 @@ from __future__ import annotations
 import datetime
 import hashlib
 import json
+import mimetypes
 import os
 import platform
 import re
 import shutil
 import subprocess
 import sys
+import threading
+import urllib.parse
 import uuid
 from dataclasses import dataclass
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -101,9 +107,20 @@ def _gather_candidate_roots() -> list[Path]:
     """Collect standard candidate root directories when ARCHIFY_ROOT is unset."""
     candidates: list[Path] = []
     try:
-        candidates.append(Path.home() / "Documents" / "archify")
+        home_dir = Path.home()
+        candidates.append(home_dir / ".local" / "share" / "archify")
+        candidates.append(home_dir / "Documents" / "archify")
     except Exception:
         pass
+
+    env_home = os.environ.get("HOME", "").strip()
+    if env_home:
+        try:
+            env_home_path = Path(env_home).expanduser()
+            candidates.append(env_home_path / ".local" / "share" / "archify")
+            candidates.append(env_home_path / "Documents" / "archify")
+        except Exception:
+            pass
 
     try:
         current_file = Path(__file__).resolve()
@@ -296,29 +313,226 @@ def atomic_delivery(target_path: Union[str, Path], content: Union[str, bytes]) -
                 pass
 
 
-def open_artifact(file_path: Union[str, Path]) -> bool:
+_ALLOWED_SERVE_HOSTS = frozenset({"127.0.0.1", "localhost"})
+_PORTAL_MIME_TYPES: dict[str, str] = {
+    ".html": "text/html; charset=utf-8",
+    ".htm": "text/html; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".json": "application/json; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".ico": "image/x-icon",
+    ".txt": "text/plain; charset=utf-8",
+    ".md": "text/markdown; charset=utf-8",
+}
+
+
+def _open_url_safely(target_url: str) -> bool:
+    """Open a validated URL or file URI in the default browser without shell interpolation."""
+    system = platform.system()
+    try:
+        if system == "Windows":
+            startfile = getattr(os, "startfile", None)
+            if callable(startfile):
+                startfile(target_url)
+                return True
+            import webbrowser
+
+            return bool(webbrowser.open(target_url))
+        cmd = ["open", target_url] if system == "Darwin" else ["xdg-open", target_url]
+        proc = subprocess.run(cmd, check=False)  # noqa: S603
+        return proc.returncode == 0
+    except (OSError, subprocess.SubprocessError, ValueError, RuntimeError) as exc:
+        _log(f"Failed to open target URL: {exc}")
+        return False
+
+
+def open_artifact(file_path: str | Path) -> bool:
     """Safely open an existing HTML artifact in the default browser without shell interpolation."""
     path_obj = Path(file_path).resolve()
     if not path_obj.is_file() or path_obj.suffix.lower() not in (".html", ".htm"):
         _log(f"Error: Target artifact is not an existing HTML file: {path_obj}")
         return False
+    return _open_url_safely(path_obj.as_uri())
 
-    file_uri = path_obj.as_uri()
-    system = platform.system()
+
+def _validate_serve_args(directory: str | Path, host: str, port: int) -> Path:
+    """Validate loopback host, TCP port, and non-symlink served directory root."""
+    if not isinstance(host, str) or host not in _ALLOWED_SERVE_HOSTS:
+        raise ValueError(f"Host '{host}' is not allowed; only 127.0.0.1 or localhost permitted")
+    if isinstance(port, bool) or not isinstance(port, int) or not (0 <= port <= 65535):
+        raise ValueError(f"Invalid TCP port: {port!r}")
+    if not directory:
+        raise ValueError("Directory path cannot be empty")
+    raw_dir = Path(directory)
+    if raw_dir.is_symlink():
+        raise ValueError(f"Served directory cannot be a symlink: {raw_dir}")
+    if not raw_dir.exists():
+        raise FileNotFoundError(f"Served directory does not exist: {raw_dir}")
+    if not raw_dir.is_dir():
+        raise ValueError(f"Served path is not a directory: {raw_dir}")
+    return raw_dir.resolve()
+
+
+def _parse_relative_segments(raw_request_path: str) -> tuple[list[str] | None, int]:
+    """Decode URL path safely and reject traversal, backslashes, or null bytes."""
+    raw_path = urllib.parse.urlsplit(raw_request_path).path
     try:
-        if system == "Windows":
-            if callable(getattr(os, "startfile", None)):
-                os.startfile(file_uri)
-                return True
-            import webbrowser
+        decoded = urllib.parse.unquote(raw_path, errors="strict")
+    except UnicodeDecodeError:
+        return None, HTTPStatus.BAD_REQUEST
+    if "\x00" in decoded or "\\" in decoded:
+        return None, HTTPStatus.FORBIDDEN
+    stripped = decoded.lstrip("/")
+    if not stripped:
+        return ["index.html"], HTTPStatus.OK
+    parts = [part for part in stripped.split("/") if part not in ("", ".")]
+    if ".." in parts:
+        return None, HTTPStatus.FORBIDDEN
+    return (parts or ["index.html"]), HTTPStatus.OK
 
-            return bool(webbrowser.open(file_uri))
-        cmd = ["open", file_uri] if system == "Darwin" else ["xdg-open", file_uri]
-        proc = subprocess.run(cmd, check=False)
-        return proc.returncode == 0
-    except Exception as exc:
-        _log(f"Failed to open artifact: {exc}")
+
+def _is_within_root(candidate: Path, root: Path) -> bool:
+    """Return True when candidate resolves inside root."""
+    try:
+        candidate.resolve().relative_to(root)
+    except (ValueError, OSError):
         return False
+    return True
+
+
+def _resolve_safe_serve_path(root: Path, raw_request_path: str) -> tuple[Path | None, int]:
+    """Resolve URL path under root while blocking traversal and outside symlinks."""
+    parts, parse_status = _parse_relative_segments(raw_request_path)
+    if parts is None:
+        return None, parse_status
+    current = root
+    for part in parts:
+        current = current / part
+        if current.is_symlink() and not _is_within_root(current, root):
+            return None, HTTPStatus.FORBIDDEN
+    if current.is_dir():
+        current = current / "index.html"
+        if current.is_symlink() and not _is_within_root(current, root):
+            return None, HTTPStatus.FORBIDDEN
+    if not _is_within_root(current, root):
+        return None, HTTPStatus.FORBIDDEN
+    if not current.is_file():
+        return None, HTTPStatus.NOT_FOUND
+    return current.resolve(), HTTPStatus.OK
+
+
+def _guess_mime_type(file_path: Path) -> str:
+    """Return deterministic Content-Type for portal assets with stdlib fallback."""
+    ext = file_path.suffix.lower()
+    if ext in _PORTAL_MIME_TYPES:
+        return _PORTAL_MIME_TYPES[ext]
+    guessed, _ = mimetypes.guess_type(str(file_path))
+    return guessed or "application/octet-stream"
+
+
+class _LocalPortalHTTPServer(ThreadingHTTPServer):
+    """Loopback HTTP server with daemon worker threads and root directory reference."""
+
+    daemon_threads = True
+
+    def __init__(
+        self,
+        server_address: tuple[str, int],
+        handler_cls: type[BaseHTTPRequestHandler],
+        root: Path,
+    ) -> None:
+        self.serve_root = root
+        super().__init__(server_address, handler_cls)
+
+
+class _LocalPortalHandler(BaseHTTPRequestHandler):
+    """Fail-closed static file handler allowing only GET/HEAD inside serve_root."""
+
+    def log_message(self, fmt: str, *args: Any) -> None:
+        if _log_enabled():
+            _log(f"HTTP {self.address_string()} - {fmt % args}")
+
+    def _send_bytes(self, status: int, content_type: str, body: bytes, *, send_body: bool) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        if send_body and body:
+            self.wfile.write(body)
+
+    def _send_text_error(self, status: int, message: str, *, send_body: bool = True) -> None:
+        payload = f"{status} {message}\n".encode()
+        self._send_bytes(status, "text/plain; charset=utf-8", payload, send_body=send_body)
+
+    def _serve_file(self, *, send_body: bool) -> None:
+        root: Path = self.server.serve_root  # type: ignore[attr-defined]
+        target, status = _resolve_safe_serve_path(root, self.path)
+        if target is None:
+            self._send_text_error(status, HTTPStatus(status).phrase, send_body=send_body)
+            return
+        try:
+            data = target.read_bytes()
+        except OSError as exc:
+            _log(f"Failed reading served file {target}: {exc}")
+            self._send_text_error(HTTPStatus.NOT_FOUND, "Not Found", send_body=send_body)
+            return
+        self._send_bytes(HTTPStatus.OK, _guess_mime_type(target), data, send_body=send_body)
+
+    def do_GET(self) -> None:  # noqa: N802
+        self._serve_file(send_body=True)
+
+    def do_HEAD(self) -> None:  # noqa: N802
+        self._serve_file(send_body=False)
+
+    def _reject_method(self) -> None:
+        self.send_response(HTTPStatus.METHOD_NOT_ALLOWED)
+        self.send_header("Allow", "GET, HEAD")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        body = b"405 Method Not Allowed\n"
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    do_POST = _reject_method  # noqa: N815
+    do_PUT = _reject_method  # noqa: N815
+    do_DELETE = _reject_method  # noqa: N815
+    do_PATCH = _reject_method  # noqa: N815
+    do_OPTIONS = _reject_method  # noqa: N815
+
+
+def serve_directory(
+    directory: str | Path,
+    host: str = "127.0.0.1",
+    port: int = 0,
+    open_browser: bool = False,
+) -> tuple[Any, str]:
+    """Serve a local directory over loopback HTTP on a background daemon thread."""
+    resolved_root = _validate_serve_args(directory, host, port)
+    server = _LocalPortalHTTPServer((host, port), _LocalPortalHandler, resolved_root)
+    actual_port = server.server_address[1]
+    url = f"http://{host}:{actual_port}/"
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"poll_interval": 0.05},
+        name=f"archify-serve-{actual_port}",
+        daemon=True,
+    )
+    thread.start()
+    _log(f"Serving {resolved_root} at {url}")
+    if open_browser:
+        if (resolved_root / "index.html").is_file():
+            _open_url_safely(url)
+        else:
+            _log(f"Skipping browser launch: index.html not found in {resolved_root}")
+    return server, url
 
 
 def _inspect_candidate(cand: Path) -> tuple[Optional[str], Optional[int], list[dict]]:

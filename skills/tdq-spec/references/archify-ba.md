@@ -16,7 +16,7 @@ A request that changes something that already exists (extended feature, bugfix, 
 - Up to four native diagrams per page (`@workflow`, `@architecture`, `@sequence`…, syntax in Archify `references/explainer-authoring.md`). Diagram ids must differ from panel ids.
 - Text under a diagram only says what the diagram cannot: why it changed, an exception.
 - A brand-new feature with nothing before: one line `Hiện trạng: chưa có`, after diagrams only.
-- Put `@meta locale=en` right under the title (the engine defaults to `zh-CN` chrome). Skip `lane` rows: measured 2026-11-02, a lane workflow inside an explainer rendered 0×0.
+- Put `@meta locale=en` right under the title so the engine avoids `zh-CN` fallback. When `doc_lang=vi`, `tdq_archify.py` automatically localizes explainer HTML chrome and `#explainer-reader-words` to Vietnamese before manifest hashing. Skip `lane` rows: measured 2026-11-02, a lane workflow inside an explainer rendered 0×0.
 
 Validate before rendering: `node <archify>/bin/archify.mjs validate explainer <candidate>`.
 
@@ -38,9 +38,10 @@ Only show a preview link when the command succeeded and the output exists. A fai
 ```sh
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" verify --document "docs/tdq/spec/<slug>.md" --manifest "docs/tdq/spec/<slug>-preview.manifest.json"
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" open "docs/tdq/spec/<slug>-preview.html"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/tdq_archify.py" serve "docs/tdq/spec" --port 8765
 ```
 
-Plan references the approved preview and manifest rather than creating another design. No HTML asset replaces the spec's measurable requirements. A standalone HTML is a snapshot, not a live project scanner.
+For multi-level interactive flows (up to 4 levels), `--type drilldown` renders a self-contained portal HTML (`render_drilldown_standalone`) via `archify_portal` without modifying native SVG nodes. Plan references the approved preview and manifest rather than creating another design. No HTML asset replaces the spec's measurable requirements. A standalone HTML is a snapshot, not a live project scanner.
 
 ## Approval Gate
 

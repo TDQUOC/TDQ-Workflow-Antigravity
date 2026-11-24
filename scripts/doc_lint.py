@@ -12,13 +12,17 @@ Prints `file:line: [RULE] description`; exit 1 on violations, 0 when clean, 2 on
 Silence one rule for one line: put `<!-- doc-lint: allow R4 -->` on the line RIGHT ABOVE it.
 Env: TDQ_LOG=0 turns the log service off (on by default, one ISO-timestamped line to stderr).
 """
+import ast
 import json
 import os
 import posixpath
 import re
+import shlex
+import subprocess
 import sys
 from datetime import datetime
-import utf8_io  # noqa: E402,F401 — imported for its side effect: stdout/stderr become UTF-8
+
+import utf8_io  # noqa: F401 — imported for its side effect: stdout/stderr become UTF-8
 
 EXIT_SYNTAX = 2
 
@@ -138,7 +142,7 @@ ALLOW = re.compile(r"<!--\s*doc-lint:\s*allow\s+(R\d+)[^>]*-->")
 INLINE_CODE = re.compile(r"`[^`]*`")
 # An HTML comment is not prose: it is a note for whoever edits the file, and no reader
 # parses it as a sentence. Counting it under R5 would add ~8 words per i18n-allow label.
-HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
+HTML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 TEMPLATE_LINK = re.compile(r"references/[^)\s]*template[^)\s]*\.md")
 # `·` and `;` separate items in these docs — each item reads on its own
 SENTENCE_SPLIT = re.compile(r"(?<=[.!?…])\s+|\s*[·;]\s*")
@@ -989,8 +993,225 @@ def rule_r15(doc, out):
     out.extend(r15_loi(doc, check_dir=True))
 
 
+# --------------------- R16: scenario & Bug Board CLI flag / length checks
+
+CLI_DOC_SCENARIO_MAX_LINES = 40
+_CLI_SCRIPT_RE = re.compile(
+    r"(?:^|[\s`\"'(|])(?:\./)?scripts/([A-Za-z0-9_.-]+\.py)\b(.*)"
+)
+_CLI_FLAG_RE = re.compile(r"^(--[A-Za-z0-9][A-Za-z0-9-]*)(?:=.*)?$")
+_CLI_FLAG_SCAN_RE = re.compile(r"--[A-Za-z0-9][A-Za-z0-9-]*")
+_CLI_SHELL_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||[;|#])\s*")
+_SCRIPT_FLAGS_CACHE: dict[tuple[str, int, int, str | None], set[str]] = {}
+
+
+def _cli_doc_scope(path: str) -> tuple[str | None, str | None]:
+    """Return ('scenarios'|'bugs', repo_root) when path sits under docs/tdq/{scenarios,bugs}/."""
+    norm = os.path.abspath(path).replace("\\", "/")
+    for kind in ("scenarios", "bugs"):
+        marker = f"/docs/tdq/{kind}/"
+        if marker in norm:
+            root = norm[:norm.index(marker)] or os.path.sep
+            return kind, root
+    return None, None
+
+
+def _resolve_cli_script(script_name: str, repo_root: str | None) -> str | None:
+    """Locate `scripts/<script_name>` in `repo_root` (fallback to TDQ scripts when absent)."""
+    if ".." in script_name or "/" in script_name or "\\" in script_name:
+        return None
+    if repo_root is not None:
+        scripts_dir = os.path.join(repo_root, "scripts")
+        if os.path.isdir(scripts_dir):
+            cand = os.path.join(scripts_dir, script_name)
+            return cand if os.path.isfile(cand) else None
+    fallback = os.path.join(os.path.dirname(os.path.abspath(__file__)), script_name)
+    return fallback if os.path.isfile(fallback) else None
+
+
+def _docstring_node_ids(tree: ast.AST) -> set[int]:
+    """Return object ids of leading docstring Constant nodes across module/class/function bodies."""
+    ids: set[int] = set()
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            ids.add(id(first.value))
+    return ids
+
+
+def _add_argument_flags(call: ast.Call) -> set[str]:
+    """Extract `--flag` strings (plus `--no-...` for BooleanOptionalAction) from one Call node."""
+    found: set[str] = set()
+    for arg in call.args:
+        if isinstance(arg, ast.Constant) and isinstance(arg.value, str) and arg.value.startswith("--"):
+            found.add(arg.value)
+    has_bool_opt = any(
+        kw.arg == "action" and "BooleanOptionalAction" in ast.dump(kw.value)
+        for kw in call.keywords
+    )
+    if has_bool_opt:
+        found.update(f"--no-{flag[2:]}" for flag in list(found))
+    return found
+
+
+def _parse_script_flags(source: str) -> tuple[set[str], set[str], bool]:
+    """Return (argparse_flags, string_literal_flags, supports_help) from Python source."""
+    supports_help = any(tok in source for tok in ("argparse", "ArgumentParser", "--help"))
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set(), set(_CLI_FLAG_SCAN_RE.findall(source)), supports_help
+    doc_ids = _docstring_node_ids(tree)
+    ap_flags: set[str] = set()
+    str_flags: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
+            if name == "add_argument":
+                ap_flags.update(_add_argument_flags(node))
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in doc_ids:
+            str_flags.update(_CLI_FLAG_SCAN_RE.findall(node.value))
+    return ap_flags, str_flags, supports_help
+
+
+def _help_cli_flags(script_path: str, subcommand: str | None) -> set[str]:
+    """Probe `<script> [subcommand] --help` safely to catch dynamic argparse options."""
+    cmd = [sys.executable, script_path]
+    if subcommand:
+        cmd.append(subcommand)
+    cmd.append("--help")
+    env = dict(os.environ, TDQ_LOG="0")
+    try:
+        proc = subprocess.run(cmd, check=False, capture_output=True, encoding="utf-8",
+                              errors="replace", text=True, timeout=3, env=env)
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    return set(_CLI_FLAG_SCAN_RE.findall(proc.stdout + "\n" + proc.stderr))
+
+
+def _valid_script_flags(script_path: str, subcommand: str | None) -> tuple[set[str], bool]:
+    """Return (declared_flags, has_argparse) for `script_path`, caching by file stat."""
+    try:
+        st = os.stat(script_path)
+    except OSError:
+        return set(), False
+    key = (os.path.abspath(script_path), st.st_mtime_ns, st.st_size, subcommand)
+    cached = _SCRIPT_FLAGS_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        with open(script_path, encoding="utf-8", errors="ignore") as fh:
+            source = fh.read()
+    except OSError:
+        return set(), False
+    ap_flags, str_flags, supports_help = _parse_script_flags(source)
+    flags = (ap_flags | {"--help"}) if ap_flags else (str_flags | ({"--help"} if supports_help else set()))
+    result = (flags, "argparse" in source)
+    _SCRIPT_FLAGS_CACHE[key] = result
+    return result
+
+
+def _tokenize_cli_tail(raw_tail: str) -> tuple[str | None, list[str]]:
+    """Return (optional_subcommand, [--flags]) from the argument tail of one command."""
+    cmd_part = _CLI_SHELL_SPLIT_RE.split(raw_tail, maxsplit=1)[0]
+    try:
+        tokens = shlex.split(cmd_part)
+    except ValueError:
+        tokens = cmd_part.split()
+    subcommand = None
+    flags: list[str] = []
+    for tok in tokens:
+        if "scripts/" in tok and tok.endswith(".py"):
+            break
+        m = _CLI_FLAG_RE.match(tok)
+        if m:
+            flags.append(m.group(1))
+        elif subcommand is None and not flags and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*", tok):
+            subcommand = tok
+    return subcommand, flags
+
+
+def _extract_cli_invocations(line: str, is_fenced: bool) -> list[tuple[str, str | None, list[str]]]:
+    """Extract (script_name, subcommand, [--flags]) invocations from one markdown line."""
+    segments = [line] if is_fenced else [
+        *[m.group(0)[1:-1] for m in INLINE_CODE.finditer(line)],
+        INLINE_CODE.sub(" ", line),
+    ]
+    found: list[tuple[str, str | None, list[str]]] = []
+    for seg in segments:
+        match = _CLI_SCRIPT_RE.search(seg)
+        if not match:
+            continue
+        subcommand, flags = _tokenize_cli_tail(match.group(2))
+        found.append((match.group(1), subcommand, flags))
+    return found
+
+
+def _check_cli_invocation(doc: Doc, idx: int, invocation: tuple[str, str | None, list[str]],
+                          effective_root: str | None, out: list[str]) -> None:
+    """Validate one extracted `scripts/<name>.py` invocation against `effective_root`."""
+    script_name, subcommand, flags = invocation
+    script_path = _resolve_cli_script(script_name, effective_root)
+    if not script_path:
+        _report(out, doc, idx, "R16", f"referenced script `scripts/{script_name}` does not exist")
+        return
+    valid, has_argparse = _valid_script_flags(script_path, subcommand)
+    help_probed = False
+    for flag in flags:
+        if flag in valid:
+            continue
+        if has_argparse and not help_probed:
+            valid.update(_help_cli_flags(script_path, subcommand))
+            help_probed = True
+        if flag not in valid:
+            _report(out, doc, idx, "R16", f"unknown CLI flag `{flag}` for `scripts/{script_name}`")
+
+
+def validate_cli_flags(doc: Doc, repo_root: str | None = None) -> list[str]:
+    """Validate `scripts/<name>.py` existence and `--flag` tokens in a scenario or Bug Board Doc."""
+    _, inferred_root = _cli_doc_scope(doc.path)
+    effective_root = repo_root if repo_root is not None else inferred_root
+    out: list[str] = []
+    for idx, line in enumerate(doc.lines):
+        for invocation in _extract_cli_invocations(line, doc.in_fence[idx]):
+            _check_cli_invocation(doc, idx, invocation, effective_root, out)
+    return out
+
+
+def _scenario_exempt_first_line(doc: Doc) -> bool:
+    """Return True when line 1 explicitly exempts the doc from R16."""
+    if not doc.lines:
+        return False
+    found = ALLOW.search(doc.lines[0])
+    return bool(found) and found.group(1) == "R16"
+
+
+def rule_cli_docs(doc, out):
+    """Validate scenario line cap (<= 40) and script/flag names under docs/tdq/{scenarios,bugs}/."""
+    kind, repo_root = _cli_doc_scope(doc.path)
+    if kind is None or not any(line.strip() for line in doc.lines):
+        return
+    if kind == "scenarios" and not _scenario_exempt_first_line(doc):
+        base = os.path.basename(doc.path).lower()
+        has_markers = any(k in "\n".join(doc.lines).lower() for k in ("goal", "act", "assert"))
+        if (base not in ("readme.md", "index.md") or has_markers) and len(doc.lines) > CLI_DOC_SCENARIO_MAX_LINES:
+            out.append(
+                f"{doc.path}:1: [R16] scenario has {len(doc.lines)} lines "
+                f"(> {CLI_DOC_SCENARIO_MAX_LINES}) — keep E2E scenarios concise"
+            )
+    out.extend(validate_cli_flags(doc, repo_root=repo_root))
+
+
 RULES = [rule_r1, rule_r2, rule_r3, rule_r4, rule_r5, rule_r6, rule_r7, rule_r8,
-         rule_r9, rule_r10, rule_r11, rule_r15]
+         rule_r9, rule_r10, rule_r11, rule_r15, rule_cli_docs]
 
 # Directories holding records / machine-generated files — bound by R8 only, see lint_file().
 OUTPUT_DIRS = (os.path.join("docs", "tdq"), os.path.join("docs", "workinglog"),
@@ -1184,9 +1405,7 @@ def _r14_nguong(cell):
 
 def _r14_o(line):
     """Split a table row into stripped cells; `\\|` is a literal pipe, not a separator."""
-    body = line.strip()
-    if body.startswith("|"):
-        body = body[1:]
+    body = line.strip().removeprefix("|")
     if body.endswith("|") and not body.endswith("\\|"):
         body = body[:-1]
     return [c.strip() for c in re.split(r"(?<!\\)\|", body)]
@@ -1286,6 +1505,171 @@ def rule_r14(doc, out):
         _report(out, doc, so_dong - 1, "R14", msg)
 
 
+# --------------------- R16: Layer-1 readability gate on spec, plan, and reports
+
+R16_MOC = "2026-11-21-1819"
+R16_TARGET_DIRS = ("spec", "plan", "reports")
+R16_MAX_CALLOUT_WORDS = 120
+R16_MAX_SENTENCE_WORDS = 35
+R16_MAX_BACKTICKS_PER_100 = 6
+R16_MAX_MIDDLE_DOTS = 2
+_R16_SCOPE_RE = re.compile(r"(?:^|/)docs/tdq/(?:spec|plan|reports)/[^/]+$")
+_R16_LAYER2_RE = re.compile(
+    r"^##\s+(?:1(?:\.|\s|$)|mục\s+lục\b|table\s+of\s+contents\b|p1\b|phân\s+bổ\b|thời\s+gian\b)",  # i18n-allow
+    re.IGNORECASE,
+)
+_R16_CALLOUT_RE = re.compile(r"^\s*>\s*\*\*Tóm tắt dễ hiểu:\*\*\s*(.*)$")  # i18n-allow
+_R16_BOLD_LABEL_RE = re.compile(r"^\*\*[^*]+:\*\*")
+_R16_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9_:/.-])[A-Za-z0-9_.-]+(?:[/\\][A-Za-z0-9_.-]+)+\.[A-Za-z][A-Za-z0-9]{0,7}(?![A-Za-z0-9_/.-])"
+)
+_R16_LINE_REF_RE = re.compile(r"(?<!\d):\d+\b")
+
+
+def _r16_in_scope(ten_file):
+    """Return True when `ten_file` is a .md slug >= R16_MOC in spec/, plan/, or reports/."""
+    norm = ten_file.replace("\\", "/")
+    ten = posixpath.basename(norm)
+    if not ten.endswith(".md") or not R14_SLUG.match(ten) or ten[:15] < R16_MOC:
+        return False
+    parent_dir = posixpath.dirname(norm)
+    if not parent_dir:
+        return True
+    if "docs/tdq/" in norm:
+        return bool(_R16_SCOPE_RE.search(norm))
+    return posixpath.basename(parent_dir) in R16_TARGET_DIRS
+
+
+def _r16_line_allowed(lines, idx):
+    """Return True when `allow R16` sits above `idx` (or on line 0 for line-1 checks)."""
+    if idx == 0:
+        found = ALLOW.search(lines[0]) if lines else None
+        return bool(found) and found.group(1) == "R16"
+    found = ALLOW.search(lines[idx - 1])
+    return bool(found) and found.group(1) == "R16"
+
+
+def _r16_opening_lines(lines):
+    """Return [(0-based idx, line, in_fence)] before Layer-2 headings."""
+    opening = []
+    fenced = False
+    for idx, line in enumerate(lines):
+        if FENCE.match(line):
+            fenced = not fenced
+            opening.append((idx, line, True))
+            continue
+        if not fenced and _R16_LAYER2_RE.match(line):
+            break
+        opening.append((idx, line, fenced))
+    return opening
+
+
+def _r16_collect_continuation(opening, start_pos):
+    """Collect continuation blockquote lines immediately following the callout header."""
+    parts = []
+    for _, nxt_line, nxt_fenced in opening[start_pos:]:
+        if nxt_fenced or not nxt_line.lstrip().startswith(">"):
+            break
+        inner = nxt_line.lstrip()[1:].strip()
+        if _R16_BOLD_LABEL_RE.match(inner):
+            break
+        if inner:
+            parts.append(inner)
+    return parts
+
+
+def _r16_extract_callout(opening):
+    """Return (start_idx, body_text) for `> **Tóm tắt dễ hiểu:**` in opening, else None."""  # i18n-allow
+    for pos, (idx, line, in_fence) in enumerate(opening):
+        if in_fence:
+            continue
+        match = _R16_CALLOUT_RE.match(line)
+        if match:
+            parts = [match.group(1).strip()] + _r16_collect_continuation(opening, pos + 1)
+            return idx, " ".join(p for p in parts if p)
+    return None
+
+
+def _r16_check_callout(lines, start_idx, body, loi):
+    """Validate summary callout length, sentence cap, backtick density, and raw tech refs."""
+    if _r16_line_allowed(lines, start_idx):
+        return
+    line_no = start_idx + 1
+    clean_body = HTML_COMMENT.sub(" ", body).strip()
+    plain_body = clean_body.replace("`", "")
+    word_count = len(plain_body.split())
+    if word_count == 0:
+        loi.append((line_no, "summary callout `> **Tóm tắt dễ hiểu:**` is empty"))  # i18n-allow
+        return
+    if word_count > R16_MAX_CALLOUT_WORDS:
+        loi.append((line_no, f"summary callout has {word_count} words (> {R16_MAX_CALLOUT_WORDS}) — keep Layer 1 concise"))
+    for sentence in SENTENCE_SPLIT.split(plain_body):
+        s_count = len(sentence.split())
+        if s_count > R16_MAX_SENTENCE_WORDS:
+            loi.append((line_no, f"summary callout sentence has {s_count} words (> {R16_MAX_SENTENCE_WORDS}) — split it"))
+    bt_pairs = len(INLINE_CODE.findall(clean_body))
+    if bt_pairs * 100 > R16_MAX_BACKTICKS_PER_100 * word_count:
+        rate = bt_pairs * 100.0 / word_count
+        loi.append((
+            line_no,
+            (
+                f"summary callout backtick density {bt_pairs}/{word_count}w "
+                f"({rate:.1f}/100w > {R16_MAX_BACKTICKS_PER_100}/100w)"
+            ),
+        ))
+    if _R16_PATH_RE.search(clean_body):
+        loi.append((line_no, "summary callout contains raw file path — move paths to Layer 2"))
+    if _R16_LINE_REF_RE.search(clean_body):
+        loi.append((line_no, "summary callout contains raw `:line` reference — move references to Layer 2"))
+
+
+def _r16_check_middle_dots(lines, opening, loi):
+    """Flag non-table/non-blockquote/non-Soul opening lines packing >= 3 middle-dots (`·`)."""
+    for idx, line, in_fence in opening:
+        if in_fence:
+            continue
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("|", ">", "<!--")):
+            continue
+        low = stripped.lower()
+        if low.startswith(("soul:", "**soul:**")):
+            continue
+        dots = line.count("·")
+        if dots > R16_MAX_MIDDLE_DOTS and not _r16_line_allowed(lines, idx):
+            loi.append((
+                idx + 1,
+                f"Layer-1 opening line packs {dots} middle-dots (`·`) — keep <= {R16_MAX_MIDDLE_DOTS}",
+            ))
+
+
+def r16_loi(text, ten_file):
+    """-> [(line_number, message)] for R16 Layer-1 readability on spec, plan, and reports."""
+    if not _r16_in_scope(ten_file):
+        return []
+    lines = text.splitlines()
+    opening = _r16_opening_lines(lines)
+    loi = []
+    callout = _r16_extract_callout(opening)
+    if callout is None:
+        if not _r16_line_allowed(lines, 0):
+            loi.append((1, "missing Layer-1 summary callout `> **Tóm tắt dễ hiểu:**`"))  # i18n-allow
+    else:
+        _r16_check_callout(lines, callout[0], callout[1], loi)
+    _r16_check_middle_dots(lines, opening, loi)
+    return loi
+
+
+def rule_r16(doc, out):
+    """Enforce Layer-1 readability on spec/, plan/, and reports/ from R16_MOC onward."""
+    abs_norm = os.path.abspath(doc.path).replace("\\", "/")
+    if not _R16_SCOPE_RE.search(abs_norm):
+        return
+    loi = r16_loi("\n".join(doc.lines), doc.path)
+    _log(f"R16 {os.path.basename(doc.path)} → {len(loi)} finding(s)")
+    for so_dong, msg in loi:
+        _report(out, doc, so_dong - 1, "R16", msg)
+
+
 def lint_file(path):
     doc = Doc(path)
     out = []
@@ -1296,7 +1680,7 @@ def lint_file(path):
     abs_path = os.path.abspath(path)
     is_output = any(f"{os.sep}{d}{os.sep}" in abs_path for d in OUTPUT_DIRS)
     if is_output:
-        for rule in (rule_r8, rule_r10, rule_r11, rule_r12, rule_r14, rule_r15):
+        for rule in (rule_r8, rule_r10, rule_r11, rule_r12, rule_r14, rule_r15, rule_r16, rule_cli_docs):
             rule(doc, out)
     else:
         for rule in RULES:

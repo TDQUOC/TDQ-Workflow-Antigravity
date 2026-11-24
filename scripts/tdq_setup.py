@@ -29,11 +29,13 @@ graphify graph) under a pid lock, ending in the readiness stamp
 Env: TDQ_PROJECT_DIR anchors the project; TDQ_LOG=0 silences the log.
 """
 import argparse
+from contextlib import contextmanager
 import ctypes
 import hashlib
 import io
 import json
 import os
+from pathlib import Path
 import platform
 import re
 import shlex
@@ -45,6 +47,7 @@ import sys
 import tarfile
 import tempfile
 import time
+from typing import Any, Optional
 import urllib.request
 import zipfile
 from datetime import datetime
@@ -59,8 +62,26 @@ import tdq_checkportable  # noqa: E402
 import tdq_devtool_mcp  # noqa: E402
 import tdq_lsp  # noqa: E402
 import tdq_no  # noqa: E402 — hạ tầng ghi nợ dùng chung với tdq_finish.py
+import tdq_setup_state  # noqa: E402
 import tdq_ten_lenh  # noqa: E402
 import utf8_io  # noqa: E402
+
+_FALLBACK_TREE_SITTER_PACKAGES: tuple[str, ...] = (
+    "tree-sitter",
+    "tree-sitter-python",
+    "tree-sitter-javascript",
+    "tree-sitter-typescript",
+    "tree-sitter-rust",
+)
+
+try:
+    import archify_registry
+except ImportError:
+    archify_registry = None
+
+TREE_SITTER_PACKAGES: tuple[str, ...] = getattr(
+    archify_registry, "TREE_SITTER_PACKAGES", _FALLBACK_TREE_SITTER_PACKAGES
+)
 
 TIMEOUT_CAI = 300
 # Trần cho mỗi phép smoke: chúng chạy sau khi cài xong, và không phép nào được treo lệnh setup.
@@ -998,10 +1019,20 @@ def doc_thong_bao_update_moi(home=None):
     return False, ""
 
 
+def kiem_va_them_user_scripts_path():
+    """Add existing user Scripts dirs with binaries to PATH without installing."""
+    if _khong_cham_may():
+        return [], [], []
+    da_lam, ghi_chu = tdq_checkportable.dam_bao_user_scripts_tren_path()
+    return da_lam, ghi_chu, []
+
+
 def kiem_va_cai_shim_python3(tu_dong_them_path=True):
     """Tự động kiểm tra và cài đặt shim python3 trên Windows nếu thiếu hoặc lỗi. -> (da_cai, canh_bao, no)."""
     if not tdq_ten_lenh.la_windows():
         return [], [], []
+
+    da_path, cb_path, _ = kiem_va_them_user_scripts_path() if tu_dong_them_path else ([], [], [])
 
     song = False
     try:
@@ -1012,16 +1043,16 @@ def kiem_va_cai_shim_python3(tu_dong_them_path=True):
         song = False
 
     if song and tdq_ten_lenh.co_shim_python3():
-        return ["shim `python3` đã sẵn sàng"], [], []
+        return ["shim `python3` đã sẵn sàng"] + da_path, cb_path, []
 
     _log("phát hiện `python3` chưa hoạt động hoặc dính Microsoft Store stub — tiến hành cài shim")
     da_lam, ghi_chu = tdq_checkportable.cai_shim_python3(nen_tang="win32", tu_dong_them_path=tu_dong_them_path)
     if da_lam:
-        return [f"shim `python3`: {d}" for d in da_lam], ghi_chu, []
+        return [f"shim `python3`: {d}" for d in da_lam] + da_path, ghi_chu + cb_path, []
     # Nếu không có file mới được ghi nhưng ghi_chu cho thấy đã đúng sẵn hoặc song == True
     if any("already correct" in g for g in ghi_chu) or song:
-        return ["shim `python3` đã sẵn sàng"], ghi_chu, []
-    return [], ghi_chu, ["không thể tự cài shim `python3` tự động (cần cấp quyền PATH)"]
+        return ["shim `python3` đã sẵn sàng"] + da_path, ghi_chu + cb_path, []
+    return da_path, ghi_chu + cb_path, ["không thể tự cài shim `python3` tự động (cần cấp quyền PATH)"]
 
 
 def kiem_dryrun_hook(goc_plugin=None):
@@ -1085,6 +1116,79 @@ def kiem_tra_archify(project=None):
     return False, f"{ver_str} · {err or 'không tìm thấy file bin/archify.mjs'}"
 
 
+def _fallback_tree_sitter_support() -> dict[str, Any]:
+    """Fallback probe for tree-sitter packages when archify_registry is unavailable."""
+    import importlib
+    import importlib.metadata
+
+    installed: list[str] = []
+    missing: list[str] = []
+    versions: dict[str, str | None] = {}
+    for pkg in _FALLBACK_TREE_SITTER_PACKAGES:
+        try:
+            importlib.import_module(pkg.replace("-", "_"))
+        except (ImportError, OSError, RuntimeError, ValueError):
+            missing.append(pkg)
+            versions[pkg] = None
+            continue
+        installed.append(pkg)
+        try:
+            versions[pkg] = importlib.metadata.version(pkg)
+        except (importlib.metadata.PackageNotFoundError, OSError, ValueError):
+            versions[pkg] = None
+    lang_pairs = (
+        ("tree-sitter-python", ("python",)),
+        ("tree-sitter-javascript", ("javascript",)),
+        ("tree-sitter-typescript", ("typescript", "tsx")),
+        ("tree-sitter-rust", ("rust",)),
+    )
+    langs = [
+        name
+        for pkg, names in lang_pairs
+        if "tree-sitter" in installed and pkg in installed
+        for name in names
+    ]
+    return {
+        "available": len(missing) == 0,
+        "missing": missing,
+        "installed": installed,
+        "languages": langs,
+        "version": versions.get("tree-sitter"),
+    }
+
+
+def _probe_tree_sitter_support() -> dict[str, Any]:
+    """Probe tree-sitter availability via archify_registry with stdlib fallback."""
+    if (
+        archify_registry is not None
+        and sys.modules.get("archify_registry", archify_registry) is not None
+    ):
+        return archify_registry.check_tree_sitter_support()
+    return _fallback_tree_sitter_support()
+
+
+def _format_tree_sitter_ok(info: dict[str, Any]) -> str:
+    """Format ready status string from check_tree_sitter_support output."""
+    ver = info.get("version") or "installed"
+    langs = ", ".join(info.get("languages") or [])
+    if langs:
+        return f"tree-sitter {ver} · 4 grammars ready ({langs})"
+    return f"tree-sitter {ver} · 4 grammars ready"
+
+
+def kiem_tra_tree_sitter() -> tuple[bool, str]:
+    """Check tree-sitter core and 4 grammar packages -> (ok, detail)."""
+    info = _probe_tree_sitter_support()
+    if info.get("available"):
+        detail = _format_tree_sitter_ok(info)
+        _log(f"kiem_tra_tree_sitter ok: {detail}")
+        return True, detail
+    missing = info.get("missing") or list(TREE_SITTER_PACKAGES)
+    detail = f"missing tree-sitter packages: {', '.join(missing)}"
+    _log(f"kiem_tra_tree_sitter missing: {detail}")
+    return False, detail
+
+
 MOC_MO = "<!-- TDQ:TOOLS -->"
 MOC_DONG = "<!-- /TDQ:TOOLS -->"
 
@@ -1112,10 +1216,78 @@ KHOI_HUONG_DAN = """## Bộ tìm kiếm 3 tầng
 - Mọi yêu cầu mới từ người dùng BẮT BUỘC phải mở bằng skill `tdq-workflow:tdq-intake` (hoặc `tdq-intake` nếu cài cục bộ) và chạy theo pipeline của TDQ Workflow (quick hoặc full). Tuyệt đối KHÔNG tự ý chuyển sang plan mode của harness (`EnterPlanMode`) khi nhận yêu cầu.
 - Yêu cầu chứa '_tdq_direct' → tự động phân tích & tìm kiếm mã nguồn, lập mini-plan và chỉ dừng ở 1 cổng duyệt mini-plan (không hỏi chọn pipeline, không phỏng vấn).
 - Ngoại lệ Refactor & Kiến trúc sạch (Rung 1): Khi người dùng yêu cầu Refactor, tái cấu trúc hoặc Clean Architecture/SOLID, cấu trúc sạch và tính mở rộng module đứng TRÊN luật phẫu thuật 1 dòng tối thiểu. Cấm tự ý ép gộp các tầng/lớp hợp lý thành hàm phẳng nếu làm vỡ chủ đích thiết kế.
-- Tự phục hồi môi trường (Self-healing): lỗi 'Python was not found' thì dùng Python đã cài (`python` hoặc `py -3`). Chẩn đoán trước; chỉ sửa kết nối/shim trong quyền đã cấp. Không chạy setup toàn phần nếu sẽ cài mới hoặc đổi permission/host ngoài phạm vi.
+- Tự phục hồi môi trường (Self-healing): lỗi 'Python was not found' thì dùng Python đã cài (`python` hoặc `py -3`). Công cụ đã cài sẵn ở thư mục Scripts/bin mức người dùng nhưng thiếu trong `PATH` thì được phép tự thêm vào User `PATH`. Không chạy setup toàn phần nếu sẽ cài mới hoặc đổi permission/host ngoài phạm vi.
 - Skill báo `Unknown skill` → plugin chưa bật ở project này: đọc `{goc}/skills/tdq-intake/SKILL.md`, thay `{bien_plugin}` bằng `{goc}`, làm theo; nhắc người dùng chạy lệnh setup ở trên để bật plugin.
 - Không được tự ý đổi mode làm việc hiện tại (`EnterPlanMode`, `ExitPlanMode`...).
 - Mọi câu hỏi, lựa chọn option và duyệt gate PHẢI trao đổi trực tiếp trong chat (dạng `1a 2b 3c`, "duyệt spec", "duyệt plan", "duyệt nhanh" hoặc câu tự nhiên). Tuyệt đối CẤM mở popup question UI (`AskUserQuestion`) của agent code.
+
+## Nguyên tắc Ưu tiên MCP & Bộ kỹ năng MCP (MCP-First)
+
+- Luôn ưu tiên dùng MCP và bộ skill của MCP (nếu có); ưu tiên lập phương án dùng MCP trong spec/plan để giải quyết trọn vẹn yêu cầu người dùng.
+- Kiểm tra kết nối trước (Pre-flight check): kiểm inventory, schema và endpoint cấu hình thực trước thao tác MCP. Nếu chưa kết nối, tự phục hồi công cụ đã cài trong quyền hiện có rồi probe lại; cần thao tác ngoài quyền thì hướng dẫn user. Không suy trạng thái runtime từ cấu hình.
+- Ví dụ: Khi phát triển mã nguồn Roblox hoặc Unity, luôn kiểm tra sự hiện diện của MCP và bộ skill/tool của MCP tương ứng để thực hiện và kiểm chứng thay vì thao tác mù mờ.
+Chi tiết cẩm nang: `{goc}/skills/tdq-setup/references/mcp-first-guide.md`.
+
+## Tự chủ phối hợp công cụ có kiểm chứng
+
+- Mọi task: xác định mục tiêu, input, đích và quyền; lập bước nội bộ ngắn với tool, output và điều kiện xong. Không yêu cầu xuất suy luận kín. Chỉ hỏi thông tin thiếu làm đổi kết quả; giữ gate TDQ.
+- Khám phá tool/skill thực trong phiên. Web ưu tiên Chrome MCP; native app/dialog dùng agent-desktop khi cần; file/CLI dùng tool chuyên biệt. Một tool đủ thì không ép phối hợp nhiều tool; chọn đường ít bước nhất vẫn đúng và có quyền.
+- Ưu tiên upload_file trực tiếp nếu schema có và browser host đọc được file. Khi chuyển browser/native: kiểm trang, process/window, file và đích bằng quan sát/ref mới; xác minh attachment trước gửi. handle_dialog không mặc định điều khiển Windows picker.
+- Download/Save As phải kiểm file cuối tồn tại, loại và nội dung phù hợp; click thành công chưa phải hoàn tất. Chờ event/tool wait nếu có, không poll dồn dập.
+- Delivery gửi/upload chưa rõ: quan sát đích trước, không lặp thao tác khi chưa biết kết quả. Retry chỉ khi có dữ kiện mới/điều kiện đổi; không tiến triển thì đổi phương án hợp lệ hoặc báo blocker. Không đổi tool để vượt hành động đã bị từ chối.
+- Thiếu tool: research nguồn chính thức, kiểm OS/quyền, đề xuất lệnh cài user-level kèm kiểm chứng và gỡ; chờ user duyệt. Không tự cài mới, đổi permission, OAuth hoặc nới phạm vi file/dịch vụ/người nhận.
+- Tự kiểm từng bước và output cuối; báo rõ hoàn tất/partial/blocker bằng bằng chứng. Chất lượng > runtime > context cost. ĐÚNG: upload trực tiếp, kiểm attachment, gửi một lần, kiểm file tải. SAI: gửi lại khi timeout chưa rõ hoặc báo xong chỉ từ click.
+
+## Quy tắc Git và Attribution bắt buộc
+
+- Tuyệt đối KHÔNG thêm dòng `Co-Authored-By: Claude Code...` hoặc bất kỳ attribution trailer nào vào git commit message hoặc PR body. Mọi commit và PR chỉ chứa nội dung kỹ thuật thuần túy do người dùng và agent trao đổi.
+- Vùng tự động mang theo khi đổi/hợp nhất nhánh: Khi mở nhánh request hoặc khi merge về nhánh gốc, nếu working tree dirty nhưng CHỈ thuộc `docs/**`, `*.md`, `logs/**`, `*.log`, `graphify-out/**` thì TỰ ĐỘNG mang theo, commit hoặc merge. Không cần dừng lại hỏi người dùng. Chỉ dừng hỏi khi có thay đổi dirty ở mã nguồn (`scripts/`, `src/`, `hooks/`, `tests/`...).
+
+## Chuẩn Trình bày & Báo cáo (Soul & Report)
+
+- Luôn trình bày đơn giản, dễ hiểu, ngắn gọn nhưng trực quan, đầy đủ thông tin theo chuẩn 2 lớp (`user-facing-block.md`). Lớp 1 cho người đọc ở chat (8–16 dòng, không bọc backtick số thường) và ô `> **Tóm tắt dễ hiểu:**` đầu file `.md` (<= 120 từ, <= 6 backtick/100 từ, không nhồi tường `·`). Lớp 2 lưu đầy đủ bằng chứng bên dưới.
+- Mặc định cho cả `spec`, `plan` và `report`: kể theo mạch Trước → Sau → Kết quả với ô `Tóm tắt dễ hiểu` ở đầu file `.md` để ai đọc 10–15 giây cũng hiểu ngay.
+- Phase `report` luôn xuất cặp `docs/tdq/reports/<slug>.md` và `Archify HTML` (`docs/tdq/reports/<slug>.html`) với đủ 4 mục: Trước request, Sau request, Đã test gì, Kết quả test."""
+
+
+def khoi_huong_dan(goc=None):
+    """Khối ghim, với đường dẫn TUYỆT ĐỐI của bản cài trên máy này.
+
+    Hai bản trước đều sai: đường dẫn tương đối repo không mở được từ project khác, còn
+    `${CLAUDE_PLUGIN_ROOT}` là biến của tầng hook/plugin và KHÔNG được expand trong `CLAUDE.md`
+    — agent đọc được một chuỗi không trỏ tới đâu cả. Instruction user-level áp cho mọi repo trên
+    máy, nên thứ duy nhất luôn đúng ở đó là đường dẫn tuyệt đối.
+    """
+    # Biến plugin đi qua tham số, không viết `${{...}}` trong hằng số: bản build portable chỉ thay
+    # được chuỗi literal, một tên biến kẹp trong ngoặc kép làm nó báo còn sót biến.
+    return KHOI_HUONG_DAN.format(goc=(goc or GOC_REPO).replace("\\", "/"),
+                                 bien_plugin="${CLAUDE_PLUGIN_ROOT}")
+
+
+ARCHIFY_REPO_URL = "https://github.com/tt-a1i/archify.git"
+GEMINI_PIN_MAX_BYTES = 24000
+
+KHOI_HUONG_DAN_AGY = """## Bộ tìm kiếm 3 tầng
+
+- Bắt đầu phiên/tra cứu code: gọi `start_lsp(root_dir, language_id)` trước (TS/JS cần mở 1 file bằng `open_document` để nhận project).
+  Tra symbol: `list_symbols` (trong file), `find_symbol` (workspace), `find_references` (nơi gọi). Gọi LSP mở khóa 10 lượt grep.
+  Tên chính xác đã biết → grep. Vỡ lan, bản đồ kiến trúc → graphify.
+  Khái niệm mơ hồ → `graphify query "<câu hỏi>"` song song grep nhiều từ đồng nghĩa, rồi gộp.
+- Mỗi tầng có phụ thuộc riêng và chết trong im lặng; tầng nào chết thì rơi xuống grep.
+- Kiểm các bậc bằng `python {goc}/scripts/tdq_lsp.py check`; thiếu công cụ thì research nguồn chính thức và đề xuất cài user-level, chờ user duyệt. Chỉ chạy `python {goc}/scripts/tdq_setup.py` khi phạm vi setup đã được duyệt (Windows có thể dùng `py -3`).
+  Luật đầy đủ kèm số đo: `{goc}/skills/tdq-setup/references/uu-tien-tim-kiem.md`.
+- Khảo sát code 3 chiều (Triangulation Code Exploration) trong phase analyze/quick_analyze: Quét rộng bằng Grep tự do không giới hạn quota. Đào sâu cấu trúc bằng LSP (find_references, go_to_definition) và quét vỡ lan bằng Graphify (affected 2 bước). Lập bảng đối chiếu vùng chạm để không bỏ sót mã nguồn khi refactor hoặc mở rộng.
+- Tự quyết xử lý LSP: áp dụng `--bo-qua-lsp "<lý do rõ ràng>"` cho tài liệu/nghiên cứu/cài MCP hoặc tham chiếu nội tệp khi phù hợp. Phục hồi công cụ đã cài trong quyền hiện có; thiếu Language Server/dependency thì tìm nguồn chính thức, đề xuất cài user-level và chờ user duyệt, không tự cài hoặc nới quyền.
+
+## Nguyên tắc TDQ Workflow bắt buộc
+
+- Mọi yêu cầu mới từ người dùng BẮT BUỘC phải mở bằng skill `tdq-intake` và chạy theo pipeline của TDQ Workflow (quick hoặc full). Tuyệt đối KHÔNG tự ý chuyển sang plan mode của harness (`/plan`) khi nhận yêu cầu.
+- Yêu cầu chứa '_tdq_direct' → tự động phân tích & tìm kiếm mã nguồn, lập mini-plan và chỉ dừng ở 1 cổng duyệt mini-plan (không hỏi chọn pipeline, không phỏng vấn).
+- Ngoại lệ Refactor & Kiến trúc sạch (Rung 1): Khi người dùng yêu cầu Refactor, tái cấu trúc hoặc Clean Architecture/SOLID, cấu trúc sạch và tính mở rộng module đứng TRÊN luật phẫu thuật 1 dòng tối thiểu. Cấm tự ý ép gộp các tầng/lớp hợp lý thành hàm phẳng nếu làm vỡ chủ đích thiết kế.
+- Tự phục hồi môi trường (Self-healing): lỗi 'Python was not found' thì dùng Python đã cài (`python` hoặc `py -3`). Chẩn đoán trước; chỉ sửa kết nối/shim trong quyền đã cấp. Không chạy setup toàn phần nếu sẽ cài mới hoặc đổi permission/host ngoài phạm vi.
+- Skill báo `Unknown skill` → plugin chưa bật ở project này: đọc `{goc}/skills/tdq-intake/SKILL.md`, thay `{bien_plugin}` bằng `{goc}`, làm theo; nhắc người dùng chạy lệnh setup ở trên để bật plugin.
+- Không được tự ý đổi mode làm việc hiện tại (`/plan`...).
+- Mọi câu hỏi, lựa chọn option và duyệt gate PHẢI trao đổi trực tiếp trong chat (dạng `1a 2b 3c`, "duyệt spec", "duyệt plan", "duyệt nhanh" hoặc câu tự nhiên). Tuyệt đối CẤM mở popup question UI (`ask_question`) của agent code.
 
 ## Nguyên tắc Ưu tiên MCP & Bộ kỹ năng MCP (MCP-First)
 
@@ -1146,18 +1318,10 @@ Chi tiết cẩm nang: `{goc}/skills/tdq-setup/references/mcp-first-guide.md`.
 - Phase `report` luôn xuất cặp `docs/tdq/reports/<slug>.md` và `Archify HTML` (`docs/tdq/reports/<slug>.html`); khi có cập nhật bắt buộc nêu rõ 4 phần: (1) Trước request trạng thái/flow thế nào, (2) Sau request thế nào, (3) Đã test gì, và (4) Kết quả test ra được cái gì."""
 
 
-def khoi_huong_dan(goc=None):
-    """Khối ghim, với đường dẫn TUYỆT ĐỐI của bản cài trên máy này.
-
-    Hai bản trước đều sai: đường dẫn tương đối repo không mở được từ project khác, còn
-    `${CLAUDE_PLUGIN_ROOT}` là biến của tầng hook/plugin và KHÔNG được expand trong `CLAUDE.md`
-    — agent đọc được một chuỗi không trỏ tới đâu cả. Instruction user-level áp cho mọi repo trên
-    máy, nên thứ duy nhất luôn đúng ở đó là đường dẫn tuyệt đối.
-    """
-    # Biến plugin đi qua tham số, không viết `${{...}}` trong hằng số: bản build portable chỉ thay
-    # được chuỗi literal, một tên biến kẹp trong ngoặc kép làm nó báo còn sót biến.
-    return KHOI_HUONG_DAN.format(goc=(goc or GOC_REPO).replace("\\", "/"),
-                                 bien_plugin="${CLAUDE_PLUGIN_ROOT}")
+def khoi_huong_dan_agy(goc=None):
+    """Build Antigravity-native <!-- TDQ:TOOLS --> block for ~/.gemini/GEMINI.md."""
+    resolved = (goc or GOC_REPO).replace("\\", "/")
+    return KHOI_HUONG_DAN_AGY.format(goc=resolved, bien_plugin="${PLUGIN_ROOT}")
 
 
 def _doc_instruction(duong):
@@ -1187,7 +1351,7 @@ def _dau_instruction(info):
                                       info.st_mtime_ns, info.st_ctime_ns, info.st_mode)
 
 
-def _noi_instruction(cu, goc):
+def _noi_instruction(cu, goc, khoi_fn=None):
     text = cu.decode("utf-8")
     counts = text.count(MOC_MO), text.count(MOC_DONG)
     if counts not in ((0, 0), (1, 1)):
@@ -1196,7 +1360,8 @@ def _noi_instruction(cu, goc):
         raise ValueError("marker TDQ:TOOLS đảo thứ tự")
     match = re.search(rb"\r\n|\r|\n", cu)
     newline = match.group() if match else b"\n"
-    khoi = f"{MOC_MO}\n{khoi_huong_dan(goc)}\n{MOC_DONG}".encode().replace(b"\n", newline)
+    builder = khoi_fn or khoi_huong_dan
+    khoi = f"{MOC_MO}\n{builder(goc)}\n{MOC_DONG}".encode().replace(b"\n", newline)
     if counts == (1, 1):
         start, end = cu.index(MOC_MO.encode()), cu.index(MOC_DONG.encode()) + len(MOC_DONG)
         return cu[:start] + khoi + cu[end:]
@@ -1380,12 +1545,12 @@ def _thay_instruction(duong, cu, moi, info, acl):
             os.unlink(tam)
 
 
-def ghim_huong_dan_tool(duong, goc=None):
+def ghim_huong_dan_tool(duong, goc=None, khoi_fn=None):
     """Ghim nguyên tử; True khi đổi, False khi no-op, lỗi không tiến stamp."""
     duong = os.path.abspath(duong)
     try:
         cu, info = _doc_instruction(duong)
-        moi = _noi_instruction(cu, goc)
+        moi = _noi_instruction(cu, goc, khoi_fn=khoi_fn)
         if moi == cu:
             return False
         acl = _acl_instruction(duong) if info else None
@@ -1880,7 +2045,7 @@ def khoi_tao_nen(project, chay=None, *, cache_mode="off", request=None):
 
 def parse_args(argv):
     ap = argparse.ArgumentParser(
-        description="Cài và chứng minh mọi phụ thuộc của bộ tìm kiếm 3 tầng.")
+        description="Install and verify 3-tier search and Antigravity setup dependencies.")
     ap.add_argument("--khong-log", action="store_true", help="tắt log ra stderr")
     ap.add_argument("--readiness-cache", choices=("off", "auto"), default="off")
     ap.add_argument("--request", help="Request cache namespace (defaults to active state)")
@@ -1908,6 +2073,21 @@ def parse_args(argv):
                     help="tắt dòng nhắc [TDQ:SETUP] Caveman lúc SessionStart")
     ap.add_argument("--unmute-caveman-prompt", action="store_true",
                     help="bật lại dòng nhắc [TDQ:SETUP] Caveman lúc SessionStart")
+    ap.add_argument("--setupfully", action="store_true",
+                    help="Run automated one-shot Antigravity setup (Phase 1) and persist restart state")
+    ap.add_argument("--scan-json", action="store_true",
+                    help="Scan Antigravity toolchain and emit structured JSON manifest")
+    ap.add_argument("--apply-manifest", action="store_true",
+                    help="Apply Antigravity Phase-1 setup manifest without restarting")
+    ap.add_argument("--post-restart-verify", action="store_true",
+                    help="Run 6-layer post-restart verification and clear pending flag on Core Gate PASS")
+    ap.add_argument("--confirm-restarted", action="store_true",
+                    help="Explicitly confirm IDE restart when process fingerprint cannot change")
+    ap.add_argument("--set-tavily-key", default="",
+                    help="Save TAVILY_API_KEY in private secrets.env without echoing the secret")
+    ap.add_argument("--state-dir", default="",
+                    help="Override TDQ_SETUP_STATE_DIR for isolated state operations")
+    ap.add_argument("--json", action="store_true", help="Emit JSON summary when supported")
     return ap.parse_args(argv)
 
 
@@ -1985,7 +2165,6 @@ def _xu_ly_caveman_flags(args, project):
     if getattr(args, "khong_log", False):
         os.environ["TDQ_LOG"] = "0"
     import caveman_config
-    from pathlib import Path
     plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if args.mute_caveman_prompt or args.unmute_caveman_prompt:
         muted = bool(args.mute_caveman_prompt)
@@ -2033,25 +2212,30 @@ def chay_cli(argv):
     return main(argv, khai_codex=_khai_codex_mac_dinh)
 
 
-def main(argv, khai_codex=None):
-    args = parse_args(argv)
-    if args.khong_log:
-        # Một biến, hai module. Thang bậc có log riêng, nên nếu `--khong-log` chỉ tắt cờ của
-        # chính file này thì user gõ nó vẫn nghe một nửa tiếng ồn.
-        os.environ["TDQ_LOG"] = "0"
-    project = tdq_lsp._project_dir()
-    rtk_rc = _xu_ly_rtk_flags(args, project)
-    if rtk_rc is not None:
-        return rtk_rc
-    caveman_rc = _xu_ly_caveman_flags(args, project)
-    if caveman_rc is not None:
-        return caveman_rc
+@contextmanager
+def _scoped_state_dir(state_dir: Optional[str]):
+    """Temporarily scope TDQ_SETUP_STATE_DIR around one CLI invocation."""
+    cleaned = (state_dir or "").strip()
+    if not cleaned:
+        yield None
+        return
+    resolved = Path(cleaned).expanduser()
+    prev = os.environ.get("TDQ_SETUP_STATE_DIR")
+    os.environ["TDQ_SETUP_STATE_DIR"] = str(resolved)
+    try:
+        yield resolved
+    finally:
+        if prev is None:
+            os.environ.pop("TDQ_SETUP_STATE_DIR", None)
+        else:
+            os.environ["TDQ_SETUP_STATE_DIR"] = prev
+
+
+def _xu_ly_legacy_mode_flags(args, project) -> Optional[int]:
+    """Handle legacy standalone flags (--kiem-archify, --update-plugin, --nen)."""
     if args.kiem_archify:
         ok, chi_tiet = kiem_tra_archify(project)
-        if ok:
-            print(f"archify · ĐẠT ({chi_tiet})")
-        else:
-            print(f"cảnh báo · archify chưa sẵn sàng ({chi_tiet})")
+        print(f"archify · ĐẠT ({chi_tiet})" if ok else f"cảnh báo · archify chưa sẵn sàng ({chi_tiet})")
         return 0
     if args.update_plugin:
         ok, msg = thuc_hien_cap_nhat_remote()
@@ -2059,11 +2243,49 @@ def main(argv, khai_codex=None):
         return 0
     if args.nen:
         options = {"cache_mode": args.readiness_cache, "request": args.request}
-        if args.readiness_cache == "off":
-            khoi_tao_nen(project)
-        else:
-            khoi_tao_nen(project, **options)
+        khoi_tao_nen(project) if args.readiness_cache == "off" else khoi_tao_nen(project, **options)
         return 0
+    return None
+
+
+def main(argv, khai_codex=None):
+    args = parse_args(argv)
+    if args.khong_log:
+        os.environ["TDQ_LOG"] = "0"
+    project = tdq_lsp._project_dir()
+    with _scoped_state_dir(getattr(args, "state_dir", "")) as state_dir_override:
+        for handler in (
+            lambda: _xu_ly_rtk_flags(args, project),
+            lambda: _xu_ly_caveman_flags(args, project),
+            lambda: _xu_ly_legacy_mode_flags(args, project),
+            lambda: _handle_antigravity_cli(args, project, state_dir_override),
+        ):
+            rc = handler()
+            if rc is not None:
+                return rc
+        return _run_legacy_claude_setup(args, project, khai_codex)
+
+
+def _record_tree_sitter_status(da_cai: list[str], canh_bao: list[str]) -> None:
+    """Probe or install tree-sitter dependencies and record status in setup output."""
+    try:
+        dat_ts, chi_tiet_ts = ensure_tree_sitter_installed()
+        if dat_ts:
+            da_cai.append(f"tree-sitter AST: {chi_tiet_ts}")
+        else:
+            canh_bao.append(f"tree-sitter AST: {chi_tiet_ts}")
+    except (
+        OSError,
+        RuntimeError,
+        ValueError,
+        ImportError,
+        subprocess.SubprocessError,
+    ) as exc:
+        canh_bao.append(f"tree-sitter AST check error: {exc}")
+
+
+def _run_legacy_claude_setup(args, project, khai_codex=None):
+    """Run legacy Claude Code setup flow unchanged when host is not Antigravity."""
     _log(f"setup · project={project} · máy={platform.node()}")
 
     # Handoff contains only static probe receipts; each reuse hashes its inputs again.
@@ -2113,6 +2335,7 @@ def main(argv, khai_codex=None):
             canh_bao.append(f"tiện ích Archify: {chi_tiet_archify}")
     except Exception as exc:  # noqa: BLE001
         canh_bao.append(f"lỗi kiểm tra tiện ích Archify: {exc}")
+    _record_tree_sitter_status(da_cai, canh_bao)
     phien_ban_moi = doc_phien_ban_plugin(GOC_REPO)
     if phien_ban_moi:
         ghi_phat_hanh(project, phien_ban_moi)
@@ -2150,23 +2373,857 @@ _ORIG_GHIM_HUONG_DAN = ghim_huong_dan_tool
 
 def is_antigravity_host():
     """Return True when running inside Antigravity plugin/agent context."""
-    if os.environ.get("TDQ_HOST") == "antigravity":
-        return True
-    norm = os.path.abspath(__file__).replace("\\", "/").lower()
-    return any(m in norm for m in (
-        "/.gemini/config/plugins/", "/plugins/tdq-workflow-agy/", "/plugins/tdq-workflow/", "/antigravity_portable/"
-    ))
+    return tdq_lsp._is_antigravity_host(caller_file=__file__)
 
 
-def _sync_agy_guard_ghim(duong, goc=None):
+def _sync_agy_guard_ghim(duong, goc=None, khoi_fn=None):
     """Skip mutating ~/.claude/CLAUDE.md when running natively under Antigravity."""
     if is_antigravity_host() and ".claude" in os.path.expanduser(str(duong)).lower():
         _log("antigravity host: skipped ~/.claude/CLAUDE.md mutation")
         return False
-    return _ORIG_GHIM_HUONG_DAN(duong, goc=goc)
+    return _ORIG_GHIM_HUONG_DAN(duong, goc=goc, khoi_fn=khoi_fn)
 
 
 ghim_huong_dan_tool = _sync_agy_guard_ghim
+
+
+def _resolve_home(home: Optional[str] = None) -> Path:
+    """Resolve user home from explicit arg, HOME, USERPROFILE, or Path.home."""
+    if home is not None and str(home).strip():
+        return Path(str(home)).expanduser()
+    env_home = os.environ.get("HOME", "").strip() or os.environ.get("USERPROFILE", "").strip()
+    return Path(env_home).expanduser() if env_home else Path.home()
+
+
+def _is_temp_path(path: Path) -> bool:
+    """Return True when `path` resides inside system temp or active test job root."""
+    try:
+        resolved = Path(path).resolve()
+        roots = [Path(tempfile.gettempdir()).resolve()]
+        job_root = os.environ.get("TDQ_TEST_JOB_ROOT", "").strip()
+        if job_root:
+            roots.append(Path(job_root).resolve())
+        return any(resolved == root or root in resolved.parents for root in roots)
+    except OSError:
+        return False
+
+
+def _can_write_home(home: Path) -> bool:
+    """Allow home writes in live runs or inside isolated temp test homes."""
+    return (not _khong_cham_may()) or _is_temp_path(home)
+
+
+def _can_write_state(state_dir: Path) -> bool:
+    """Allow state writes in live runs or inside isolated TDQ_SETUP_STATE_DIR/temp dirs."""
+    has_override = bool(os.environ.get("TDQ_SETUP_STATE_DIR", "").strip())
+    return (not _khong_cham_may()) or has_override or _is_temp_path(state_dir)
+
+
+def _write_setup_log(state_dir: Path, message: str) -> None:
+    """Append an ISO-timestamped log line to `${PLUGIN_DATA}/logs/setup.log`."""
+    if not _log_enabled() or not _can_write_state(state_dir):
+        return
+    try:
+        log_path = state_dir / "logs" / "setup.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with io.open(log_path, "a", encoding="utf-8", newline="\n") as fh:
+            fh.write(f"[{_now()}] {message}\n")
+    except OSError:
+        pass
+
+
+@contextmanager
+def _antigravity_host_context():
+    """Temporarily ensure TDQ_HOST=antigravity during Antigravity manifest ops."""
+    prev = os.environ.get("TDQ_HOST")
+    if prev and prev.strip().lower() in ("antigravity", "agy"):
+        yield
+        return
+    os.environ["TDQ_HOST"] = "antigravity"
+    try:
+        yield
+    finally:
+        if prev is None:
+            os.environ.pop("TDQ_HOST", None)
+        else:
+            os.environ["TDQ_HOST"] = prev
+
+
+def _active_agy_plugin_root(home: Optional[Path] = None) -> str:
+    """Resolve installed Antigravity plugin root, falling back to repo/plugin dir."""
+    resolved_home = home or _resolve_home()
+    installed = resolved_home / ".gemini" / "config" / "plugins" / "tdq-workflow-agy"
+    if (installed / "skills").is_dir() or (installed / "mcp_config.json").is_file():
+        return str(installed)
+    bundled = Path(GOC_REPO) / "plugins" / "tdq-workflow-agy"
+    if (bundled / "skills").is_dir() or (bundled / "mcp_config.json").is_file():
+        return str(bundled)
+    return GOC_REPO
+
+
+def pin_agy_gemini_md(
+    gemini_md_path: Optional[str] = None, plugin_root: Optional[str] = None
+) -> bool:
+    """Pin the Antigravity <!-- TDQ:TOOLS --> block atomically into ~/.gemini/GEMINI.md."""
+    home = _resolve_home()
+    target = Path(gemini_md_path).expanduser() if gemini_md_path else (home / ".gemini" / "GEMINI.md")
+    root = plugin_root or _active_agy_plugin_root(home)
+    block = f"{MOC_MO}\n{khoi_huong_dan_agy(root)}\n{MOC_DONG}"
+    if len(block.encode("utf-8")) >= GEMINI_PIN_MAX_BYTES:
+        raise ValueError(f"Antigravity GEMINI pin exceeds {GEMINI_PIN_MAX_BYTES} bytes")
+    return _ORIG_GHIM_HUONG_DAN(str(target), goc=root, khoi_fn=khoi_huong_dan_agy)
+
+
+def _find_archify_for_home(home: Path) -> Optional[Path]:
+    """Locate Archify installation honoring ARCHIFY_ROOT, ~/.local/share/archify, and ~/Documents/archify."""
+    env_set, env_path = archify_delivery._check_env_archify_root()
+    if env_set:
+        return Path(env_path) if env_path else None
+    candidates = [
+        home / ".local" / "share" / "archify",
+        home / "Documents" / "archify",
+    ]
+    if not _is_temp_path(home):
+        found = archify_delivery.find_archify_root()
+        if found:
+            candidates.insert(0, Path(found))
+    for cand in candidates:
+        if archify_delivery.get_archify_bin(cand) is not None:
+            return cand
+    return None
+
+
+def _run_git_cmd(args: list[str], timeout: int = 120) -> tuple[int, str]:
+    """Run git command without shell or console window on Windows."""
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            args,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+        )
+        out = ((proc.stdout or "") + "\n" + (proc.stderr or "")).strip()
+        return proc.returncode, out
+    except (OSError, subprocess.SubprocessError) as exc:
+        return 1, str(exc)
+
+
+def _validate_archify_origin(repo_dir: Path) -> tuple[bool, str]:
+    """Verify existing Archify git checkout points strictly at upstream tt-a1i/archify."""
+    rc, url_out = _run_git_cmd(["git", "-C", str(repo_dir), "remote", "get-url", "origin"])
+    if rc != 0:
+        return False, "unable to verify archify git origin remote"
+    norm = url_out.strip().rstrip("/")
+    if norm.lower().endswith(".git"):
+        norm = norm[:-4]
+    expected = ARCHIFY_REPO_URL[:-4] if ARCHIFY_REPO_URL.lower().endswith(".git") else ARCHIFY_REPO_URL
+    if norm.lower() != expected.lower():
+        return False, f"unexpected archify git origin: {url_out.strip()[:80]}"
+    return True, "ok"
+
+
+def _clone_or_update_archify(existing: Optional[Path], install_dir: Path) -> tuple[bool, str]:
+    """Clone or fast-forward pull Archify via git after verifying official origin."""
+    git_bin = shutil.which("git")
+    if existing is not None:
+        if (existing / ".git").is_dir() and git_bin:
+            ok_orig, msg_orig = _validate_archify_origin(existing)
+            if not ok_orig:
+                return False, msg_orig
+            rc, out = _run_git_cmd([git_bin, "-C", str(existing), "pull", "--ff-only"])
+            if rc != 0:
+                _log(f"WARN archify git pull failed: {out[:120]}")
+        return True, str(existing)
+    if not git_bin:
+        return False, "git executable not found in PATH"
+    install_dir.parent.mkdir(parents=True, exist_ok=True)
+    rc, out = _run_git_cmd(
+        [git_bin, "clone", "--branch", "main", "--depth", "1", "--", ARCHIFY_REPO_URL, str(install_dir)]
+    )
+    if rc != 0:
+        detail = out.splitlines()[0][:120] if out else str(rc)
+        return False, f"git clone archify failed: {detail}"
+    return True, str(install_dir)
+
+
+def _local_archify_result(existing: Optional[Path]) -> tuple[bool, str]:
+    """Return local-only Archify status without touching network."""
+    if existing is not None:
+        _log(f"archify ready at {existing} (local-only)")
+        return True, str(existing)
+    reason = "TDQ_KHONG_CHAM_MAY=1" if _khong_cham_may() else "opt_in_required"
+    _log(f"archify missing; skipped network clone because {reason}")
+    return False, f"skipped: {reason}"
+
+
+def ensure_archify_installed(
+    home: Optional[str] = None, allow_network: bool = True
+) -> tuple[bool, str]:
+    """Ensure Archify is installed at ~/.local/share/archify; respect TDQ_KHONG_CHAM_MAY=1."""
+    env_root = os.environ.get("ARCHIFY_ROOT", "").strip()
+    target_home = _resolve_home(home)
+    existing = _find_archify_for_home(target_home)
+    if env_root and existing is None:
+        return False, f"ARCHIFY_ROOT is invalid: {env_root}"
+    if _khong_cham_may() or not allow_network:
+        return _local_archify_result(existing)
+    ok_git, target_or_err = _clone_or_update_archify(existing, target_home / ".local" / "share" / "archify")
+    if not ok_git:
+        return False, target_or_err
+    target_dir = Path(target_or_err)
+    if archify_delivery.get_archify_bin(target_dir) is None:
+        return False, f"archify.mjs missing under {target_dir}"
+    node_ok, _, node_errs = archify_delivery._check_node_environment()
+    if not node_ok:
+        return False, "; ".join(node_errs) or "Node.js >= 18 required for Archify"
+    _log(f"archify ready at {target_dir}")
+    return True, str(target_dir)
+
+
+def _run_tree_sitter_pip(missing: list[str]) -> tuple[bool, str]:
+    """Install allowlisted missing tree-sitter packages via pip --user without shell."""
+    cmd = [sys.executable, "-m", "pip", "install", "--user", *missing]
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=TIMEOUT_CAI,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        _log(f"ensure_tree_sitter_installed subprocess error: {exc}")
+        return False, f"pip install failed for {', '.join(missing)}: {exc}"
+    if proc.returncode != 0:
+        out = ((proc.stderr or "") or (proc.stdout or "")).strip()
+        snippet = out.splitlines()[-1][:160] if out else f"exit={proc.returncode}"
+        _log(f"ensure_tree_sitter_installed pip rc={proc.returncode}: {snippet}")
+        return False, (
+            f"pip install failed ({proc.returncode}) "
+            f"for {', '.join(missing)}: {snippet}"
+        )
+    import importlib
+
+    importlib.invalidate_caches()
+    after = _probe_tree_sitter_support()
+    if after.get("available"):
+        detail = _format_tree_sitter_ok(after)
+        _log(f"ensure_tree_sitter_installed installed {missing}: {detail}")
+        return True, detail
+    still_missing = after.get("missing") or missing
+    _log(f"ensure_tree_sitter_installed incomplete after pip: {still_missing}")
+    return False, f"tree-sitter still missing after install: {', '.join(still_missing)}"
+
+
+def ensure_tree_sitter_installed(allow_network: bool = True) -> tuple[bool, str]:
+    """Ensure tree-sitter core and 4 grammars exist; honor TDQ_KHONG_CHAM_MAY=1."""
+    info = _probe_tree_sitter_support()
+    allowlist = set(TREE_SITTER_PACKAGES)
+    missing = [pkg for pkg in (info.get("missing") or []) if pkg in allowlist]
+    if info.get("available") and not missing:
+        detail = _format_tree_sitter_ok(info)
+        _log(f"ensure_tree_sitter_installed ready: {detail}")
+        return True, detail
+    if not missing:
+        return False, "tree-sitter check failed: no installable packages in allowlist"
+    if _khong_cham_may() or not allow_network:
+        reason = "TDQ_KHONG_CHAM_MAY=1" if _khong_cham_may() else "allow_network=False"
+        pkg_list = ", ".join(missing)
+        hint = f"pip install --user {' '.join(missing)}"
+        _log(f"ensure_tree_sitter_installed skipped ({reason}): {pkg_list}")
+        return False, (
+            f"missing tree-sitter packages ({reason}): "
+            f"{pkg_list}; install via: {hint}"
+        )
+    return _run_tree_sitter_pip(missing)
+
+
+def _agy_cli_env(home: Path) -> dict[str, str]:
+    """Build environment for `agy` subprocess aligned with `home`."""
+    env = dict(os.environ)
+    env["HOME"] = str(home)
+    env["USERPROFILE"] = str(home)
+    env["GEMINI_CONFIG_DIR"] = str(home / ".gemini" / "config")
+    env["ANTIGRAVITY_GEMINI_DIR"] = str(home / ".gemini")
+    return env
+
+
+def _probe_agy_cli_plugins(resolved_home: Path) -> Optional[list[dict[str, Any]]]:
+    """Query `agy plugin list --json`; return None when CLI absent or failed."""
+    agy_bin = shutil.which("agy")
+    if not agy_bin:
+        return None
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            [agy_bin, "plugin", "list", "--json"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            env=_agy_cli_env(resolved_home), timeout=10,
+        )
+        parsed = json.loads(proc.stdout or "[]") if proc.returncode == 0 else None
+        if isinstance(parsed, list):
+            return [p for p in parsed if isinstance(p, dict)]
+    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        _log(f"agy plugin list failed: {type(exc).__name__}")
+    return None
+
+
+def _scan_agy_plugin_dirs(plugins_dir: Path) -> list[dict[str, Any]]:
+    """Collect installed plugin metadata directly from ~/.gemini/config/plugins."""
+    if not plugins_dir.is_dir():
+        return []
+    disk: list[dict[str, Any]] = []
+    for pdir in sorted(plugins_dir.iterdir()):
+        manifest = pdir / "plugin.json"
+        if not manifest.is_file():
+            continue
+        try:
+            meta = json.loads(manifest.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            meta = {}
+        disk.append({
+            "name": str(meta.get("name") or pdir.name),
+            "enabled": True,
+            "version": str(meta.get("version") or ""),
+            "path": str(pdir),
+        })
+    return disk
+
+
+def _probe_agy_plugins(home: Optional[str] = None) -> list[dict[str, Any]]:
+    """Probe installed Antigravity plugins via `agy plugin list --json` with disk fallback."""
+    resolved_home = _resolve_home(home)
+    cli_plugins = _probe_agy_cli_plugins(resolved_home)
+    if cli_plugins is not None:
+        return cli_plugins
+    return _scan_agy_plugin_dirs(resolved_home / ".gemini" / "config" / "plugins")
+
+
+def _run_agy_plugin_cmd(args: list[str], home: Path) -> tuple[bool, str]:
+    """Run an `agy plugin ...` subcommand safely."""
+    agy_bin = shutil.which("agy")
+    if not agy_bin:
+        return False, "agy CLI not found"
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            [agy_bin, "plugin", *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=_agy_cli_env(home),
+            timeout=30,
+        )
+        out = ((proc.stdout or "") + "\n" + (proc.stderr or "")).strip()
+        return proc.returncode == 0, out[:160]
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, str(exc)
+
+
+def _inspect_gemini_md(home: Path) -> dict[str, Any]:
+    """Inspect ~/.gemini/GEMINI.md presence, markers, byte size, and Antigravity compliance."""
+    path = home / ".gemini" / "GEMINI.md"
+    if not path.is_file():
+        return {
+            "path": str(path), "exists": False, "pinned": False,
+            "bytes": 0, "under_budget": True, "valid_agy_pin": False,
+        }
+    raw = path.read_bytes()
+    text = raw.decode("utf-8", errors="replace")
+    pinned = (MOC_MO in text) and (MOC_DONG in text)
+    forbidden = ("mcp__lsp__", "CLAUDE_" + "PLUGIN_ROOT", "EnterPlanMode", "AskUserQuestion")
+    required = ("start_lsp", "tdq-intake", "/plan", "ask_question")
+    valid_pin = (
+        pinned
+        and len(raw) < GEMINI_PIN_MAX_BYTES
+        and all(tok in text for tok in required)
+        and not any(tok in text for tok in forbidden)
+    )
+    return {
+        "path": str(path),
+        "exists": True,
+        "pinned": pinned,
+        "bytes": len(raw),
+        "under_budget": len(raw) < GEMINI_PIN_MAX_BYTES,
+        "valid_agy_pin": valid_pin,
+    }
+
+
+def _inspect_archify_for_home(home: Path) -> dict[str, Any]:
+    """Inspect Node.js >= 18 and Archify location scoped to `home`."""
+    node_ok, node_ver, node_errs = archify_delivery._check_node_environment()
+    root = _find_archify_for_home(home)
+    bin_path = archify_delivery.get_archify_bin(root) if root else None
+    ready = bool(node_ok and root and bin_path)
+    return {
+        "ready": ready,
+        "node_ok": node_ok,
+        "node_version": node_ver,
+        "root": str(root) if root else "",
+        "bin": str(bin_path) if bin_path else "",
+        "error": "; ".join(node_errs) if not node_ok else ("" if bin_path else "archify_not_found"),
+    }
+
+
+def _inspect_tree_sitter() -> dict[str, Any]:
+    """Inspect tree-sitter core and 4 grammar packages for Antigravity manifest."""
+    info = _probe_tree_sitter_support()
+    missing = list(info.get("missing") or [])
+    installed = bool(info.get("available")) and len(missing) == 0
+    return {
+        "installed": installed,
+        "missing": missing,
+        "languages": list(info.get("languages") or []),
+        "version": str(info.get("version") or ""),
+        "packages": list(TREE_SITTER_PACKAGES),
+    }
+
+
+def _inspect_lsp_core_agy(project: str) -> dict[str, Any]:
+    """Collect Antigravity-safe Rungs 1-7 status without mutating project state."""
+    rungs = [
+        tdq_lsp.bac1_binary(),
+        tdq_lsp.bac2_mcp(),
+        tdq_lsp.bac3_language_server(project),
+        tdq_lsp.bac4_quyen_tool(),
+        tdq_lsp.bac5_hook_xung_dot(project),
+        tdq_lsp.bac6_cau_hinh_goc_import(project),
+        tdq_lsp.bac7_graphify(project),
+    ]
+    rows = [
+        {
+            "rung": b.so,
+            "name": b.ten,
+            "ok": bool(b.dat),
+            "warn_only": bool(b.chi_canh_bao),
+            "detail": b.chi_tiet,
+            "fix": b.lenh_cai,
+        }
+        for b in rungs
+    ]
+    blocking = [r for r in rows if not r["ok"] and not r["warn_only"]]
+    return {"ok": len(blocking) == 0, "blocking_count": len(blocking), "rungs": rows}
+
+
+def _find_plugin_entry(plugins: list[dict[str, Any]], name: str) -> dict[str, Any]:
+    """Return installed plugin status summary from `_probe_agy_plugins` output."""
+    match = next((p for p in plugins if p.get("name") == name), None)
+    if not match:
+        return {"installed": False, "enabled": False, "version": "", "path": ""}
+    return {
+        "installed": True,
+        "enabled": bool(match.get("enabled")),
+        "version": str(match.get("version") or ""),
+        "path": str(match.get("path") or ""),
+    }
+
+
+def _build_manifest_actions(
+    lsp_core: dict[str, Any],
+    gemini_info: dict[str, Any],
+    rtk_ok: bool,
+    caveman_info: dict[str, Any],
+    archify_info: dict[str, Any],
+    cdp_plugin: dict[str, Any],
+    tree_sitter_info: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Build ordered list of setup actions needed for Antigravity."""
+    actions: list[dict[str, Any]] = []
+    if not lsp_core["ok"]:
+        actions.append({"id": "fix_core_lsp", "category": "core", "blocking": True})
+    if not gemini_info["valid_agy_pin"]:
+        actions.append({"id": "pin_gemini_md", "category": "core", "blocking": True})
+    if not rtk_ok:
+        actions.append({"id": "install_rtk_rg", "category": "addon", "blocking": False})
+    if not caveman_info.get("active"):
+        actions.append({"id": "wrap_caveman_mcp", "category": "addon", "blocking": False})
+    if not archify_info["ready"]:
+        actions.append({"id": "install_archify", "category": "addon", "blocking": False})
+    if tree_sitter_info is not None and not tree_sitter_info.get("installed"):
+        actions.append(
+            {"id": "install_tree_sitter", "category": "addon", "blocking": False}
+        )
+    if not cdp_plugin["enabled"]:
+        actions.append({
+            "id": "enable_chrome_devtools_plugin",
+            "category": "optional_companion",
+            "blocking": False,
+        })
+    return actions
+
+
+def _inspect_tavily_and_chrome(
+    state_dir: Path, devtool_status: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Inspect optional Tavily key presence (never returning secret) and Chrome readiness."""
+    secrets = tdq_setup_state.load_secrets_env(data_dir=state_dir)
+    env_tavily = bool(os.environ.get("TAVILY_API_KEY", "").strip())
+    file_tavily = bool(secrets.get("TAVILY_API_KEY"))
+    tavily_info = {
+        "key_configured": env_tavily or file_tavily,
+        "source": "env" if env_tavily else ("secrets_env" if file_tavily else "none"),
+        "optional": True,
+    }
+    chrome_info = {
+        "available": bool(devtool_status.get("chrome_available")),
+        "chrome_path_env": bool(os.environ.get("CHROME_PATH", "").strip()),
+        "mcp_registered": bool(devtool_status.get("mcp_registered")),
+        "optional": True,
+    }
+    return tavily_info, chrome_info
+
+
+def scan_setup_manifest(project: str) -> dict[str, Any]:
+    """Scan Antigravity toolchain and return structured JSON manifest with 0 Claude debt."""
+    import caveman_config
+    import rtk_integration
+
+    home, state_dir = _resolve_home(), tdq_setup_state.resolve_plugin_data_dir()
+    with _antigravity_host_context():
+        lsp_core = _inspect_lsp_core_agy(project)
+        plugins = _probe_agy_plugins(home=str(home))
+        caveman_info = caveman_config.probe_caveman(
+            plugin_root=_active_agy_plugin_root(home), home=str(home)
+        )
+        rtk_probe = rtk_integration.probe_rtk(cwd=project)
+        rg_path = rtk_integration.locate_rg_binary() or ""
+        rtk_ok = bool(rtk_probe.get("valid")) and bool(rg_path)
+        archify_info = _inspect_archify_for_home(home)
+        tree_sitter_info = _inspect_tree_sitter()
+        gemini_info = _inspect_gemini_md(home)
+        devtool_status = tdq_devtool_mcp.check_devtool_setup(agy_plugins_probe=lambda: plugins)
+
+    cdp_plugin = {**_find_plugin_entry(plugins, "chrome-devtools-plugin"), "optional": True}
+    tavily_info, chrome_info = _inspect_tavily_and_chrome(state_dir, devtool_status)
+    actions = _build_manifest_actions(
+        lsp_core,
+        gemini_info,
+        rtk_ok,
+        caveman_info,
+        archify_info,
+        cdp_plugin,
+        tree_sitter_info=tree_sitter_info,
+    )
+    _log(f"scan_setup_manifest host=antigravity actions={len(actions)} claude_debt=0")
+    rtk_summary = {
+        "valid": bool(rtk_probe.get("valid")), "collision": bool(rtk_probe.get("collision")),
+        "version": str(rtk_probe.get("version") or ""), "rg_path": rg_path, "ok": rtk_ok,
+    }
+    return {
+        "schema_version": 1, "host": "antigravity", "project": str(project),
+        "claude_debt_count": 0, "state_dir": str(state_dir),
+        "setup_state": tdq_setup_state.load_setup_state(data_dir=state_dir),
+        "core": {
+            "tdq_lsp": lsp_core, "gemini_md": gemini_info,
+            "tdq_workflow_agy": _find_plugin_entry(plugins, "tdq-workflow-agy"),
+        },
+        "addons": {
+            "rtk": rtk_summary,
+            "caveman": caveman_info,
+            "archify": archify_info,
+            "tree_sitter": tree_sitter_info,
+        },
+        "optional_companions": {
+            "chrome_devtools_plugin": cdp_plugin, "chrome_browser": chrome_info, "tavily": tavily_info,
+        },
+        "actions": actions,
+    }
+
+
+def _apply_core_agy_tools(
+    project: str, dry_run: bool, applied: list[str], skipped: list[str]
+) -> dict[str, Any]:
+    """Install/verify core 3-tier LSP tools for Antigravity without touching ~/.claude*."""
+    bac = [
+        tdq_lsp.bac1_binary(),
+        tdq_lsp.bac2_mcp(),
+        tdq_lsp.bac3_language_server(project),
+        tdq_lsp.bac4_quyen_tool(),
+        tdq_lsp.bac5_hook_xung_dot(project),
+        tdq_lsp.bac7_graphify(project),
+    ]
+    missing = [b.ten for b in bac if not b.dat and not b.chi_canh_bao]
+    if dry_run:
+        if missing:
+            skipped.append(f"core_install_dry_run:{','.join(missing)}")
+        return {"dry_run": True, "missing": missing, "installed": [], "debt": []}
+    da_cai, no = cai_thieu(bac)
+    da_shim, _, no_shim = kiem_va_cai_shim_python3()
+    don_may()
+    applied.extend(da_cai + da_shim)
+    return {"dry_run": False, "missing": missing, "installed": da_cai + da_shim, "debt": no + no_shim}
+
+
+def _apply_rtk_addon(
+    project: str, setupfully: bool, dry_run: bool, applied: list[str], skipped: list[str]
+) -> dict[str, Any]:
+    """Probe and optionally install RTK + ripgrep."""
+    import rtk_integration
+
+    rtk_probe = rtk_integration.probe_rtk(cwd=project)
+    rg_bin = rtk_integration.locate_rg_binary()
+    if bool(rtk_probe.get("valid") and rg_bin):
+        if not dry_run:
+            rtk_integration.ensure_rtk_config()
+        return {"ok": True, "installed": False}
+    if setupfully and not dry_run:
+        res = rtk_integration.install_rtk_and_rg(approve=True)
+        ok = bool(res.get("ok"))
+        if ok:
+            applied.append("rtk_and_rg")
+        return {"ok": ok, "installed": ok}
+    skipped.append("rtk_and_rg:dry_mode_or_opt_in")
+    return {"ok": False, "installed": False}
+
+
+def _apply_caveman_addon(
+    home: Path, setupfully: bool, applied: list[str], skipped: list[str]
+) -> dict[str, Any]:
+    """Wrap installed Antigravity mcp_config.json via Node launcher and enable Caveman."""
+    import caveman_config
+
+    installed_plugin = home / ".gemini" / "config" / "plugins" / "tdq-workflow-agy"
+    installed_mcp = installed_plugin / "mcp_config.json"
+    if not (setupfully and installed_mcp.is_file() and _can_write_home(home)):
+        skipped.append("caveman_node_wrap:no_installed_mcp_or_dry")
+        return {"wrapped": [], "enabled": False}
+    proxy = installed_plugin / "scripts" / caveman_config.PROXY_SCRIPT_NAME
+    wrapped = caveman_config.wrap_mcp_config(installed_mcp, proxy)
+    cav_res = caveman_config.enable_caveman(
+        approve=True,
+        wrapped_servers=wrapped or list(caveman_config.CAVEMAN_MCP_SERVERS),
+        home=str(home),
+    )
+    if wrapped:
+        applied.append("caveman_node_wrap")
+    return {"wrapped": wrapped, "enabled": bool(cav_res.get("enabled"))}
+
+
+def _apply_addons_agy(
+    project: str,
+    home: Path,
+    setupfully: bool,
+    dry_run: bool,
+    applied: list[str],
+    skipped: list[str],
+) -> dict[str, Any]:
+    """Apply RTK, Caveman Node launcher, Archify, and tree-sitter installation."""
+    rtk_status = _apply_rtk_addon(project, setupfully, dry_run, applied, skipped)
+    caveman_status = _apply_caveman_addon(home, setupfully, applied, skipped)
+    allow_net = bool(setupfully and not dry_run)
+    archify_ok, archify_detail = ensure_archify_installed(
+        home=str(home), allow_network=allow_net
+    )
+    if archify_ok:
+        applied.append(f"archify:{archify_detail}")
+    else:
+        skipped.append(f"archify:{archify_detail}")
+    ts_ok, ts_detail = ensure_tree_sitter_installed(allow_network=allow_net)
+    if ts_ok:
+        applied.append(f"tree_sitter:{ts_detail}")
+    else:
+        skipped.append(f"tree_sitter:{ts_detail}")
+    return {
+        "rtk": rtk_status,
+        "caveman": caveman_status,
+        "archify": {"ok": archify_ok, "detail": archify_detail},
+        "tree_sitter": {"ok": ts_ok, "detail": ts_detail},
+    }
+
+
+def _apply_optional_companions_agy(
+    home: Path,
+    setupfully: bool,
+    dry_run: bool,
+    applied: list[str],
+    skipped: list[str],
+) -> dict[str, Any]:
+    """Enable/check optional Antigravity companion plugins without blocking core gate."""
+    plugins = _probe_agy_plugins(home=str(home))
+    tdq_p = _find_plugin_entry(plugins, "tdq-workflow-agy")
+    cdp_p = _find_plugin_entry(plugins, "chrome-devtools-plugin")
+    if not dry_run:
+        if tdq_p["installed"] and not tdq_p["enabled"]:
+            ok, _ = _run_agy_plugin_cmd(["enable", "tdq-workflow-agy"], home)
+            if ok:
+                tdq_p["enabled"] = True
+                applied.append("enable:tdq-workflow-agy")
+        if setupfully and not cdp_p["enabled"]:
+            cmd = ["enable", "chrome-devtools-plugin"] if cdp_p["installed"] else ["install", "chrome-devtools-plugin"]
+            ok, _ = _run_agy_plugin_cmd(cmd, home)
+            if ok:
+                cdp_p["installed"] = True
+                cdp_p["enabled"] = True
+                applied.append(f"{cmd[0]}:chrome-devtools-plugin")
+            else:
+                skipped.append("chrome-devtools-plugin:optional_unavailable")
+    elif not cdp_p["enabled"]:
+        skipped.append("chrome-devtools-plugin:optional_dry_run")
+    devtool_info = tdq_devtool_mcp.check_devtool_setup(agy_plugins_probe=lambda: plugins)
+    return {
+        "tdq_workflow_agy": tdq_p,
+        "chrome_devtools_plugin": {**cdp_p, "blocking_core": False},
+        "chrome_browser": {
+            "available": bool(devtool_info.get("chrome_available")),
+            "blocking_core": False,
+        },
+    }
+
+
+def _persist_awaiting_restart_state(
+    project: str, setupfully: bool, state_dir: Path
+) -> tuple[str, bool]:
+    """Compute host fingerprint and persist awaiting_restart + setup-pending.flag."""
+    fp_info = tdq_setup_state.compute_host_session_fingerprint()
+    fingerprint = str(fp_info.get("fingerprint", ""))
+    payload = {
+        "version": 2, "status": "awaiting_restart", "host": "antigravity",
+        "setupfully": bool(setupfully), "project": str(project),
+        "host_fingerprint": fingerprint,
+        "host_root_pid": fp_info.get("root_pid"), "host_root_name": fp_info.get("root_name"),
+    }
+    if not _can_write_state(state_dir):
+        return fingerprint, False
+    tdq_setup_state.save_setup_state(payload, pending=True, data_dir=state_dir)
+    return fingerprint, True
+
+
+def apply_setup_manifest(
+    project: str, setupfully: bool = False, tavily_key: str = ""
+) -> dict[str, Any]:
+    """Execute Antigravity Phase-1 setup and persist awaiting_restart + pending flag."""
+    home, state_dir = _resolve_home(), tdq_setup_state.resolve_plugin_data_dir()
+    dry_run = _khong_cham_may()
+    applied, skipped = [], []
+    resolved_tavily = _read_secret_arg(tavily_key) if tavily_key else ""
+    if resolved_tavily and resolved_tavily.strip() and _can_write_state(state_dir):
+        tdq_setup_state.save_tavily_secret(resolved_tavily, data_dir=state_dir)
+        applied.append("tavily_secret_saved")
+    with _antigravity_host_context():
+        core_res = _apply_core_agy_tools(project, dry_run, applied, skipped)
+        addons_res = _apply_addons_agy(project, home, setupfully, dry_run, applied, skipped)
+        optional_res = _apply_optional_companions_agy(home, setupfully, dry_run, applied, skipped)
+    if _can_write_home(home):
+        if pin_agy_gemini_md(str(home / ".gemini" / "GEMINI.md"), _active_agy_plugin_root(home)):
+            applied.append("gemini_md_pinned")
+    else:
+        skipped.append("gemini_md_pin:dry_mode")
+    fp, persisted = _persist_awaiting_restart_state(project, setupfully, state_dir)
+    _write_setup_log(state_dir, f"apply_setup_manifest setupfully={setupfully} dry_run={dry_run}")
+    _log(f"apply_setup_manifest status=awaiting_restart pending=True dry_run={dry_run}")
+    return {
+        "ok": True, "dry_run": dry_run, "host": "antigravity", "claude_debt_count": 0,
+        "setupfully": bool(setupfully), "status": "awaiting_restart", "pending": True,
+        "state_persisted": persisted, "state_dir": str(state_dir), "host_fingerprint": fp,
+        "core": core_res, "addons": addons_res, "optional_companions": optional_res,
+        "gemini_md": _inspect_gemini_md(home),
+        "actions_applied": applied, "actions_skipped": skipped,
+    }
+
+
+def _read_secret_arg(raw_arg: str) -> str:
+    """Resolve API key from stdin when '-' is passed so secrets avoid process argv."""
+    if raw_arg == "-":
+        return sys.stdin.read().strip()
+    return raw_arg
+
+
+def _handle_set_tavily_key(
+    api_key: str, state_dir: Optional[Path], as_json: bool
+) -> int:
+    """Validate and save TAVILY_API_KEY into secrets.env without echoing the key."""
+    target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
+    resolved_key = _read_secret_arg(api_key)
+    try:
+        saved_path = tdq_setup_state.save_tavily_secret(resolved_key, data_dir=target_dir)
+    except (ValueError, PermissionError) as exc:
+        print(f"tavily-key error: {exc}", file=sys.stderr)
+        return 1
+    _write_setup_log(target_dir, "saved TAVILY_API_KEY via --set-tavily-key (redacted)")
+    if as_json:
+        print(json.dumps({"ok": True, "secrets_path": str(saved_path)}))
+    else:
+        print(f"tavily-key · saved (redacted) -> {saved_path}")
+    return 0
+
+
+def _handle_post_restart_verify(
+    confirm_restarted: bool, state_dir: Optional[Path], as_json: bool
+) -> int:
+    """Lazy-import tdq_simulate_verify, run 6-layer verification, and finalize state."""
+    target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
+    if confirm_restarted:
+        tdq_setup_state.evaluate_restart_resume(
+            is_new_turn=True, confirm_manual=True, data_dir=target_dir
+        )
+    # Lazy import required: scripts/tdq_simulate_verify.py is delivered in Wave 4 (T2.3).
+    import tdq_simulate_verify
+
+    plugin_root = Path(_active_agy_plugin_root())
+    verify_res = tdq_simulate_verify.run_simulate_verify(
+        plugin_root=plugin_root, data_dir=target_dir
+    )
+    core_pass = str(verify_res.get("core_gate", "")).upper() == "PASS"
+    state = tdq_setup_state.load_setup_state(data_dir=target_dir)
+    state["status"] = "verified" if core_pass else "verify_failed"
+    state["verify_result"] = verify_res
+    tdq_setup_state.save_setup_state(state, pending=not core_pass, data_dir=target_dir)
+    _write_setup_log(target_dir, f"post-restart-verify core_gate={verify_res.get('core_gate')}")
+    if as_json:
+        print(json.dumps({"status": state["status"], "verify": verify_res}, ensure_ascii=False))
+    else:
+        print(
+            f"post-restart-verify · core_gate={verify_res.get('core_gate')} "
+            f"| optional_gate={verify_res.get('optional_gate')} | status={state['status']}"
+        )
+    return 0 if core_pass else 1
+
+
+def _run_antigravity_apply_cli(args: argparse.Namespace, project: str) -> int:
+    """Apply Phase-1 setup manifest and format either JSON or summary output."""
+    receipt = apply_setup_manifest(
+        project, setupfully=bool(args.setupfully), tavily_key=args.set_tavily_key
+    )
+    if args.json:
+        print(json.dumps(receipt, indent=2, ensure_ascii=False))
+        return 0
+    print(
+        f"setupfully · host=antigravity status={receipt['status']} "
+        f"pending={receipt['pending']} claude_debt={receipt['claude_debt_count']} "
+        f"state_dir={receipt['state_dir']}"
+    )
+    print("Phase 1 complete. Please restart Antigravity IDE, then send any message to run --post-restart-verify.")
+    return 0
+
+
+def _print_confirm_restarted(state_dir: Optional[Path]) -> int:
+    """Confirm manual IDE restart transition and print resulting resume JSON."""
+    target_dir = state_dir or tdq_setup_state.resolve_plugin_data_dir()
+    res = tdq_setup_state.evaluate_restart_resume(
+        is_new_turn=True, confirm_manual=True, data_dir=target_dir
+    )
+    print(json.dumps(res, ensure_ascii=False))
+    return 0
+
+
+def _handle_antigravity_cli(
+    args: argparse.Namespace, project: str, state_dir: Optional[Path]
+) -> Optional[int]:
+    """Dispatch Antigravity Setupfully / Manifest / Verify CLI flags or default AGY host flow."""
+    if args.set_tavily_key and not (args.setupfully or args.apply_manifest):
+        return _handle_set_tavily_key(args.set_tavily_key, state_dir, args.json)
+    if args.scan_json:
+        print(json.dumps(scan_setup_manifest(project), indent=2, ensure_ascii=False))
+        return 0
+    if args.post_restart_verify:
+        return _handle_post_restart_verify(args.confirm_restarted, state_dir, args.json)
+    if args.confirm_restarted:
+        return _print_confirm_restarted(state_dir)
+    if args.setupfully or args.apply_manifest or is_antigravity_host():
+        return _run_antigravity_apply_cli(args, project)
+    return None
 
 
 if __name__ == "__main__":

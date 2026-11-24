@@ -95,10 +95,10 @@ AGY_CODES = (
     "EDIT", "TEST", "TICK", "DIRTY", "LOG", "READ", "SEARCH", "NO-PLAN-MODE",
     "LSP", "LSP-WAIT", "COMPACT", "GON", "UNFINISHED", "PAUSE", "LECH",
     "SETUP", "SUBAGENT", "VUNG", "GATE", "ANCHOR", "ZERO-POPUP", "READONLY",
-    "SCOPE", "FEEDBACK",
+    "SCOPE", "FEEDBACK", "PLAIN",
 )
 CODES = ("TDQ:NEXT", "TDQ:APPROVE", "TDQ:LOG", "TDQ:STATE", "TDQ:GIT", "TDQ:GON",
-         "TDQ:DOC", "TDQ:SEARCH", "TDQ:ASK", "TDQ:LSP")
+         "TDQ:DOC", "TDQ:SEARCH", "TDQ:ASK", "TDQ:LSP", "TDQ:PLAIN")
 
 # The token budget cap (spec §2.7) — measured on the reminder content.
 MAX_REMIND_CHARS = 200
