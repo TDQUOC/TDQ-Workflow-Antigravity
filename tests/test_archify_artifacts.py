@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -26,6 +27,7 @@ from archify_artifacts import (
     mark_stale,
     BINDING_START,
     BINDING_END,
+    EXCLUDED_DIR_NAMES,
 )
 
 
@@ -1186,4 +1188,246 @@ def test_build_manifest_preserves_pre_render_source_snapshot(tmp_path):
     res = check_manifest(tmp_path, manifest)
     assert res["status"] == "stale"
     assert any("Source file modified: src/app.py" in r for r in res["reasons"])
+
+
+# ---------------------------------------------------------------------------
+# T1.2: target/.pytest_cache exclusions and fragmented child_files checks
+# ---------------------------------------------------------------------------
+
+def test_source_fingerprint_excludes_target_and_pytest_cache(tmp_path):
+    assert "target" in EXCLUDED_DIR_NAMES
+    assert ".pytest_cache" in EXCLUDED_DIR_NAMES
+
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "app.py").write_text("print('ok')\n", encoding="utf-8")
+
+    # Root and nested Rust target directories
+    root_rmeta = tmp_path / "target" / "release" / "deps" / "a.rmeta"
+    root_rmeta.parent.mkdir(parents=True)
+    root_rmeta.write_text("rust-meta", encoding="utf-8")
+
+    nested_rmeta = tmp_path / "hooks" / "rust" / "tdq-dispatch" / "target" / "debug" / "x.rmeta"
+    nested_rmeta.parent.mkdir(parents=True)
+    nested_rmeta.write_text("nested-meta", encoding="utf-8")
+
+    # Root and nested pytest caches
+    root_cache = tmp_path / ".pytest_cache" / "v" / "x"
+    root_cache.parent.mkdir(parents=True)
+    root_cache.write_text("cache", encoding="utf-8")
+
+    sub_cache = tmp_path / "tests" / ".pytest_cache" / "README.md"
+    sub_cache.parent.mkdir(parents=True)
+    sub_cache.write_text("cache-readme", encoding="utf-8")
+
+    fp = source_fingerprint(tmp_path)
+    assert "src/app.py" in fp
+    assert "target/release/deps/a.rmeta" not in fp
+    assert "hooks/rust/tdq-dispatch/target/debug/x.rmeta" not in fp
+    assert ".pytest_cache/v/x" not in fp
+    assert "tests/.pytest_cache/README.md" not in fp
+
+
+def test_check_manifest_fragment_child_files_valid_and_stale(tmp_path):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+
+    arch_dir = tmp_path / "docs" / "architecture"
+    (arch_dir / "slices").mkdir(parents=True)
+    (arch_dir / "nodes").mkdir(parents=True)
+    art = arch_dir / "index.html"
+    art.write_text("<html>portal</html>", encoding="utf-8")
+
+    s1 = arch_dir / "slices" / "s1.svg"
+    s1.write_bytes(b"<svg>s1</svg>")
+    n1 = arch_dir / "nodes" / "n1.json"
+    n1.write_bytes(b'{"id":"n1"}')
+    bundle_js = arch_dir / "registry-bundle.js"
+    bundle_js.write_bytes(b"window.__TDQ_ARCHIFY_REGISTRY__ = {};")
+
+    child_map = {
+        "slices/s1.svg": hashlib.sha256(b"<svg>s1</svg>").hexdigest(),
+        "nodes/n1.json": hashlib.sha256(b'{"id":"n1"}').hexdigest(),
+        "registry-bundle.js": hashlib.sha256(b"window.__TDQ_ARCHIFY_REGISTRY__ = {};").hexdigest(),
+    }
+    manifest = build_manifest(tmp_path, doc, cand, art, {}, child_files=child_map)
+    assert manifest["child_files"] == child_map
+    assert check_manifest(tmp_path, manifest)["status"] == "current"
+
+    # Mutate 1 byte in slices/s1.svg -> stale
+    s1.write_bytes(b"<svg>s2</svg>")
+    res_mut = check_manifest(tmp_path, manifest)
+    assert res_mut["status"] == "stale"
+    assert any("Child file digest mismatch for slices/s1.svg" in r for r in res_mut["reasons"])
+    s1.write_bytes(b"<svg>s1</svg>")
+
+    # Delete nodes/n1.json -> stale
+    n1.unlink()
+    res_del = check_manifest(tmp_path, manifest)
+    assert res_del["status"] == "stale"
+    assert any("Child file missing: nodes/n1.json" in r for r in res_del["reasons"])
+
+
+@pytest.mark.parametrize(
+    "bad_child_path",
+    [
+        "../escape.svg",
+        "slices/../slices/s1.svg",
+        "/abs/escape.svg",
+        "C:/escape.svg",
+        "C:escape.svg",
+        "slices\\s1.svg",
+        "..\\escape.svg",
+        "./slices/s1.svg",
+        "slices//s1.svg",
+        "slices/s1.svg/",
+        "",
+        "   ",
+    ],
+)
+def test_child_files_rejects_traversal_absolute_and_non_canonical_paths(tmp_path, bad_child_path):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    arch_dir = tmp_path / "docs" / "architecture"
+    (arch_dir / "slices").mkdir(parents=True)
+    art = arch_dir / "index.html"
+    art.write_text("<html></html>", encoding="utf-8")
+    (arch_dir / "slices" / "s1.svg").write_bytes(b"<svg/>")
+
+    valid_hash = hashlib.sha256(b"<svg/>").hexdigest()
+    base_manifest = build_manifest(tmp_path, doc, cand, art, {})
+
+    # 1. check_manifest must reject fail-closed as invalid
+    bad_manifest = dict(base_manifest)
+    bad_manifest["child_files"] = {bad_child_path: valid_hash}
+    res = check_manifest(tmp_path, bad_manifest)
+    assert res["status"] == "invalid"
+
+    # 2. build_manifest must also reject direct non-canonical/escaping child_files
+    with pytest.raises(ValueError):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files={bad_child_path: valid_hash})
+
+
+def test_child_files_rejects_absolute_path_even_inside_artifact_dir(tmp_path):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    arch_dir = tmp_path / "docs" / "architecture"
+    (arch_dir / "slices").mkdir(parents=True)
+    art = arch_dir / "index.html"
+    art.write_text("<html></html>", encoding="utf-8")
+    inside_svg = arch_dir / "slices" / "s1.svg"
+    inside_svg.write_bytes(b"<svg/>")
+
+    abs_posix = inside_svg.resolve().as_posix()
+    valid_hash = hashlib.sha256(b"<svg/>").hexdigest()
+    manifest = build_manifest(tmp_path, doc, cand, art, {})
+    manifest["child_files"] = {abs_posix: valid_hash}
+
+    res = check_manifest(tmp_path, manifest)
+    assert res["status"] == "invalid"
+    assert any("absolute" in r.lower() or "escapes" in r.lower() for r in res["reasons"])
+
+    with pytest.raises(ValueError):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files={abs_posix: valid_hash})
+
+
+def test_build_manifest_rejects_invalid_child_files_types(tmp_path):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    art = tmp_path / "art.html"
+    art.write_text("<html></html>", encoding="utf-8")
+
+    with pytest.raises(TypeError, match="child_files must be a dict"):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files=["slices/s1.svg"])  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files={123: "a" * 64})  # type: ignore[dict-item]
+
+
+def test_child_files_rejects_symlink_escape_outside_artifact_dir(tmp_path):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    arch_dir = tmp_path / "docs" / "architecture"
+    (arch_dir / "slices").mkdir(parents=True)
+    art = arch_dir / "index.html"
+    art.write_text("<html></html>", encoding="utf-8")
+
+    outside_target = tmp_path / "secret.svg"
+    outside_target.write_bytes(b"<svg>secret</svg>")
+    link_path = arch_dir / "slices" / "leak.svg"
+    try:
+        os.symlink(outside_target, link_path)
+    except OSError:
+        pytest.skip("Symlinks not supported in this environment")
+
+    valid_hash = hashlib.sha256(b"<svg>secret</svg>").hexdigest()
+    manifest = build_manifest(tmp_path, doc, cand, art, {})
+    manifest["child_files"] = {"slices/leak.svg": valid_hash}
+    res = check_manifest(tmp_path, manifest)
+    assert res["status"] == "invalid"
+    assert any("escapes" in r for r in res["reasons"])
+
+    with pytest.raises(ValueError, match="escapes"):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files={"slices/leak.svg": valid_hash})
+
+
+def test_child_files_rejects_simulated_symlink_escape_deterministic(tmp_path, monkeypatch):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    arch_dir = tmp_path / "docs" / "architecture"
+    (arch_dir / "slices").mkdir(parents=True)
+    art = arch_dir / "index.html"
+    art.write_text("<html></html>", encoding="utf-8")
+    link_target = arch_dir / "slices" / "leak.svg"
+    link_target.write_bytes(b"<svg>x</svg>")
+
+    outside_file = tmp_path / "outside.svg"
+    outside_file.write_bytes(b"<svg>x</svg>")
+
+    monkeypatch.setattr(Path, "is_symlink", lambda self: self.name == "leak.svg")
+    monkeypatch.setattr(os, "readlink", lambda p: str(outside_file))
+
+    valid_hash = hashlib.sha256(b"<svg>x</svg>").hexdigest()
+    manifest = build_manifest(tmp_path, doc, cand, art, {})
+    manifest["child_files"] = {"slices/leak.svg": valid_hash}
+
+    res = check_manifest(tmp_path, manifest)
+    assert res["status"] == "invalid"
+    assert any("escapes" in r for r in res["reasons"])
+
+    with pytest.raises(ValueError, match="escapes"):
+        build_manifest(tmp_path, doc, cand, art, {}, child_files={"slices/leak.svg": valid_hash})
+
+
+def test_archify_artifacts_logging_default_on_and_muted_with_tdq_log_zero(tmp_path, monkeypatch, capsys):
+    doc = tmp_path / "doc.md"
+    doc.write_text("# Spec\n", encoding="utf-8")
+    cand = tmp_path / "cand.json"
+    cand.write_text("{}", encoding="utf-8")
+    art = tmp_path / "art.html"
+    art.write_text("<html></html>", encoding="utf-8")
+
+    monkeypatch.setenv("TDQ_LOG", "1")
+    manifest = build_manifest(tmp_path, doc, cand, art, {})
+    assert check_manifest(tmp_path, manifest)["status"] == "current"
+    err_on = capsys.readouterr().err
+    assert re.search(r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] archify_artifacts:", err_on)
+
+    monkeypatch.setenv("TDQ_LOG", "0")
+    build_manifest(tmp_path, doc, cand, art, {})
+    assert check_manifest(tmp_path, manifest)["status"] == "current"
+    assert capsys.readouterr().err == ""
+
 
