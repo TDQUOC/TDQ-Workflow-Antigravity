@@ -1,0 +1,75 @@
+{
+  "node_id": "op_stage_slices_svg",
+  "title": "Dựng Slice SVG Bẩn & Tái Dùng Slice Sạch Từ Cache",
+  "depth": 3,
+  "node_kind": "portal_render",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/tdq_archify.py:_stage_registry_slices",
+    "ast_symbol_sha256": "0d9425ad17bfe14b7a58ddf113b5db36e4a1b997f02f32acc4e9e5c83c0cfb51",
+    "span_binding": {
+      "path": "scripts/tdq_archify.py",
+      "line": 1341,
+      "end_line": 1373
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Quyết định slice nào cần chạy lại Archify CLI và slice nào được sao chép nguyên vẹn từ thư mục đích trước đó.",
+    "what_goes_where": "Tính combined slice hash từ AST + sub_flow, kiểm tra slice_cache trong manifest cũ rồi đưa SVG vào staging/slices/.",
+    "why_it_exists": "Giảm thời gian đồng bộ về gần 0 ở các lượt chạy lặp lại khi mã nguồn không đổi.",
+    "edge_cases": [
+      "Nếu tệp SVG ở đích bị xóa hoặc sửa tay (lệch SHA-256 trong child_files) sẽ tự động render lại slice đó.",
+      "Chế độ --full bỏ qua cache và render mới toàn bộ slice."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "slice_owners, staging_dir, dest_dir, prior_manifest, dirty_slices và cờ incremental"
+    ],
+    "outputs": [
+      "Bộ ba (slices_map, slice_children_hashes, slice_cache)"
+    ],
+    "side_effects": [
+      "Ghi các tệp SVG vào staging/slices/ và log reused clean / rendered dirty"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/tdq_archify.py",
+      "line": 1341,
+      "end_line": 1373
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-op-stage-slices-svg",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_reuse",
+        "label": "Tái dùng SVG sạch",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_pub",
+        "label": "Xuất bản nguyên tử",
+        "col": 1,
+        "lane": "main",
+        "target_node_id": "detail_atomic_publish"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_reuse",
+        "to": "st_pub"
+      }
+    ]
+  }
+}

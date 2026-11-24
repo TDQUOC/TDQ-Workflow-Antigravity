@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d8c2918a-e3c4-407a-9127-863fe314a69f",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry-preview.25f2fc86c4a94da88a1b7441eacf7458.html",
+  "specification": {
+    "sha256": "01d73ef82c09b16ddadf48755ff0eedb047cb3e6bd0cded0a7b8395c1ad3daba",
+    "bytes": 2847
+  },
+  "artifact": {
+    "sha256": "386e9c6053f18fbbe8a29583804431ba2844ebd18cb251d5d20b827e6f99d024",
+    "bytes": 1588282
+  },
+  "explainer": {
+    "preparedSha256": "e9680771ad0fa1cac625272bcddb0487ad899477c57ac9d2322bb195d31fc813",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sync-before",
+        "inline": true,
+        "sha256": "ddd70f29da9dc969dc82ec6b5e680006634f5aca4f2c68d04bfe0c5555531d20",
+        "bytes": 932
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-sync-after",
+        "inline": true,
+        "sha256": "5983546560bf2339936663cdbad102390bb0a5ffe280a5d4509ea779fe9db01c",
+        "bytes": 923
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-ui-before",
+        "inline": true,
+        "sha256": "4f2a17b8ffeb884ee2f1616bc95324d0b80a9377948cf007af4fe08b48267d58",
+        "bytes": 763
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-ui-after",
+        "inline": true,
+        "sha256": "4e7b091e89af447a83f4c8282543e694dbfadddf1d60a339718d85003a59606b",
+        "bytes": 941
+      }
+    ]
+  }
+}

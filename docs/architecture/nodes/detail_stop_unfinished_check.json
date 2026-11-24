@@ -1,0 +1,50 @@
+{
+  "node_id": "detail_stop_unfinished_check",
+  "title": "Hàm Thuần Kiểm Tra Task Kế Hoạch Còn Mở",
+  "depth": 4,
+  "node_kind": "decision_branch",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/stop_gate.py:unfinished_reason",
+    "ast_symbol_sha256": "bd554016c9ebda25fd05bbf3c5c7a9a28cbd4caf8b21969f3fd243f9a06cf2ed",
+    "span_binding": {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 155,
+      "end_line": 175
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Đánh giá thuần túy xem pha implement có đang bỏ dở checkbox kế hoạch mà chưa tạm dừng hợp lệ hay không.",
+    "what_goes_where": "Kiểm tra pha hiện hành, trạng thái tick plan, số task [>] đã giao sub-agent và cờ implement_pause.",
+    "why_it_exists": "Ngăn agent kết thúc lượt giữa chừng khi kế hoạch vẫn còn việc [ ] hoặc [~] chưa hoàn tất.",
+    "edge_cases": [
+      "Nếu có task đang giao [>] cho sub-agent hoặc đã khai báo implement_pause thì trả về None.",
+      "Mọi pha khác implement đều trả về None để tránh chặn nhầm ở mức người dùng."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Từ điển state, thông tin tick từ plan_tick_state và số lượng open_count"
+    ],
+    "outputs": [
+      "Chuỗi lý do [TDQ:UNFINISHED] hoặc None nếu hợp lệ được dừng"
+    ],
+    "side_effects": [
+      "Không có (hàm thuần không I/O để kiểm thử đơn vị trực tiếp)"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/stop_gate.py",
+      "line": 155,
+      "end_line": 175
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ]
+}

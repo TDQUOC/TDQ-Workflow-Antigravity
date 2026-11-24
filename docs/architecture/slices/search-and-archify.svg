@@ -1,0 +1,238 @@
+<svg viewBox="0 0 1347 470" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="blueprint" data-quality-profile="showcase" data-node-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
+        <title id="archify-diagram-title">3-Tier Search Triangle &amp; Archify 2-Tier Visual Engine</title>
+        <desc id="archify-diagram-description">LSP + Graphify + Grep Triangulation Feeding Task BA Previews &amp; Master Map Portal</desc>
+        <!-- Definitions -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-default" />
+          </marker>
+          <marker id="arrowhead-emphasis" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-emphasis" />
+          </marker>
+          <marker id="arrowhead-security" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-security" />
+          </marker>
+          <marker id="arrowhead-dashed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" class="m-dashed" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" class="c-grid" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <style>
+          svg[data-node-ui] [data-node-id] > rect:not(.c-mask) { stroke-width: 1.25px; }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-frontend { fill: color-mix(in srgb, var(--frontend-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--frontend-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-backend { fill: color-mix(in srgb, var(--backend-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--backend-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-database { fill: color-mix(in srgb, var(--database-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--database-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-cloud { fill: color-mix(in srgb, var(--cloud-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--cloud-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-security { fill: color-mix(in srgb, var(--security-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--security-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-messagebus { fill: color-mix(in srgb, var(--messagebus-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--messagebus-stroke) 72%, var(--mask)); }
+          :is([data-theme="dark"] svg[data-node-ui], svg[data-node-ui][data-theme="dark"]) [data-node-id] > rect:not(.c-mask).c-external { fill: color-mix(in srgb, var(--external-stroke) 13%, var(--mask)); stroke: color-mix(in srgb, var(--external-stroke) 72%, var(--mask)); }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-region { fill: color-mix(in srgb, var(--cloud-stroke) 3%, transparent); stroke: color-mix(in srgb, var(--cloud-stroke) 42%, var(--lane-stroke)); stroke-dasharray: none; }
+          svg[data-node-ui] .c-security-group { stroke: color-mix(in srgb, var(--security-stroke) 58%, var(--lane-stroke)); }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-security-group { stroke-dasharray: 4 3; }
+          svg[data-node-ui]:is([data-preset="classic"], [data-preset="signal-flow"], [data-preset="editorial"]) .c-lane { stroke: var(--lane-stroke); stroke-dasharray: none; }
+          svg[data-node-ui] [data-graph-role="structural-frame-label-mask"] { rx: 5px; fill: color-mix(in srgb, var(--cloud-stroke) 10%, var(--mask)); stroke: color-mix(in srgb, var(--cloud-stroke) 38%, var(--mask)); stroke-width: .8px; }
+          svg[data-node-ui] [data-composition-frame-kind="security-group"] > [data-graph-role="structural-frame-label-mask"] { fill: color-mix(in srgb, var(--security-stroke) 9%, var(--mask)); stroke: color-mix(in srgb, var(--security-stroke) 36%, var(--mask)); }
+          svg[data-node-ui] .phase-rule { opacity: .5; stroke-dasharray: none; }
+          svg[data-node-ui] .phase-chip { stroke: var(--lane-stroke); stroke-width: .75px; }
+          svg[data-node-ui] g[data-edge-from] > rect.c-mask { rx: 7px; stroke: var(--lane-stroke); stroke-width: .75px; }
+          svg[data-node-ui][data-preset="blueprint"] :is([data-graph-role="structural-frame-label-mask"], g[data-edge-from] > rect.c-mask, .phase-chip) { rx: 2px; }
+          svg[data-node-ui][data-preset="editorial"] :is([data-graph-role="structural-frame-label-mask"], g[data-edge-from] > rect.c-mask, .phase-chip) { rx: 3px; }
+        </style>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- Boundaries (behind everything) -->
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="3-Tier Code Intelligence &amp; Bridge" x="28" y="66" width="584" height="336" rx="12" class="c-region" stroke-width="1"/>
+
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="security-group" data-composition-frame-id="1" data-composition-frame-label="2-Tier Archify Visual Delivery &amp; Cryptographic Binding" x="698" y="66" width="609" height="336" rx="8" class="c-security-group" stroke-width="1"/>
+
+        <!-- Connection paths (before components for correct z-order) -->
+        <g data-graph-role="automatic-crossover" style="--step:0">
+          <path data-graph-role="automatic-crossover-underlay" d="M 234 162 L 234 208 Q 234 216 242 216 L 380 216" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="lsp_tier" data-edge-to="bridge_cli" data-edge-label="symbols" data-edge-key="0" data-edge-id="s1" data-composition-points="234,162;234,216;380,216" data-composition-crossover="halo" data-composition-independent="true" d="M 234 162 L 234 208 Q 234 216 242 216 L 380 216" class="a-default" data-animate="edge" style="--step:0" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:1">
+          <path data-graph-role="automatic-crossover-underlay" d="M 234 310 L 234 264 Q 234 256 242 256 L 380 256" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="graphify_tier" data-edge-to="bridge_cli" data-edge-label="graph.json" data-edge-key="1" data-edge-id="s2" data-composition-points="234,310;234,256;380,256" data-composition-crossover="halo" data-composition-independent="true" d="M 234 310 L 234 264 Q 234 256 242 256 L 380 256" class="a-default" data-animate="edge" style="--step:1" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:2">
+          <path data-graph-role="automatic-crossover-underlay" d="M 590 216 L 728 216 Q 736 216 736 208 L 736 162" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="bridge_cli" data-edge-to="ba_author" data-edge-label="evidence" data-edge-key="2" data-edge-id="s3" data-composition-points="590,216;736,216;736,162" data-composition-crossover="halo" data-composition-independent="true" d="M 590 216 L 728 216 Q 736 216 736 208 L 736 162" class="a-emphasis" data-animate="edge" style="--step:2" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:3">
+          <path data-graph-role="automatic-crossover-underlay" d="M 825 162 L 825 310" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="ba_author" data-edge-to="four_gates" data-edge-label="candidate" data-edge-key="3" data-edge-id="s4" data-composition-points="825,162;825,310" data-composition-crossover="halo" d="M 825 162 L 825 310" class="a-security" data-animate="edge" style="--step:3" stroke-width="1.5" marker-end="url(#arrowhead-security)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:4">
+          <path data-graph-role="automatic-crossover-underlay" d="M 590 256 L 728 256 Q 736 256 736 264 L 736 310" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="bridge_cli" data-edge-to="four_gates" data-edge-label="finalize" data-edge-key="4" data-edge-id="s5" data-composition-points="590,256;736,256;736,310" data-composition-crossover="halo" data-composition-independent="true" d="M 590 256 L 728 256 Q 736 256 736 264 L 736 310" class="a-default" data-animate="edge" style="--step:4" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:5">
+          <path data-graph-role="automatic-crossover-underlay" d="M 930 339 L 946 339 Q 954 339 954 331 L 954 134 Q 954 126 962 126 L 1070 126" fill="none" stroke="var(--mask)" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="four_gates" data-edge-to="task_preview" data-edge-label="bind spec" data-edge-key="5" data-edge-id="s6" data-composition-points="930,339;954,339;954,126;1070,126" data-composition-crossover="halo" data-composition-independent="true" d="M 930 339 L 946 339 Q 954 339 954 331 L 954 134 Q 954 126 962 126 L 1070 126" class="a-default" data-animate="edge" style="--step:5" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        </g>
+        <g data-graph-role="automatic-crossover" style="--step:6">
+          <path data-graph-role="automatic-crossover-underlay" d="M 930 354.05 L 1070 354.05" fill="none" stroke="var(--mask)" stroke-width="5.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>
+          <path data-edge-from="four_gates" data-edge-to="master_portal" data-edge-label="sync-master" data-edge-key="6" data-edge-id="s7" data-composition-points="930,354.05;1070,354.05" data-composition-crossover="halo" data-composition-independent="true" d="M 930 354.05 L 1070 354.05" class="a-emphasis" data-animate="edge" style="--step:6" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        </g>
+
+        <!-- Components -->
+        <g id="node-lsp_tier" data-node-id="lsp_tier" data-node-label="Tier 1: Agent-LSP" tabindex="0" role="button" aria-label="Focus Tier 1: Agent-LSP, definitions · callers · types, 3-Tier Code Intelligence &amp; Bridge" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="definitions · callers · types" data-node-tag="semantic" data-node-context="3-Tier Code Intelligence &amp; Bridge">
+          <title>Tier 1: Agent-LSP · definitions · callers · types · 3-Tier Code Intelligence &amp; Bridge · semantic</title>
+          <rect x="50" y="90" width="200" height="72" rx="8" class="c-mask"/>
+          <rect x="50" y="90" width="200" height="72" rx="8" class="c-cloud" data-animate="node" style="--step:0" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(56 96) scale(0.6875)">
+            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="150" y="124" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tier 1: Agent-LSP</text>
+        <text data-detail="context" x="150" y="140" class="t-muted" font-size="9" text-anchor="middle">definitions · callers · types</text>
+        <text data-detail="fine" x="150" y="154" class="t-cloud" font-size="7" text-anchor="middle">semantic</text>
+        </g>
+
+        <g id="node-graphify_tier" data-node-id="graphify_tier" data-node-label="Tier 2: Graphify AST" tabindex="0" role="button" aria-label="Focus Tier 2: Graphify AST, 2862 nodes · 2-hop blast, 3-Tier Code Intelligence &amp; Bridge" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="2862 nodes · 2-hop blast" data-node-tag="topology" data-node-context="3-Tier Code Intelligence &amp; Bridge">
+          <title>Tier 2: Graphify AST · 2862 nodes · 2-hop blast · 3-Tier Code Intelligence &amp; Bridge · topology</title>
+          <rect x="50" y="310" width="200" height="72" rx="8" class="c-mask"/>
+          <rect x="50" y="310" width="200" height="72" rx="8" class="c-cloud" data-animate="node" style="--step:1" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(56 316) scale(0.6875)">
+            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="150" y="344" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tier 2: Graphify AST</text>
+        <text data-detail="context" x="150" y="360" class="t-muted" font-size="9" text-anchor="middle">2862 nodes · 2-hop blast</text>
+        <text data-detail="fine" x="150" y="374" class="t-cloud" font-size="7" text-anchor="middle">topology</text>
+        </g>
+
+        <g id="node-bridge_cli" data-node-id="bridge_cli" data-node-label="tdq_archify &amp; Model" tabindex="0" role="button" aria-label="Focus tdq_archify &amp; Model, bridge · render · sync-master, 3-Tier Code Intelligence &amp; Bridge" aria-pressed="false" data-node-kind="backend" data-node-sublabel="bridge · render · sync-master" data-node-tag="adapter" data-node-context="3-Tier Code Intelligence &amp; Bridge">
+          <title>tdq_archify &amp; Model · bridge · render · sync-master · 3-Tier Code Intelligence &amp; Bridge · adapter</title>
+          <rect x="380" y="200" width="210" height="72" rx="8" class="c-mask"/>
+          <rect x="380" y="200" width="210" height="72" rx="8" class="c-backend" data-animate="node" style="--step:1" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(386 206) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="485" y="234" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">tdq_archify &amp; Model</text>
+        <text data-detail="context" x="485" y="250" class="t-muted" font-size="9" text-anchor="middle">bridge · render · sync-master</text>
+        <text data-detail="fine" x="485" y="264" class="t-backend" font-size="7" text-anchor="middle">adapter</text>
+        </g>
+
+        <g id="node-ba_author" data-node-id="ba_author" data-node-label="Personal BA Author" tabindex="0" role="button" aria-label="Focus Personal BA Author, Spec/Plan JSON + master.model, 2-Tier Archify Visual Delivery &amp; Cryptographic Binding" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="Spec/Plan JSON + master.model" data-node-tag="authoring" data-node-context="2-Tier Archify Visual Delivery &amp; Cryptographic Binding">
+          <title>Personal BA Author · Spec/Plan JSON + master.model · 2-Tier Archify Visual Delivery &amp; Cryptographic Binding · authoring</title>
+          <rect x="720" y="90" width="210" height="72" rx="8" class="c-mask"/>
+          <rect x="720" y="90" width="210" height="72" rx="8" class="c-frontend" data-animate="node" style="--step:3" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(726 96) scale(0.6875)">
+            <rect x="2" y="3" width="12" height="10" rx="2"/>
+            <path d="M2 6.5h12"/>
+            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
+            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="825" y="124" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Personal BA Author</text>
+        <text data-detail="context" x="825" y="140" class="t-muted" font-size="9" text-anchor="middle">Spec/Plan JSON + master.model</text>
+        <text data-detail="fine" x="825" y="154" class="t-frontend" font-size="7" text-anchor="middle">authoring</text>
+        </g>
+
+        <g id="node-four_gates" data-node-id="four_gates" data-node-label="Archify 4-Gate Engine" tabindex="0" role="button" aria-label="Focus Archify 4-Gate Engine, validate · deliver · check · cdp, 2-Tier Archify Visual Delivery &amp; Cryptographic Binding" aria-pressed="false" data-node-kind="security" data-node-sublabel="validate · deliver · check · cdp" data-node-tag="4-gates" data-node-context="2-Tier Archify Visual Delivery &amp; Cryptographic Binding">
+          <title>Archify 4-Gate Engine · validate · deliver · check · cdp · 2-Tier Archify Visual Delivery &amp; Cryptographic Binding · 4-gates</title>
+          <rect x="720" y="310" width="210" height="72" rx="8" class="c-mask"/>
+          <rect x="720" y="310" width="210" height="72" rx="8" class="c-security" data-animate="node" style="--step:4" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="security" class="semantic-sigil s-security" transform="translate(726 316) scale(0.6875)">
+            <path d="M8 2.2 13 4v3.5c0 3.1-1.8 5.4-5 6.5-3.2-1.1-5-3.4-5-6.5V4Z"/>
+            <path d="m5.8 8 1.5 1.5 3-3"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="825" y="344" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Archify 4-Gate Engine</text>
+        <text data-detail="context" x="825" y="360" class="t-muted" font-size="9" text-anchor="middle">validate · deliver · check · cdp</text>
+        <text data-detail="fine" x="825" y="374" class="t-security" font-size="7" text-anchor="middle">4-gates</text>
+        </g>
+
+        <g id="node-task_preview" data-node-id="task_preview" data-node-label="Tier 1: Task BA Preview" tabindex="0" role="button" aria-label="Focus Tier 1: Task BA Preview, preview.html + SHA-256 bind, 2-Tier Archify Visual Delivery &amp; Cryptographic Binding" aria-pressed="false" data-node-kind="database" data-node-sublabel="preview.html + SHA-256 bind" data-node-tag="per-request" data-node-context="2-Tier Archify Visual Delivery &amp; Cryptographic Binding">
+          <title>Tier 1: Task BA Preview · preview.html + SHA-256 bind · 2-Tier Archify Visual Delivery &amp; Cryptographic Binding · per-request</title>
+          <rect x="1070" y="90" width="215" height="72" rx="8" class="c-mask"/>
+          <rect x="1070" y="90" width="215" height="72" rx="8" class="c-database" data-animate="node" style="--step:6" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1076 96) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1177.5" y="124" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tier 1: Task BA Preview</text>
+        <text data-detail="context" x="1177.5" y="140" class="t-muted" font-size="9" text-anchor="middle">preview.html + SHA-256 bind</text>
+        <text data-detail="fine" x="1177.5" y="154" class="t-database" font-size="7" text-anchor="middle">per-request</text>
+        </g>
+
+        <g id="node-master_portal" data-node-id="master_portal" data-node-label="Tier 2: Master Map Portal" tabindex="0" role="button" aria-label="Focus Tier 2: Master Map Portal, docs/architecture/index.html, 2-Tier Archify Visual Delivery &amp; Cryptographic Binding" aria-pressed="false" data-node-kind="database" data-node-sublabel="docs/architecture/index.html" data-node-tag="project-wide" data-node-context="2-Tier Archify Visual Delivery &amp; Cryptographic Binding">
+          <title>Tier 2: Master Map Portal · docs/architecture/index.html · 2-Tier Archify Visual Delivery &amp; Cryptographic Binding · project-wide</title>
+          <rect x="1070" y="310" width="215" height="72" rx="8" class="c-mask"/>
+          <rect x="1070" y="310" width="215" height="72" rx="8" class="c-database" data-animate="node" style="--step:7" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(1076 316) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1177.5" y="344" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Tier 2: Master Map Portal</text>
+        <text data-detail="context" x="1177.5" y="360" class="t-muted" font-size="9" text-anchor="middle">docs/architecture/index.html</text>
+        <text data-detail="fine" x="1177.5" y="374" class="t-database" font-size="7" text-anchor="middle">project-wide</text>
+        </g>
+
+        <!-- Connection labels -->
+        <g data-detail="context" data-edge-from="lsp_tier" data-edge-to="bridge_cli" data-edge-label="symbols" data-edge-key="0" data-edge-id="s1">
+          <rect x="285.2" y="196" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="307" y="206" class="t-edge-default" font-size="8" text-anchor="middle">symbols</text>
+        </g>
+        <g data-detail="context" data-edge-from="graphify_tier" data-edge-to="bridge_cli" data-edge-label="graph.json" data-edge-key="1" data-edge-id="s2">
+          <rect x="278" y="236" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="307" y="246" class="t-edge-default" font-size="8" text-anchor="middle">graph.json</text>
+        </g>
+        <g data-detail="context" data-edge-from="bridge_cli" data-edge-to="ba_author" data-edge-label="evidence" data-edge-key="2" data-edge-id="s3">
+          <rect x="711.8" y="169" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="736" y="179" class="t-edge-emphasis" font-size="8" text-anchor="middle">evidence</text>
+        </g>
+        <g data-detail="context" data-edge-from="ba_author" data-edge-to="four_gates" data-edge-label="candidate" data-edge-key="3" data-edge-id="s4">
+          <rect x="798.4" y="226" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="825" y="236" class="t-edge-security" font-size="8" text-anchor="middle">candidate</text>
+        </g>
+        <g data-detail="context" data-edge-from="bridge_cli" data-edge-to="four_gates" data-edge-label="finalize" data-edge-key="4" data-edge-id="s5">
+          <rect x="711.8" y="263" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="736" y="273" class="t-edge-default" font-size="8" text-anchor="middle">finalize</text>
+        </g>
+        <g data-detail="context" data-edge-from="four_gates" data-edge-to="task_preview" data-edge-label="bind spec" data-edge-key="5" data-edge-id="s6">
+          <rect x="927.4" y="212.5" width="53.199999999999996" height="14" rx="3" class="c-mask"/>
+          <text x="954" y="222.5" class="t-edge-default" font-size="8" text-anchor="middle">bind spec</text>
+        </g>
+        <g data-detail="context" data-edge-from="four_gates" data-edge-to="master_portal" data-edge-label="sync-master" data-edge-key="6" data-edge-id="s7">
+          <rect x="968.6" y="334.05" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="1000" y="344.05" class="t-edge-emphasis" font-size="8" text-anchor="middle">sync-master</text>
+        </g>
+
+        <!-- Boundary labels (foreground masks keep routes out of titles) -->
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="3-Tier Code Intelligence &amp; Bridge">
+          <rect data-graph-role="structural-frame-label-mask" x="32" y="70" width="188.2" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="36" y="83" class="t-cloud" font-size="9" font-weight="600">3-Tier Code Intelligence &amp; Bridge</text>
+        </g>
+
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="security-group" data-composition-frame-label="2-Tier Archify Visual Delivery &amp; Cryptographic Binding">
+          <rect data-graph-role="structural-frame-label-mask" x="702" y="70" width="301.59999999999997" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="706" y="83" class="t-security" font-size="9" font-weight="600">2-Tier Archify Visual Delivery &amp; Cryptographic Binding</text>
+        </g>
+
+        <!-- Legend -->
+        <g data-legend="" data-legend-bridge="">
+          <text x="40" y="434" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="Personal BA Authoring" data-legend-x="40" data-legend-baseline="454" data-legend-width="174">
+            <rect x="40" y="445" width="16" height="10" rx="2.5" class="c-frontend" stroke-width="1"/>
+            <text x="62" y="454" class="t-muted" font-size="10" font-weight="500">Personal BA Authoring</text>
+          </g>
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="CLI Bridge &amp; Adapter" data-legend-x="236" data-legend-baseline="454" data-legend-width="167">
+            <rect x="236" y="445" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
+            <text x="258" y="454" class="t-muted" font-size="10" font-weight="500">CLI Bridge &amp; Adapter</text>
+          </g>
+          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Signed Artifacts &amp; Map" data-legend-x="425" data-legend-baseline="454" data-legend-width="180">
+            <rect x="425" y="445" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
+            <text x="447" y="454" class="t-muted" font-size="10" font-weight="500">Signed Artifacts &amp; Map</text>
+          </g>
+          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="3-Tier Search Engine" data-legend-x="627" data-legend-baseline="454" data-legend-width="167">
+            <rect x="627" y="445" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
+            <text x="649" y="454" class="t-muted" font-size="10" font-weight="500">3-Tier Search Engine</text>
+          </g>
+          <g data-legend-semantic-kind="security" data-legend-kind="security" data-legend-label="4-Gate Verifier" data-legend-x="816" data-legend-baseline="454" data-legend-width="136">
+            <rect x="816" y="445" width="16" height="10" rx="2.5" class="c-security" stroke-width="1"/>
+            <text x="838" y="454" class="t-muted" font-size="10" font-weight="500">4-Gate Verifier</text>
+          </g>
+        </g>
+      </svg>

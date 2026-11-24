@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "a7808215-2bc2-4a43-af64-c539d80dbf53",
+  "receiptId": "064b5438-6d24-471f-92a1-6035982f2693",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\models\\search-and-archify.json",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\search-and-archify.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.html",
   "specification": {
     "sha256": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
     "bytes": 4663

@@ -343,12 +343,14 @@ class TestRuntimePackagingClosure(unittest.TestCase):
     """Tests for runtime packaging closure of Archify modules."""
 
     def test_archify_modules_included_in_release(self):
-        """Verify all four Archify integration modules are included in the release filter."""
+        """Verify all six Archify integration modules are included in the release filter."""
         archify_modules = (
             "scripts/tdq_archify.py",
             "scripts/archify_delivery.py",
             "scripts/archify_model.py",
             "scripts/archify_artifacts.py",
+            "scripts/archify_registry.py",
+            "scripts/archify_portal.py",
         )
         for rel_path in archify_modules:
             self.assertTrue(

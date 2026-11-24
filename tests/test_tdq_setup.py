@@ -11,6 +11,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -599,6 +600,294 @@ class TestKiemTraArchify(unittest.TestCase):
         src = inspect.getsource(tdq_setup.kiem_tra_archify)
         self.assertNotIn("admin", src.lower())
         self.assertNotIn("Users", src)
+
+
+class TestTreeSitterSetup(unittest.TestCase):
+    """Tests for tree-sitter dependency checks and user-level installer."""
+
+    def test_kiem_tra_tree_sitter_all_present(self):
+        ok, detail = tdq_setup.kiem_tra_tree_sitter()
+        self.assertTrue(ok, detail)
+        self.assertIn("tree-sitter", detail)
+        import importlib.metadata
+
+        real_ver = importlib.metadata.version("tree-sitter")
+        self.assertIn(real_ver, detail)
+
+    def test_kiem_tra_tree_sitter_missing_grammar(self):
+        with mock.patch.dict(sys.modules, {"tree_sitter_rust": None}):
+            ok, detail = tdq_setup.kiem_tra_tree_sitter()
+        self.assertFalse(ok)
+        self.assertIn("tree-sitter-rust", detail)
+
+    def test_kiem_tra_tree_sitter_fallback_when_registry_unavailable(self):
+        with (
+            mock.patch.object(tdq_setup, "archify_registry", None),
+            mock.patch.dict(sys.modules, {"tree_sitter_rust": None}),
+        ):
+            ok, detail = tdq_setup.kiem_tra_tree_sitter()
+        self.assertFalse(ok)
+        self.assertIn("tree-sitter-rust", detail)
+
+    def test_ensure_tree_sitter_offline_or_read_only_skips_pip(self):
+        cases = (
+            ({"TDQ_KHONG_CHAM_MAY": "1"}, True),
+            ({"TDQ_KHONG_CHAM_MAY": "0"}, False),
+        )
+        for env_patch, allow_net in cases:
+            with (
+                mock.patch.dict(os.environ, env_patch),
+                mock.patch.dict(sys.modules, {"tree_sitter_rust": None}),
+                mock.patch.object(
+                    tdq_setup.tdq_ten_lenh, "chay_subprocess"
+                ) as sub,
+            ):
+                ok, detail = tdq_setup.ensure_tree_sitter_installed(
+                    allow_network=allow_net
+                )
+            self.assertFalse(ok)
+            self.assertIn("tree-sitter-rust", detail)
+            self.assertIn("pip", detail.lower())
+            sub.assert_not_called()
+
+    def test_ensure_tree_sitter_already_present_skips_pip(self):
+        with (
+            mock.patch.dict(os.environ, {"TDQ_KHONG_CHAM_MAY": "1"}),
+            mock.patch.object(
+                tdq_setup.tdq_ten_lenh, "chay_subprocess"
+            ) as sub,
+        ):
+            ok, detail = tdq_setup.ensure_tree_sitter_installed(
+                allow_network=False
+            )
+        self.assertTrue(ok, detail)
+        self.assertIn("tree-sitter", detail)
+        sub.assert_not_called()
+
+    def test_ensure_tree_sitter_installs_only_missing_and_rechecks(self):
+        state = {"installed": False}
+        pip_cmds = []
+
+        def fake_support():
+            if state["installed"]:
+                return {
+                    "available": True,
+                    "missing": [],
+                    "installed": list(tdq_setup.TREE_SITTER_PACKAGES),
+                    "languages": [
+                        "python",
+                        "javascript",
+                        "typescript",
+                        "tsx",
+                        "rust",
+                    ],
+                    "version": "0.25.0",
+                }
+            return {
+                "available": False,
+                "missing": ["tree-sitter-rust", "evil-injected-pkg"],
+                "installed": ["tree-sitter"],
+                "languages": [],
+                "version": "0.25.0",
+            }
+
+        def fake_sub(cmd, **kwargs):
+            self.assertFalse(kwargs.get("shell", False))
+            self.assertIsNotNone(kwargs.get("timeout"))
+            pip_cmds.append(list(cmd))
+            state["installed"] = True
+            return mock.MagicMock(returncode=0, stdout="ok\n", stderr="")
+
+        with (
+            mock.patch.dict(os.environ, {"TDQ_KHONG_CHAM_MAY": "0"}),
+            mock.patch.object(
+                tdq_setup.archify_registry,
+                "check_tree_sitter_support",
+                side_effect=fake_support,
+            ),
+            mock.patch.object(
+                tdq_setup.tdq_ten_lenh,
+                "chay_subprocess",
+                side_effect=fake_sub,
+            ),
+        ):
+            ok, detail = tdq_setup.ensure_tree_sitter_installed(
+                allow_network=True
+            )
+
+        self.assertTrue(ok, detail)
+        self.assertIn("0.25.0", detail)
+        self.assertEqual(
+            pip_cmds,
+            [[sys.executable, "-m", "pip", "install", "--user", "tree-sitter-rust"]],
+        )
+
+    def test_ensure_tree_sitter_pip_failure_fail_closed(self):
+        missing_info = {
+            "available": False,
+            "missing": ["tree-sitter-rust"],
+            "installed": ["tree-sitter"],
+            "languages": [],
+            "version": "0.25.0",
+        }
+        fail_proc = mock.MagicMock(
+            returncode=1, stdout="", stderr="ERROR: network unreachable\n"
+        )
+        with (
+            mock.patch.dict(os.environ, {"TDQ_KHONG_CHAM_MAY": "0"}),
+            mock.patch.object(
+                tdq_setup.archify_registry,
+                "check_tree_sitter_support",
+                return_value=missing_info,
+            ),
+            mock.patch.object(
+                tdq_setup.tdq_ten_lenh,
+                "chay_subprocess",
+                return_value=fail_proc,
+            ),
+        ):
+            ok, detail = tdq_setup.ensure_tree_sitter_installed(
+                allow_network=True
+            )
+        self.assertFalse(ok)
+        self.assertIn("tree-sitter-rust", detail)
+
+        # Even if pip exits 0, fail closed if re-check still shows missing
+        ok_proc = mock.MagicMock(returncode=0, stdout="done\n", stderr="")
+        with (
+            mock.patch.dict(os.environ, {"TDQ_KHONG_CHAM_MAY": "0"}),
+            mock.patch.object(
+                tdq_setup.archify_registry,
+                "check_tree_sitter_support",
+                return_value=missing_info,
+            ),
+            mock.patch.object(
+                tdq_setup.tdq_ten_lenh,
+                "chay_subprocess",
+                return_value=ok_proc,
+            ),
+        ):
+            ok_recheck, detail_recheck = tdq_setup.ensure_tree_sitter_installed(
+                allow_network=True
+            )
+        self.assertFalse(ok_recheck)
+        self.assertIn("tree-sitter-rust", detail_recheck)
+
+    def test_standard_setup_flow_records_tree_sitter_status(self):
+        for ts_res, expected_prefix in (
+            (
+                (True, "tree-sitter 0.25.0"),
+                "đã cài · tree-sitter",  # i18n-allow: CLI stdout prefix
+            ),
+            (
+                (False, "missing tree-sitter packages: tree-sitter-rust"),
+                "cảnh báo · tree-sitter",  # i18n-allow: CLI stdout prefix
+            ),
+        ):
+            out = io.StringIO()
+            with (
+                tempfile.TemporaryDirectory() as tmp_proj,
+                mock.patch.dict(
+                    os.environ,
+                    {"TDQ_HOST": "", "TDQ_LOG": "0", "TDQ_PROJECT_DIR": tmp_proj},
+                ),
+                mock.patch.object(
+                    tdq_setup, "is_antigravity_host", return_value=False
+                ),
+                mock.patch.object(tdq_setup.tdq_lsp, "chay_kiem", return_value=[]),
+                mock.patch.object(
+                    tdq_setup.tdq_lsp, "kiem_mot_lenh", return_value=(0, "", [])
+                ),
+                mock.patch.object(
+                    tdq_setup, "kiem_va_cai_shim_python3", return_value=([], [], [])
+                ),
+                mock.patch.object(
+                    tdq_setup, "khai_server_mcp", return_value=([], [])
+                ),
+                mock.patch.object(tdq_setup, "don_may", return_value=([], [])),
+                mock.patch.object(
+                    tdq_setup, "va_hook_xung_dot", return_value=([], [])
+                ),
+                mock.patch.object(
+                    tdq_setup, "kiem_plugin_user", return_value=([], [], [])
+                ),
+                mock.patch.object(
+                    tdq_setup, "no_skill_khong_ton_tai", return_value=[]
+                ),
+                mock.patch.object(
+                    tdq_setup, "kiem_dryrun_hook", return_value=(True, "ok")
+                ),
+                mock.patch.object(
+                    tdq_setup, "ghim_huong_dan_tool", return_value=False
+                ),
+                mock.patch.object(
+                    tdq_setup, "dong_bo_mcp_plugin_cache", return_value=False
+                ),
+                mock.patch.object(
+                    tdq_setup.tdq_devtool_mcp, "is_enabled", return_value=False
+                ),
+                mock.patch.object(
+                    tdq_setup, "kiem_tra_archify", return_value=(True, "ok")
+                ),
+                mock.patch.object(
+                    tdq_setup, "ensure_tree_sitter_installed", return_value=ts_res
+                ),
+                mock.patch.object(tdq_setup, "ghi_phat_hanh"),
+                mock.patch.object(tdq_no, "ghi_no", return_value=0),
+                mock.patch("sys.stdout", out),
+            ):
+                rc = tdq_setup.main(["--khong-log"])
+            self.assertEqual(rc, 0)
+            stdout_text = out.getvalue()
+            self.assertIn(expected_prefix, stdout_text)
+            if not ts_res[0]:
+                self.assertIn("tree-sitter-rust", stdout_text)
+
+    def test_ensure_tree_sitter_handles_subprocess_error(self):
+        missing_info = {
+            "available": False,
+            "missing": ["tree-sitter-rust"],
+            "installed": ["tree-sitter"],
+            "languages": [],
+            "version": "0.25.0",
+        }
+        with (
+            mock.patch.dict(os.environ, {"TDQ_KHONG_CHAM_MAY": "0"}),
+            mock.patch.object(
+                tdq_setup.archify_registry,
+                "check_tree_sitter_support",
+                return_value=missing_info,
+            ),
+            mock.patch.object(
+                tdq_setup.tdq_ten_lenh,
+                "chay_subprocess",
+                side_effect=subprocess.TimeoutExpired(cmd="pip", timeout=300),
+            ),
+        ):
+            ok, detail = tdq_setup.ensure_tree_sitter_installed(
+                allow_network=True
+            )
+        self.assertFalse(ok)
+        self.assertIn("tree-sitter-rust", detail)
+
+    def test_tree_sitter_logging_iso_and_muted(self):
+        err_on = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"TDQ_LOG": "1"}),
+            mock.patch("sys.stderr", err_on),
+        ):
+            tdq_setup.kiem_tra_tree_sitter()
+        self.assertRegex(
+            err_on.getvalue(), r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\]"
+        )
+
+        err_off = io.StringIO()
+        with (
+            mock.patch.dict(os.environ, {"TDQ_LOG": "0"}),
+            mock.patch("sys.stderr", err_off),
+        ):
+            tdq_setup.kiem_tra_tree_sitter()
+        self.assertEqual(err_off.getvalue(), "")
 
 
 if __name__ == "__main__":

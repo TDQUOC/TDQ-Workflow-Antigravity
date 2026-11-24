@@ -6,9 +6,9 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "54ceaa34-d69f-43d1-ac63-ee51f33d4ecb",
+  "deliveryReceiptId": "6d06cc8d-a8e6-4cd7-9082-b6eb582de52e",
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.2e1901a055ce46c5845c7cf32374a46c\\hooks-and-gates.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.html",
     "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
     "bytes": 823078
   },

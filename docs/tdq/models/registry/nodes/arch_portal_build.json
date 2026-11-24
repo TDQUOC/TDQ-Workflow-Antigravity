@@ -1,0 +1,74 @@
+{
+  "node_id": "arch_portal_build",
+  "title": "Dựng Vỏ Portal HTML Lười (< 300 KB)",
+  "depth": 2,
+  "node_kind": "portal_render",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/archify_portal.py:build_portal_shell",
+    "ast_symbol_sha256": "7ca7dfe1012f8f43041e80f4124780942b98496abbd18a1d5cceb9db54d18de3",
+    "span_binding": {
+      "path": "scripts/archify_portal.py",
+      "line": 859,
+      "end_line": 904
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Lắp ráp tài liệu HTML5 tương tác với bộ điều hướng breadcrumb, tìm kiếm, ngăn kéo giải thích và vỏ tải lười.",
+    "what_goes_where": "Chuẩn hóa registry_index, nhồi slice L1/L2 vừa ngân sách 295 KB và nối fallback registry-bundle.js cho file://.",
+    "why_it_exists": "Giúp mở index.html tức thì dưới 300 KB dù hệ thống có hàng trăm node sâu nhiều tầng.",
+    "edge_cases": [
+      "Nếu slice L1/L2 vượt ngân sách sẽ tự động hạ về rỗng để tải qua fetch/bundle, vẫn đảm bảo < 300 KB.",
+      "Mọi dữ liệu JSON nhúng đều escape '<', '>', '&' chống XSS thoát thẻ script."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "registry_index, bản đồ slices SVG, bản đồ nodes, mode ('lazy'|'embedded') và doc_lang"
+    ],
+    "outputs": [
+      "Chuỗi HTML5 hoàn chỉnh đạt chuẩn ngân sách dung lượng và ủy quyền sự kiện [data-node-id]"
+    ],
+    "side_effects": [
+      "Phát log kích thước byte và số slice eager ra stderr"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/archify_portal.py",
+      "line": 859,
+      "end_line": 904
+    }
+  ],
+  "reused_by": [
+    "flow_search_archify"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-arch-portal-build",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_shell",
+        "label": "Chọn slice L1/L2",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_js",
+        "label": "Gắn delegate & fallback",
+        "col": 1,
+        "lane": "branch"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_shell",
+        "to": "st_js"
+      }
+    ]
+  }
+}

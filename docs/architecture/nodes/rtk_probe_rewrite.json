@@ -1,0 +1,75 @@
+{
+  "node_id": "rtk_probe_rewrite",
+  "title": "Thăm Dò Nhị Phân RTK & Bộ Nhớ Đệm Stamp",
+  "depth": 3,
+  "node_kind": "registry_op",
+  "hydration_tier": "lazy_l3_plus",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "scripts/rtk_integration.py:probe_rtk",
+    "ast_symbol_sha256": "720b58bd12f42a6191acd9cbbddebd9de5bd0de76fba25a3623582503d549981",
+    "span_binding": {
+      "path": "scripts/rtk_integration.py",
+      "line": 257,
+      "end_line": 296
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Xác minh phiên bản rtk >= 0.25.0, chống nhầm gói cùng tên và lưu cache theo stat tệp.",
+    "what_goes_where": "Tìm nhị phân rtk an toàn ngoài CWD, đối chiếu stamp .tdq-runtime/rtk-probe.json và gọi kiểm tra version + gain.",
+    "why_it_exists": "Tránh chạy nhầm binary 'rtk' của Rust Type Kit và không tốn chi phí spawn lại ở mỗi lệnh bash.",
+    "edge_cases": [
+      "Nếu kích thước hoặc mtime_ns nhị phân thay đổi thì tự động vô hiệu hóa cache và probe lại.",
+      "Không tìm thấy rtk trên PATH trả về lý do not_found thay vì ném ngoại lệ."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Thư mục làm việc cwd, runner tùy chọn và đường dẫn bin_path"
+    ],
+    "outputs": [
+      "Từ điển trạng thái valid, version, path, reason, cached, collision"
+    ],
+    "side_effects": [
+      "Ghi tệp .tdq-runtime/rtk-probe.json và log chuẩn ISO ra stderr"
+    ]
+  },
+  "sources": [
+    {
+      "path": "scripts/rtk_integration.py",
+      "line": 257,
+      "end_line": 296
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-rtk-probe-rewrite",
+    "max_cols": 2,
+    "steps": [
+      {
+        "step_id": "st_gain",
+        "label": "Kiểm tra RTK gain",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "detail_rtk_collision_guard"
+      },
+      {
+        "step_id": "st_stamp",
+        "label": "Lưu cache rtk-probe.json",
+        "col": 1,
+        "lane": "branch"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_gain",
+        "to": "st_stamp"
+      }
+    ]
+  }
+}

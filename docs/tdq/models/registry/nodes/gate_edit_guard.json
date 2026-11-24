@@ -1,0 +1,86 @@
+{
+  "node_id": "gate_edit_guard",
+  "title": "Cổng Bảo Vệ Ghi Tệp Theo Pha & Vùng File",
+  "depth": 2,
+  "node_kind": "gate_check",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/edit_gate.py:main",
+    "ast_symbol_sha256": "533eca80d42b2f637d4a496a89762a73167c4db1be27fcb58b9f0849d5433002",
+    "span_binding": {
+      "path": "hooks/scripts/edit_gate.py",
+      "line": 109,
+      "end_line": 338
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Quan sát mọi thao tác sửa tệp và chặn sửa mã nguồn khi chưa duyệt cổng hoặc sai vùng phân công.",
+    "what_goes_where": "Ghi sự kiện edit/log_written vào sổ lượt, kiểm tra TDQ:STATE, TDQ:APPROVE, TDQ:TEAM và TDQ:TICK.",
+    "why_it_exists": "Đảm bảo không ai sửa code trước khi duyệt spec/plan và sub-agent không ghi đè vùng file của nhau.",
+    "edge_cases": [
+      "Tệp nằm trong docs/ được phép ghi sớm để phục vụ spec, plan, research và workinglog.",
+      "Sub-agent trong .tdq-worktrees được miễn bộ đếm streak sửa 3 lần liên tiếp ở leader."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Payload PreToolUse Edit/Write chứa file_path/TargetFile và thông tin agent"
+    ],
+    "outputs": [
+      "Cho phép ghi (kèm nhắc nhở JIT rule nếu cần) hoặc deny qua _common.block"
+    ],
+    "side_effects": [
+      "Ghi sự kiện edit, code_edit, log_written vào sổ lượt .tdq-turn.jsonl"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/edit_gate.py",
+      "line": 109,
+      "end_line": 338
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "slice-gate-edit-guard",
+    "max_cols": 3,
+    "steps": [
+      {
+        "step_id": "st_obs",
+        "label": "Ghi sổ edit & workinglog",
+        "col": 0,
+        "lane": "main"
+      },
+      {
+        "step_id": "st_rules",
+        "label": "Kiểm tra pha & vùng file",
+        "col": 1,
+        "lane": "branch"
+      },
+      {
+        "step_id": "st_deny",
+        "label": "Chặn sai pha / sai vùng",
+        "col": 2,
+        "lane": "error",
+        "target_node_id": "gate_deny_handler"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_obs",
+        "to": "st_rules"
+      },
+      {
+        "from": "st_rules",
+        "to": "st_deny",
+        "label": "chặn"
+      }
+    ]
+  }
+}

@@ -22,8 +22,11 @@ Tests cover:
   * TDQ_LOG stderr logging
 """
 import hashlib
+import http.client
+import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -607,6 +610,234 @@ class TestRunFinalizeBehavior(unittest.TestCase):
                     self.assertTrue(res_elevated.status)
                     self.assertEqual(res_elevated.receipt.get("status"), "pass")
                     self.assertTrue(res_elevated.receipt.get("ok"))
+
+
+class TestServeDirectory(unittest.TestCase):
+    """Behavior and security tests for local HTTP serve_directory."""
+
+    def setUp(self):
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.temp_dir, True)
+        self.serve_root = self.temp_dir / "portal"
+        self.serve_root.mkdir()
+        (self.serve_root / "slices").mkdir()
+        (self.serve_root / "nodes").mkdir()
+        (self.serve_root / "styles").mkdir()
+        (self.serve_root / "index.html").write_text("<html><body>Portal</body></html>", encoding="utf-8")
+        (self.serve_root / "slices" / "s1.svg").write_text("<svg data-node-id='n1'></svg>", encoding="utf-8")
+        (self.serve_root / "nodes" / "n1.json").write_text('{"id":"n1"}', encoding="utf-8")
+        (self.serve_root / "registry-bundle.js").write_text("window.__TDQ__={};", encoding="utf-8")
+        (self.serve_root / "styles" / "app.css").write_text("body{margin:0}", encoding="utf-8")
+
+    def _start_server(self, directory=None, host="127.0.0.1", port=0, open_browser=False):
+        target = self.serve_root if directory is None else directory
+        server, url = archify_delivery.serve_directory(target, host=host, port=port, open_browser=open_browser)
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        return server, url
+
+    @staticmethod
+    def _request(url: str, method: str, raw_path: str) -> tuple[int, dict[str, str], bytes]:
+        host_port = url.split("://", 1)[1].rstrip("/")
+        conn = http.client.HTTPConnection(host_port, timeout=5)
+        try:
+            conn.request(method, raw_path)
+            resp = conn.getresponse()
+            body = resp.read()
+            headers = {k.lower(): v for k, v in resp.getheaders()}
+            return resp.status, headers, body
+        finally:
+            conn.close()
+
+    def test_serves_portal_assets_with_mime_and_no_store(self):
+        """Serves /, HTML, SVG, JSON, JS, CSS with expected MIME types, Cache-Control, and HEAD."""
+        _, url = self._start_server()
+        self.assertRegex(url, r"^http://127\.0\.0\.1:\d+/$")
+
+        cases = [
+            ("/", "text/html", b"Portal"),
+            ("/index.html", "text/html", b"Portal"),
+            ("/slices/s1.svg?v=1", "image/svg+xml", b"data-node-id='n1'"),
+            ("/nodes/n1.json", "application/json", b'"id":"n1"'),
+            ("/registry-bundle.js", "javascript", b"window.__TDQ__"),
+            ("/styles/app.css", "text/css", b"margin:0"),
+        ]
+        for req_path, mime_fragment, expected_fragment in cases:
+            status, headers, body = self._request(url, "GET", req_path)
+            self.assertEqual(status, 200, f"GET {req_path} failed")
+            self.assertEqual(headers.get("cache-control"), "no-store")
+            self.assertIn(mime_fragment, headers.get("content-type", "").lower())
+            self.assertIn(expected_fragment, body)
+
+        head_status, head_headers, head_body = self._request(url, "HEAD", "/slices/s1.svg")
+        self.assertEqual(head_status, 200)
+        self.assertEqual(head_headers.get("cache-control"), "no-store")
+        self.assertIn("image/svg+xml", head_headers.get("content-type", "").lower())
+        self.assertEqual(head_body, b"")
+
+    def test_rejects_non_get_head_and_missing_paths(self):
+        """Non-GET/HEAD methods and missing files/directories fail closed without directory listings."""
+        _, url = self._start_server()
+        post_status, post_headers, _ = self._request(url, "POST", "/index.html")
+        self.assertGreaterEqual(post_status, 400)
+        self.assertEqual(post_headers.get("cache-control"), "no-store")
+
+        miss_status, _, _ = self._request(url, "GET", "/does-not-exist.html")
+        self.assertEqual(miss_status, 404)
+
+        dir_status, _, dir_body = self._request(url, "GET", "/slices/")
+        self.assertEqual(dir_status, 404)
+        self.assertNotIn(b"s1.svg", dir_body)
+
+        empty_dir = self.temp_dir / "empty"
+        empty_dir.mkdir()
+        _, empty_url = self._start_server(directory=empty_dir)
+        empty_status, _, _ = self._request(empty_url, "GET", "/")
+        self.assertEqual(empty_status, 404)
+
+    def test_blocks_path_traversal_and_malformed_urls(self):
+        """Blocks ../, encoded traversal, backslash traversal, and invalid UTF-8 escapes."""
+        secret = self.temp_dir / "secret.txt"
+        secret.write_text("TOP_SECRET_VALUE", encoding="utf-8")
+        _, url = self._start_server()
+
+        bad_paths = [
+            "/../secret.txt",
+            "/%2e%2e/secret.txt",
+            "/..%2fsecret.txt",
+            "/%5c..%5csecret.txt",
+            "/slices/../../secret.txt",
+            "/%ff",
+        ]
+        for bad_path in bad_paths:
+            status, _, body = self._request(url, "GET", bad_path)
+            self.assertGreaterEqual(status, 400, f"Path {bad_path} must be rejected")
+            self.assertNotIn(b"TOP_SECRET_VALUE", body)
+
+    def test_rejects_unsafe_host_missing_dir_and_bad_port(self):
+        """Rejects non-loopback hosts, missing/non-dir roots, and invalid ports; allows localhost."""
+        for bad_host in ("0.0.0.0", "", "192.168.1.50", "example.com"):  # noqa: S104
+            with self.assertRaises(ValueError):
+                archify_delivery.serve_directory(self.serve_root, host=bad_host)
+
+        with self.assertRaises(FileNotFoundError):
+            archify_delivery.serve_directory(self.temp_dir / "missing_dir")
+
+        regular_file = self.temp_dir / "not_a_dir.html"
+        regular_file.write_text("<html></html>", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            archify_delivery.serve_directory(regular_file)
+
+        for bad_port in (-1, 65536, True):
+            with self.assertRaises(ValueError):
+                archify_delivery.serve_directory(self.serve_root, port=bad_port)
+
+        server, localhost_url = self._start_server(host="localhost")
+        self.assertRegex(localhost_url, r"^http://localhost:\d+/$")
+        bound_url = f"http://{server.server_address[0]}:{server.server_address[1]}/"
+        status, _, body = self._request(bound_url, "GET", "/")
+        self.assertEqual(status, 200)
+        self.assertIn(b"Portal", body)
+
+    def test_rejects_symlink_root_and_symlink_escape(self):
+        """Rejects symlink root directory and symlinks resolving outside served root."""
+        outside_file = self.temp_dir / "outside.txt"
+        outside_file.write_text("OUTSIDE_SECRET", encoding="utf-8")
+
+        link_dir = self.temp_dir / "link_portal"
+        link_file = self.serve_root / "leak.txt"
+        symlink_supported = True
+        try:
+            link_dir.symlink_to(self.serve_root, target_is_directory=True)
+            link_file.symlink_to(outside_file)
+        except (OSError, NotImplementedError):
+            symlink_supported = False
+
+        if symlink_supported:
+            with self.assertRaises(ValueError):
+                archify_delivery.serve_directory(link_dir)
+            _, url = self._start_server()
+            status, _, body = self._request(url, "GET", "/leak.txt")
+            self.assertGreaterEqual(status, 400)
+            self.assertNotIn(b"OUTSIDE_SECRET", body)
+        else:
+            with mock.patch.object(Path, "is_symlink", return_value=True), self.assertRaises(ValueError):
+                archify_delivery.serve_directory(self.serve_root)
+
+            _, url = self._start_server()
+            (self.serve_root / "escape.txt").write_text("stub", encoding="utf-8")
+            real_resolve = Path.resolve
+
+            def fake_resolve(path_obj: Path, strict: bool = False) -> Path:
+                if path_obj.name == "escape.txt":
+                    return outside_file
+                return real_resolve(path_obj, strict=strict)
+
+            with mock.patch.object(Path, "resolve", fake_resolve):
+                status, _, body = self._request(url, "GET", "/escape.txt")
+                self.assertEqual(status, 403)
+                self.assertNotIn(b"OUTSIDE_SECRET", body)
+
+    def test_open_browser_only_when_enabled_and_index_exists(self):
+        """Opens browser safely only when open_browser=True and index.html exists."""
+        with (
+            mock.patch("platform.system", return_value="Windows"),
+            mock.patch("os.startfile", create=True) as mock_startfile,
+        ):
+            _, url = self._start_server(open_browser=True)
+            mock_startfile.assert_called_once_with(url)
+
+        with (
+            mock.patch("platform.system", return_value="Windows"),
+            mock.patch.object(os, "startfile", None, create=False),
+            mock.patch("webbrowser.open", return_value=True) as mock_wb,
+        ):
+            _, url_fb = self._start_server(open_browser=True)
+            mock_wb.assert_called_once_with(url_fb)
+
+        with (
+            mock.patch("platform.system", return_value="Linux"),
+            mock.patch("subprocess.run", return_value=mock.MagicMock(returncode=0)) as mock_run,
+        ):
+            _, url_linux = self._start_server(open_browser=True)
+            mock_run.assert_called_once_with(["xdg-open", url_linux], check=False)
+
+        no_index = self.temp_dir / "no_index"
+        no_index.mkdir()
+        with (
+            mock.patch("platform.system", return_value="Windows"),
+            mock.patch("os.startfile", create=True) as mock_startfile,
+            mock.patch("webbrowser.open", return_value=True) as mock_wb,
+        ):
+            self._start_server(directory=no_index, open_browser=True)
+            mock_startfile.assert_not_called()
+            mock_wb.assert_not_called()
+
+        with (
+            mock.patch("platform.system", return_value="Windows"),
+            mock.patch("os.startfile", create=True) as mock_startfile,
+        ):
+            self._start_server(open_browser=False)
+            mock_startfile.assert_not_called()
+
+    def test_tdq_log_toggle_for_serve_directory(self):
+        """TDQ_LOG=1 emits ISO-timestamped stderr logs; TDQ_LOG=0 is completely silent."""
+        err_on = io.StringIO()
+        with mock.patch.dict(os.environ, {"TDQ_LOG": "1"}), mock.patch("sys.stderr", err_on):
+            _, url_on = self._start_server()
+            status_on, _, _ = self._request(url_on, "GET", "/")
+            self.assertEqual(status_on, 200)
+        self.assertRegex(
+            err_on.getvalue(),
+            r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\] archify_delivery:",
+        )
+
+        err_off = io.StringIO()
+        with mock.patch.dict(os.environ, {"TDQ_LOG": "0"}), mock.patch("sys.stderr", err_off):
+            _, url_off = self._start_server()
+            self._request(url_off, "GET", "/")
+            self._request(url_off, "GET", "/missing")
+        self.assertEqual(err_off.getvalue(), "")
 
 
 if __name__ == "__main__":

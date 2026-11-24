@@ -1,0 +1,492 @@
+{
+  "schema_version": "1.0",
+  "max_depth": 6,
+  "root_flows": [
+    "flow_hooks_gates",
+    "flow_search_archify"
+  ],
+  "node_count": 20,
+  "cycles_detected": [
+    {
+      "from_node": "gate_stop_verify",
+      "to_node": "flow_hooks_gates",
+      "detected_at_depth": 2,
+      "handling": "anchor-back-to-breadcrumb",
+      "step_id": "st_cycle",
+      "via": "cycle_back_to"
+    },
+    {
+      "from_node": "detail_cycle_dfs_guard",
+      "to_node": "op_ast_dirty_compute",
+      "detected_at_depth": 4,
+      "handling": "anchor-back-to-breadcrumb",
+      "step_id": "st_anchor",
+      "via": "cycle_back_to"
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "arch_incremental_sync",
+      "title": "Điều Phối Đồng Bộ Master Gia Tăng Theo AST",
+      "depth": 2,
+      "node_kind": "registry_op",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/tdq_archify.py:sync_master",
+      "ast_symbol_sha256": "362654e81972621781a22db79ca261999a49fd233923acc536ef50c995658419",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/tdq_archify.py",
+        "line": 1501,
+        "end_line": 1545
+      },
+      "summary_sha256": "714f1f281decfe8dadaabd8c6933ef8ec6adb89ed445610f19dc472b68b9256e",
+      "sub_flow_slice_id": "slice-arch-incremental-sync",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/arch_incremental_sync.json"
+    },
+    {
+      "node_id": "arch_lsp_ladder",
+      "title": "Kiểm Tra Bậc 1 Binary agent-lsp",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/tdq_lsp.py:bac1_binary",
+      "ast_symbol_sha256": "99c114a33491d357dbea8ea22a962431e7d56c61ca6a47dae2b30a2981df9fe6",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/tdq_lsp.py",
+        "line": 281,
+        "end_line": 293
+      },
+      "summary_sha256": "105191592e6a7720d6475fab6bae8c398055fec93e02f03e9b77903ef0a225fc",
+      "sub_flow_slice_id": "slice-arch-lsp-ladder",
+      "reused_by": [
+        "flow_search_archify",
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/arch_lsp_ladder.json"
+    },
+    {
+      "node_id": "arch_model_validate",
+      "title": "Xác Thực Hợp Đồng Master Model & Registry",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_model.py:validate_model",
+      "ast_symbol_sha256": "8c06f4e88839494e63a50c59035dd8f062f7524932571a4485369cebb31317ff",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_model.py",
+        "line": 856,
+        "end_line": 867
+      },
+      "summary_sha256": "8f0a58fcbe0a64f088c7c30e1394b01bc5dca6e097c16134a603a730a2a3a5b7",
+      "sub_flow_slice_id": "slice-arch-model-validate",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/arch_model_validate.json"
+    },
+    {
+      "node_id": "arch_portal_build",
+      "title": "Dựng Vỏ Portal HTML Lười (< 300 KB)",
+      "depth": 2,
+      "node_kind": "portal_render",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_portal.py:build_portal_shell",
+      "ast_symbol_sha256": "7ca7dfe1012f8f43041e80f4124780942b98496abbd18a1d5cceb9db54d18de3",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_portal.py",
+        "line": 859,
+        "end_line": 904
+      },
+      "summary_sha256": "305150a7e7782cf107a06c448bda622149b5708e1e5776afaa2041470c11700e",
+      "sub_flow_slice_id": "slice-arch-portal-build",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/arch_portal_build.json"
+    },
+    {
+      "node_id": "detail_atomic_publish",
+      "title": "Xuất Bản Nguyên Tử Có Khóa Độc Quyền & Rollback",
+      "depth": 4,
+      "node_kind": "storage_io",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_artifacts.py:publish_bundle",
+      "ast_symbol_sha256": "6f471b6057bf5c303c8b598e75696e742cbb2945c66f84696ebd9b919aed0419",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_artifacts.py",
+        "line": 1172,
+        "end_line": 1195
+      },
+      "summary_sha256": "0cf5d4267ef18e44cad87833151079f612f58efc9d9d1f41400e2bc10c157507",
+      "sub_flow_slice_id": null,
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/detail_atomic_publish.json"
+    },
+    {
+      "node_id": "detail_cycle_dfs_guard",
+      "title": "Bộ Phát Hiện Chu Trình DFS Có Giới Hạn Độ Sâu",
+      "depth": 4,
+      "node_kind": "decision_branch",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_registry.py:detect_cycles",
+      "ast_symbol_sha256": "0ee55518d6a282ed82e4bc2816ba0efd9ef5dc46b8bfbb1b847c04084fa09132",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_registry.py",
+        "line": 774,
+        "end_line": 818
+      },
+      "summary_sha256": "1c47168f7bc32608b42dbd0d0ab138eccc5457a421275a456460d0f7411d77f4",
+      "sub_flow_slice_id": "slice-detail-cycle-dfs-guard",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/detail_cycle_dfs_guard.json"
+    },
+    {
+      "node_id": "detail_rtk_collision_guard",
+      "title": "Lá Chắn Chống Nhầm Nhị Phân RTK (Collision Guard)",
+      "depth": 4,
+      "node_kind": "security_crypto",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/rtk_integration.py:_run_gain_check",
+      "ast_symbol_sha256": "37e287f3ccd1052e387005c7fe00123d1331211b0e71685e2212bfdae6e31883",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/rtk_integration.py",
+        "line": 239,
+        "end_line": 254
+      },
+      "summary_sha256": "260774eb65b81993964ae1006c3d5fdd7b720dfadd9f02eca7346d501cf73a20",
+      "sub_flow_slice_id": null,
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/detail_rtk_collision_guard.json"
+    },
+    {
+      "node_id": "detail_stop_unfinished_check",
+      "title": "Hàm Thuần Kiểm Tra Task Kế Hoạch Còn Mở",
+      "depth": 4,
+      "node_kind": "decision_branch",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/stop_gate.py:unfinished_reason",
+      "ast_symbol_sha256": "bd554016c9ebda25fd05bbf3c5c7a9a28cbd4caf8b21969f3fd243f9a06cf2ed",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/stop_gate.py",
+        "line": 155,
+        "end_line": 175
+      },
+      "summary_sha256": "9483a696203718ffaa98d1768c1ce97b67a9c5f1fb547709e22bea7442910358",
+      "sub_flow_slice_id": null,
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/detail_stop_unfinished_check.json"
+    },
+    {
+      "node_id": "detail_tree_sitter_sha256",
+      "title": "Bộ Băm AST Tree-Sitter Miễn Nhiễm Comment & Vị Trí Dòng",
+      "depth": 4,
+      "node_kind": "security_crypto",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_registry.py:extract_symbol_ast_hash",
+      "ast_symbol_sha256": "aea13ebd6c112d1f24b22a9b1196482ccae51cbcefc08d4f8f43c17a6044a510",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_registry.py",
+        "line": 523,
+        "end_line": 562
+      },
+      "summary_sha256": "4809ea98477bc8418bc5e061696b0a79c50bf795714d6fd6c5f4dcdffa1c30f7",
+      "sub_flow_slice_id": null,
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/detail_tree_sitter_sha256.json"
+    },
+    {
+      "node_id": "flow_hooks_gates",
+      "title": "Luồng Cổng Chặn Hooks & Verify-by-Effect",
+      "depth": 1,
+      "node_kind": "flow_root",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/_common.py:normalize_payload",
+      "ast_symbol_sha256": "f4cd7f1df9857768752e224d16137631c8b4d24327674a01490ff5ba182205a7",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/_common.py",
+        "line": 316,
+        "end_line": 369
+      },
+      "summary_sha256": "216dfe6ad043799e869b78d2328f7869599d8967d29322fddea808a413b23bac",
+      "sub_flow_slice_id": "hooks-and-gates",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/flow_hooks_gates.json"
+    },
+    {
+      "node_id": "flow_search_archify",
+      "title": "Luồng Tìm Kiếm 3 Tầng & Đồng Bộ Archify Portal",
+      "depth": 1,
+      "node_kind": "flow_root",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/tdq_archify.py:main",
+      "ast_symbol_sha256": "563875a76e6836c87885b09aea07a46f509f2ae8956db83cc0cff9676875a975",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/tdq_archify.py",
+        "line": 2077,
+        "end_line": 2096
+      },
+      "summary_sha256": "4f515987aced826816c44c70d4ea4c1ba1acae7b73e3c596b757b77fbe876cd6",
+      "sub_flow_slice_id": "search-and-archify",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/flow_search_archify.json"
+    },
+    {
+      "node_id": "gate_command_rtk",
+      "title": "Cổng Gộp run_command & Viết Lại RTK",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/command_gate.py:process_payload",
+      "ast_symbol_sha256": "1f9fe432d38c139def8154d26f2f8e115e0f13b8df2303d2752cb6336822393c",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/command_gate.py",
+        "line": 59,
+        "end_line": 98
+      },
+      "summary_sha256": "8cf865433a1fe685d3fca0d279a296ff81aa98da877fc91be308a274fda3f5b9",
+      "sub_flow_slice_id": "slice-gate-command-rtk",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/gate_command_rtk.json"
+    },
+    {
+      "node_id": "gate_deny_handler",
+      "title": "Bộ Chuẩn Hóa Từ Chối & Giảm Trùng Lặp Denial",
+      "depth": 3,
+      "node_kind": "error_handler",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/_common.py:block",
+      "ast_symbol_sha256": "35364380690e6d1609cf0f8efb299ca6fab7b2a250a2168587e6952cc3194a95",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/_common.py",
+        "line": 732,
+        "end_line": 774
+      },
+      "summary_sha256": "4e7cdaa66ba896a493ee8464dd4bd6398ab4de6bf42ba4ee2f58f43d5e4e04e1",
+      "sub_flow_slice_id": null,
+      "reused_by": [
+        "flow_hooks_gates",
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/gate_deny_handler.json"
+    },
+    {
+      "node_id": "gate_edit_guard",
+      "title": "Cổng Bảo Vệ Ghi Tệp Theo Pha & Vùng File",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/edit_gate.py:main",
+      "ast_symbol_sha256": "533eca80d42b2f637d4a496a89762a73167c4db1be27fcb58b9f0849d5433002",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/edit_gate.py",
+        "line": 109,
+        "end_line": 338
+      },
+      "summary_sha256": "d3f0b4d2edfa6798593f8fe4883cc822125c1c588c38852b26a4d119072f0036",
+      "sub_flow_slice_id": "slice-gate-edit-guard",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/gate_edit_guard.json"
+    },
+    {
+      "node_id": "gate_search_order",
+      "title": "Cổng Kiểm Soát Thứ Tự Tìm Kiếm 3 Tầng",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/search_gate.py:eval_search",
+      "ast_symbol_sha256": "c7b817b6d82d888c9ab8bb1955c414b1bf7b2ea6cd4e55b887d71d4c576e91b7",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/search_gate.py",
+        "line": 167,
+        "end_line": 198
+      },
+      "summary_sha256": "073424627fee3e1738afb7bed4896100c6c4e6b9d93798223ab5a3486055749f",
+      "sub_flow_slice_id": "slice-gate-search-order",
+      "reused_by": [
+        "flow_hooks_gates",
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/gate_search_order.json"
+    },
+    {
+      "node_id": "gate_stop_verify",
+      "title": "Cổng Stop Verify-by-Effect & Vòng Lặp Sửa Lỗi",
+      "depth": 2,
+      "node_kind": "gate_check",
+      "hydration_tier": "eager_l1_l2",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/stop_gate.py:main",
+      "ast_symbol_sha256": "16927558414c492898c8a84b5478f17143473c664a6d43c79e406f5332538548",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/stop_gate.py",
+        "line": 274,
+        "end_line": 387
+      },
+      "summary_sha256": "2a7429641c38d0fef297d994aab83987f199e42643d6baa17972923c6cf7c200",
+      "sub_flow_slice_id": "slice-gate-stop-verify",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/gate_stop_verify.json"
+    },
+    {
+      "node_id": "op_ast_dirty_compute",
+      "title": "Tính Tập Node Bẩn & Tự Nối Lại Dải Dòng Dịch Chuyển",
+      "depth": 3,
+      "node_kind": "registry_op",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/archify_registry.py:compute_dirty_set",
+      "ast_symbol_sha256": "795cad92ef1eb5d9e110776a21219b6ed8e79c5a9f101d36c48321a3a049bfb6",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/archify_registry.py",
+        "line": 973,
+        "end_line": 1019
+      },
+      "summary_sha256": "bd644bf3ba66ebcfd3336a3b0f7bf78aafaec46e3bf5d0ea915013810e5541a3",
+      "sub_flow_slice_id": "slice-op-ast-dirty-compute",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/op_ast_dirty_compute.json"
+    },
+    {
+      "node_id": "op_stage_slices_svg",
+      "title": "Dựng Slice SVG Bẩn & Tái Dùng Slice Sạch Từ Cache",
+      "depth": 3,
+      "node_kind": "portal_render",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/tdq_archify.py:_stage_registry_slices",
+      "ast_symbol_sha256": "0d9425ad17bfe14b7a58ddf113b5db36e4a1b997f02f32acc4e9e5c83c0cfb51",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/tdq_archify.py",
+        "line": 1341,
+        "end_line": 1373
+      },
+      "summary_sha256": "1e7cc1458b2d52d045187bb69524bdbac5881449eec9fc959dff16ee3fdd44a0",
+      "sub_flow_slice_id": "slice-op-stage-slices-svg",
+      "reused_by": [
+        "flow_search_archify"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/op_stage_slices_svg.json"
+    },
+    {
+      "node_id": "rtk_probe_rewrite",
+      "title": "Thăm Dò Nhị Phân RTK & Bộ Nhớ Đệm Stamp",
+      "depth": 3,
+      "node_kind": "registry_op",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "scripts/rtk_integration.py:probe_rtk",
+      "ast_symbol_sha256": "720b58bd12f42a6191acd9cbbddebd9de5bd0de76fba25a3623582503d549981",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "scripts/rtk_integration.py",
+        "line": 257,
+        "end_line": 296
+      },
+      "summary_sha256": "45e7c6e016893580ab1bbb09dba3b0d2a0511fe772d95fda526b73d6f9fc97ef",
+      "sub_flow_slice_id": "slice-rtk-probe-rewrite",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/rtk_probe_rewrite.json"
+    },
+    {
+      "node_id": "stop_disk_diff_check",
+      "title": "Đối Chiếu Dấu Vân Tay Repo Đầu/Cuối Lượt",
+      "depth": 3,
+      "node_kind": "gate_check",
+      "hydration_tier": "lazy_l3_plus",
+      "evidence_kind": "working-tree",
+      "symbol_ref": "hooks/scripts/stop_gate.py:_repo_changed",
+      "ast_symbol_sha256": "81d2de050397160dc2d6a10d6149e8cc299293beb7e59f3e991a32ace703d10c",
+      "hash_mode": "tree_sitter_ast",
+      "span_binding": {
+        "path": "hooks/scripts/stop_gate.py",
+        "line": 91,
+        "end_line": 101
+      },
+      "summary_sha256": "45ef012f77391085165ffbf5c717bafa2985b635947874aba94daad265b62b69",
+      "sub_flow_slice_id": "slice-stop-disk-diff-check",
+      "reused_by": [
+        "flow_hooks_gates"
+      ],
+      "cache_status": "clean",
+      "file_path": "nodes/stop_disk_diff_check.json"
+    }
+  ]
+}

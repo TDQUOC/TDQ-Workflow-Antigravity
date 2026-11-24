@@ -1,0 +1,98 @@
+{
+  "node_id": "flow_hooks_gates",
+  "title": "Luồng Cổng Chặn Hooks & Verify-by-Effect",
+  "depth": 1,
+  "node_kind": "flow_root",
+  "hydration_tier": "eager_l1_l2",
+  "evidence_kind": "working-tree",
+  "fingerprint": {
+    "symbol_ref": "hooks/scripts/_common.py:normalize_payload",
+    "ast_symbol_sha256": "f4cd7f1df9857768752e224d16137631c8b4d24327674a01490ff5ba182205a7",
+    "span_binding": {
+      "path": "hooks/scripts/_common.py",
+      "line": 316,
+      "end_line": 369
+    },
+    "render_slice_sha256": null,
+    "cache_status": "clean",
+    "hash_mode": "tree_sitter_ast"
+  },
+  "natural_explanation": {
+    "summary": "Điều phối toàn bộ vòng đời hook từ lúc nhận payload Antigravity/Claude đến kiểm chứng hiệu ứng thực trên đĩa.",
+    "what_goes_where": "Chuẩn hóa payload sự kiện ở _common, chuyển qua PreToolUse (command_gate, search_gate, edit_gate) rồi chốt ở stop_gate.",
+    "why_it_exists": "Ngăn agent bỏ qua thứ tự tìm kiếm, sửa code khi chưa duyệt cổng hoặc kết thúc lượt với việc làm dở dang.",
+    "edge_cases": [
+      "Payload JSON hỏng hoặc thiếu trường vẫn fail-open an toàn để không treo công cụ hợp lệ.",
+      "Chạy trong worktree .tdq-worktrees tự động chuyển nhánh kiểm tra qua subagent_stop."
+    ]
+  },
+  "io_contract": {
+    "inputs": [
+      "Sự kiện JSON từ stdin (PreToolUse, PostToolUse, Stop, SessionStart)"
+    ],
+    "outputs": [
+      "Quyết định JSON allow/deny/overwrite hoặc cảnh báo ngữ cảnh"
+    ],
+    "side_effects": [
+      "Ghi sổ nhật ký lượt .tdq-turn.jsonl và log chuẩn ISO ra stderr"
+    ]
+  },
+  "sources": [
+    {
+      "path": "hooks/scripts/_common.py",
+      "line": 316,
+      "end_line": 369
+    }
+  ],
+  "reused_by": [
+    "flow_hooks_gates"
+  ],
+  "sub_flow": {
+    "slice_id": "hooks-and-gates",
+    "max_cols": 4,
+    "steps": [
+      {
+        "step_id": "st_cmd",
+        "label": "Cổng lệnh & nén RTK",
+        "col": 0,
+        "lane": "main",
+        "target_node_id": "gate_command_rtk"
+      },
+      {
+        "step_id": "st_search",
+        "label": "Cổng tìm kiếm 3 tầng",
+        "col": 1,
+        "lane": "main",
+        "target_node_id": "gate_search_order"
+      },
+      {
+        "step_id": "st_edit",
+        "label": "Cổng bảo vệ ghi tệp",
+        "col": 2,
+        "lane": "main",
+        "target_node_id": "gate_edit_guard"
+      },
+      {
+        "step_id": "st_stop",
+        "label": "Kiểm chứng Stop cuối lượt",
+        "col": 3,
+        "lane": "main",
+        "target_node_id": "gate_stop_verify"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_cmd",
+        "to": "st_search"
+      },
+      {
+        "from": "st_search",
+        "to": "st_edit"
+      },
+      {
+        "from": "st_edit",
+        "to": "st_stop"
+      }
+    ]
+  }
+}

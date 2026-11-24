@@ -1,0 +1,124 @@
+{
+  "slug": "2026-11-24-1308-implement-archify-drilldown-registry",
+  "plan_file": "docs\\tdq\\plan\\2026-11-24-1308-implement-archify-drilldown-registry.md",
+  "plan_sha": "11e5ab62d233d5504e5d467b109016043f2d17c79e191f1f55daa79f67ecfa76",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "faacbf871a41e85ea65df1987f513fb2277dcd5dbfc9ff99bddf26091083e240",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/archify_registry.py",
+        "tests/test_archify_registry.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/archify_artifacts.py",
+        "tests/test_archify_artifacts.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/archify_delivery.py",
+        "tests/test_archify_delivery.py"
+      ],
+      "dot": 1
+    },
+    "T1.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_setup.py",
+        "tests/test_tdq_setup.py",
+        "tests/test_agy_host_setup.py"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/archify_portal.py",
+        "tests/test_archify_portal.py"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/archify_model.py",
+        "tests/test_archify_model.py"
+      ],
+      "dot": 2
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_archify.py",
+        "tests/test_archify_pipeline.py",
+        "tests/test_tdq_archify.py"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/models/registry/index.json",
+        "docs/tdq/models/master.model.json",
+        "docs/architecture/index.html",
+        "docs/architecture/manifest.json"
+      ],
+      "dot": 4
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-build/references/archify-lifecycle.md",
+        "skills/tdq-spec/references/archify-ba.md",
+        "skills/tdq-intake/references/archify-quick.md",
+        "scripts/build_portable.py",
+        "tests/test_archify_distribution.py"
+      ],
+      "dot": 4
+    },
+    "T3.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "mcp",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-24-1308-implement-archify-drilldown-registry/browser-e2e-audit.md"
+      ],
+      "dot": 5,
+      "worktree_required": false
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_archify_logging.py"
+      ],
+      "dot": 4
+    },
+    "T4.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-24-1308-implement-archify-drilldown-registry/regression-summary.md"
+      ],
+      "dot": 6,
+      "worktree_required": false
+    }
+  }
+}

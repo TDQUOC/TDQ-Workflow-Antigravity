@@ -40,6 +40,8 @@ APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_plan_scaffold", "tdq_config", "tdq_meta_gate",
     # Approved 2026-11-22-1521-trien-khai-setup-fully-agy state & 6-layer verifier
     "tdq_setup_state", "tdq_simulate_verify",
+    # Approved 2026-11-24-1308-implement-archify-drilldown-registry AST registry & portal
+    "archify_registry", "archify_portal",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -612,6 +614,7 @@ class TestSinhNhanhRelease(TempDest):
         diem_vao_bat_buoc = {
             "tdq_setup", "tdq_state", "tdq_finish", "tdq_archify",
             "archify_delivery", "archify_model", "archify_artifacts",
+            "archify_registry", "archify_portal",
             "tdq_lsp", "build_portable", "tdq_test", "tdq_checkportable",
         } | APPROVED_RUNTIME_MODULES
         self.assertLessEqual(APPROVED_RUNTIME_MODULES, kept_py,
