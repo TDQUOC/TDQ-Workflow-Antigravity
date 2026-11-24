@@ -1,12 +1,14 @@
 {
   "name": "tdq-workflow-agy",
-  "version": "0.106.0",
+  "version": "0.107.0",
   "host": "antigravity",
-  "upstream_commit": "1fbd04c6",
+  "upstream_commit": "26e76a96",
   "scripts": [
     "archify_artifacts.py",
     "archify_delivery.py",
     "archify_model.py",
+    "archify_portal.py",
+    "archify_registry.py",
     "caveman_config.py",
     "claude_export.py",
     "context_surface.py",

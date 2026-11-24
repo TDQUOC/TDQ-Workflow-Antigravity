@@ -4,8 +4,8 @@
     "token": 729
   },
   "skills/tdq-build/references/archify-lifecycle.md": {
-    "sha256": "f47ca606de7803131d17f783f78ddb8d5518fb2aac685b80bb23674feb1deced",
-    "token": 927
+    "sha256": "c4b90f311126cfba424ccb55bb95f7f364bfc7df35ded53600df9f15bae39c5a",
+    "token": 1077
   },
   "skills/tdq-build/references/codex-mode.md": {
     "sha256": "e177eea1251004477002798825ed117d66ab9034dc4ef608e5a48a62da5a853f",
@@ -168,8 +168,8 @@
     "token": 2607
   },
   "skills/tdq-intake/references/archify-quick.md": {
-    "sha256": "9abf6a3bc6f75dc0e4b2c0632f43717572dfbf05ee072bd07211b1796f627442",
-    "token": 510
+    "sha256": "a42179a15b13c511e5c57608be9ff30ddc9f342a6df864932bc6c51f3c0f06f3",
+    "token": 565
   },
   "skills/tdq-intake/references/interview.md": {
     "sha256": "27ac9c29912b7cdd090df15eb2014695c6b86470dcbec320607acb9602b5f57a",
@@ -260,8 +260,8 @@
     "token": 1543
   },
   "skills/tdq-spec/references/archify-ba.md": {
-    "sha256": "3d1ff7b72b234adf92bb70bd648d9f77ccd78912c9f0b65bdd39762a6f2ebf61",
-    "token": 1129
+    "sha256": "8a24eae99ab80f870056b9aaa817b621f7edf17e28bc8b53797713f2ad928e60",
+    "token": 1201
   },
   "skills/tdq-spec/references/spec-template-huong-dan.md": {
     "sha256": "14278df7a4401f65f2606b6f8445e04724493f669a69ac567cff9918bc3f7037",

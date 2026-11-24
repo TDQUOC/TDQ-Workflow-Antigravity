@@ -38,9 +38,10 @@ Only show a preview link when the command succeeded and the output exists. A fai
 ```sh
 python3 "${PLUGIN_ROOT}/scripts/tdq_archify.py" verify --document "docs/tdq/spec/<slug>.md" --manifest "docs/tdq/spec/<slug>-preview.manifest.json"
 python3 "${PLUGIN_ROOT}/scripts/tdq_archify.py" open "docs/tdq/spec/<slug>-preview.html"
+python3 "${PLUGIN_ROOT}/scripts/tdq_archify.py" serve "docs/tdq/spec" --port 8765
 ```
 
-Plan references the approved preview and manifest rather than creating another design. No HTML asset replaces the spec's measurable requirements. A standalone HTML is a snapshot, not a live project scanner.
+For multi-level interactive flows (up to 4 levels), `--type drilldown` renders a self-contained portal HTML (`render_drilldown_standalone`) via `archify_portal` without modifying native SVG nodes. Plan references the approved preview and manifest rather than creating another design. No HTML asset replaces the spec's measurable requirements. A standalone HTML is a snapshot, not a live project scanner.
 
 ## Approval Gate
 

@@ -66,6 +66,23 @@ import tdq_setup_state  # noqa: E402
 import tdq_ten_lenh  # noqa: E402
 import utf8_io  # noqa: E402
 
+_FALLBACK_TREE_SITTER_PACKAGES: tuple[str, ...] = (
+    "tree-sitter",
+    "tree-sitter-python",
+    "tree-sitter-javascript",
+    "tree-sitter-typescript",
+    "tree-sitter-rust",
+)
+
+try:
+    import archify_registry
+except ImportError:
+    archify_registry = None
+
+TREE_SITTER_PACKAGES: tuple[str, ...] = getattr(
+    archify_registry, "TREE_SITTER_PACKAGES", _FALLBACK_TREE_SITTER_PACKAGES
+)
+
 TIMEOUT_CAI = 300
 # Trần cho mỗi phép smoke: chúng chạy sau khi cài xong, và không phép nào được treo lệnh setup.
 TIMEOUT_SMOKE = 60
@@ -1097,6 +1114,79 @@ def kiem_tra_archify(project=None):
 
     ver_str = f"Node.js {node_ver} (>= 18)" if node_ver else "Node.js (>= 18)"
     return False, f"{ver_str} · {err or 'không tìm thấy file bin/archify.mjs'}"
+
+
+def _fallback_tree_sitter_support() -> dict[str, Any]:
+    """Fallback probe for tree-sitter packages when archify_registry is unavailable."""
+    import importlib
+    import importlib.metadata
+
+    installed: list[str] = []
+    missing: list[str] = []
+    versions: dict[str, str | None] = {}
+    for pkg in _FALLBACK_TREE_SITTER_PACKAGES:
+        try:
+            importlib.import_module(pkg.replace("-", "_"))
+        except (ImportError, OSError, RuntimeError, ValueError):
+            missing.append(pkg)
+            versions[pkg] = None
+            continue
+        installed.append(pkg)
+        try:
+            versions[pkg] = importlib.metadata.version(pkg)
+        except (importlib.metadata.PackageNotFoundError, OSError, ValueError):
+            versions[pkg] = None
+    lang_pairs = (
+        ("tree-sitter-python", ("python",)),
+        ("tree-sitter-javascript", ("javascript",)),
+        ("tree-sitter-typescript", ("typescript", "tsx")),
+        ("tree-sitter-rust", ("rust",)),
+    )
+    langs = [
+        name
+        for pkg, names in lang_pairs
+        if "tree-sitter" in installed and pkg in installed
+        for name in names
+    ]
+    return {
+        "available": len(missing) == 0,
+        "missing": missing,
+        "installed": installed,
+        "languages": langs,
+        "version": versions.get("tree-sitter"),
+    }
+
+
+def _probe_tree_sitter_support() -> dict[str, Any]:
+    """Probe tree-sitter availability via archify_registry with stdlib fallback."""
+    if (
+        archify_registry is not None
+        and sys.modules.get("archify_registry", archify_registry) is not None
+    ):
+        return archify_registry.check_tree_sitter_support()
+    return _fallback_tree_sitter_support()
+
+
+def _format_tree_sitter_ok(info: dict[str, Any]) -> str:
+    """Format ready status string from check_tree_sitter_support output."""
+    ver = info.get("version") or "installed"
+    langs = ", ".join(info.get("languages") or [])
+    if langs:
+        return f"tree-sitter {ver} · 4 grammars ready ({langs})"
+    return f"tree-sitter {ver} · 4 grammars ready"
+
+
+def kiem_tra_tree_sitter() -> tuple[bool, str]:
+    """Check tree-sitter core and 4 grammar packages -> (ok, detail)."""
+    info = _probe_tree_sitter_support()
+    if info.get("available"):
+        detail = _format_tree_sitter_ok(info)
+        _log(f"kiem_tra_tree_sitter ok: {detail}")
+        return True, detail
+    missing = info.get("missing") or list(TREE_SITTER_PACKAGES)
+    detail = f"missing tree-sitter packages: {', '.join(missing)}"
+    _log(f"kiem_tra_tree_sitter missing: {detail}")
+    return False, detail
 
 
 MOC_MO = "<!-- TDQ:TOOLS -->"
@@ -2176,6 +2266,24 @@ def main(argv, khai_codex=None):
         return _run_legacy_claude_setup(args, project, khai_codex)
 
 
+def _record_tree_sitter_status(da_cai: list[str], canh_bao: list[str]) -> None:
+    """Probe or install tree-sitter dependencies and record status in setup output."""
+    try:
+        dat_ts, chi_tiet_ts = ensure_tree_sitter_installed()
+        if dat_ts:
+            da_cai.append(f"tree-sitter AST: {chi_tiet_ts}")
+        else:
+            canh_bao.append(f"tree-sitter AST: {chi_tiet_ts}")
+    except (
+        OSError,
+        RuntimeError,
+        ValueError,
+        ImportError,
+        subprocess.SubprocessError,
+    ) as exc:
+        canh_bao.append(f"tree-sitter AST check error: {exc}")
+
+
 def _run_legacy_claude_setup(args, project, khai_codex=None):
     """Run legacy Claude Code setup flow unchanged when host is not Antigravity."""
     _log(f"setup · project={project} · máy={platform.node()}")
@@ -2227,6 +2335,7 @@ def _run_legacy_claude_setup(args, project, khai_codex=None):
             canh_bao.append(f"tiện ích Archify: {chi_tiet_archify}")
     except Exception as exc:  # noqa: BLE001
         canh_bao.append(f"lỗi kiểm tra tiện ích Archify: {exc}")
+    _record_tree_sitter_status(da_cai, canh_bao)
     phien_ban_moi = doc_phien_ban_plugin(GOC_REPO)
     if phien_ban_moi:
         ghi_phat_hanh(project, phien_ban_moi)
@@ -2473,6 +2582,65 @@ def ensure_archify_installed(
     return True, str(target_dir)
 
 
+def _run_tree_sitter_pip(missing: list[str]) -> tuple[bool, str]:
+    """Install allowlisted missing tree-sitter packages via pip --user without shell."""
+    cmd = [sys.executable, "-m", "pip", "install", "--user", *missing]
+    try:
+        proc = tdq_ten_lenh.chay_subprocess(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=TIMEOUT_CAI,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        _log(f"ensure_tree_sitter_installed subprocess error: {exc}")
+        return False, f"pip install failed for {', '.join(missing)}: {exc}"
+    if proc.returncode != 0:
+        out = ((proc.stderr or "") or (proc.stdout or "")).strip()
+        snippet = out.splitlines()[-1][:160] if out else f"exit={proc.returncode}"
+        _log(f"ensure_tree_sitter_installed pip rc={proc.returncode}: {snippet}")
+        return False, (
+            f"pip install failed ({proc.returncode}) "
+            f"for {', '.join(missing)}: {snippet}"
+        )
+    import importlib
+
+    importlib.invalidate_caches()
+    after = _probe_tree_sitter_support()
+    if after.get("available"):
+        detail = _format_tree_sitter_ok(after)
+        _log(f"ensure_tree_sitter_installed installed {missing}: {detail}")
+        return True, detail
+    still_missing = after.get("missing") or missing
+    _log(f"ensure_tree_sitter_installed incomplete after pip: {still_missing}")
+    return False, f"tree-sitter still missing after install: {', '.join(still_missing)}"
+
+
+def ensure_tree_sitter_installed(allow_network: bool = True) -> tuple[bool, str]:
+    """Ensure tree-sitter core and 4 grammars exist; honor TDQ_KHONG_CHAM_MAY=1."""
+    info = _probe_tree_sitter_support()
+    allowlist = set(TREE_SITTER_PACKAGES)
+    missing = [pkg for pkg in (info.get("missing") or []) if pkg in allowlist]
+    if info.get("available") and not missing:
+        detail = _format_tree_sitter_ok(info)
+        _log(f"ensure_tree_sitter_installed ready: {detail}")
+        return True, detail
+    if not missing:
+        return False, "tree-sitter check failed: no installable packages in allowlist"
+    if _khong_cham_may() or not allow_network:
+        reason = "TDQ_KHONG_CHAM_MAY=1" if _khong_cham_may() else "allow_network=False"
+        pkg_list = ", ".join(missing)
+        hint = f"pip install --user {' '.join(missing)}"
+        _log(f"ensure_tree_sitter_installed skipped ({reason}): {pkg_list}")
+        return False, (
+            f"missing tree-sitter packages ({reason}): "
+            f"{pkg_list}; install via: {hint}"
+        )
+    return _run_tree_sitter_pip(missing)
+
+
 def _agy_cli_env(home: Path) -> dict[str, str]:
     """Build environment for `agy` subprocess aligned with `home`."""
     env = dict(os.environ)
@@ -2599,6 +2767,20 @@ def _inspect_archify_for_home(home: Path) -> dict[str, Any]:
     }
 
 
+def _inspect_tree_sitter() -> dict[str, Any]:
+    """Inspect tree-sitter core and 4 grammar packages for Antigravity manifest."""
+    info = _probe_tree_sitter_support()
+    missing = list(info.get("missing") or [])
+    installed = bool(info.get("available")) and len(missing) == 0
+    return {
+        "installed": installed,
+        "missing": missing,
+        "languages": list(info.get("languages") or []),
+        "version": str(info.get("version") or ""),
+        "packages": list(TREE_SITTER_PACKAGES),
+    }
+
+
 def _inspect_lsp_core_agy(project: str) -> dict[str, Any]:
     """Collect Antigravity-safe Rungs 1-7 status without mutating project state."""
     rungs = [
@@ -2645,6 +2827,7 @@ def _build_manifest_actions(
     caveman_info: dict[str, Any],
     archify_info: dict[str, Any],
     cdp_plugin: dict[str, Any],
+    tree_sitter_info: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Build ordered list of setup actions needed for Antigravity."""
     actions: list[dict[str, Any]] = []
@@ -2658,6 +2841,10 @@ def _build_manifest_actions(
         actions.append({"id": "wrap_caveman_mcp", "category": "addon", "blocking": False})
     if not archify_info["ready"]:
         actions.append({"id": "install_archify", "category": "addon", "blocking": False})
+    if tree_sitter_info is not None and not tree_sitter_info.get("installed"):
+        actions.append(
+            {"id": "install_tree_sitter", "category": "addon", "blocking": False}
+        )
     if not cdp_plugin["enabled"]:
         actions.append({
             "id": "enable_chrome_devtools_plugin",
@@ -2704,13 +2891,20 @@ def scan_setup_manifest(project: str) -> dict[str, Any]:
         rg_path = rtk_integration.locate_rg_binary() or ""
         rtk_ok = bool(rtk_probe.get("valid")) and bool(rg_path)
         archify_info = _inspect_archify_for_home(home)
+        tree_sitter_info = _inspect_tree_sitter()
         gemini_info = _inspect_gemini_md(home)
         devtool_status = tdq_devtool_mcp.check_devtool_setup(agy_plugins_probe=lambda: plugins)
 
     cdp_plugin = {**_find_plugin_entry(plugins, "chrome-devtools-plugin"), "optional": True}
     tavily_info, chrome_info = _inspect_tavily_and_chrome(state_dir, devtool_status)
     actions = _build_manifest_actions(
-        lsp_core, gemini_info, rtk_ok, caveman_info, archify_info, cdp_plugin
+        lsp_core,
+        gemini_info,
+        rtk_ok,
+        caveman_info,
+        archify_info,
+        cdp_plugin,
+        tree_sitter_info=tree_sitter_info,
     )
     _log(f"scan_setup_manifest host=antigravity actions={len(actions)} claude_debt=0")
     rtk_summary = {
@@ -2725,7 +2919,12 @@ def scan_setup_manifest(project: str) -> dict[str, Any]:
             "tdq_lsp": lsp_core, "gemini_md": gemini_info,
             "tdq_workflow_agy": _find_plugin_entry(plugins, "tdq-workflow-agy"),
         },
-        "addons": {"rtk": rtk_summary, "caveman": caveman_info, "archify": archify_info},
+        "addons": {
+            "rtk": rtk_summary,
+            "caveman": caveman_info,
+            "archify": archify_info,
+            "tree_sitter": tree_sitter_info,
+        },
         "optional_companions": {
             "chrome_devtools_plugin": cdp_plugin, "chrome_browser": chrome_info, "tavily": tavily_info,
         },
@@ -2810,20 +3009,27 @@ def _apply_addons_agy(
     applied: list[str],
     skipped: list[str],
 ) -> dict[str, Any]:
-    """Apply RTK, Caveman Node launcher wrapping, and Archify installation."""
+    """Apply RTK, Caveman Node launcher, Archify, and tree-sitter installation."""
     rtk_status = _apply_rtk_addon(project, setupfully, dry_run, applied, skipped)
     caveman_status = _apply_caveman_addon(home, setupfully, applied, skipped)
+    allow_net = bool(setupfully and not dry_run)
     archify_ok, archify_detail = ensure_archify_installed(
-        home=str(home), allow_network=bool(setupfully and not dry_run)
+        home=str(home), allow_network=allow_net
     )
     if archify_ok:
         applied.append(f"archify:{archify_detail}")
     else:
         skipped.append(f"archify:{archify_detail}")
+    ts_ok, ts_detail = ensure_tree_sitter_installed(allow_network=allow_net)
+    if ts_ok:
+        applied.append(f"tree_sitter:{ts_detail}")
+    else:
+        skipped.append(f"tree_sitter:{ts_detail}")
     return {
         "rtk": rtk_status,
         "caveman": caveman_status,
         "archify": {"ok": archify_ok, "detail": archify_detail},
+        "tree_sitter": {"ok": ts_ok, "detail": ts_detail},
     }
 
 
