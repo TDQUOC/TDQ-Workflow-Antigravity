@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b99e17a9-58fa-49f3-9c80-1dde3810d2e4",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1106-research-archify-drilldown-nodes\\.tmp.bao-cao.archify.92ed39bd7f6146cfad7b0de00b6535c5.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-1106-research-archify-drilldown-nodes.ae098561b1fc402a8f093e9f1196d739.html",
+  "specification": {
+    "sha256": "b3ac2ba3fb0c225290c689616814fbd433bb8d1269a512d363b586f49dfe5125",
+    "bytes": 2674
+  },
+  "artifact": {
+    "sha256": "f9e9a72cbc3db31330e2d35fcafeacce8aac64de346a7c3ff6d969eaf457e701",
+    "bytes": 1231504
+  },
+  "explainer": {
+    "preparedSha256": "720f522e3d16bb6daa281a4433c6e3b5cb2d1c46d325b39ead72e2ac9a7c7417",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "wf-before-bottleneck",
+        "inline": true,
+        "sha256": "47c05fd76e111bf9ad75d120ddd95c5f243f3b89ab9b8d0b714793b61aa3b690",
+        "bytes": 982
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-after-hybrid",
+        "inline": true,
+        "sha256": "ae56783c316759fee8b2cd51128c311eee71f911dbf1392c1e4c734907e10906",
+        "bytes": 970
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "wf-login-5layers",
+        "inline": true,
+        "sha256": "689a41003ac42e854955b7719fbd368d212744d1e1082698a4beb259aad3fb13",
+        "bytes": 967
+      }
+    ]
+  }
+}

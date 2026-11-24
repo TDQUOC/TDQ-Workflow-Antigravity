@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\truoc-sau.archify.md",
+    "sha256": "01d73ef82c09b16ddadf48755ff0eedb047cb3e6bd0cded0a7b8395c1ad3daba",
+    "bytes": 2847
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry-preview.25f2fc86c4a94da88a1b7441eacf7458.html",
+    "sha256": "386e9c6053f18fbbe8a29583804431ba2844ebd18cb251d5d20b827e6f99d024",
+    "bytes": 1588282
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [
+    {
+      "code": "explainer/writing-sentence-length",
+      "severity": "warning",
+      "message": "Sentence has 31 reading units, above the configured en limit of 28.",
+      "subject": {
+        "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-1308-implement-archify-drilldown-registry\\truoc-sau.archify.md",
+        "line": 4,
+        "component": "answer"
+      },
+      "evidence": {
+        "reason": "Sentence has 31 reading units, above the configured en limit of 28.",
+        "example": "先查缓存。未命中时再查数据库。 / Check the cache first. Query the database on a miss.",
+        "rule": "sentence-length",
+        "units": 31,
+        "limit": 28
+      },
+      "supportedFixes": [
+        "Split at a logical action or condition boundary while preserving qualifications and causal links."
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry-preview.25f2fc86c4a94da88a1b7441eacf7458.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-24-1308-implement-archify-drilldown-registry-preview.25f2fc86c4a94da88a1b7441eacf7458.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2616,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

@@ -1,0 +1,633 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Canonical Logic Node Registry JSON Schema & 5-Level Reusable Login Flow Reference Example (No-Fork Archify Architecture)",
+  "logic_node_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://tdq.local/schemas/archify-logic-node-registry.schema.json",
+    "title": "TDQ Archify Logic Node Registry Schema",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "schema_version",
+      "max_depth",
+      "root_flow_id",
+      "nodes",
+      "cycles_detected"
+    ],
+    "properties": {
+      "schema_version": { "type": "string", "const": "1.0" },
+      "max_depth": { "type": "integer", "minimum": 1, "maximum": 8 },
+      "root_flow_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "cycles_detected": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["from_node", "to_node", "detected_at_depth", "handling"],
+          "properties": {
+            "from_node": { "type": "string" },
+            "to_node": { "type": "string" },
+            "detected_at_depth": { "type": "integer", "minimum": 2 },
+            "handling": { "type": "string", "enum": ["anchor-back-to-breadcrumb", "reject-at-validate"] }
+          }
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "$ref": "#/$defs/LogicNode" }
+      }
+    },
+    "$defs": {
+      "LogicNode": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "title",
+          "depth",
+          "hydration_tier",
+          "evidence_kind",
+          "fingerprint",
+          "natural_explanation",
+          "io_contract",
+          "sources",
+          "reused_by"
+        ],
+        "properties": {
+          "node_id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "title": { "type": "string", "minLength": 3, "maxLength": 72 },
+          "depth": { "type": "integer", "minimum": 1, "maximum": 8 },
+          "node_kind": {
+            "type": "string",
+            "enum": ["flow_root", "ui_action", "decision_branch", "security_crypto", "storage_io", "network_rpc", "error_handler"]
+          },
+          "hydration_tier": {
+            "type": "string",
+            "enum": ["eager_l1_l2", "lazy_l3_plus"]
+          },
+          "evidence_kind": {
+            "type": "string",
+            "enum": ["planned", "working-tree", "committed"]
+          },
+          "fingerprint": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["symbol_ref", "ast_symbol_sha256", "span_binding", "render_slice_sha256", "cache_status"],
+            "properties": {
+              "symbol_ref": { "type": "string" },
+              "ast_symbol_sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+              "span_binding": {
+                "type": "object",
+                "required": ["path", "line", "end_line"],
+                "properties": {
+                  "path": { "type": "string" },
+                  "line": { "type": "integer", "minimum": 1 },
+                  "end_line": { "type": "integer", "minimum": 1 }
+                }
+              },
+              "render_slice_sha256": { "type": ["string", "null"] },
+              "cache_status": { "type": "string", "enum": ["clean", "span_shifted_only", "dirty", "planned_draft"] }
+            }
+          },
+          "natural_explanation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["summary", "what_goes_where", "why_it_exists", "edge_cases"],
+            "properties": {
+              "summary": { "type": "string" },
+              "what_goes_where": { "type": "string" },
+              "why_it_exists": { "type": "string" },
+              "edge_cases": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "io_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["inputs", "outputs", "side_effects"],
+            "properties": {
+              "inputs": { "type": "array", "items": { "type": "string" } },
+              "outputs": { "type": "array", "items": { "type": "string" } },
+              "side_effects": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "sub_flow": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slice_id", "max_cols", "steps", "edges"],
+            "properties": {
+              "slice_id": { "type": "string" },
+              "max_cols": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "steps": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 6,
+                "items": {
+                  "type": "object",
+                  "required": ["step_id", "label", "col", "target_node_id"],
+                  "properties": {
+                    "step_id": { "type": "string" },
+                    "label": { "type": "string" },
+                    "col": { "type": "integer", "minimum": 0, "maximum": 5 },
+                    "lane": { "type": "string", "enum": ["main", "branch", "error"] },
+                    "target_node_id": { "type": ["string", "null"] },
+                    "cycle_back_to": { "type": ["string", "null"] }
+                  }
+                }
+              },
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["from", "to", "condition"],
+                  "properties": {
+                    "from": { "type": "string" },
+                    "to": { "type": "string" },
+                    "condition": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "sources": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "required": ["path", "line", "end_line"],
+              "properties": {
+                "path": { "type": "string" },
+                "line": { "type": "integer", "minimum": 1 },
+                "end_line": { "type": "integer", "minimum": 1 }
+              }
+            }
+          },
+          "reused_by": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "example_login_registry": {
+    "schema_version": "1.0",
+    "max_depth": 5,
+    "root_flow_id": "flow-auth-login-root",
+    "cycles_detected": [
+      {
+        "from_node": "session-rotation-guard",
+        "to_node": "auth-ui-submit",
+        "detected_at_depth": 5,
+        "handling": "anchor-back-to-breadcrumb"
+      }
+    ],
+    "nodes": [
+      {
+        "node_id": "flow-auth-login-root",
+        "title": "1. Luồng tổng: Đăng nhập & Cấp phiên truy cập",
+        "depth": 1,
+        "node_kind": "flow_root",
+        "hydration_tier": "eager_l1_l2",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.login_orchestrator",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/login_flow.md", "line": 1, "end_line": 40 },
+          "render_slice_sha256": "slice-l1-auth-root-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Toàn bộ hành trình từ lúc người dùng gõ tài khoản tới khi nhận Access Token hợp lệ hoặc thông báo lỗi.",
+          "what_goes_where": "Không lưu mật khẩu thô ở trình duyệt; dữ liệu đi theo 4 chặng rõ ràng qua từng node con.",
+          "why_it_exists": "Giúp người đọc nắm bức tranh tổng trong 5 giây mà không bị ngợp bởi chi tiết mã hóa hay cookie.",
+          "edge_cases": ["Mất mạng giữa chừng -> giữ nguyên username trên form", "Sai mật khẩu quá 5 lần -> chuyển nhánh khóa tạm"]
+        },
+        "io_contract": {
+          "inputs": ["username", "password", "remember_me: bool"],
+          "outputs": ["access_token (RAM)", "refresh_cookie (nếu Remember)", "redirect / error_banner"],
+          "side_effects": ["Cập nhật trạng thái UI & bản ghi phiên Redis trên server"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l1-root",
+          "max_cols": 5,
+          "steps": [
+            { "step_id": "s1", "label": "Nhập User + Pass & Bấm Login", "col": 0, "lane": "main", "target_node_id": "auth-ui-submit" },
+            { "step_id": "s2", "label": "Kiểm tra Nhớ đăng nhập?", "col": 1, "lane": "main", "target_node_id": "auth-check-remember" },
+            { "step_id": "s3", "label": "Mã hóa & Gửi POST /api/login", "col": 2, "lane": "main", "target_node_id": "auth-encrypt-send" },
+            { "step_id": "s4", "label": "Nhận Access Token & Phiên", "col": 3, "lane": "main", "target_node_id": "server-verify-and-issue" },
+            { "step_id": "s5", "label": "Lỗi xác thực / Khóa tạm", "col": 3, "lane": "error", "target_node_id": "auth-error-reject" }
+          ],
+          "edges": [
+            { "from": "s1", "to": "s2", "condition": "Form hợp lệ (submit)" },
+            { "from": "s2", "to": "s3", "condition": "Đã gắn cờ TTL phiên" },
+            { "from": "s3", "to": "s4", "condition": "HTTP 200 OK" },
+            { "from": "s3", "to": "s5", "condition": "HTTP 401 / 429 Too Many Requests" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/auth/login_flow.md", "line": 1, "end_line": 40 }],
+        "reused_by": ["flow-auth-login-root"]
+      },
+      {
+        "node_id": "auth-ui-submit",
+        "title": "2a. Nhập Username + Password & Bấm Login",
+        "depth": 2,
+        "node_kind": "ui_action",
+        "hydration_tier": "eager_l1_l2",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:ui.LoginForm.handleSubmit",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/login_form.tsx", "line": 12, "end_line": 58 },
+          "render_slice_sha256": "slice-l2-ui-submit-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Kiểm tra sơ bộ dữ liệu ngay trên trình duyệt trước khi gửi đi, tránh gửi request rỗng hoặc bấm nút liên tiếp.",
+          "what_goes_where": "Chỉ cắt khoảng trắng ở username trong bộ nhớ form tạm; giữ nguyên ký tự mật khẩu trong input password.",
+          "why_it_exists": "Giảm tải cho server khỏi các request rác và bảo vệ UX khi mạng chậm.",
+          "edge_cases": ["Double-click nút Login -> khóa nút ngay ở lần click đầu", "Bỏ trống password -> chặn tại client"]
+        },
+        "io_contract": {
+          "inputs": ["raw_username", "raw_password", "remember_checkbox"],
+          "outputs": ["normalized_credentials", "ui_loading = true"],
+          "side_effects": ["Vô hiệu hóa nút Submit trong lúc chờ phản hồi"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l2-ui-submit",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "u1", "label": "Trim username & Kiểm rỗng", "col": 0, "lane": "main", "target_node_id": null },
+            { "step_id": "u2", "label": "Khóa nút Login (in-flight)", "col": 1, "lane": "main", "target_node_id": null },
+            { "step_id": "u3", "label": "Chuyển sang kiểm Remember", "col": 2, "lane": "main", "target_node_id": "auth-check-remember" }
+          ],
+          "edges": [
+            { "from": "u1", "to": "u2", "condition": "Đủ độ dài tối thiểu" },
+            { "from": "u2", "to": "u3", "condition": "Gọi bước chọn chế độ phiên" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/auth/login_form.tsx", "line": 12, "end_line": 58 }],
+        "reused_by": ["flow-auth-login-root"]
+      },
+      {
+        "node_id": "auth-check-remember",
+        "title": "2b. Kiểm tra xem có Nhớ đăng nhập không",
+        "depth": 2,
+        "node_kind": "decision_branch",
+        "hydration_tier": "eager_l1_l2",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.resolveSessionPersistence",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/session_policy.py", "line": 10, "end_line": 45 },
+          "render_slice_sha256": "slice-l2-remember-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Đọc ô tích Remember Login để quyết định thời hạn phiên và nơi cất giữ token sau khi tắt tab trình duyệt.",
+          "what_goes_where": "Bật Remember -> đánh dấu cấp Refresh Token 30 ngày vào HttpOnly Cookie; Tắt Remember -> chỉ cấp phiên tạm trong bộ nhớ tab (RAM / Session Storage).",
+          "why_it_exists": "Cân bằng giữa sự tiện lợi (không phải gõ lại mật khẩu mỗi ngày) và an toàn trên máy dùng chung.",
+          "edge_cases": ["Chế độ ẩn danh (Incognito) chặn Cookie dài hạn -> tự hạ xuống phiên RAM"]
+        },
+        "io_contract": {
+          "inputs": ["remember_me: bool"],
+          "outputs": ["session_mode: 'persistent_30d' | 'ephemeral_tab'", "ttl_seconds: 2592000 | 1800"],
+          "side_effects": ["Đính kèm flag session_mode vào request đăng nhập"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l2-remember",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "r1", "label": "Đọc cờ remember_me", "col": 0, "lane": "main", "target_node_id": null },
+            { "step_id": "r2", "label": "BẬT: Chọn lưu bền 30 ngày", "col": 1, "lane": "main", "target_node_id": "storage-persist-session" },
+            { "step_id": "r3", "label": "TẮT: Chỉ giữ phiên trong RAM", "col": 1, "lane": "branch", "target_node_id": "storage-memory-session" }
+          ],
+          "edges": [
+            { "from": "r1", "to": "r2", "condition": "remember_me == true" },
+            { "from": "r1", "to": "r3", "condition": "remember_me == false" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/auth/session_policy.py", "line": 10, "end_line": 45 }],
+        "reused_by": ["flow-auth-login-root"]
+      },
+      {
+        "node_id": "auth-encrypt-send",
+        "title": "2c. Mã hóa Payload & Gửi về Server",
+        "depth": 2,
+        "node_kind": "security_crypto",
+        "hydration_tier": "eager_l1_l2",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.encryptAndPostCredentials",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/crypto_transport.ts", "line": 18, "end_line": 74 },
+          "render_slice_sha256": "slice-l2-encrypt-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Đóng gói thông tin đăng nhập kèm nonce chống gửi lại, rồi gửi qua kênh mã hóa TLS 1.3 tới máy chủ xác thực.",
+          "what_goes_where": "Mật khẩu được bọc trong lớp TLS + chữ ký thiết bị/nonce gửi trong JSON Body tới endpoint POST /api/v1/auth/login (không đưa lên URL query).",
+          "why_it_exists": "Ngăn nghe lén trên Wi-Fi công cộng và chống tấn công phát lại request (replay attack).",
+          "edge_cases": ["Timeout sau 8 giây -> hủy yêu cầu an toàn, xóa password buffer ở RAM client"]
+        },
+        "io_contract": {
+          "inputs": ["normalized_credentials", "session_mode", "device_nonce"],
+          "outputs": ["HTTP POST TLS Response (200 JSON | 401 | 429)"],
+          "side_effects": ["Phát 1 HTTPS request kèm header X-Request-Nonce"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l2-encrypt",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "e1", "label": "Tạo Envelope + Nonce", "col": 0, "lane": "main", "target_node_id": "crypto-tls-envelope" },
+            { "step_id": "e2", "label": "Gửi POST qua TLS 1.3", "col": 1, "lane": "main", "target_node_id": null },
+            { "step_id": "e3", "label": "Chuyển Server xác minh", "col": 2, "lane": "main", "target_node_id": "server-verify-and-issue" }
+          ],
+          "edges": [
+            { "from": "e1", "to": "e2", "condition": "Payload ký xong" },
+            { "from": "e2", "to": "e3", "condition": "Tới Auth Gateway" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/auth/crypto_transport.ts", "line": 18, "end_line": 74 }],
+        "reused_by": ["flow-auth-login-root", "flow-change-password", "flow-stepup-mfa"]
+      },
+      {
+        "node_id": "auth-error-reject",
+        "title": "2d. Nhánh lỗi: Sai mật khẩu / Chống dò brute-force",
+        "depth": 2,
+        "node_kind": "error_handler",
+        "hydration_tier": "eager_l1_l2",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.handleLoginFailure",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/rate_limit.py", "line": 5, "end_line": 52 },
+          "render_slice_sha256": "slice-l2-error-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Xử lý an toàn khi sai mật khẩu hoặc có dấu hiệu thử tự động liên tục bằng cách tăng bộ đếm giới hạn và trả thông báo chung.",
+          "what_goes_where": "Tăng biến đếm fail_count theo IP+username vào Redis với TTL 15 phút; trả về UI câu báo chung 'Sai tài khoản hoặc mật khẩu' để không lộ user có tồn tại không.",
+          "why_it_exists": "Chặn tin tặc dò mật khẩu hàng loạt và ngăn rò rỉ danh sách tài khoản.",
+          "edge_cases": ["fail_count >= 5 -> trả HTTP 429 khóa đăng nhập trong 900 giây"]
+        },
+        "io_contract": {
+          "inputs": ["http_status", "client_ip", "username_hash"],
+          "outputs": ["ui_error_message", "retry_after_seconds"],
+          "side_effects": ["Ghi audit log cảnh báo và tăng Redis counter auth:fail:<key>"]
+        },
+        "sources": [{ "path": "docs/planned/auth/rate_limit.py", "line": 5, "end_line": 52 }],
+        "reused_by": ["flow-auth-login-root"]
+      },
+      {
+        "node_id": "storage-persist-session",
+        "title": "3a. Mini-Flow: Ghi gì vào đâu khi Nhớ đăng nhập",
+        "depth": 3,
+        "node_kind": "storage_io",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.persistRememberedSession",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/session_storage.ts", "line": 1, "end_line": 68 },
+          "render_slice_sha256": "slice-l3-persist-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Quyết định vị trí lưu an toàn cho từng loại token khi người dùng chọn Nhớ đăng nhập: tuyệt đối tách biệt nơi giữ khóa dài hạn và khóa ngắn hạn.",
+          "what_goes_where": "1) Refresh Token dài hạn -> Cookie cờ HttpOnly + Secure + SameSite=Strict (JS không đọc được); 2) Access Token (15 phút) -> chỉ giữ trong biến RAM JavaScript; 3) Tên hiển thị & avatar (không nhạy cảm) -> LocalStorage để hiện nhanh lúc mở app.",
+          "why_it_exists": "Nếu web dính lỗ hổng XSS (chèn mã JS lạ), kẻ xấu vẫn không thể đọc trộm Refresh Token từ HttpOnly Cookie.",
+          "edge_cases": ["Trình duyệt tắt bên thứ 3 hoặc hết dung lượng IndexedDB -> fallback về phiên RAM và báo nhẹ"]
+        },
+        "io_contract": {
+          "inputs": ["refresh_token_sealed", "access_token_short", "user_display_meta"],
+          "outputs": ["storage_commit_ok: bool"],
+          "side_effects": ["Server gắn Set-Cookie HttpOnly; Client cập nhật AuthContext RAM + LocalStorage ui_hint"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l3-storage",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "st1", "label": "Server ghi Cookie HttpOnly (30d)", "col": 0, "lane": "main", "target_node_id": "cookie-write-policy" },
+            { "step_id": "st2", "label": "Client giữ Access Token ở RAM", "col": 1, "lane": "main", "target_node_id": null },
+            { "step_id": "st3", "label": "Ghi UI hint vào LocalStorage", "col": 2, "lane": "main", "target_node_id": null }
+          ],
+          "edges": [
+            { "from": "st1", "to": "st2", "condition": "Header Set-Cookie thành công" },
+            { "from": "st2", "to": "st3", "condition": "Cập nhật thông tin chào mừng" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/auth/session_storage.ts", "line": 1, "end_line": 68 }],
+        "reused_by": ["auth-check-remember", "flow-token-refresh"]
+      },
+      {
+        "node_id": "storage-memory-session",
+        "title": "3b. Phiên tạm thời trong RAM (Khi KHÔNG Nhớ đăng nhập)",
+        "depth": 3,
+        "node_kind": "storage_io",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.bindEphemeralMemorySession",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/session_storage.ts", "line": 70, "end_line": 102 },
+          "render_slice_sha256": "slice-l3-mem-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Lưu Access Token duy nhất trong bộ nhớ tab đang mở và xóa Cookie dài hạn để khi đóng trình duyệt là tự động đăng xuất.",
+          "what_goes_where": "Access Token nằm trong Closure/State RAM (biến mất khi đóng tab); Refresh Cookie đặt Max-Age=Session (hoặc không cấp dài hạn) và xóa các hint cũ trong LocalStorage.",
+          "why_it_exists": "Bảo vệ người dùng trên máy tính công cộng hoặc máy mượn.",
+          "edge_cases": ["F5 tải lại trang -> tự động xin lại Access Token 1 lần nếu session cookie tạm vẫn còn trên tiến trình trình duyệt"]
+        },
+        "io_contract": {
+          "inputs": ["access_token_short"],
+          "outputs": ["in_memory_auth_state"],
+          "side_effects": ["Xóa cookie nhớ cũ (Max-Age=0) nếu có"]
+        },
+        "sources": [{ "path": "docs/planned/auth/session_storage.ts", "line": 70, "end_line": 102 }],
+        "reused_by": ["auth-check-remember"]
+      },
+      {
+        "node_id": "crypto-tls-envelope",
+        "title": "3c. Đóng gói Nonce + Chuẩn hóa Payload TLS",
+        "depth": 3,
+        "node_kind": "security_crypto",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:auth.buildSignedEnvelope",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/auth/crypto_transport.ts", "line": 76, "end_line": 120 },
+          "render_slice_sha256": null,
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Sinh mã ngẫu nhiên một lần dùng (nonce UUIDv4) kèm dấu thời gian UTC để server phân biệt hai lần gửi hợp lệ với request bị phát lại.",
+          "what_goes_where": "Gắn header X-Request-Nonce và X-Client-Timestamp lên request HTTPS; không lưu nonce ở cookie.",
+          "why_it_exists": "Đảm bảo mỗi gói tin đăng nhập chỉ có giá trị trong cửa sổ thời gian 60 giây.",
+          "edge_cases": ["Đồng hồ máy client lệch > 5 phút -> server trả lỗi 400 Clock Skew kèm giờ chuẩn"]
+        },
+        "io_contract": {
+          "inputs": ["payload_dict", "utc_now"],
+          "outputs": ["headers_map", "tls_json_body"],
+          "side_effects": ["Đọc crypto.getRandomValues() của trình duyệt"]
+        },
+        "sources": [{ "path": "docs/planned/auth/crypto_transport.ts", "line": 76, "end_line": 120 }],
+        "reused_by": ["auth-encrypt-send"]
+      },
+      {
+        "node_id": "server-verify-and-issue",
+        "title": "3d. Server kiểm tra Password Hash & Phát JWT",
+        "depth": 3,
+        "node_kind": "network_rpc",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:server.auth.verifyCredentialsAndIssue",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/server/auth_service.py", "line": 30, "end_line": 95 },
+          "render_slice_sha256": "slice-l3-server-issue-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Máy chủ lấy bản ghi tài khoản từ Database, đối chiếu mật khẩu qua thuật toán băm chậm Argon2id (constant-time) rồi gọi module ký cặp JWT.",
+          "what_goes_where": "Không bao giờ giải mã mật khẩu; đọc password_hash từ bảng users và ghi phiên mới vào Redis trước khi trả Access Token cho client.",
+          "why_it_exists": "Dù Database có bị lộ, kẻ xấu vẫn không thể dịch ngược ra mật khẩu gốc nhờ hàm băm Argon2id + salt ngẫu nhiên.",
+          "edge_cases": ["Tài khoản bị khóa quản trị (is_active=false) -> từ chối ngay cả khi mật khẩu đúng"]
+        },
+        "io_contract": {
+          "inputs": ["username", "plaintext_over_tls", "session_mode"],
+          "outputs": ["access_jwt", "refresh_token_cookie_header", "expires_in: 900"],
+          "side_effects": ["Cập nhật cột last_login_at ở DB & gọi jwt-sign-and-store-jti"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l3-server-verify",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "sv1", "label": "So Argon2id hash (DB)", "col": 0, "lane": "main", "target_node_id": null },
+            { "step_id": "sv2", "label": "Ký JWT & Lưu JTI vào Redis", "col": 1, "lane": "main", "target_node_id": "jwt-sign-and-store-jti" },
+            { "step_id": "sv3", "label": "Trả Token + Set-Cookie", "col": 2, "lane": "main", "target_node_id": "cookie-write-policy" }
+          ],
+          "edges": [
+            { "from": "sv1", "to": "sv2", "condition": "Hash khớp & user active" },
+            { "from": "sv2", "to": "sv3", "condition": "Ghi JTI Redis OK" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/server/auth_service.py", "line": 30, "end_line": 95 }],
+        "reused_by": ["flow-auth-login-root", "flow-token-refresh", "flow-sso-exchange"]
+      },
+      {
+        "node_id": "cookie-write-policy",
+        "title": "4a. Chính sách ghi HttpOnly Cookie & Cờ bảo mật",
+        "depth": 4,
+        "node_kind": "security_crypto",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:server.auth.attachRefreshCookie",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/server/cookie_policy.py", "line": 1, "end_line": 42 },
+          "render_slice_sha256": null,
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Thiết lập các lá chắn bảo mật trên HTTP Response Header Set-Cookie để cookie chỉ đi đúng tên miền và không bị đọc bởi mã script.",
+          "what_goes_where": "Ghi header `Set-Cookie: rt=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth/refresh` khi remember_me=true.",
+          "why_it_exists": "Chặn đồng thời hai hình thức đánh cắp phổ biến nhất: XSS (nhờ HttpOnly) và CSRF (nhờ SameSite=Strict).",
+          "edge_cases": ["Môi trường dev chạy HTTP localhost -> chỉ hạ cờ Secure khi env == 'local-dev'"]
+        },
+        "io_contract": {
+          "inputs": ["http_response", "refresh_token", "ttl_seconds"],
+          "outputs": ["http_response_with_cookie"],
+          "side_effects": ["Trình duyệt lưu cookie vào Cookie Jar được mã hóa ở mức OS"]
+        },
+        "sources": [{ "path": "docs/planned/server/cookie_policy.py", "line": 1, "end_line": 42 }],
+        "reused_by": ["storage-persist-session", "server-verify-and-issue"]
+      },
+      {
+        "node_id": "jwt-sign-and-store-jti",
+        "title": "4b. Ký JWT RS256 & Ghi Refresh JTI vào Redis",
+        "depth": 4,
+        "node_kind": "security_crypto",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:server.auth.mintJwtPair",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/server/jwt_minter.py", "line": 15, "end_line": 78 },
+          "render_slice_sha256": "slice-l4-jwt-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Tạo Access Token sống ngắn (15 phút) bằng khóa riêng RS256 và lưu mã định danh JTI của Refresh Token vào Redis để có thể thu hồi từ xa.",
+          "what_goes_where": "Access JWT không lưu DB (stateless); riêng JTI + family_id của Refresh Token được ghi vào Redis (`auth:rt:<jti>`) kèm TTL 30 ngày.",
+          "why_it_exists": "Cho phép vừa kiểm tra API nhanh không cần hỏi DB (nhờ chữ ký JWT), vừa bấm 'Đăng xuất khỏi mọi thiết bị' tức thì được (nhờ xóa JTI trong Redis).",
+          "edge_cases": ["Redis tạm mất kết nối -> fail-closed (trả 503), không phát phiên mù"]
+        },
+        "io_contract": {
+          "inputs": ["user_id", "roles[]", "ttl_seconds"],
+          "outputs": ["access_jwt", "refresh_jwt", "jti_uuid"],
+          "side_effects": ["SETEX Redis auth:rt:<jti> ttl payload"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l4-jwt",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "j1", "label": "Ký Access JWT (15m, RS256)", "col": 0, "lane": "main", "target_node_id": null },
+            { "step_id": "j2", "label": "Ghi Refresh JTI vào Redis", "col": 1, "lane": "main", "target_node_id": null },
+            { "step_id": "j3", "label": "Kích hoạt bảo vệ xoay vòng", "col": 2, "lane": "main", "target_node_id": "session-rotation-guard" }
+          ],
+          "edges": [
+            { "from": "j1", "to": "j2", "condition": "Cặp token ký xong" },
+            { "from": "j2", "to": "j3", "condition": "Gắn family_id bảo vệ" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/server/jwt_minter.py", "line": 15, "end_line": 78 }],
+        "reused_by": ["server-verify-and-issue", "flow-token-refresh"]
+      },
+      {
+        "node_id": "session-rotation-guard",
+        "title": "5. Xoay vòng Refresh Token & Chống tái sử dụng (Cycle Guard)",
+        "depth": 5,
+        "node_kind": "security_crypto",
+        "hydration_tier": "lazy_l3_plus",
+        "evidence_kind": "planned",
+        "fingerprint": {
+          "symbol_ref": "planned:server.auth.rotateAndDetectReplay",
+          "ast_symbol_sha256": null,
+          "span_binding": { "path": "docs/planned/server/token_rotation.py", "line": 1, "end_line": 64 },
+          "render_slice_sha256": "slice-l5-rotation-v1",
+          "cache_status": "planned_draft"
+        },
+        "natural_explanation": {
+          "summary": "Mỗi lần xin Access Token mới, Refresh Token cũ bị hủy ngay lập tức. Nếu ai đó mang token cũ quay lại sử dụng, toàn bộ phiên bị thu hồi và ép đăng nhập lại.",
+          "what_goes_where": "Xóa JTI cũ khỏi Redis trong 1 giao dịch nguyên tử, ghi JTI mới cùng `family_id`. Nếu gặp JTI đã đánh dấu `used=true` -> xóa sạch cả `family_id` trong Redis và chuyển về `auth-ui-submit`.",
+          "why_it_exists": "Phát hiện kịp thời ngay khi Refresh Token bị lộ hoặc bị sao chép từ máy người dùng.",
+          "edge_cases": ["Hai tab cùng xin refresh trong 200ms -> tab sau rơi vào grace window 3s hay thu hồi tùy cấu hình"]
+        },
+        "io_contract": {
+          "inputs": ["presented_refresh_jti", "family_id"],
+          "outputs": ["new_token_pair | revoke_and_force_relogin"],
+          "side_effects": ["Hủy toàn bộ key Redis thuộc family_id nếu phát hiện replay"]
+        },
+        "sub_flow": {
+          "slice_id": "slice-auth-l5-rotation",
+          "max_cols": 3,
+          "steps": [
+            { "step_id": "rt1", "label": "Kiểm tra JTI đã dùng chưa?", "col": 0, "lane": "main", "target_node_id": null },
+            { "step_id": "rt2", "label": "Hợp lệ: Đổi JTI mới", "col": 1, "lane": "main", "target_node_id": null },
+            { "step_id": "rt3", "label": "Bị dùng lại: Hủy family -> Login", "col": 2, "lane": "error", "target_node_id": null, "cycle_back_to": "auth-ui-submit" }
+          ],
+          "edges": [
+            { "from": "rt1", "to": "rt2", "condition": "JTI chưa dùng" },
+            { "from": "rt1", "to": "rt3", "condition": "JTI đã dùng (Replay!) -> Neo chu trình về auth-ui-submit" }
+          ]
+        },
+        "sources": [{ "path": "docs/planned/server/token_rotation.py", "line": 1, "end_line": 64 }],
+        "reused_by": ["jwt-sign-and-store-jti", "flow-token-refresh"]
+      }
+    ]
+  }
+}
