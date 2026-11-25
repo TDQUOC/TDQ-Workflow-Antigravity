@@ -74,5 +74,9 @@
       "hard_stop_tokens": null,
       "hard_stop_usd": null
     }
+  },
+  "p1": {
+    "domain_router_enabled": true,
+    "zero_downgrade_enabled": true
   }
 }
