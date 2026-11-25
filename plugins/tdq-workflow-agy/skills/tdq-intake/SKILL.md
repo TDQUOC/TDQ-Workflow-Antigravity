@@ -60,6 +60,9 @@ Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conve
    of `skills/tdq-setup/references/uu-tien-tim-kiem.md` — the line-index block at the top of that
    file gives the exact line range, so the whole file never has to be read.
    Phase khảo sát (`analyze`/`quick_analyze`) áp dụng Tam Giác Khảo Sát 3 Chiều: Grep tự do quét rộng gom đủ file, LSP đào sâu cấu trúc, Graphify quét vỡ lan; không giới hạn quota grep.
+   **Domain & Skill Routing (P1).** Run `python3 "${PLUGIN_ROOT}/scripts/tdq_domains.py" route --prompt "<ask>"`
+   and `python3 "${PLUGIN_ROOT}/scripts/skill_router.py" --tra "<ask>" --domain <id>` before setting
+   `domain_id`, `work_kind`, and `lane` via `scripts/tdq_state.py init`.
 
 2. **Propose a lane, then ASK.** In chat: 2–3 lines summarising what the user wants.
    Judging size/need (`Cỡ:/Cần:`) is an INTERNAL step — it picks which option you <!-- i18n-allow: canonical name in the default language -->

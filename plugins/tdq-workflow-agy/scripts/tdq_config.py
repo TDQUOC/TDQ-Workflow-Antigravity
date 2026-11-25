@@ -6,9 +6,11 @@ Usage:
     python3 scripts/tdq_config.py max-qc [--json] [--cwd <path>]
 
 Env:
-    TDQ_MAX_QC_SUBAGENTS  Override qc.ultra_max_subagents (positive int or unlimited/0/none).
-    TDQ_PROJECT_DIR       Fallback project root when --cwd is omitted.
-    TDQ_LOG=0             Disable ISO-timestamped diagnostics on stderr.
+    TDQ_MAX_QC_SUBAGENTS        Override qc.ultra_max_subagents (positive int or unlimited/0/none).
+    TDQ_DOMAIN_ROUTER_ENABLED   Override p1.domain_router_enabled (0/false/no/off or 1/true/yes/on).
+    TDQ_ZERO_DOWNGRADE_ENABLED  Override p1.zero_downgrade_enabled (0/false/no/off or 1/true/yes/on).
+    TDQ_PROJECT_DIR             Fallback project root when --cwd is omitted.
+    TDQ_LOG=0                   Disable ISO-timestamped diagnostics on stderr.
 """
 
 from __future__ import annotations
@@ -31,6 +33,20 @@ PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAX_QC_SUBAGENTS = 5
 DEFAULT_AUTO_ESCALATE_RETRIES = 2
 UNLIMITED_KEYWORDS: tuple[str, ...] = ("0", "unlimited", "none", "khong-gioi-han")
+_BOOL_STR_MAP: dict[str, bool] = {
+    "1": True,
+    "true": True,
+    "yes": True,
+    "on": True,
+    "0": False,
+    "false": False,
+    "no": False,
+    "off": False,
+}
+_P1_ENV_OVERRIDES: tuple[tuple[str, str], ...] = (
+    ("TDQ_DOMAIN_ROUTER_ENABLED", "domain_router_enabled"),
+    ("TDQ_ZERO_DOWNGRADE_ENABLED", "zero_downgrade_enabled"),
+)
 
 DEFAULT_CONFIG: dict[str, Any] = {
     "qc": {
@@ -104,6 +120,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "hard_stop_usd": None,
         },
     },
+    "p1": {
+        "domain_router_enabled": True,
+        "zero_downgrade_enabled": True,
+    },
 }
 
 ROLE_DEFAULT_TIERS: dict[str, int] = {
@@ -173,16 +193,80 @@ def _parse_env_value(raw: str) -> int | str:
         return raw
 
 
+def _parse_bool_value(raw: Any, label: str) -> bool | None:
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, int) and raw in (0, 1):
+        return bool(raw)
+    if isinstance(raw, str):
+        norm = raw.strip().lower()
+        if norm in _BOOL_STR_MAP:
+            return _BOOL_STR_MAP[norm]
+    _log(f"WARN invalid boolean {label}={raw!r}; ignoring override")
+    return None
+
+
+def _normalize_p1_booleans(
+    config: dict[str, Any], prev_p1: dict[str, Any], layer_p1: dict[str, Any]
+) -> None:
+    p1_cfg = config.setdefault("p1", {})
+    if not isinstance(p1_cfg, dict):
+        return
+    for key in ("domain_router_enabled", "zero_downgrade_enabled"):
+        if key not in layer_p1:
+            continue
+        parsed = _parse_bool_value(layer_p1[key], f"p1.{key}")
+        if parsed is not None:
+            p1_cfg[key] = parsed
+        elif key in prev_p1:
+            p1_cfg[key] = prev_p1[key]
+
+
+def _apply_flat_p1_fallback(config: dict[str, Any], layer: dict[str, Any]) -> None:
+    if "domain_router_enabled" not in layer:
+        return
+    layer_p1 = layer.get("p1")
+    if isinstance(layer_p1, dict) and "domain_router_enabled" in layer_p1:
+        return
+    p1_cfg = config.setdefault("p1", {})
+    if not isinstance(p1_cfg, dict):
+        return
+    parsed = _parse_bool_value(layer["domain_router_enabled"], "domain_router_enabled")
+    if parsed is not None:
+        p1_cfg["domain_router_enabled"] = parsed
+
+
+def _merge_config_layer(config: dict[str, Any], layer: dict[str, Any]) -> None:
+    prev_p1 = copy.deepcopy(config.get("p1")) if isinstance(config.get("p1"), dict) else {}
+    _deep_merge(config, layer)
+    layer_p1 = layer.get("p1")
+    if isinstance(layer_p1, dict):
+        _normalize_p1_booleans(config, prev_p1, layer_p1)
+    _apply_flat_p1_fallback(config, layer)
+
+
+def _apply_p1_env_overrides(config: dict[str, Any]) -> None:
+    p1_cfg = config.setdefault("p1", {})
+    if not isinstance(p1_cfg, dict):
+        return
+    for env_name, key in _P1_ENV_OVERRIDES:
+        raw_env = os.environ.get(env_name)
+        if raw_env is None or not raw_env.strip():
+            continue
+        parsed = _parse_bool_value(raw_env, env_name)
+        if parsed is not None:
+            p1_cfg[key] = parsed
+
+
 def _apply_env_override(config: dict[str, Any]) -> None:
     raw_env = os.environ.get("TDQ_MAX_QC_SUBAGENTS")
-    if raw_env is None:
-        return
-    stripped = raw_env.strip()
-    if not stripped:
-        return
-    qc_cfg = config.setdefault("qc", {})
-    if isinstance(qc_cfg, dict):
-        qc_cfg["ultra_max_subagents"] = _parse_env_value(stripped)
+    if raw_env is not None:
+        stripped = raw_env.strip()
+        if stripped:
+            qc_cfg = config.setdefault("qc", {})
+            if isinstance(qc_cfg, dict):
+                qc_cfg["ultra_max_subagents"] = _parse_env_value(stripped)
+    _apply_p1_env_overrides(config)
 
 
 def load_config(cwd: str | Path | None = None) -> dict[str, Any]:
@@ -192,14 +276,14 @@ def load_config(cwd: str | Path | None = None) -> dict[str, Any]:
     if not plugin_ok:
         config = copy.deepcopy(DEFAULT_CONFIG)
     elif plugin_data is not None:
-        _deep_merge(config, plugin_data)
+        _merge_config_layer(config, plugin_data)
 
     project_file = _resolve_project_dir(cwd) / "docs" / "tdq" / "config.json"
     project_data, project_ok = _read_json_object(project_file, "project")
     if not project_ok:
         config = copy.deepcopy(DEFAULT_CONFIG)
     elif project_data is not None:
-        _deep_merge(config, project_data)
+        _merge_config_layer(config, project_data)
 
     _apply_env_override(config)
     return config
