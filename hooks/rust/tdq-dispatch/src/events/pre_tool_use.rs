@@ -296,6 +296,13 @@ fn tdq_log_enabled() -> bool {
 static EMBEDDED_MCP_POLICY_JSON: &str =
     include_str!("../../../../../scripts/defaults/mcp-policy.default.json");
 
+static EMBEDDED_DOMAIN_PACKS: &[&str] = &[
+    include_str!("../../../../../scripts/defaults/domains/code-build.json"),
+    include_str!("../../../../../scripts/defaults/domains/research-rca.json"),
+    include_str!("../../../../../scripts/defaults/domains/pm-ba-content.json"),
+    include_str!("../../../../../scripts/defaults/domains/ops-checklist.json"),
+];
+
 const DESTRUCTIVE_VERBS: &[&str] = &[
     "delete", "remove", "drop", "destroy", "exec", "execute", "run", "push", "deploy", "reset",
 ];
@@ -567,6 +574,182 @@ pub(crate) fn check_p0_runtime_guard(workspace_root: &Path, sid: &str) -> Option
         ));
     }
     None
+}
+
+fn parse_bool_flag(raw: &str) -> Option<bool> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
+    }
+}
+
+fn parse_json_bool(val: &Value) -> Option<bool> {
+    val.as_bool()
+        .or_else(|| val.as_str().and_then(parse_bool_flag))
+        .or_else(|| {
+            val.as_i64().and_then(|n| match n {
+                0 => Some(false),
+                1 => Some(true),
+                _ => None,
+            })
+        })
+}
+
+fn read_p1_flag_from_json(val: &Value, key: &str) -> Option<bool> {
+    if let Some(b) = val
+        .get("p1")
+        .and_then(|p| p.get(key))
+        .and_then(parse_json_bool)
+    {
+        return Some(b);
+    }
+    val.get(key).and_then(parse_json_bool)
+}
+
+fn read_p1_zero_downgrade_enabled(workspace_root: &Path) -> bool {
+    if let Ok(raw) = std::env::var("TDQ_ZERO_DOWNGRADE_ENABLED") {
+        if !raw.trim().is_empty() {
+            if let Some(flag) = parse_bool_flag(&raw) {
+                return flag;
+            }
+        }
+    }
+    for cfg_path in [
+        workspace_root.join("docs").join("tdq").join("config.json"),
+        workspace_root.join("tdq-config.json"),
+    ] {
+        if let Ok(Some(val)) = read_json_object(&cfg_path) {
+            if let Some(flag) = read_p1_flag_from_json(&val, "zero_downgrade_enabled") {
+                return flag;
+            }
+        }
+    }
+    true
+}
+
+fn merge_domain_pack_obj(
+    packs: &mut std::collections::HashMap<String, serde_json::Map<String, Value>>,
+    val: &Value,
+) {
+    let Some(obj) = val.as_object() else {
+        return;
+    };
+    let Some(did) = obj
+        .get("domain_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return;
+    };
+    let entry = packs.entry(did.to_string()).or_default();
+    for (k, v) in obj {
+        entry.insert(k.clone(), v.clone());
+    }
+    entry.insert("domain_id".to_string(), Value::String(did.to_string()));
+}
+
+fn merge_domain_pack_dir(
+    dir: &Path,
+    packs: &mut std::collections::HashMap<String, serde_json::Map<String, Value>>,
+) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    let mut paths: Vec<PathBuf> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("json") && p.is_file())
+        .collect();
+    paths.sort();
+    for path in paths {
+        if let Ok(Some(val)) = read_json_object(&path) {
+            merge_domain_pack_obj(packs, &val);
+        }
+    }
+}
+
+fn domain_requires_code_escalation(workspace_root: &Path, domain_id: &str) -> bool {
+    let did = domain_id.trim();
+    if did.is_empty() {
+        return false;
+    }
+    let mut packs: std::collections::HashMap<String, serde_json::Map<String, Value>> =
+        std::collections::HashMap::new();
+    for raw in EMBEDDED_DOMAIN_PACKS {
+        if let Ok(val) = serde_json::from_str::<Value>(raw) {
+            merge_domain_pack_obj(&mut packs, &val);
+        }
+    }
+    merge_domain_pack_dir(
+        &workspace_root.join("scripts").join("defaults").join("domains"),
+        &mut packs,
+    );
+    merge_domain_pack_dir(
+        &workspace_root.join("docs").join("tdq").join("domains"),
+        &mut packs,
+    );
+    let Some(pack) = packs.get(did) else {
+        return false;
+    };
+    if pack
+        .get("escalate_on_code_edit")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return true;
+    }
+    pack.get("default_work_kind")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|wk| wk.eq_ignore_ascii_case("investigate"))
+}
+
+/// Block edits outside `docs/` when active `domain_id` or `work_kind` requires code escalation.
+pub(crate) fn check_p1_zero_downgrade_guard(
+    workspace_root: &Path,
+    sid: &str,
+    state: &TdqState,
+) -> Option<RouteOutcome> {
+    if !read_p1_zero_downgrade_enabled(workspace_root) {
+        return None;
+    }
+    let is_investigate = state
+        .work_kind
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|wk| wk.eq_ignore_ascii_case("investigate"));
+    let did = state
+        .domain_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let domain_blocked = did.is_some_and(|d| domain_requires_code_escalation(workspace_root, d));
+    if !is_investigate && !domain_blocked {
+        return None;
+    }
+    let trigger = if domain_blocked {
+        format!("domain_id={}", did.unwrap_or(""))
+    } else {
+        "work_kind=investigate".to_string()
+    };
+    if tdq_log_enabled() {
+        eprintln!(
+            "[{}] tdq-dispatch: deny APPROVE p1_zero_downgrade {}",
+            now_iso_utc(),
+            trigger
+        );
+    }
+    Some(deny_with_block(
+        workspace_root,
+        sid,
+        "APPROVE",
+        &format!(
+            "P1 Zero-Downgrade Lock ({} requires escalate-to-build before editing source). Run: py -3 -X utf8 scripts/tdq_state.py escalate-to-build --by \"<user request words>\"",
+            trigger
+        ),
+    ))
 }
 
 fn load_mcp_baseline(workspace_root: &Path) -> Value {
@@ -1141,6 +1324,11 @@ fn handle_edit_tool(
         .is_empty()
     {
         return RouteOutcome::Decided(HookDecision::allow());
+    }
+    if !in_docs && role_opt.is_none() {
+        if let Some(deny) = check_p1_zero_downgrade_guard(workspace_root, sid, &state) {
+            return deny;
+        }
     }
     if role_opt.is_some() || state.implement_mode.as_deref() == Some("subagent") {
         return RouteOutcome::DelegatePython;
@@ -2021,6 +2209,180 @@ mod tests {
                 if d.decision == DecisionKind::Deny
                 && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
         ));
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_p1_zero_downgrade_guard_domains_docs_override_and_rollback() {
+        let tmp = std::env::temp_dir().join(format!("tdq_p1_zd_rust_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(tmp.join("docs").join("tdq").join("plan")).unwrap();
+        fs::create_dir_all(tmp.join("docs").join("tdq").join("research")).unwrap();
+        fs::create_dir_all(tmp.join("docs").join("tdq").join("domains")).unwrap();
+        fs::create_dir_all(tmp.join("src")).unwrap();
+        let plan_rel = "docs/tdq/plan/p1-rust.md";
+        fs::write(tmp.join(plan_rel), "- [~] **T1** work\n").unwrap();
+        let state_val = TdqState {
+            active_request: Some("2026-11-26-p1-rust".to_string()),
+            lane: Some("quick".to_string()),
+            phase: Some("implement".to_string()),
+            quick_approved: Some(true),
+            implement_mode: Some("main".to_string()),
+            plan_file: Some(plan_rel.to_string()),
+            ..Default::default()
+        };
+        let today_log = today_log_rel_for_state(Some(&state_val));
+        let log_path = tmp.join(&today_log);
+        fs::create_dir_all(log_path.parent().unwrap()).unwrap();
+        fs::write(&log_path, "## 01:00 — init\n").unwrap();
+
+        let src_edit = HookPayload {
+            tool_name: Some("Edit".to_string()),
+            tool_input: Some(json!({ "file_path": tmp.join("src/app.py").to_string_lossy() })),
+            ..Default::default()
+        };
+        let docs_edit = HookPayload {
+            tool_name: Some("Edit".to_string()),
+            tool_input: Some(json!({ "file_path": tmp.join("docs/tdq/research/note.md").to_string_lossy() })),
+            ..Default::default()
+        };
+
+        // 1. research-rca and pm-ba-content block source edits with [TDQ:APPROVE], including subagent mode
+        for (dom, mode) in [("research-rca", "main"), ("research-rca", "subagent"), ("pm-ba-content", "main")] {
+            fs::write(
+                tmp.join("docs/tdq/state.json"),
+                json!({
+                    "active_request": "2026-11-26-p1-rust",
+                    "lane": "quick",
+                    "phase": "implement",
+                    "quick_approved": true,
+                    "implement_mode": mode,
+                    "plan_file": plan_rel,
+                    "work_kind": "build",
+                    "domain_id": dom
+                })
+                .to_string(),
+            )
+            .unwrap();
+            assert!(
+                matches!(
+                    handle_pre_tool_use(&src_edit, &tmp),
+                    RouteOutcome::Decided(ref d)
+                        if d.decision == DecisionKind::Deny
+                        && d.reason.as_deref().unwrap_or("").contains("[TDQ:APPROVE]")
+                        && d.reason.as_deref().unwrap_or("").contains("escalate-to-build")
+                ),
+                "Expected [TDQ:APPROVE] for domain={} mode={}",
+                dom,
+                mode
+            );
+        }
+
+        // 2. docs/** edits stay allowed even when domain/work_kind is locked
+        assert!(matches!(
+            handle_pre_tool_use(&docs_edit, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 3. Legacy work_kind=investigate without domain_id blocks source edit
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            json!({
+                "active_request": "2026-11-26-p1-rust",
+                "lane": "quick",
+                "phase": "implement",
+                "quick_approved": true,
+                "implement_mode": "main",
+                "plan_file": plan_rel,
+                "work_kind": "investigate"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:APPROVE]")
+        ));
+
+        // 4. Custom override domain in docs/tdq/domains/ blocks source edit; code-build allows
+        fs::write(
+            tmp.join("docs/tdq/domains/custom-lock.json"),
+            r#"{"domain_id":"custom-lock","escalate_on_code_edit":true}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            json!({
+                "active_request": "2026-11-26-p1-rust",
+                "lane": "quick",
+                "phase": "implement",
+                "quick_approved": true,
+                "implement_mode": "main",
+                "plan_file": plan_rel,
+                "work_kind": "build",
+                "domain_id": "custom-lock"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:APPROVE]")
+        ));
+
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            json!({
+                "active_request": "2026-11-26-p1-rust",
+                "lane": "quick",
+                "phase": "implement",
+                "quick_approved": true,
+                "implement_mode": "main",
+                "plan_file": plan_rel,
+                "work_kind": "build",
+                "domain_id": "code-build"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 5. Rollback config p1.zero_downgrade_enabled=false unlocks legacy investigate edits
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            json!({
+                "active_request": "2026-11-26-p1-rust",
+                "lane": "quick",
+                "phase": "implement",
+                "quick_approved": true,
+                "implement_mode": "main",
+                "plan_file": plan_rel,
+                "work_kind": "investigate",
+                "domain_id": "research-rca"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/config.json"),
+            r#"{"p1":{"zero_downgrade_enabled":false}}"#,
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+        assert_eq!(parse_bool_flag("0"), Some(false));
+        assert_eq!(parse_bool_flag("TRUE"), Some(true));
+        assert_eq!(parse_bool_flag("invalid"), None);
 
         let _ = fs::remove_dir_all(&tmp);
     }
