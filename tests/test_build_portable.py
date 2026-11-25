@@ -44,6 +44,8 @@ APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "archify_registry", "archify_portal",
     # Approved 2026-11-25-1834-p0-runtime-safety-rust-parity P0 lease & MCP policy
     "tdq_lease", "mcp_policy",
+    # Approved 2026-11-26-0210-p1-domain-packs-bm25 domain packs & BM25 skill router
+    "skill_router", "tdq_domains",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -71,6 +73,11 @@ APPROVED_RELEASE_DOCS = {
     "skills/tdq-setup/references/zero-to-full-agy.md",
     # Approved 2026-11-25-1834-p0-runtime-safety-rust-parity default MCP policy
     "scripts/defaults/mcp-policy.default.json",
+    # Approved 2026-11-26-0210-p1-domain-packs-bm25 default domain packs
+    "scripts/defaults/domains/code-build.json",
+    "scripts/defaults/domains/research-rca.json",
+    "scripts/defaults/domains/pm-ba-content.json",
+    "scripts/defaults/domains/ops-checklist.json",
 }
 
 
@@ -567,7 +574,6 @@ class TestSinhNhanhRelease(TempDest):
             "scripts/doc_index.py",
             "scripts/i18n_check.py",
             "scripts/luat_phan_loai.py",
-            "scripts/skill_router.py",
             "scripts/tdq_eval.py",
             "scripts/tdq_knowledge.py",
         )
@@ -588,6 +594,9 @@ class TestSinhNhanhRelease(TempDest):
             "scripts/build_portable.py",
             "scripts/tdq_test.py",
             "scripts/tdq_vision_diff.py",
+            "scripts/skill_router.py",
+            "scripts/tdq_domains.py",
+            "scripts/defaults/domains/code-build.json",
         )
         for duong in duoc_giu:
             self.assertTrue(build_portable.la_duong_dan_release(duong),
