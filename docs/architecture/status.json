@@ -5,14 +5,17 @@
     "Source file modified: hooks/hooks.json",
     "Source file modified: hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
     "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs",
+    "Source file modified: hooks/rust/tdq-dispatch/src/storage.rs",
     "Source file modified: hooks/scripts/bash_gate.py",
     "Source file modified: hooks/scripts/edit_gate.py",
     "Source file modified: hooks/scripts/lsp_gate.py",
     "Source file modified: scripts/build_portable.py",
+    "Source file modified: scripts/skill_router.py",
     "Source file modified: scripts/tdq_config.py",
     "Source file modified: scripts/tdq_state.py",
     "Source file modified: scripts/tdq_team.py",
     "Source file modified: scripts/tdq_timing.py",
+    "Source file modified: skills/tdq-intake/SKILL.md",
     "Source file added: scripts/defaults/domains/code-build.json",
     "Source file added: scripts/defaults/domains/ops-checklist.json",
     "Source file added: scripts/defaults/domains/pm-ba-content.json",
@@ -22,5 +25,5 @@
     "Source file added: scripts/tdq_domains.py",
     "Source file added: scripts/tdq_lease.py"
   ],
-  "checked_at": "2026-11-25T20:09:06Z"
+  "checked_at": "2026-11-25T20:58:10Z"
 }
