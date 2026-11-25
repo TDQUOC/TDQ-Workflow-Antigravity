@@ -42,6 +42,8 @@ APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_setup_state", "tdq_simulate_verify",
     # Approved 2026-11-24-1308-implement-archify-drilldown-registry AST registry & portal
     "archify_registry", "archify_portal",
+    # Approved 2026-11-25-1834-p0-runtime-safety-rust-parity P0 lease & MCP policy
+    "tdq_lease", "mcp_policy",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -67,6 +69,8 @@ APPROVED_RELEASE_DOCS = {
     "scripts/bootstrap.sh",
     "scripts/tdq_setup_probe.mjs",
     "skills/tdq-setup/references/zero-to-full-agy.md",
+    # Approved 2026-11-25-1834-p0-runtime-safety-rust-parity default MCP policy
+    "scripts/defaults/mcp-policy.default.json",
 }
 
 
