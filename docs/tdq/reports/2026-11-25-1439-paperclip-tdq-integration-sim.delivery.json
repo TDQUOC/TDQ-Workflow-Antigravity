@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "166db22c-67d1-4f18-ab60-afbc08ba4e22",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1439-paperclip-tdq-integration-sim\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1439-paperclip-tdq-integration-sim.68470b9c888348beb9f03e33f5ffbbc1.html",
+  "specification": {
+    "sha256": "77721146b52aadbd54a16062e83e5bfb05e2f57928d1dfbe01496046be7ea1ab",
+    "bytes": 2302
+  },
+  "artifact": {
+    "sha256": "f42fe317af35dde08dd80c8a84ed62475b944a52cdf2a99ce3d74d6b2c0bdfa9",
+    "bytes": 1211859
+  },
+  "explainer": {
+    "preparedSha256": "da9a41153fa25c4bfda96d158bea32641f38fcd16baaca49524f06fa899963a0",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "phase-task-stability",
+        "inline": true,
+        "sha256": "0caa03ab50b21e636eb919fd39f74ae31f674f9b542085f8939ebdd0765db84c",
+        "bytes": 867
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "multi-domain-packs",
+        "inline": true,
+        "sha256": "bc492cd93bd11b78cbdf23feaba390f638fc56a0a9d232de9c0a9385955f1b09",
+        "bytes": 853
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "three-phase-roadmap",
+        "inline": true,
+        "sha256": "d6c3fe0b2f8ceb205d724c20b70b17d1196bd25e014e4e6075fdebbfd9aab9b8",
+        "bytes": 820
+      }
+    ]
+  }
+}

@@ -1,18 +1,18 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-25T11:04:50+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-25T16:13:52+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-24-2359-research-paperclip-features-apps |
+| Request | 2026-11-25-1439-paperclip-tdq-integration-sim |
 | Work kind | investigate |
 | Lane | full |
 | Phase | report |
-| Spec | docs/tdq/spec/2026-11-24-2359-research-paperclip-features-apps.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-24-2359-research-paperclip-features-apps.md — ✔ approved |
+| Spec | docs/tdq/spec/2026-11-25-1439-paperclip-tdq-integration-sim.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-25-1439-paperclip-tdq-integration-sim.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
-| QC level | full |
+| QC level | ultra |
 | Run mode | main |
 
 ## Where we are

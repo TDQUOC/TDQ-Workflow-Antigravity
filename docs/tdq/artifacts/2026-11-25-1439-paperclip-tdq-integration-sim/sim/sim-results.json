@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-11-25T16:04:17+07:00",
+  "python_version": "3.13.15",
+  "platform": "win32",
+  "summary": {
+    "total_scenarios": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "scenarios": [
+    {
+      "id": "SIM-1",
+      "title": "Atomic Claim Lock & Lease TTL Recovery",
+      "passed": true,
+      "baseline": {
+        "duplicate_race_claims": 61,
+        "crashed_tasks_stuck": 2
+      },
+      "proposed": {
+        "duplicate_active_claims": 0,
+        "tasks_completed": 12,
+        "crashed_tasks_recovered": 2,
+        "avg_lock_ms": 0.328
+      }
+    },
+    {
+      "id": "SIM-2",
+      "title": "4-Tier Priority, 60m Aging Fairness & blockedBy Idempotency",
+      "passed": true,
+      "baseline": {
+        "aged_task_dispatch_slot": 20,
+        "premature_parent_runs": 1,
+        "duplicate_parent_wakes": 3
+      },
+      "proposed": {
+        "aged_task_dispatch_slot": 4,
+        "aging_share_hits": 1,
+        "premature_parent_runs": 0,
+        "parent_after_all_children": true,
+        "parent_wakes_delivered": 1
+      }
+    },
+    {
+      "id": "SIM-3",
+      "title": "Circuit Breaker (3-State) & Budget Hard-Stop",
+      "passed": true,
+      "baseline": {
+        "wasted_runs_executed": 21,
+        "total_spend_usd": 7.2,
+        "budget_overshoot_usd": 2.2
+      },
+      "proposed": {
+        "tripped_at_run": 12,
+        "refusal_opened_at_streak": 5,
+        "recovered_to_closed": true,
+        "blocked_failure_runs": 4,
+        "final_spend_usd": 4.8,
+        "budget_overshoot_usd": 0.0,
+        "pause_reason": "budget",
+        "soft_warn_at_80pct": true
+      }
+    },
+    {
+      "id": "SIM-4",
+      "title": "12 TDQ Invariants Non-Regression & MCP Changed-Tool Quarantine",
+      "passed": true,
+      "baseline": {
+        "tdq_invariants_intact": 12,
+        "untrusted_new_mcp_tools_blocked": 0,
+        "untrusted_new_mcp_tools_exposed": 2
+      },
+      "proposed": {
+        "tdq_invariants_intact": 12,
+        "tdq_regressions": 0,
+        "untrusted_new_mcp_tools_quarantined": 2,
+        "normal_read_allowed": true,
+        "policy_check_avg_ms": 0.0009
+      }
+    },
+    {
+      "id": "SIM-5",
+      "title": "Multi-Domain Pack Routing & Code-Build Rigor Preservation",
+      "passed": true,
+      "baseline": {
+        "supported_work_kinds": 2,
+        "non_code_domain_mismatches": 4,
+        "bm25_wired_to_flow": false
+      },
+      "proposed": {
+        "domain_packs_tested": 4,
+        "bm25_routing_hits": 8,
+        "bm25_routing_total": 8,
+        "code_build_rigor_preserved": true,
+        "disk_code_gates_verified": 5,
+        "non_code_domain_mismatches": 0
+      }
+    },
+    {
+      "id": "SIM-6",
+      "title": "Pattern-Native (Stdlib) vs Hybrid Bridge (Docker/WSL2) Windows Benchmark",
+      "passed": true,
+      "pattern_native": {
+        "iterations": 200,
+        "p50_ms": 0.367,
+        "p95_ms": 0.428,
+        "mean_ms": 0.374,
+        "max_ms": 0.499,
+        "new_runtime_dependencies": 0,
+        "windows_native_compatible": true,
+        "fits_core_p0_p1": true
+      },
+      "hybrid_bridge": {
+        "requires_node_gte": ">=24.11.0",
+        "patched_dependencies_count": 11,
+        "requires_postgres_server": true,
+        "antigravity_windows_native": false,
+        "windows_local_trusted_gap": true,
+        "recommended_tier": "P2 opt-in add-on (disabled by default, Docker/WSL2 only)"
+      }
+    }
+  ]
+}
