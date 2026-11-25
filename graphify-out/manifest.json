@@ -18,10 +18,10 @@
     "semantic_hash": "9c97dd11628f1ab6fc581dc2d42c0cc0"
   },
   "hooks/hooks.json": {
-    "mtime": 1795227491.4552624,
-    "seen": 1795229840.9448595,
-    "ast_hash": "585b1631af57ed88e9dd4b96dd3a68f1",
-    "semantic_hash": "585b1631af57ed88e9dd4b96dd3a68f1"
+    "mtime": 1795624629.7028053,
+    "seen": 1795624958.5904827,
+    "ast_hash": "855e08c61cd6c86f18859bb29be5d595",
+    "semantic_hash": "855e08c61cd6c86f18859bb29be5d595"
   },
   "hooks/scripts/_common.py": {
     "mtime": 1795277880.9970684,
@@ -1261,10 +1261,10 @@
     "semantic_hash": "b73ab0e604603fc1aa73556546346840"
   },
   "tools/patches/agy_manifests.py": {
-    "mtime": 1795535750.3826602,
-    "seen": 1795602021.2690547,
-    "ast_hash": "c2662907d24801e50504f270b1f9e78f",
-    "semantic_hash": "c2662907d24801e50504f270b1f9e78f"
+    "mtime": 1795624641.6339545,
+    "seen": 1795624958.6304774,
+    "ast_hash": "78365d9ef8e9e6393bc17b8c7e237229",
+    "semantic_hash": "78365d9ef8e9e6393bc17b8c7e237229"
   },
   "tools/patches/cli_fixes_a.py": {
     "mtime": 1795368217.7808988,
@@ -1525,10 +1525,10 @@
     "semantic_hash": "9d97ce42b2c114e6e223835b310ef28f"
   },
   "scripts/tdq_config.py": {
-    "mtime": 1795192836.1288905,
-    "seen": 1795210711.114872,
-    "ast_hash": "81df2eb882ec1ea44e6f768c29f2f524",
-    "semantic_hash": "81df2eb882ec1ea44e6f768c29f2f524"
+    "mtime": 1795624099.8079474,
+    "seen": 1795624565.4316978,
+    "ast_hash": "760ad25461cc051bff0b08d82acb50a9",
+    "semantic_hash": "760ad25461cc051bff0b08d82acb50a9"
   },
   "tdq-config.json": {
     "mtime": 1795192836.140675,
@@ -1649,5 +1649,23 @@
     "seen": 1795602021.2517273,
     "ast_hash": "65b349b60a0962af99fec5d25c594372",
     "semantic_hash": "65b349b60a0962af99fec5d25c594372"
+  },
+  "scripts/defaults/mcp-policy.default.json": {
+    "mtime": 1795623752.9466174,
+    "seen": 1795624565.4277124,
+    "ast_hash": "cd7c4ecb28bbacded054ed9068d92bb3",
+    "semantic_hash": "cd7c4ecb28bbacded054ed9068d92bb3"
+  },
+  "scripts/mcp_policy.py": {
+    "mtime": 1795624536.360756,
+    "seen": 1795624565.4288952,
+    "ast_hash": "353cb4e405bc587427d90e4db678c59e",
+    "semantic_hash": "353cb4e405bc587427d90e4db678c59e"
+  },
+  "scripts/tdq_lease.py": {
+    "mtime": 1795623752.9471638,
+    "seen": 1795624565.4329336,
+    "ast_hash": "1b000537e338956efe9dd8344eb1a9c1",
+    "semantic_hash": "1b000537e338956efe9dd8344eb1a9c1"
   }
 }

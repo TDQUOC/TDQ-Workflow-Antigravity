@@ -2,7 +2,12 @@
   "schema_version": 1,
   "status": "stale",
   "reasons": [
-    "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs"
+    "Source file modified: hooks/hooks.json",
+    "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs",
+    "Source file modified: scripts/tdq_config.py",
+    "Source file added: scripts/defaults/mcp-policy.default.json",
+    "Source file added: scripts/mcp_policy.py",
+    "Source file added: scripts/tdq_lease.py"
   ],
-  "checked_at": "2026-11-25T16:17:57Z"
+  "checked_at": "2026-11-25T16:42:28Z"
 }
