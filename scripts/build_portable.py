@@ -77,7 +77,7 @@ RELEASE_EXCLUDE_SCRIPTS = frozenset({
     "canvas_a4_ch4_ch7.py", "canvas_a4_rebuild.py", "canvas_draw.py",
     "canvas_layout_apply.py", "canvas_move_block.py", "check_canvas_layout.py",
     "doc_dup.py", "doc_index.py", "i18n_check.py", "luat_phan_loai.py",
-    "skill_router.py", "tdq_eval.py", "tdq_knowledge.py",
+    "tdq_eval.py", "tdq_knowledge.py",
 })
 
 # The skill that only means something on the TARGET machine (`tdq-checkportable`) lives here and
