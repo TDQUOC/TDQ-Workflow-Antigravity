@@ -28,15 +28,23 @@ import sys
 import unicodedata
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(ROOT, "scripts"))
-import tdq_state  # noqa: E402 — shares the log service
-import skill_tokens  # noqa: E402 — shares the SKILL.md map and the full descriptions
-import skill_inventory  # noqa: E402 — shares the list of ENABLED skills
+SCRIPTS_DIR = os.path.join(ROOT, "scripts")
+if SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, SCRIPTS_DIR)
+
+import skill_inventory
+import skill_tokens
+import tdq_config
+import tdq_domains
+import tdq_state
+import utf8_io
 
 KHO = os.path.join(ROOT, "docs", "tdq", "audit", "skill-index.json")
 TRUONG = ("ten", "mo_ta", "nguon", "duong_dan")
 EXIT_THIEU_KHO = 4
 TOP_K = 5
+DOMAIN_BOOST = 1.25
+PREFERRED_FLOOR_SCORE = 0.05
 
 # Standard BM25 parameters. k1 tunes the reward when a word repeats, b tunes the penalty on
 # long documents. Keep the standard values so the numbers compare with outside literature.
@@ -63,21 +71,26 @@ TU_RE = re.compile(r"[a-z0-9]+")
 # Vietnamese question returns tdq-*. Measured for real: a Vietnamese sentence asking to run
 # a sonarqube scan put tdq-plan at rank 1 and sonar-integrate at rank 3, purely on function
 # words. Dropping function words in both languages is standard IR, not a sample-set trick.
-DUNG_TU = frozenset("""
-a an and are as at be by for from has have how i in is it its of on or that the to
-was what when where which who will with you your this these those do does can could
-should would if then than there here it s
-bi boi ca cac cai cho chua chuc co con cua cung da dang de den di do doi duoc dung
-gi gia giup hay hoac khi khong la lai lam len luc mA ma moi mot muon nao nay nen ngay
-nhu nhung no o phai qua ra rang rat roi sau se so ta thi tren tu tuy va vao ve vi voi
-vua xong y toi ban minh chung ho no cai nhieu it hon nua lan cach kieu tren duoi
-""".split())
+DUNG_TU = frozenset([
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "have", "how",
+    "i", "in", "is", "it", "its", "of", "on", "or", "that", "the", "to", "was", "what",
+    "when", "where", "which", "who", "will", "with", "you", "your", "this", "these",
+    "those", "do", "does", "can", "could", "should", "would", "if", "then", "than",
+    "there", "here", "s", "bi", "boi", "ca", "cac", "cai", "cho", "chua", "chuc", "co",
+    "con", "cua", "cung", "da", "dang", "de", "den", "di", "do", "doi", "duoc", "dung",
+    "gi", "gia", "giup", "hay", "hoac", "khi", "khong", "la", "lai", "lam", "len", "luc",
+    "mA", "ma", "moi", "mot", "muon", "nao", "nay", "nen", "ngay", "nhu", "nhung", "no",
+    "o", "phai", "qua", "ra", "rang", "rat", "roi", "sau", "se", "so", "ta", "thi",
+    "tren", "tu", "tuy", "va", "vao", "ve", "vi", "voi", "vua", "xong", "y", "toi",
+    "ban", "minh", "chung", "ho", "nhieu", "it", "hon", "nua", "lan", "cach", "kieu",
+    "duoi",
+])
 
 
 def tach_tu(chu, bo_hu_tu=True):
     """str → list of normalised words with camel/snake/acronym tokenization and NFC/casefold."""
     chu_nfc = unicodedata.normalize("NFC", chu)
-    # Tách camelCase, PascalCase, acronyms:
+    # Split camelCase, PascalCase, and acronyms:
     s1 = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", chu_nfc)
     s2 = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", s1)
     s_khong_dau = bo_dau(s2.casefold())
@@ -172,27 +185,112 @@ class KhoBM25:
             tong += self._idf(tu) * f * (BM25_K1 + 1) / (f + BM25_K1 * chuan)
         return tong
 
-    def tra(self, cau_hoi, k=TOP_K):
-        """The top-k fitting records. Returns list (score, record); a score of 0 is dropped."""
-        cham = [(self.diem(cau_hoi, i), b) for i, b in enumerate(self.ban_ghi)]
-        cham = [c for c in cham if c[0] > 0]
-        cham.sort(key=lambda c: (-c[0], c[1]["ten"]))
-        return cham[:k]
+    def tra(self, cau_hoi, k=TOP_K, preferred_skills=None):
+        """The top-k fitting records as (score, record), optionally boosting preferred skills."""
+        pref = (
+            {str(name).strip() for name in preferred_skills if name}
+            if preferred_skills is not None
+            else set()
+        )
+        scored = []
+        for i, record in enumerate(self.ban_ghi):
+            score = self.diem(cau_hoi, i)
+            if score > 0:
+                if pref and record["ten"] in pref:
+                    score *= DOMAIN_BOOST
+                scored.append((score, record))
+        if not scored and pref:
+            scored = [
+                (PREFERRED_FLOOR_SCORE, record)
+                for record in self.ban_ghi
+                if record["ten"] in pref
+            ]
+        scored.sort(key=lambda item: (-item[0], item[1]["ten"]))
+        return scored[:k]
+
+
+def _default_project(project=None):
+    if project is not None:
+        return project
+    env_dir = os.environ.get("TDQ_PROJECT_DIR", "").strip()
+    return env_dir or ROOT
+
+
+def _domain_router_enabled(cwd):
+    cfg = tdq_config.load_config(cwd=cwd)
+    p1_cfg = cfg.get("p1")
+    if isinstance(p1_cfg, dict) and "domain_router_enabled" in p1_cfg:
+        return bool(p1_cfg["domain_router_enabled"])
+    if "domain_router_enabled" in cfg:
+        return bool(cfg["domain_router_enabled"])
+    return True
+
+
+def _preferred_skills_for_domain(domain_id, cwd):
+    if not isinstance(domain_id, str) or not domain_id.strip():
+        return None
+    did = domain_id.strip()
+    if not _domain_router_enabled(cwd):
+        _log(f"domain boost disabled by config; ignoring domain={did}")
+        return None
+    packs = tdq_domains.load_domain_packs(cwd)
+    pack = packs.get(did)
+    if not isinstance(pack, dict):
+        _log(f"unknown domain {did!r}; falling back to standard BM25")
+        return None
+    skills = pack.get("preferred_skills")
+    if not isinstance(skills, list) or not skills:
+        return None
+    cleaned = [str(name).strip() for name in skills if isinstance(name, str) and name.strip()]
+    return cleaned or None
+
+
+def _resolve_tra_cuu_args(ban_ghi, top_k, cwd, k, project):
+    """Normalize both Spec (ban_ghi, top_k, cwd) and helper (k, project) call shapes."""
+    is_int_k = isinstance(ban_ghi, int) and not isinstance(ban_ghi, bool)
+    records = doc_kho() if (ban_ghi is None or is_int_k) else ban_ghi
+    eff_k = ban_ghi if is_int_k else top_k
+    eff_cwd = top_k if (is_int_k and isinstance(top_k, (str, os.PathLike))) else cwd
+    if k is not None:
+        eff_k = k
+    if project is not None:
+        eff_cwd = project
+    return records, eff_k, _default_project(eff_cwd)
+
+
+def tra_cuu(
+    cau,
+    ban_ghi=None,
+    domain_id=None,
+    top_k=TOP_K,
+    cwd=None,
+    *,
+    k=None,
+    project=None,
+):
+    """Look up top-k skills for a prompt, optionally boosting a domain pack's preferred skills."""
+    records, eff_k, eff_cwd = _resolve_tra_cuu_args(ban_ghi, top_k, cwd, k, project)
+    preferred = _preferred_skills_for_domain(domain_id, eff_cwd)
+    results = KhoBM25(records).tra(cau, eff_k, preferred_skills=preferred)
+    return [dict(record, score=score) for score, record in results]
 
 
 def lenh_dung_kho(args):
-    ghi_kho(dung_kho(args.project))
+    project = getattr(args, "project", None) or ROOT
+    ghi_kho(dung_kho(project))
     print(f"Store built: {os.path.relpath(KHO, ROOT)}")
     return 0
 
 
 def lenh_tra(args):
+    project = _default_project(getattr(args, "project", None))
+    preferred = _preferred_skills_for_domain(getattr(args, "domain", None), project)
     kho = KhoBM25(doc_kho())
-    ket_qua = kho.tra(args.tra, args.k)
+    ket_qua = kho.tra(args.tra, args.k, preferred_skills=preferred)
     if not ket_qua:
         print(f"No skill matches {args.tra!r}.")
         return 0
-    print(f"| # | skill | score | source |")
+    print("| # | skill | score | source |")
     print("|---|---|---|---|")
     for thu_tu, (diem, b) in enumerate(ket_qua, 1):
         print(f"| {thu_tu} | {b['ten']} | {diem:.2f} | {b['nguon']} |")
@@ -200,20 +298,44 @@ def lenh_tra(args):
 
 
 def main(argv=None):
+    utf8_io.force_utf8()
     parser = argparse.ArgumentParser(
         prog="skill_router.py",
-        description="Prototype skill lookup store (BM25, offline). NOT wired into any flow yet.")
-    parser.add_argument("--dung-kho", action="store_true", dest="dung_kho",
-                        help="rebuild docs/tdq/audit/skill-index.json")
-    parser.add_argument("--tra", metavar="SENTENCE",
-                        help="look up the top-k skills fitting this sentence")
-    parser.add_argument("-k", type=int, default=TOP_K, help=f"how many results (default {TOP_K})")
-    parser.add_argument("--project", default=ROOT, help="project directory to inventory skills in")
+        description="Offline BM25 skill lookup store with optional domain pack boosting.",
+    )
+    parser.add_argument(
+        "--dung-kho",
+        action="store_true",
+        dest="dung_kho",
+        help="rebuild docs/tdq/audit/skill-index.json",
+    )
+    parser.add_argument(
+        "--tra",
+        metavar="SENTENCE",
+        help="look up the top-k skills fitting this sentence",
+    )
+    parser.add_argument(
+        "-k",
+        type=int,
+        default=TOP_K,
+        help=f"how many results (default {TOP_K})",
+    )
+    parser.add_argument(
+        "--domain",
+        default=None,
+        help="optional domain_id whose preferred_skills receive a boost",
+    )
+    parser.add_argument(
+        "--project",
+        default=None,
+        help="project directory to inventory skills or read domain packs in",
+    )
     args = parser.parse_args(argv)
 
     if bool(args.dung_kho) == bool(args.tra):
-        parser.error("pick exactly one: --dung-kho or --tra \"<sentence>\"")
-    _log(f"skill_router · {'--dung-kho' if args.dung_kho else '--tra'}")
+        parser.error('pick exactly one: --dung-kho or --tra "<sentence>"')
+    domain_note = f" domain={args.domain}" if args.domain else ""
+    _log(f"skill_router · {'--dung-kho' if args.dung_kho else '--tra'}{domain_note}")
     return lenh_dung_kho(args) if args.dung_kho else lenh_tra(args)
 
 
