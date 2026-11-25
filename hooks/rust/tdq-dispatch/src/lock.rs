@@ -2,6 +2,7 @@
 //! Uses OS advisory/byte-range locking (`std::fs::File::try_lock`) matching Python
 //! `with_ntfs_lock` so lock anchor files left on disk never cause false timeouts.
 
+use serde_json::Value;
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::path::{Path, PathBuf};
 use std::thread;
@@ -121,6 +122,56 @@ pub fn atomic_write_file(target_path: &Path, data: &[u8]) -> std::io::Result<()>
     Err(last_err.unwrap_or_else(|| std::io::Error::other("rename failed")))
 }
 
+/// Return true when a lease JSON object has a finite `expires_at` strictly before `now_epoch`.
+pub fn is_lease_expired(val: &Value, now_epoch: f64) -> bool {
+    let Some(exp) = val.get("expires_at").and_then(|v| v.as_f64()) else {
+        return false;
+    };
+    exp.is_finite() && now_epoch.is_finite() && exp < now_epoch
+}
+
+fn try_reclaim_lease_file(path: &Path, now_epoch: f64) -> bool {
+    let Ok(_guard) = acquire_sidecar_lock(path, Duration::from_millis(200)) else {
+        return false;
+    };
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(val) = serde_json::from_str::<Value>(&raw) else {
+        return false;
+    };
+    if !is_lease_expired(&val, now_epoch) {
+        return false;
+    }
+    fs::remove_file(path).is_ok()
+}
+
+/// Reclaim expired `.json` lease files under sidecar lock, keeping `.lock` anchors intact.
+pub fn cleanup_expired_leases(leases_dir: &Path, now_epoch: f64) -> usize {
+    let Ok(entries) = fs::read_dir(leases_dir) else {
+        return 0;
+    };
+    let mut reclaimed = 0usize;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") || !path.is_file() {
+            continue;
+        }
+        if try_reclaim_lease_file(&path, now_epoch) {
+            reclaimed += 1;
+        }
+    }
+    if reclaimed > 0 && std::env::var("TDQ_LOG").as_deref() != Ok("0") {
+        eprintln!(
+            "[{}] tdq-dispatch: reclaimed {} expired lease(s) in {}",
+            crate::storage::now_iso_utc(),
+            reclaimed,
+            leases_dir.display()
+        );
+    }
+    reclaimed
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -178,6 +229,53 @@ mod tests {
             fs::read_to_string(&test_file).unwrap(),
             "hello atomic world"
         );
+
+        let _ = fs::remove_dir_all(&tmp_dir);
+    }
+
+    #[test]
+    fn test_lease_expiration_and_cleanup_reclaims_only_expired() {
+        let tmp_dir =
+            std::env::temp_dir().join(format!("tdq_lease_rust_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp_dir);
+        fs::create_dir_all(&tmp_dir).unwrap();
+
+        let now = 1_700_000_500.0;
+        let expired_val = serde_json::json!({
+            "lease_id": "task-1",
+            "owner": "worker-1",
+            "expires_at": 1_700_000_100.0
+        });
+        let active_val = serde_json::json!({
+            "lease_id": "task-2",
+            "owner": "worker-2",
+            "expires_at": 1_700_000_900.0
+        });
+        let missing_exp = serde_json::json!({ "lease_id": "task-3" });
+        let nan_val = serde_json::json!({ "expires_at": "not-a-number" });
+
+        assert!(is_lease_expired(&expired_val, now));
+        assert!(!is_lease_expired(&active_val, now));
+        assert!(!is_lease_expired(&missing_exp, now));
+        assert!(!is_lease_expired(&nan_val, now));
+
+        let expired_file = tmp_dir.join("expired.json");
+        let active_file = tmp_dir.join("active.json");
+        let corrupt_file = tmp_dir.join("corrupt.json");
+        let missing_exp_file = tmp_dir.join("no_exp.json");
+
+        fs::write(&expired_file, expired_val.to_string()).unwrap();
+        fs::write(&active_file, active_val.to_string()).unwrap();
+        fs::write(&corrupt_file, "{corrupt-json").unwrap();
+        fs::write(&missing_exp_file, missing_exp.to_string()).unwrap();
+
+        let reclaimed = cleanup_expired_leases(&tmp_dir, now);
+        assert_eq!(reclaimed, 1);
+        assert!(!expired_file.exists());
+        assert!(sidecar_lock_path(&expired_file).exists());
+        assert!(active_file.exists());
+        assert!(corrupt_file.exists());
+        assert!(missing_exp_file.exists());
 
         let _ = fs::remove_dir_all(&tmp_dir);
     }
