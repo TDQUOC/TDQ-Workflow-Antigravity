@@ -299,6 +299,18 @@ def _normalize_p0_runtime(raw):
     return out
 
 
+def _normalize_p1_domain_fields(state):
+    """Non-destructively normalize optional P1 domain_id and downgrade_locked."""
+    if isinstance(state.get("downgrade_locked"), (bool, int)):
+        state["downgrade_locked"] = bool(state["downgrade_locked"])
+    else:
+        state["downgrade_locked"] = False
+    raw_domain = state.get("domain_id")
+    state["domain_id"] = (
+        raw_domain.strip() or None if isinstance(raw_domain, str) else None
+    )
+
+
 def default_state():
     return {
         "schema_version": 6,
@@ -306,6 +318,8 @@ def default_state():
         # slug of the request replaced at the last init (trace/log only)
         "previous_request": None,
         "work_kind": WORK_KIND_MAC_DINH,
+        "domain_id": None,
+        "downgrade_locked": False,
         "escalated_from_investigate": None,
         "lane": None,
         "phase": "idle",
@@ -533,6 +547,7 @@ def load(cwd, heal=True):
     state.pop("diagrams", None)
     state["phase"] = _nang_pha_da_go(state.get("phase"))
     state["p0_runtime"] = _normalize_p0_runtime(state.get("p0_runtime"))
+    _normalize_p1_domain_fields(state)
     return state
 
 
@@ -3171,12 +3186,88 @@ def _pop_kind_flag(argv):
 _LOCKED_WORK_KIND_PHASES = ("spec", "plan", "mode", "implement", "qc", "report")
 
 
+def _effective_domain_for_transition(state, default_id):
+    """Return active domain_id, treating mid-flight build requests as code-build."""
+    cur_domain = state.get("domain_id")
+    if isinstance(cur_domain, str) and cur_domain.strip():
+        return cur_domain.strip()
+    if not state.get("active_request"):
+        return None
+    if work_kind_hieu_luc(state, warn=False) != "build":
+        return None
+    phase = effective_phase(state, warn=False)
+    approved = any(
+        state.get(k) for k in ("spec_approved", "plan_approved", "quick_approved")
+    )
+    if phase in _LOCKED_WORK_KIND_PHASES or approved:
+        return default_id
+    return None
+
+
+def _is_downgrade_locked(state):
+    """Return True when zero-downgrade lock or investigate escalation is active."""
+    return (
+        state.get("downgrade_locked") is True
+        or bool(state.get("escalated_from_investigate"))
+    )
+
+
+def _validate_domain_id_set(cwd, state, raw_value):
+    """Validate `set domain_id=...` against domain packs and zero-downgrade lock."""
+    if not isinstance(raw_value, str) or not raw_value.strip():
+        _fail("Invalid domain_id: expected a non-empty domain pack identifier.")
+    new_domain = raw_value.strip()
+    import tdq_domains
+
+    packs = tdq_domains.load_domain_packs(cwd)
+    cur_domain = _effective_domain_for_transition(state, tdq_domains.DEFAULT_DOMAIN_ID)
+    allowed, reason = tdq_domains.can_transition_domain(
+        cur_domain, new_domain, packs, downgrade_locked=_is_downgrade_locked(state)
+    )
+    if not allowed:
+        _fail(reason)
+    if new_domain != state.get("domain_id"):
+        _info(f"domain_id: {state.get('domain_id') or 'none'} -> {new_domain}")
+    return new_domain
+
+
+def _validate_downgrade_locked_set(state, raw_value):
+    """Validate `set downgrade_locked=...`; once locked it cannot be unlocked."""
+    if not isinstance(raw_value, bool):
+        _fail("Invalid downgrade_locked (expected true|false).")
+    if not raw_value and _is_downgrade_locked(state):
+        _fail("Cannot clear downgrade_locked once zero-downgrade lock is active.")
+    return raw_value
+
+
+def _domain_requires_escalation(cwd, state):
+    """Return True when state's domain_id belongs to a pack blocking code edits."""
+    domain_id = (state or {}).get("domain_id")
+    if not isinstance(domain_id, str) or not domain_id.strip():
+        return False
+    import tdq_domains
+
+    pack = tdq_domains.load_domain_packs(cwd).get(domain_id.strip())
+    if not isinstance(pack, dict):
+        return False
+    default_kind = str(pack.get("default_work_kind", "")).strip().lower()
+    return (
+        bool(pack.get("escalate_on_code_edit", False))
+        or default_kind == "investigate"
+    )
+
+
 def _validate_work_kind_set(state, raw_value):
-    """Normalize `set work_kind=...` and block mid-flight switches past analyze."""
+    """Normalize `set work_kind=...` and enforce mid-flight and zero-downgrade locks."""
     new_kind = normalize_work_kind(raw_value)
     old_kind = work_kind_hieu_luc(state, warn=False)
     if new_kind == old_kind:
         return new_kind
+    if new_kind == "investigate" and _is_downgrade_locked(state):
+        _fail(
+            "Cannot downgrade work_kind to 'investigate' "
+            "when zero-downgrade lock is active."
+        )
     has_active = bool(state.get("active_request"))
     phase = effective_phase(state, warn=False)
     approved = any(state.get(k) for k in ("spec_approved", "plan_approved", "quick_approved"))
@@ -3217,18 +3308,21 @@ def _parse_escalate_args(rest):
 
 
 def _cli_escalate_to_build(cwd, rest):
-    """Upgrade an active `investigate` request to `build` with recorded attribution."""
+    """Upgrade an active investigate or non-code domain request to `build`."""
     by, inline_fix, want_json = _parse_escalate_args(rest)
     state = load(cwd)
     if not state or not state.get("active_request"):
         _fail("No active TDQ request — run init first before escalate-to-build.")
     stamp = state.get("updated_at")
     cu = work_kind_hieu_luc(state, warn=False)
-    if cu == "build":
+    domain_blocked = _domain_requires_escalation(cwd, state)
+    if cu == "build" and not domain_blocked:
         _warn("Request is already work_kind='build' — no escalation applied.")
         _echo_state("escalate-to-build", state, want_json)
         return
     state["work_kind"] = "build"
+    state["domain_id"] = "code-build"
+    state["downgrade_locked"] = True
     state["escalated_from_investigate"] = {
         "by": by,
         "at": now_iso(),
@@ -3572,6 +3666,10 @@ def cli(argv):
                 value = normalize_muc_gat(value)
             if key == "work_kind":
                 value = _validate_work_kind_set(state, value)
+            if key == "domain_id":
+                value = _validate_domain_id_set(cwd, state, value)
+            if key == "downgrade_locked":
+                value = _validate_downgrade_locked_set(state, value)
             if key == "muc_qc":
                 value = normalize_muc_qc(value)
                 # Logged only when the level actually MOVES, and only for this key: how deep QC
