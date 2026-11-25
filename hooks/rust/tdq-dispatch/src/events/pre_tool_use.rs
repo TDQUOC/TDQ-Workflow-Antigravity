@@ -339,9 +339,38 @@ fn read_p0_mcp_mode(workspace_root: &Path) -> String {
 }
 
 fn is_p0_unlock_command(cmd: &str) -> bool {
-    let low = cmd.to_ascii_lowercase();
-    (low.contains("tdq_state") && low.contains("reset-breaker"))
-        || (low.contains("mcp_policy") && (low.contains(" approve") || low.contains(" reset")))
+    let trimmed = cmd.trim();
+    if trimmed.is_empty()
+        || trimmed.contains('|')
+        || trimmed.contains('`')
+        || trimmed.contains("$(")
+        || trimmed.contains('\n')
+        || trimmed.contains('\r')
+    {
+        return false;
+    }
+    let mut has_unlock = false;
+    for seg in trimmed
+        .split("&&")
+        .flat_map(|s| s.split(';'))
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if seg.contains('&') {
+            return false;
+        }
+        let low = seg.to_ascii_lowercase();
+        if low.starts_with("cd ") || low.starts_with("cd\t") {
+            continue;
+        }
+        let is_reset_breaker = low.contains("tdq_state") && low.contains("reset-breaker");
+        let is_mcp_approve = low.contains("mcp_policy") && (low.contains(" approve") || low.contains(" reset"));
+        if !(is_reset_breaker || is_mcp_approve) {
+            return false;
+        }
+        has_unlock = true;
+    }
+    has_unlock
 }
 
 /// Evaluate P0 Circuit Breaker & Budget hard_stop state from `docs/tdq/state.json`.
@@ -1688,6 +1717,17 @@ mod tests {
         assert!(!matches!(
             handle_pre_tool_use(&unlock_cmd, &tmp),
             RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
+        let chained_unlock_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 scripts/tdq_state.py reset-breaker && rm -rf /" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&chained_unlock_cmd, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
         ));
 
         // 7. Budget hard_stopped blocks edits even when breaker is closed
