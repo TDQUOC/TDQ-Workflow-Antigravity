@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "54912bb1-e91b-4bb0-989b-ed767d787600",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-2359-research-paperclip-features-apps\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-2359-research-paperclip-features-apps.8c41b4282a754a949e7e519c601806d8.html",
+  "specification": {
+    "sha256": "0418fcc148c04dacb8d807a4654ddfcb7b47108d386541b44eecf8eee1389da7",
+    "bytes": 3075
+  },
+  "artifact": {
+    "sha256": "3f5e6d01d05a7957f22b79d1a843f36cf338845af33d10328f24e48a81e302e8",
+    "bytes": 1221043
+  },
+  "explainer": {
+    "preparedSha256": "52e6c7e1ff3eb43cff3751db0c58e8604832bf824fa29ccf867fb4a6e44e581c",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "paperclip-pillars",
+        "inline": true,
+        "sha256": "8edf4a6bd550eef407e5e654b397bfe732871aae5cc4e921184911c38ffff727",
+        "bytes": 1107
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "agent-compat",
+        "inline": true,
+        "sha256": "a35dda05483a4671bedfc1351b2d048275241a646f71ef435804992b9c6e062b",
+        "bytes": 930
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "three-paths",
+        "inline": true,
+        "sha256": "08a3b402a2265e692f4a196f01d8396504e903695cb9f8bf4dca06df53cea964",
+        "bytes": 990
+      }
+    ]
+  }
+}
