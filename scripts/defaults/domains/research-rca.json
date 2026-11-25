@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "domain_id": "research-rca",
+  "title": "Codebase Investigation and Root Cause Analysis",
+  "default_work_kind": "investigate",
+  "allow_downgrade": false,
+  "escalate_on_code_edit": true,
+  "preferred_lane": "full",
+  "default_muc_qc": "ultra",
+  "preferred_skills": [
+    "tdq-intake",
+    "tdq-spec",
+    "tdq-plan",
+    "tdq-lean"
+  ],
+  "keywords_en": [
+    "investigate",
+    "audit",
+    "rca",
+    "root cause",
+    "analyze",
+    "architecture",
+    "benchmark"
+  ],
+  "keywords_vi_ascii": [
+    "phan tich",
+    "khao sat",
+    "tim nguyen nhan",
+    "danh gia",
+    "lo trinh"
+  ]
+}
