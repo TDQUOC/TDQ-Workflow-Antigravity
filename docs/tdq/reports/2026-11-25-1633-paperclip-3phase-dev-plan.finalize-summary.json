@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1633-paperclip-3phase-dev-plan\\bao-cao.archify.md",
+    "sha256": "0219591a291ff7e3f80a90e8f9969e6591201ccb37e3cbd9879166e102fe288d",
+    "bytes": 3134
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1633-paperclip-3phase-dev-plan.13787583bf4a4aec812e3f8dd080c3d5.html",
+    "sha256": "11e2b615bb2ab1c3289ce5dbbc91ccffdac675fb73580f97f577e952d1234ce2",
+    "bytes": 1219049
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1633-paperclip-3phase-dev-plan.13787583bf4a4aec812e3f8dd080c3d5.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1633-paperclip-3phase-dev-plan.13787583bf4a4aec812e3f8dd080c3d5.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2251,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
