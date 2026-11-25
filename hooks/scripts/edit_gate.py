@@ -106,6 +106,53 @@ def _enforce_agy_readonly_subagent(payload, cwd):
     return False
 
 
+def _p0_breaker_enabled(cwd):
+    """Return True when the P0 circuit breaker kill-switch is enabled."""
+    from tdq_config import load_config
+
+    cfg = load_config(cwd)
+    return bool((cfg.get("p0") or {}).get("breaker_enabled", True))
+
+
+def _kiem_p0_runtime_guard(cwd, payload, state):
+    """Block source edits when P0 circuit breaker is open or budget hard-stopped."""
+    p0_rt = (state or {}).get("p0_runtime") or {}
+    breaker = p0_rt.get("breaker") or {}
+    if _p0_breaker_enabled(cwd) and breaker.get("open"):
+        reason = str(breaker.get("reason") or "circuit breaker is open")
+        block(
+            cwd,
+            payload,
+            "TDQ:READONLY",
+            [
+                f"P0 Circuit Breaker open ({reason}) — source edits blocked.",
+                "How: py -3 scripts/tdq_state.py reset-breaker",
+            ],
+            day_du=True,
+        )
+        return True
+    budget = p0_rt.get("budget") or {}
+    hard_stopped = bool(budget.get("hard_stopped"))
+    if not hard_stopped:
+        from tdq_config import load_config
+        from tdq_timing import check_budget_status
+
+        hard_stopped = check_budget_status(cwd, config=load_config(cwd)).get("state") == "hard_stop"
+    if hard_stopped:
+        block(
+            cwd,
+            payload,
+            "TDQ:READONLY",
+            [
+                "P0 Budget hard stop reached — source edits blocked.",
+                "How: adjust budget caps or reset state before editing.",
+            ],
+            day_du=True,
+        )
+        return True
+    return False
+
+
 def main():
     payload = read_payload()
     cwd = payload_cwd(payload)
@@ -167,6 +214,8 @@ def main():
         return
     if within(abs_target, os.path.realpath(os.path.join(cwd, "docs"))):
         return  # docs/** needs no reminder: brief/spec/plan/research/log
+    if _kiem_p0_runtime_guard(cwd, payload, state):
+        return
 
     # A sub-agent (Claude Code puts `agent_id` on hook input only inside one) is a reader until
     # implement: it reports into docs/, the main agent alone changes the project before then.
