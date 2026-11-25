@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-24-2359-research-paperclip-features-apps\\bao-cao.archify.md",
+    "sha256": "0418fcc148c04dacb8d807a4654ddfcb7b47108d386541b44eecf8eee1389da7",
+    "bytes": 3075
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-2359-research-paperclip-features-apps.8c41b4282a754a949e7e519c601806d8.html",
+    "sha256": "3f5e6d01d05a7957f22b79d1a843f36cf338845af33d10328f24e48a81e302e8",
+    "bytes": 1221043
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-2359-research-paperclip-features-apps.8c41b4282a754a949e7e519c601806d8.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-24-2359-research-paperclip-features-apps.8c41b4282a754a949e7e519c601806d8.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2317,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
