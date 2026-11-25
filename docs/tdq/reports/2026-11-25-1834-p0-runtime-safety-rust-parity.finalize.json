@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-25T18:15:06.118Z",
+  "startedAt": "2026-11-25T19:08:36.991Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\bao-cao.archify.md",
     "sha256": "5d98999b6ff67c68ee02f0b390dfcacb9862397cd72fac49d67653c2d25af245",
     "bytes": 2969
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
     "sha256": "15d540e9cfc9cb464415ce9f403c057fa499abe16a88702a13197122de273cb2",
     "bytes": 1588574
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\30976_1795630504263\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31540_1795633715170\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1367,
+      "durationMs": 1435,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\30976_1795630504263\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31540_1795633715170\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "0aa9af26-9c28-4db5-921d-8bd6e28c6c20",
+        "receiptId": "a814bd5f-9913-4438-8339-774fe6fc5c74",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
         "explainer": {
-          "preparedSha256": "bb2bb6f91279e4784717486ac90538088c0900ce3114a94a1eb6fde37922e440",
+          "preparedSha256": "05c49e5daa02f7d80c7c1b7aae8a786d86bb671809dd0a7952651b50e86bb3f7",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -147,17 +147,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 718,
+      "durationMs": 740,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\30976_1795630504263\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\31540_1795633715170\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
         "family": "explainer",
         "artifact": {
           "sha256": "15d540e9cfc9cb464415ce9f403c057fa499abe16a88702a13197122de273cb2",
@@ -208,7 +208,7 @@
               "id": "p0-before",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-N2UsmO\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-4cxNqr\\child.html",
                 "artifact": {
                   "sha256": "d88577c3ccc3cbfb833c3472676b867666d0e3b3e15f472742fb8cbd25945f9f",
                   "bytes": 809799
@@ -333,7 +333,7 @@
               "id": "p0-after",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-YhvCuI\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-1emMZ9\\child.html",
                 "artifact": {
                   "sha256": "b9bb47909bb5ecdd97a34b8d142c7667760162ac15fda081de73e005437db055",
                   "bytes": 809214
@@ -458,7 +458,7 @@
               "id": "p0-tested",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-NxWQKj\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-l07tAu\\child.html",
                 "artifact": {
                   "sha256": "946d443b7bb0bb3b4ef4901b46f0624c20b9312cb8fb1885efaddf5bf2788297",
                   "bytes": 809428
@@ -583,7 +583,7 @@
               "id": "p0-results",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-b0J842\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-SRHath\\child.html",
                 "artifact": {
                   "sha256": "df5c8ed90bc7281a7aa1920d646d53c58b25a2a71628d376b57d63c58a910581",
                   "bytes": 809827
@@ -708,7 +708,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "0aa9af26-9c28-4db5-921d-8bd6e28c6c20"
+        "deliveryReceiptId": "a814bd5f-9913-4438-8339-774fe6fc5c74"
       }
     }
   },
@@ -718,12 +718,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-25T18:15:08.680Z",
-  "durationMs": 2562,
+  "finishedAt": "2026-11-25T19:08:39.722Z",
+  "durationMs": 2730,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

@@ -2219,16 +2219,16 @@
     "plugins/tdq-workflow-agy/bin/tdq-dispatch-linux-x86_64": "6ff433dc366324a855b56e6679a02ffda53db16d0be5adc25fe990d3bb987edf",
     "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe": "da36a43ad12d58e63f627dc41191fb1c2a77effd11e32171a97a57da63ff78a9",
     "plugins/tdq-workflow-agy/docs/tdq/token-budget.json": "60f5ff102d35238190eceddc49391103d04a889616df5db000c0936475b1d08c",
-    "plugins/tdq-workflow-agy/hooks.json": "1159922944995a0d60dab8590ae905229ba34c4c332584c41227346f446beea7",
+    "plugins/tdq-workflow-agy/hooks.json": "2e0fc5c253e5048a0e502bc85d6a7258623bf024e36496fafe4aeda9a404d389",
     "plugins/tdq-workflow-agy/hooks/scripts/_common.py": "eadb983fccba50b4650550c42d3d72bf9d022f11eb296b16adc4b048e755a19e",
     "plugins/tdq-workflow-agy/hooks/scripts/ask_gate.py": "3933830602caf8d2e6b52e4282129f7485743b30c237297a9f175c502bdb3666",
-    "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py": "f66388d209507382b245459d073b04d8d2e41a2562fec106c6a8747dcef086ef",
+    "plugins/tdq-workflow-agy/hooks/scripts/bash_gate.py": "85db503b85a19f242ada56fc124141aa8cdd8d5d28933cab74b6956f6c263b7c",
     "plugins/tdq-workflow-agy/hooks/scripts/command_gate.py": "fc5729b1a284ed8ffd2163baf1763530ace0943b712786e998fdcae20a9bb9d1",
     "plugins/tdq-workflow-agy/hooks/scripts/dispatch.py": "2b0985496ec28f4bc92d037acec585e0e724aaa0e40a08b3f3c8fd9b72a5347d",
-    "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py": "e6659aad66e05044301fe9161a785d077052261dfbca2eb6556fa99d6a9fc955",
+    "plugins/tdq-workflow-agy/hooks/scripts/edit_gate.py": "f8936b5597576f1a3638a8fb0d3959490e3650f9f7b6c71346915eb3c96ca7c1",
     "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.json": "7ee9a85e920be2c7b4b502c5872c10eff0fe9126dec076ba59cc439d119c6a2c",
     "plugins/tdq-workflow-agy/hooks/scripts/gate_guidance.py": "f6bcb9f1cc7e04472f72b46434bb2ce11a6735f1a96f61f2291830968a60c8c2",
-    "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py": "6ee360c14ca8acbf23b6282224137de98755a2d92a6f915ca93f41bc8e9be9e9",
+    "plugins/tdq-workflow-agy/hooks/scripts/lsp_gate.py": "362b6f6fb42bb562d7fe8c59253222a3efe50d4b410834d74f23710c6cef866b",
     "plugins/tdq-workflow-agy/hooks/scripts/luat_gon.py": "4e269c69f702229187aa1ba53c0de630111eb17c2bed9f66955eee949f5134fb",
     "plugins/tdq-workflow-agy/hooks/scripts/post_invocation.py": "eb6d615d9a71ad7cd9252a205b2aee232074da3f43a58996ae8c944594207b86",
     "plugins/tdq-workflow-agy/hooks/scripts/prompt_context.py": "1014b26155981a928a2d8f22a3c0520a881d936de35c2db76e810ca6ced3ab01",
@@ -2239,7 +2239,7 @@
     "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py": "0bcd8ef054c7507b51e2d4d1de4481db0f77a0edf7e10aff11de1ac77c18b76a",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "fe34c689f956599a738425dbd2be432d8ba20334eb75ded442059eb47f71fb59",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_stop.py": "232e6118b647194390799b48667c5f867ae20f34cda1a8ab998f325017008767",
-    "plugins/tdq-workflow-agy/manifest.json": "bc49fc40350fc93ab2eaa54d3a0c67f8207a463afb14c3c5922193bd2fb5466c",
+    "plugins/tdq-workflow-agy/manifest.json": "712828a9f48deb96b9fc47414cbfa497ce885d2b3d629f61744c65291568e5d3",
     "plugins/tdq-workflow-agy/mcp_config.json": "d48655e7e33ffd5eb7f6bb3202ea28b7f16a7680edfc199672742eb5a1d3471b",
     "plugins/tdq-workflow-agy/plugin.json": "6190cb7587a8bcb5ba9d2c3e0db406db278583299477caf3a678dd3993b36447",
     "plugins/tdq-workflow-agy/rules/AGENTS.md": "89c8572d9b898f28f782629a6ba6d032cd68ecbdfddfcc89d3b639560a00acd6",
@@ -2315,7 +2315,7 @@
     "plugins/tdq-workflow-agy/scripts/tdq_simulate_verify.py": "0735ce82574be92f80b1be28c9f6df75c357cfbeb335ed091f9d4033397a2d5a",
     "plugins/tdq-workflow-agy/scripts/tdq_skill_eval.py": "fe001638eeae5764bdd428d679d1234a64030b7a392b19154f62b54bba45ea36",
     "plugins/tdq-workflow-agy/scripts/tdq_state.py": "0e662cface5aac18de6c5a0f4ac754a1dde0dc10953805a4761fd9ca4b196b6e",
-    "plugins/tdq-workflow-agy/scripts/tdq_team.py": "b4866b602a42174e224372215011e5576c07f6e2363934a17a5f83f4debb64ff",
+    "plugins/tdq-workflow-agy/scripts/tdq_team.py": "7363d0723e5beb46702588bce4a1d12eeda5e726de0d142c96f11949fc3bbe10",
     "plugins/tdq-workflow-agy/scripts/tdq_ten_lenh.py": "4fdc76d44eac63da6294e8b848e803a68322fc6d10a1f1004876cfbdc4091a79",
     "plugins/tdq-workflow-agy/scripts/tdq_test.py": "92d09f2416cb3ab4e4b6932f3ee1b84fa47725f098afdf4a1463f6e8d916ebd3",
     "plugins/tdq-workflow-agy/scripts/tdq_test_manifest.py": "95cbc392bef7c87ecad518c0ec08e06aa6b247a8afd2f00c195222236d5efaa4",
@@ -2323,7 +2323,7 @@
     "plugins/tdq-workflow-agy/scripts/tdq_test_receipt.py": "6db62454c099cb4d4f861b9e43fa9f1a821e405c24bd9cb9dc68d450b3c4970f",
     "plugins/tdq-workflow-agy/scripts/tdq_test_report.py": "439056315b9a8e5a94a06ae53e0f468d723d9d2a9d5b7f78d1fbec80eb590860",
     "plugins/tdq-workflow-agy/scripts/tdq_test_result.py": "5398b501123402c78cf3aea457a348e2633095d1294da5064337670ec2517620",
-    "plugins/tdq-workflow-agy/scripts/tdq_timing.py": "9142bcfe8bb39901d19e094fa4849af355e1b18c24d257dab4533d497280572a",
+    "plugins/tdq-workflow-agy/scripts/tdq_timing.py": "0c0a89ffeeb62bc0c2d564d1807f2e55ecff2b52f735aa170d602f1c35cd06f1",
     "plugins/tdq-workflow-agy/scripts/tdq_transcript.py": "079a279aa856a9f757cbb68c94185ccc607b22e5ca6c477333ddd7e001b7ab51",
     "plugins/tdq-workflow-agy/scripts/tdq_transcript_cache.py": "67a419929e5368839078e823a585656fcd6b5bd311e17b342cd50bfb2a16f286",
     "plugins/tdq-workflow-agy/scripts/tdq_vision_diff.py": "a2027cdedf89554478b3c3f483fd031a8465b065fac034375c47db404ad94f97",
@@ -2907,7 +2907,7 @@
       "bytes": 2969
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.html",
       "sha256": "15d540e9cfc9cb464415ce9f403c057fa499abe16a88702a13197122de273cb2",
       "bytes": 1588574
     },
@@ -2924,11 +2924,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.18e581f819e4409b845a8e1cc4c769a2.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 2562,
+    "durationMs": 2730,
     "browserCheck": {
       "requested": false,
       "ran": false

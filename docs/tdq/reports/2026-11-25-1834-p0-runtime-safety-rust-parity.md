@@ -106,5 +106,5 @@ Host metrics unavailable (5 hidden: api_request_seconds, tool_call_seconds, back
 **Rủi ro hồi quy:** Điểm chạm rộng nhất là cổng `PreToolUse` MCP/Breaker trên cả Python và Rust cùng bộ mặc định `mcp-policy.default.json`. Rủi ro được khóa bởi `5,005` bài test toàn kho, `41` test Rust và kiểm chéo đối kháng độc lập ở vòng 2, giữ nguyên tương thích `schema_version=6` và `23` mã cổng AGY.
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-25-1834-p0-runtime-safety-rust-parity.manifest.json -->
-<!-- manifest_digest: d615b627484bb375d61dc661b2e1e4d5c845aa2f61418e4f68cd47ed6b6419dc -->
+<!-- manifest_digest: 6d51989cd23984859a0186a410bf4c5d4676475ae88042c0f3c46d6c0324b28e -->
 <!-- tdq-archify-binding:end -->
