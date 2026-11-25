@@ -178,10 +178,10 @@
     "semantic_hash": "e06685646593bc431ec958294dc26b24"
   },
   "scripts/build_portable.py": {
-    "mtime": 1795368217.7580373,
-    "seen": 1795450658.8212383,
-    "ast_hash": "1f33dee4f08431e7c03c86611d8d4518",
-    "semantic_hash": "1f33dee4f08431e7c03c86611d8d4518"
+    "mtime": 1795635459.7470791,
+    "seen": 1795637359.5915408,
+    "ast_hash": "df9e22c4b98f9050fdd26be2307ccad9",
+    "semantic_hash": "df9e22c4b98f9050fdd26be2307ccad9"
   },
   "scripts/tdq_checkportable.py": {
     "mtime": 1795280358.3119974,
@@ -1525,16 +1525,16 @@
     "semantic_hash": "e74fde8234b1a292ddf82c2fa6c87275"
   },
   "scripts/tdq_config.py": {
-    "mtime": 1795633542.5897439,
-    "seen": 1795635421.646647,
-    "ast_hash": "760ad25461cc051bff0b08d82acb50a9",
-    "semantic_hash": "760ad25461cc051bff0b08d82acb50a9"
+    "mtime": 1795636290.6934953,
+    "seen": 1795637359.5989223,
+    "ast_hash": "fd8e26cd07d4129cec75d5d3d2ecb2d6",
+    "semantic_hash": "fd8e26cd07d4129cec75d5d3d2ecb2d6"
   },
   "tdq-config.json": {
-    "mtime": 1795633542.5943525,
-    "seen": 1795635421.6526816,
-    "ast_hash": "e74fde8234b1a292ddf82c2fa6c87275",
-    "semantic_hash": "e74fde8234b1a292ddf82c2fa6c87275"
+    "mtime": 1795636290.694038,
+    "seen": 1795637359.607062,
+    "ast_hash": "b0a30976468cc853cf63deaaa08c8169",
+    "semantic_hash": "b0a30976468cc853cf63deaaa08c8169"
   },
   "scripts/tdq_meta_gate.py": {
     "mtime": 1795257493.0382185,
@@ -1685,5 +1685,35 @@
     "seen": 1795635421.632954,
     "ast_hash": "ca4a3d18514f4ec36af768e0d484d90c",
     "semantic_hash": "ca4a3d18514f4ec36af768e0d484d90c"
+  },
+  "scripts/defaults/domains/code-build.json": {
+    "mtime": 1795636884.0137,
+    "seen": 1795637359.5928195,
+    "ast_hash": "bec145bcbde1cf2cebfb810cb521bafb",
+    "semantic_hash": "bec145bcbde1cf2cebfb810cb521bafb"
+  },
+  "scripts/defaults/domains/ops-checklist.json": {
+    "mtime": 1795636884.0147052,
+    "seen": 1795637359.5928216,
+    "ast_hash": "ab563b4fae5438eb5b139a65c92ca259",
+    "semantic_hash": "ab563b4fae5438eb5b139a65c92ca259"
+  },
+  "scripts/defaults/domains/pm-ba-content.json": {
+    "mtime": 1795636884.0157518,
+    "seen": 1795637359.5928233,
+    "ast_hash": "4ca3dd88448edbf9ad8bf5ba14fd42f1",
+    "semantic_hash": "4ca3dd88448edbf9ad8bf5ba14fd42f1"
+  },
+  "scripts/defaults/domains/research-rca.json": {
+    "mtime": 1795636884.0162754,
+    "seen": 1795637359.5928252,
+    "ast_hash": "3e9626eed0d14fe32652ac0c28f79b68",
+    "semantic_hash": "3e9626eed0d14fe32652ac0c28f79b68"
+  },
+  "scripts/tdq_domains.py": {
+    "mtime": 1795636884.0168054,
+    "seen": 1795637359.5991688,
+    "ast_hash": "ea414849f0d7b1841091da0336cb0aec",
+    "semantic_hash": "ea414849f0d7b1841091da0336cb0aec"
   }
 }

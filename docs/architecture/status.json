@@ -13,9 +13,14 @@
     "Source file modified: scripts/tdq_state.py",
     "Source file modified: scripts/tdq_team.py",
     "Source file modified: scripts/tdq_timing.py",
+    "Source file added: scripts/defaults/domains/code-build.json",
+    "Source file added: scripts/defaults/domains/ops-checklist.json",
+    "Source file added: scripts/defaults/domains/pm-ba-content.json",
+    "Source file added: scripts/defaults/domains/research-rca.json",
     "Source file added: scripts/defaults/mcp-policy.default.json",
     "Source file added: scripts/mcp_policy.py",
+    "Source file added: scripts/tdq_domains.py",
     "Source file added: scripts/tdq_lease.py"
   ],
-  "checked_at": "2026-11-25T20:00:58Z"
+  "checked_at": "2026-11-25T20:09:06Z"
 }
