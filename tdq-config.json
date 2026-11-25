@@ -60,5 +60,19 @@
         "use_for": "bao-mat-va-leo-thang"
       }
     ]
+  },
+  "p0": {
+    "lease_enabled": true,
+    "lease_ttl_sec": 300,
+    "breaker_enabled": true,
+    "breaker_consecutive_failures": 3,
+    "mcp_quarantine_enabled": true,
+    "mcp_mode": "balanced",
+    "oldest_dispatch_share": 4,
+    "budget_caps": {
+      "soft_warn_ratio": 0.8,
+      "hard_stop_tokens": null,
+      "hard_stop_usd": null
+    }
   }
 }
