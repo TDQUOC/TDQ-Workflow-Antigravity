@@ -1453,10 +1453,10 @@
     "semantic_hash": "be7b16d4ffbe35122eb920c34b4d91bb"
   },
   "hooks/rust/tdq-dispatch/src/lock.rs": {
-    "mtime": 1795100827.2858493,
-    "seen": 1795116774.7928479,
-    "ast_hash": "d21362010618f3436a1cf3c62c42efc9",
-    "semantic_hash": "d21362010618f3436a1cf3c62c42efc9"
+    "mtime": 1795623406.0227897,
+    "seen": 1795623486.8487067,
+    "ast_hash": "963756e262fc5a6340776160ff62500d",
+    "semantic_hash": "963756e262fc5a6340776160ff62500d"
   },
   "hooks/rust/tdq-dispatch/src/main.rs": {
     "mtime": 1795368217.7202013,

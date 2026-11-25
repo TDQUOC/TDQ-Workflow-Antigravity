@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
-  "status": "current",
-  "reasons": [],
-  "checked_at": "2026-11-25T16:01:23Z"
+  "status": "stale",
+  "reasons": [
+    "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs"
+  ],
+  "checked_at": "2026-11-25T16:17:57Z"
 }
