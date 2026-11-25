@@ -132,10 +132,10 @@
     "semantic_hash": "811e4b117a06f071c1ea26eb9c2a2d3d"
   },
   "scripts/tdq_state.py": {
-    "mtime": 1795227491.509077,
-    "seen": 1795229840.9627583,
-    "ast_hash": "4143222c40f444fdb50be50a42823932",
-    "semantic_hash": "4143222c40f444fdb50be50a42823932"
+    "mtime": 1795625105.5972493,
+    "seen": 1795625564.9588797,
+    "ast_hash": "3461d7efc96be1773c43141ab244c74e",
+    "semantic_hash": "3461d7efc96be1773c43141ab244c74e"
   },
   "scripts/token_audit.py": {
     "mtime": 1795192836.132121,
@@ -1423,10 +1423,10 @@
     "semantic_hash": "fb72489d5219e181252f6fe2d3cfd483"
   },
   "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs": {
-    "mtime": 1795308539.4472284,
-    "seen": 1795327395.7648778,
-    "ast_hash": "4e70cd213fbcbdf99b86da739743c94f",
-    "semantic_hash": "4e70cd213fbcbdf99b86da739743c94f"
+    "mtime": 1795625530.3037965,
+    "seen": 1795625564.9307234,
+    "ast_hash": "14259b94e7eda7ea89029c389176f8f3",
+    "semantic_hash": "14259b94e7eda7ea89029c389176f8f3"
   },
   "hooks/rust/tdq-dispatch/src/events/session_start.rs": {
     "mtime": 1795227491.459285,
