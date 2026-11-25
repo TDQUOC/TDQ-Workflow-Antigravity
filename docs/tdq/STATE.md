@@ -1,28 +1,28 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-25T17:48:18+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-25T23:10:58+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-25-1633-paperclip-3phase-dev-plan |
-| Work kind | investigate |
+| Request | 2026-11-25-1834-p0-runtime-safety-rust-parity |
+| Work kind | build |
 | Lane | full |
-| Phase | report |
-| Spec | docs/tdq/spec/2026-11-25-1633-paperclip-3phase-dev-plan.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-25-1633-paperclip-3phase-dev-plan.md — ✔ approved |
+| Phase | implement |
+| Spec | docs/tdq/spec/2026-11-25-1834-p0-runtime-safety-rust-parity.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-25-1834-p0-runtime-safety-rust-parity.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
 | QC level | ultra |
-| Run mode | main |
+| Run mode | subagent |
 
 ## Where we are
-QC has PASSed. Forbidden: Committing or pushing before the user asks for it.
+plan_approved = true and implement_mode = subagent. Forbidden: Doing a task the map marked as dispatched yourself on main; merging before `check` passes; leaving several tasks marked [~].
 
 ## What comes next
-Write docs/tdq/reports/<slug>.html + Markdown: before/after state & flow, what was tested & actual test results; ask about commit.
+Assign the WHOLE plan first (step 0), then release wave by wave to sub-agents, merging one wave before releasing the next — the leader only does what cannot be split.
 ```
-python3 scripts/tdq_state.py set phase=idle
+python3 scripts/tdq_state.py set phase=qc
 ```
-Done when: The report is written and the user has been asked about committing
+Done when: Every task in the plan is ticked [x] and no leftover worktree remains
 
 > Write state only through `python3 scripts/tdq_state.py …`. Unsure where you stand → run `tdq_state.py next`.
