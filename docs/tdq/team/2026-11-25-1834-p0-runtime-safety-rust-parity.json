@@ -1,0 +1,197 @@
+{
+  "slug": "2026-11-25-1834-p0-runtime-safety-rust-parity",
+  "plan_file": "docs\\tdq\\plan\\2026-11-25-1834-p0-runtime-safety-rust-parity.md",
+  "plan_sha": "da71132e3dab35ab6e7f6e977a16689ae458070ffdbf4ed69c0a0431da71184d",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "ae035349c739cf461c1d1a499573858954dd72df5bfe55805d45faece0ead27b",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_lease.py",
+        "scripts/defaults/mcp-policy.default.json",
+        "tests/test_tdq_lease.py"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_config.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/lock.rs"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py"
+      ],
+      "dot": 2
+    },
+    "T2.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/mcp_policy.py",
+        "tests/test_mcp_policy.py"
+      ],
+      "dot": 7
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_team.py",
+        "tests/test_tdq_queue.py"
+      ],
+      "dot": 3
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_timing.py",
+        "tests/test_tdq_timing_budget.py"
+      ],
+      "dot": 3
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs"
+      ],
+      "dot": 8
+    },
+    "T3.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/hooks.json",
+        "tools/patches/agy_manifests.py"
+      ],
+      "dot": 8
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/lsp_gate.py",
+        "hooks/scripts/edit_gate.py",
+        "hooks/scripts/bash_gate.py"
+      ],
+      "dot": 8
+    },
+    "T3.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_build_portable.py"
+      ],
+      "dot": 8
+    },
+    "T4.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 9
+    },
+    "T5.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-25-1834-p0-runtime-safety-rust-parity/log-verify.json"
+      ],
+      "dot": 10,
+      "worktree_required": false
+    },
+    "T5.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-25-1834-p0-runtime-safety-rust-parity.md",
+        "docs/tdq/reports/2026-11-25-1834-p0-runtime-safety-rust-parity.md",
+        "docs/tdq/reports/2026-11-25-1834-p0-runtime-safety-rust-parity.html"
+      ],
+      "dot": 11
+    },
+    "QC1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/defaults/mcp-policy.default.json",
+        "scripts/mcp_policy.py"
+      ],
+      "dot": 2
+    },
+    "QC1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_lease.py",
+        "scripts/mcp_policy.py"
+      ],
+      "dot": 3
+    },
+    "QC1.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/mcp_policy.py",
+        "hooks/scripts/lsp_gate.py",
+        "tests/test_compliance_protocol.py"
+      ],
+      "dot": 4
+    },
+    "QC1.4": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_lease.py",
+        "docs/tdq/report/2026-09-03-1648-kiem-da-nen-tang-host-tuong-thich.md"
+      ],
+      "dot": 5
+    },
+    "QC1.5": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "scripts/mcp_policy.py",
+        "hooks/scripts/lsp_gate.py",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
+        "tests/test_mcp_policy.py"
+      ],
+      "dot": 6
+    },
+    "QC2.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/bash_gate.py",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
+        "tests/test_bash_gate.py"
+      ],
+      "dot": 1
+    },
+    "QC2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs"
+      ],
+      "dot": 2
+    }
+  }
+}

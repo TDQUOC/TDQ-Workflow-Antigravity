@@ -69,7 +69,7 @@ def generate_hooks_json(plugin_root: Path) -> None:
         "read_file|view_file",
         "run_command",
         "grep_search|find_by_name|list_dir|search_directory|find_file|list_directory",
-        "mcp_.*lsp_.*|call_mcp_tool",
+        "mcp_.*|call_mcp_tool",
         "ask_question|ask_user_question",
         "invoke_subagent|swarm|define_subagent",
     )

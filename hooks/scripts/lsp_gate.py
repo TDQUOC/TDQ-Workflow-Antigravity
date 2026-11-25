@@ -143,6 +143,51 @@ def _phan_xu_lenh(cwd, phien, op, tool_input):
     return []
 
 
+def _tach_mcp_server_tool(tool_name, tool_input, policy=None):
+    """Extract (server, tool) from Antigravity/Claude MCP tool names or inputs."""
+    if tool_name == "call_mcp_tool" and isinstance(tool_input, dict):
+        srv = str(tool_input.get("ServerName") or tool_input.get("server") or "").strip()
+        tn = str(
+            tool_input.get("ToolName")
+            or tool_input.get("tool")
+            or tool_input.get("Name")
+            or tool_input.get("name")
+            or ""
+        ).strip()
+        return (srv, tn) if (srv and tn) else (None, None)
+    from mcp_policy import split_eager_mcp_name
+
+    return split_eager_mcp_name(tool_name, policy=policy)
+
+
+def _kiem_mcp_ngoai_lsp(cwd, payload, tool_name, tool_input):
+    """Enforce P0 MCP quarantine on non-tdq-lsp MCP tool calls; return True if blocked."""
+    if not (tool_name == "call_mcp_tool" or tool_name.startswith("mcp_")):
+        return False
+    from tdq_config import load_config
+
+    cfg = load_config(cwd)
+    if not (cfg.get("p0") or {}).get("mcp_quarantine_enabled", True):
+        return False
+    from mcp_policy import evaluate_tool_call, is_denied, load_policy
+
+    policy, _corrupt = load_policy(cwd)
+    server, tname = _tach_mcp_server_tool(tool_name, tool_input, policy=policy)
+    if not server or not tname:
+        return False
+    schema_obj = tool_input.get("_mcp_schema") if isinstance(tool_input, dict) else None
+    if not isinstance(schema_obj, dict):
+        schema_obj = None
+    ket_qua = evaluate_tool_call(cwd, server, tname, schema_obj=schema_obj)
+    if is_denied(ket_qua):
+        reason = str(ket_qua.get("reason") or f"MCP tool {server}/{tname} quarantined pending approval")
+        hint = str(ket_qua.get("hint") or f"py -3 scripts/mcp_policy.py approve {server} {tname}")
+        _log(f"non-tdq-lsp mcp deny server={server} tool={tname} reason={reason}")
+        _common.block(cwd, payload, "TDQ:READONLY", [reason, f"Approve: {hint}"], day_du=True)
+        return True
+    return False
+
+
 def main():
     try:
         payload = _common.read_payload()
@@ -155,6 +200,8 @@ def main():
         sys.exit(0)
     op = ten_lenh_tdq_lsp(tool_name)
     if op is None:
+        if _kiem_mcp_ngoai_lsp(cwd, payload, tool_name, tool_input):
+            return
         _log(f"non-tdq-lsp tool={tool_name!r} — allow")
         sys.exit(0)
     if not isinstance(tool_input, dict):

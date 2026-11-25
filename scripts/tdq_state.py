@@ -122,6 +122,7 @@ USAGE = ("Usage: tdq_state.py next [--brief] | get [key] | "
          "eval-enable --by \"<user words>\" | "
          "lech add --q Qn --nguong \"<..>\" --do \"<..>\" --chon \"<..>\" --ly-do \"<..>\" | "
          "lech list [--json] | lech duyet|bac <id> --by \"<user sentence>\" | "
+         "reset-breaker [--json] | "
          "reset | phases-doc | modes [--json]")
 
 EXIT_SYNTAX = 2
@@ -256,6 +257,48 @@ def work_kind_hieu_luc(state, warn=True):
     return normalize_work_kind(raw, warn=warn)
 
 
+def default_p0_runtime():
+    """Default additive P0 runtime guard state inside v6 schema."""
+    return {
+        "breaker": {
+            "open": False,
+            "consecutive_failures": 0,
+            "last_error": None,
+            "opened_at": None,
+        },
+        "budget": {
+            "soft_warned": False,
+            "hard_stopped": False,
+            "ratio": 0.0,
+        },
+        "quarantined_tools": [],
+    }
+
+
+def _merge_defaults_dict(raw, defaults):
+    """Return a dict preserving unknown keys and filling missing defaults."""
+    out = dict(defaults)
+    if isinstance(raw, dict):
+        out.update(raw)
+    for key, val in defaults.items():
+        if out.get(key) is None and val is not None:
+            out[key] = val
+    return out
+
+
+def _normalize_p0_runtime(raw):
+    """Non-destructively backfill p0_runtime and its nested sections."""
+    defaults = default_p0_runtime()
+    if not isinstance(raw, dict):
+        return defaults
+    out = dict(raw)
+    out["breaker"] = _merge_defaults_dict(raw.get("breaker"), defaults["breaker"])
+    out["budget"] = _merge_defaults_dict(raw.get("budget"), defaults["budget"])
+    qtools = raw.get("quarantined_tools")
+    out["quarantined_tools"] = list(qtools) if isinstance(qtools, list) else []
+    return out
+
+
 def default_state():
     return {
         "schema_version": 6,
@@ -340,6 +383,8 @@ def default_state():
         # phase CHANGE. Re-entering an old phase still adds a mark — that is what
         # counting re-entries is built on.
         "phase_history": [],
+        # Additive P0 runtime guard state inside v6 schema
+        "p0_runtime": default_p0_runtime(),
         "updated_at": None,
     }
 
@@ -487,6 +532,7 @@ def load(cwd, heal=True):
     # writes a state without it and nothing downstream ever reads it again.
     state.pop("diagrams", None)
     state["phase"] = _nang_pha_da_go(state.get("phase"))
+    state["p0_runtime"] = _normalize_p0_runtime(state.get("p0_runtime"))
     return state
 
 
@@ -576,25 +622,124 @@ def _atomic_write(path, text):
                 pass
 
 
+def _p0_lease_enabled(cwd):
+    """Return whether sidecar locking for state saves is enabled in p0 config."""
+    try:
+        import tdq_config
+
+        cfg = tdq_config.load_config(cwd=cwd)
+    except (ImportError, OSError, ValueError, TypeError, AttributeError):
+        return True
+    p0_cfg = cfg.get("p0") if isinstance(cfg, dict) else None
+    if isinstance(p0_cfg, dict) and isinstance(p0_cfg.get("lease_enabled"), bool):
+        return p0_cfg["lease_enabled"]
+    return True
+
+
+def _p0_breaker_threshold(cwd):
+    """Return consecutive failure threshold for the P0 circuit breaker."""
+    try:
+        import tdq_config
+
+        cfg = tdq_config.load_config(cwd=cwd)
+    except (ImportError, OSError, ValueError, TypeError, AttributeError):
+        return 3
+    p0_cfg = cfg.get("p0") if isinstance(cfg, dict) else None
+    if isinstance(p0_cfg, dict):
+        raw = p0_cfg.get("breaker_consecutive_failures", 3)
+        if not isinstance(raw, bool) and isinstance(raw, int) and raw >= 1:
+            return raw
+    return 3
+
+
+def _with_state_sidecar_lock(cwd, fn):
+    """Run fn() under the state.json sidecar lock when lease_enabled is True."""
+    if _p0_lease_enabled(cwd):
+        import tdq_lease
+
+        with tdq_lease.acquire_sidecar_lock(state_path(cwd)):
+            return fn()
+    return fn()
+
+
+def _save_unlocked(cwd, state, expect_updated_at=_MISSING):
+    """Write state.json atomically and refresh STATE.md without acquiring lock."""
+    if expect_updated_at is not _MISSING:
+        on_disk = load(cwd, heal=False)
+        if on_disk and on_disk.get("updated_at") != expect_updated_at:
+            _warn(
+                f"state was written by another process at {on_disk.get('updated_at')}"
+                " — overwriting anyway, check if two sessions are running."
+            )
+    state["updated_at"] = now_iso()
+    payload = json.dumps(state, ensure_ascii=False, indent=2) + "\n"
+    _atomic_write(state_path(cwd), payload)
+    try:
+        _atomic_write(state_md_path(cwd), render_state_md(cwd, state))
+    except OSError as exc:  # a broken mirror must not block work
+        _warn(f"could not write {STATE_MD_REL}: {exc.__class__.__name__}")
+    return state
+
+
 def save(cwd, state, expect_updated_at=_MISSING):
     """Atomically write state.json + regenerate STATE.md (S1, the mirror).
 
     expect_updated_at: the `updated_at` value seen at read time. If the disk now
-    differs → another session has just written: warn but STILL write (S7, no
-    multi-session lock).
+    differs -> another session has just written: warn but STILL write (S7).
     """
-    if expect_updated_at is not _MISSING:
-        on_disk = load(cwd, heal=False)
-        if on_disk and on_disk.get("updated_at") != expect_updated_at:
-            _warn(f"state was written by another process at {on_disk.get('updated_at')} — "
-                  "overwriting anyway, check if two sessions are running.")
-    state["updated_at"] = now_iso()
-    _atomic_write(state_path(cwd), json.dumps(state, ensure_ascii=False, indent=2) + "\n")
-    try:
-        _atomic_write(state_md_path(cwd), render_state_md(cwd, state))
-    except OSError as exc:                       # a broken mirror must not block work
-        _warn(f"could not write {STATE_MD_REL}: {exc.__class__.__name__}")
-    return state
+    return _with_state_sidecar_lock(
+        cwd, lambda: _save_unlocked(cwd, state, expect_updated_at)
+    )
+
+
+def _safe_failure_count(raw):
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        return 0
+    return raw
+
+
+def record_p0_failure(cwd, error_msg=""):
+    """Increment P0 consecutive failures and open breaker at threshold."""
+    threshold = _p0_breaker_threshold(cwd)
+
+    def _apply():
+        state = load(cwd) or default_state()
+        p0_rt = _normalize_p0_runtime(state.get("p0_runtime"))
+        breaker = p0_rt["breaker"]
+        count = _safe_failure_count(breaker.get("consecutive_failures")) + 1
+        breaker["consecutive_failures"] = count
+        breaker["last_error"] = None if error_msg is None else str(error_msg)[:400]
+        if count >= threshold:
+            breaker["open"] = True
+            breaker["opened_at"] = breaker.get("opened_at") or now_iso()
+            _warn(
+                f"P0 circuit breaker opened at {count} failure(s): "
+                f"{breaker['last_error']}"
+            )
+        else:
+            _info(f"P0 failure {count}/{threshold}: {breaker['last_error']}")
+        state["p0_runtime"] = p0_rt
+        _save_unlocked(cwd, state)
+        return p0_rt
+
+    return _with_state_sidecar_lock(cwd, _apply)
+
+
+def reset_p0_breaker(cwd):
+    """Reset P0 breaker to closed and clear budget.hard_stopped atomically."""
+
+    def _apply():
+        state = load(cwd)
+        if state is None:
+            return default_p0_runtime()
+        p0_rt = _normalize_p0_runtime(state.get("p0_runtime"))
+        p0_rt["breaker"] = default_p0_runtime()["breaker"]
+        p0_rt["budget"]["hard_stopped"] = False
+        state["p0_runtime"] = p0_rt
+        _save_unlocked(cwd, state)
+        return p0_rt
+
+    return _with_state_sidecar_lock(cwd, _apply)
 
 
 def xoa_cay(path, bo_qua_loi=False):
@@ -3488,6 +3633,9 @@ def cli(argv):
     if cmd == "hotfix":
         return _cli_hotfix(cwd, argv[1:])
 
+    if cmd == "reset-breaker":
+        return _cli_reset_breaker(cwd, argv[1:])
+
     if cmd == "reset":
         argv, want_json = _pop_json_flag(argv)
         state = default_state()
@@ -3496,6 +3644,19 @@ def cli(argv):
         return
 
     _fail(f"Invalid command: {cmd}")
+
+
+def _cli_reset_breaker(cwd, rest):
+    """`reset-breaker [--json]` — close P0 circuit breaker and clear hard_stopped."""
+    rest, want_json = _pop_json_flag(list(rest))
+    if rest:
+        _fail(f"reset-breaker: unexpected argument {rest[0]!r}.")
+    p0_rt = reset_p0_breaker(cwd)
+    _info("P0 circuit breaker reset (open=False, hard_stopped=False)")
+    if want_json:
+        print(json.dumps(p0_rt, ensure_ascii=False, indent=2))
+    else:
+        print("✅ reset-breaker: open=False hard_stopped=False")
 
 
 def _cli_hotfix(cwd, rest):

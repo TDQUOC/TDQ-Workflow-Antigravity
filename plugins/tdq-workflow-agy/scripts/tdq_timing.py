@@ -25,6 +25,7 @@ import utf8_io  # noqa: E402,F401
 import argparse
 import datetime
 import json
+import math
 import os
 import sys
 
@@ -386,6 +387,124 @@ def _role_telemetry_markdown(roles):
             f"{rate} | {row['retries']} | {avg} | {models} |"
         )
     return lines
+
+
+def _finite_nonneg(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    num = float(value)
+    return num if math.isfinite(num) and num >= 0 else None
+
+
+def _positive_cap(value):
+    num = _finite_nonneg(value)
+    return num if num is not None and num > 0 else None
+
+
+def _extract_budget_caps(cfg):
+    if not isinstance(cfg, dict):
+        return {}
+    if "p0" in cfg:
+        p0 = cfg.get("p0")
+        raw = p0.get("budget_caps") if isinstance(p0, dict) else None
+    else:
+        raw = cfg.get("budget_caps")
+    return raw if isinstance(raw, dict) else {}
+
+
+def _load_budget_caps(cwd, config):
+    cfg = config
+    if cfg is None:
+        try:
+            import tdq_config
+
+            cfg = tdq_config.load_config(cwd)
+        except (ImportError, OSError, ValueError, TypeError, RuntimeError):
+            cfg = {}
+    caps = _extract_budget_caps(cfg)
+    ratio = _positive_cap(caps.get("soft_warn_ratio"))
+    soft_warn = ratio if ratio is not None and ratio <= 1.0 else 0.8
+    return (
+        soft_warn,
+        _positive_cap(caps.get("hard_stop_tokens")),
+        _positive_cap(caps.get("hard_stop_usd")),
+    )
+
+
+def _row_tokens(row):
+    for key in ("tokens", "total_tokens"):
+        val = _finite_nonneg(row.get(key))
+        if val is not None:
+            return val
+    inp = _finite_nonneg(row.get("input_tokens")) or 0.0
+    out = _finite_nonneg(row.get("output_tokens")) or 0.0
+    return inp + out
+
+
+def _row_cost_usd(row):
+    for key in ("cost_usd", "usd"):
+        val = _finite_nonneg(row.get(key))
+        if val is not None:
+            return val
+    return 0.0
+
+
+def _sum_telemetry_usage(path):
+    if not os.path.isfile(path):
+        return 0.0, 0.0
+    total_tokens = 0.0
+    total_usd = 0.0
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line:
+                    continue
+                row = _parse_telemetry_line(line)
+                if row is None:
+                    continue
+                total_tokens += _row_tokens(row)
+                total_usd += _row_cost_usd(row)
+    except OSError:
+        return 0.0, 0.0
+    return total_tokens, total_usd
+
+
+def check_budget_status(cwd, config=None):
+    """Evaluate token and USD usage in telemetry against configured P0 caps."""
+    soft_warn, token_cap, usd_cap = _load_budget_caps(cwd, config)
+    if token_cap is None and usd_cap is None:
+        return {"state": "ok", "ratio": 0.0, "tokens": 0, "cost_usd": 0.0}
+
+    total_tokens, total_usd = _sum_telemetry_usage(_telemetry_path(cwd))
+    total_usd = round(total_usd, 9)
+    ratios = []
+    if token_cap is not None:
+        ratios.append(total_tokens / token_cap)
+    if usd_cap is not None:
+        ratios.append(total_usd / usd_cap)
+
+    ratio = round(max(ratios, default=0.0), 9)
+    if ratio >= 1.0:
+        state = "hard_stop"
+    elif ratio >= soft_warn:
+        state = "soft_warn"
+    else:
+        state = "ok"
+
+    out_ratio = round(ratio, 6)
+    out_usd = round(total_usd, 6)
+    if state != "ok":
+        _log(
+            f"budget {state}: ratio={out_ratio} "
+            f"tokens={int(total_tokens)} cost_usd={out_usd}"
+        )
+    return {
+        "state": state,
+        "ratio": out_ratio,
+        "tokens": int(total_tokens),
+        "cost_usd": out_usd,
+    }
 
 
 def tong_hop(state, ket_thuc, transcript_dir=None, *, project_dir=None, host="auto", session_ids=None,

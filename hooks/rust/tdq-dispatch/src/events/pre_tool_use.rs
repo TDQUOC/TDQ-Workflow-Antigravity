@@ -18,6 +18,8 @@ use crate::storage::{
     unix_timestamp_f64, TdqState,
 };
 use crate::RouteOutcome;
+use serde_json::Value;
+use sha2::{Digest, Sha256};
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -291,6 +293,593 @@ fn tdq_log_enabled() -> bool {
     std::env::var("TDQ_LOG").as_deref() != Ok("0")
 }
 
+static EMBEDDED_MCP_POLICY_JSON: &str =
+    include_str!("../../../../../scripts/defaults/mcp-policy.default.json");
+
+const DESTRUCTIVE_VERBS: &[&str] = &[
+    "delete", "remove", "drop", "destroy", "exec", "execute", "run", "push", "deploy", "reset",
+];
+
+fn read_json_object(path: &Path) -> Result<Option<Value>, ()> {
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let Ok(raw) = fs::read_to_string(path) else {
+        return Err(());
+    };
+    let Ok(val) = serde_json::from_str::<Value>(&raw) else {
+        return Err(());
+    };
+    if val.is_object() {
+        Ok(Some(val))
+    } else {
+        Err(())
+    }
+}
+
+fn read_p0_config_val(workspace_root: &Path) -> Option<Value> {
+    let cfg_path = workspace_root.join("docs").join("tdq").join("config.json");
+    let Ok(Some(val)) = read_json_object(&cfg_path) else {
+        return None;
+    };
+    val.get("p0").cloned()
+}
+
+fn read_p0_bool(workspace_root: &Path, key: &str, default_val: bool) -> bool {
+    read_p0_config_val(workspace_root)
+        .and_then(|p| p.get(key).and_then(|v| v.as_bool()))
+        .unwrap_or(default_val)
+}
+
+fn read_p0_mcp_mode(workspace_root: &Path) -> String {
+    read_p0_config_val(workspace_root)
+        .and_then(|p| p.get("mcp_mode").and_then(|v| v.as_str()).map(|s| s.trim().to_ascii_lowercase()))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "balanced".to_string())
+}
+
+fn split_p0_unlock_tokens(seg: &str) -> Option<Vec<String>> {
+    let mut tokens = Vec::new();
+    let mut cur = String::new();
+    let mut quote: Option<char> = None;
+    let mut in_tok = false;
+    for ch in seg.chars() {
+        match quote {
+            Some(q) if ch == q => quote = None,
+            Some(_) => cur.push(ch),
+            None if ch == '\'' || ch == '"' => {
+                quote = Some(ch);
+                in_tok = true;
+            }
+            None if ch.is_whitespace() => {
+                if in_tok {
+                    tokens.push(std::mem::take(&mut cur));
+                    in_tok = false;
+                }
+            }
+            None => {
+                cur.push(ch);
+                in_tok = true;
+            }
+        }
+    }
+    if quote.is_some() {
+        return None;
+    }
+    if in_tok {
+        tokens.push(cur);
+    }
+    if tokens.is_empty() { None } else { Some(tokens) }
+}
+
+fn has_valid_p0_subcmd(script_name: &str, args: &[String]) -> bool {
+    let mut pos: Option<String> = None;
+    let mut skip_next = false;
+    for arg in args {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if arg == "--cwd" || arg == "--project" {
+            skip_next = true;
+            continue;
+        }
+        if arg.starts_with('-') {
+            continue;
+        }
+        pos = Some(arg.to_ascii_lowercase());
+        break;
+    }
+    matches!(
+        (script_name, pos.as_deref()),
+        ("tdq_state.py", Some("reset-breaker")) | ("mcp_policy.py", Some("approve" | "reset"))
+    )
+}
+
+fn is_p0_python_unlock_target(tokens: &[String]) -> bool {
+    let base = tokens[0].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+    let runner = base.strip_suffix(".exe").unwrap_or(&base);
+    if !matches!(runner, "py" | "python" | "python3") && !runner.starts_with("python3.") {
+        return false;
+    }
+    let mut idx = 1usize;
+    while idx < tokens.len() {
+        let tok = tokens[idx].as_str();
+        if matches!(tok, "-3" | "-2" | "-B" | "-E" | "-I" | "-O" | "-OO" | "-S" | "-s" | "-u" | "-v" | "-q")
+            || (tok.starts_with("-X") && tok.len() > 2)
+        {
+            idx += 1;
+        } else if tok == "-X" && idx + 1 < tokens.len() {
+            idx += 2;
+        } else {
+            break;
+        }
+    }
+    if idx >= tokens.len() {
+        return false;
+    }
+    let script_name = tokens[idx].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+    if script_name != "tdq_state.py" && script_name != "mcp_policy.py" {
+        return false;
+    }
+    has_valid_p0_subcmd(&script_name, &tokens[idx + 1..])
+}
+
+fn is_p0_unlock_command(cmd: &str) -> bool {
+    let trimmed = cmd.trim();
+    if trimmed.is_empty()
+        || trimmed.contains('|')
+        || trimmed.contains('`')
+        || trimmed.contains("$(")
+        || trimmed.contains('\n')
+        || trimmed.contains('\r')
+        || trimmed.contains('<')
+        || trimmed.contains('>')
+        || trimmed.contains('#')
+    {
+        return false;
+    }
+    let mut has_unlock = false;
+    for seg in trimmed
+        .split("&&")
+        .flat_map(|s| s.split(';'))
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if seg.contains('&') {
+            return false;
+        }
+        let Some(tokens) = split_p0_unlock_tokens(seg) else {
+            return false;
+        };
+        let head = tokens[0].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+        if head == "cd" && (tokens.len() == 2 || (tokens.len() == 3 && tokens[1].eq_ignore_ascii_case("/d"))) {
+            continue;
+        }
+        if !is_p0_python_unlock_target(&tokens) {
+            return false;
+        }
+        has_unlock = true;
+    }
+    has_unlock
+}
+
+fn json_finite_nonneg(val: Option<&Value>) -> Option<f64> {
+    let v = val?;
+    if v.is_boolean() {
+        return None;
+    }
+    v.as_f64().filter(|n| n.is_finite() && *n >= 0.0)
+}
+
+fn load_budget_caps_rust(workspace_root: &Path) -> (Option<f64>, Option<f64>) {
+    let cfg_path = workspace_root.join("docs").join("tdq").join("config.json");
+    let Ok(Some(cfg)) = read_json_object(&cfg_path) else {
+        return (None, None);
+    };
+    let caps = if let Some(p0) = cfg.get("p0") {
+        p0.get("budget_caps").and_then(|v| v.as_object())
+    } else {
+        cfg.get("budget_caps").and_then(|v| v.as_object())
+    };
+    let Some(caps_obj) = caps else {
+        return (None, None);
+    };
+    let token_cap = json_finite_nonneg(caps_obj.get("hard_stop_tokens")).filter(|n| *n > 0.0);
+    let usd_cap = json_finite_nonneg(caps_obj.get("hard_stop_usd")).filter(|n| *n > 0.0);
+    (token_cap, usd_cap)
+}
+
+fn sum_telemetry_usage_rust(telemetry_path: &Path) -> (f64, f64) {
+    let Ok(raw) = fs::read_to_string(telemetry_path) else {
+        return (0.0, 0.0);
+    };
+    let (mut total_tokens, mut total_usd) = (0.0_f64, 0.0_f64);
+    for line in raw.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let Ok(Value::Object(row)) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        let row_toks = json_finite_nonneg(row.get("tokens"))
+            .or_else(|| json_finite_nonneg(row.get("total_tokens")))
+            .unwrap_or_else(|| {
+                json_finite_nonneg(row.get("input_tokens")).unwrap_or(0.0)
+                    + json_finite_nonneg(row.get("output_tokens")).unwrap_or(0.0)
+            });
+        let row_usd = json_finite_nonneg(row.get("cost_usd"))
+            .or_else(|| json_finite_nonneg(row.get("usd")))
+            .unwrap_or(0.0);
+        total_tokens += row_toks;
+        total_usd += row_usd;
+    }
+    (total_tokens, total_usd)
+}
+
+fn is_budget_hard_stop_reached(workspace_root: &Path) -> bool {
+    let (token_cap, usd_cap) = load_budget_caps_rust(workspace_root);
+    if token_cap.is_none() && usd_cap.is_none() {
+        return false;
+    }
+    let tel_path = workspace_root.join("docs").join("tdq").join(".tdq-agent-telemetry.jsonl");
+    let (total_tokens, raw_usd) = sum_telemetry_usage_rust(&tel_path);
+    let total_usd = (raw_usd * 1_000_000_000.0).round() / 1_000_000_000.0;
+    let mut max_ratio = 0.0_f64;
+    if let Some(tc) = token_cap {
+        max_ratio = max_ratio.max(total_tokens / tc);
+    }
+    if let Some(uc) = usd_cap {
+        max_ratio = max_ratio.max(total_usd / uc);
+    }
+    ((max_ratio * 1_000_000_000.0).round() / 1_000_000_000.0) >= 1.0
+}
+
+/// Evaluate P0 Circuit Breaker & Budget hard_stop state from `docs/tdq/state.json` and telemetry.
+pub(crate) fn check_p0_runtime_guard(workspace_root: &Path, sid: &str) -> Option<RouteOutcome> {
+    let spath = workspace_root.join("docs").join("tdq").join("state.json");
+    let state_val = read_json_object(&spath).ok().flatten();
+    let p0_rt = state_val
+        .as_ref()
+        .and_then(|v| v.get("p0_runtime"))
+        .and_then(|v| v.as_object());
+    let breaker_open = p0_rt
+        .and_then(|rt| rt.get("breaker"))
+        .and_then(|b| b.get("open"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if read_p0_bool(workspace_root, "breaker_enabled", true) && breaker_open {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "READONLY",
+            "P0 circuit breaker is OPEN after consecutive failures. Run: py -3 scripts/tdq_state.py reset-breaker",
+        ));
+    }
+    let hard_stopped = p0_rt
+        .and_then(|rt| rt.get("budget"))
+        .and_then(|b| b.get("hard_stopped"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if hard_stopped || is_budget_hard_stop_reached(workspace_root) {
+        return Some(deny_with_block(
+            workspace_root,
+            sid,
+            "READONLY",
+            "P0 budget hard_stop reached. Raise cap in docs/tdq/config.json or run: py -3 scripts/tdq_state.py reset-breaker",
+        ));
+    }
+    None
+}
+
+fn load_mcp_baseline(workspace_root: &Path) -> Value {
+    let default_path = workspace_root
+        .join("scripts")
+        .join("defaults")
+        .join("mcp-policy.default.json");
+    if let Ok(Some(val)) = read_json_object(&default_path) {
+        return val;
+    }
+    serde_json::from_str::<Value>(EMBEDDED_MCP_POLICY_JSON).unwrap_or_else(|_| Value::Object(Default::default()))
+}
+
+fn merge_policy_override(baseline: &Value, override_val: &Value) -> Result<Value, ()> {
+    let mut merged = baseline.as_object().cloned().unwrap_or_default();
+    let Some(ov) = override_val.as_object() else {
+        return Err(());
+    };
+    if let Some(mode_v) = ov.get("mode") {
+        let Some(mode_s) = mode_v.as_str().map(str::trim).filter(|s| !s.is_empty()) else {
+            return Err(());
+        };
+        merged.insert("mode".to_string(), Value::String(mode_s.to_ascii_lowercase()));
+    }
+    for key in ["trusted_servers", "read_prefixes", "write_prefixes"] {
+        if let Some(v) = ov.get(key) {
+            if !v.is_array() {
+                return Err(());
+            }
+            merged.insert(key.to_string(), v.clone());
+        }
+    }
+    if let Some(app_v) = ov.get("approved_tools") {
+        let Some(app_obj) = app_v.as_object() else {
+            return Err(());
+        };
+        let mut base_app = merged
+            .get("approved_tools")
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+        for (k, v) in app_obj {
+            base_app.insert(k.clone(), v.clone());
+        }
+        merged.insert("approved_tools".to_string(), Value::Object(base_app));
+    }
+    Ok(Value::Object(merged))
+}
+
+fn load_mcp_policy_merged(workspace_root: &Path) -> (Value, bool) {
+    let baseline = load_mcp_baseline(workspace_root);
+    let proj_path = workspace_root.join("docs").join("tdq").join("mcp-policy.json");
+    match read_json_object(&proj_path) {
+        Ok(None) => (baseline, false),
+        Ok(Some(ov)) => match merge_policy_override(&baseline, &ov) {
+            Ok(merged) => (merged, false),
+            Err(()) => (baseline, true),
+        },
+        Err(()) => (baseline, true),
+    }
+}
+
+fn extract_mcp_server_and_tool(norm: &NormalizedToolCall, policy: &Value) -> (String, String) {
+    let srv_raw = norm
+        .server_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty() && *s != "_");
+    if let Some(srv) = srv_raw {
+        return (srv.to_string(), norm.tool_name.clone());
+    }
+    if let Some(rest) = norm.tool_name.strip_prefix("mcp__") {
+        if let Some((srv, tool)) = rest.split_once("__") {
+            return (srv.to_string(), tool.to_string());
+        }
+    }
+    if let Some(rest) = norm.tool_name.strip_prefix("mcp_") {
+        if let Some((srv, tool)) = rest.split_once("__") {
+            return (srv.to_string(), tool.to_string());
+        }
+        let mut trusted = json_lower_list(policy, "trusted_servers");
+        trusted.sort_by_key(|s| std::cmp::Reverse(s.len()));
+        let rest_low = rest.to_ascii_lowercase();
+        for srv in trusted {
+            let prefix_low = format!("{}_", srv);
+            if rest_low.starts_with(&prefix_low)
+                && rest.len() > prefix_low.len()
+                && rest.is_char_boundary(srv.len())
+                && rest.is_char_boundary(srv.len() + 1)
+            {
+                return (rest[..srv.len()].to_string(), rest[srv.len() + 1..].to_string());
+            }
+        }
+        if let Some(idx) = rest_low.find("_lsp_") {
+            if rest.is_char_boundary(idx)
+                && rest.is_char_boundary(idx + 4)
+                && rest.is_char_boundary(idx + 5)
+                && !rest[..idx].contains('_')
+                && idx + 5 < rest.len()
+            {
+                return (rest[..idx + 4].to_string(), rest[idx + 5..].to_string());
+            }
+        }
+        if let Some((srv, tool)) = rest.split_once('_') {
+            return (srv.to_string(), tool.to_string());
+        }
+    }
+    (String::new(), norm.tool_name.clone())
+}
+
+fn json_lower_list(policy: &Value, key: &str) -> Vec<String> {
+    policy
+        .get(key)
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.trim().to_ascii_lowercase())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn strip_tool_prefix_lower(srv_lower: &str, tool_lower: &str) -> String {
+    if !srv_lower.is_empty() {
+        let exact_prefix = format!("mcp__{}__", srv_lower);
+        if let Some(rest) = tool_lower.strip_prefix(&exact_prefix) {
+            return rest.to_string();
+        }
+    }
+    if let Some(rest) = tool_lower.strip_prefix("mcp__") {
+        if let Some((_, tail)) = rest.split_once("__") {
+            return tail.to_string();
+        }
+    }
+    tool_lower.strip_prefix("lsp.").unwrap_or(tool_lower).to_string()
+}
+
+fn matches_any_prefix(short: &str, prefixes: &[String]) -> bool {
+    prefixes
+        .iter()
+        .any(|p| short == p || short.starts_with(p.as_str()))
+}
+
+fn is_destructive_short(short: &str) -> bool {
+    DESTRUCTIVE_VERBS
+        .iter()
+        .any(|v| short == *v || short.starts_with(v))
+}
+
+fn classify_mcp_tier_rust(server: &str, tool_name: &str, policy: &Value) -> &'static str {
+    let srv = server.trim().to_ascii_lowercase();
+    let short = strip_tool_prefix_lower(&srv, &tool_name.trim().to_ascii_lowercase());
+    let write_prefixes = json_lower_list(policy, "write_prefixes");
+    if matches_any_prefix(&short, &write_prefixes) {
+        return if is_destructive_short(&short) {
+            "destructive"
+        } else {
+            "write"
+        };
+    }
+    let trusted = json_lower_list(policy, "trusted_servers");
+    if trusted.iter().any(|t| t == &srv) || srv.contains("lsp") {
+        return "read";
+    }
+    let read_prefixes = json_lower_list(policy, "read_prefixes");
+    if matches_any_prefix(&short, &read_prefixes) {
+        return "read";
+    }
+    if is_destructive_short(&short) {
+        "destructive"
+    } else {
+        "write"
+    }
+}
+
+fn escape_json_ascii(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for ch in raw.chars() {
+        let code = ch as u32;
+        if code <= 0x7F {
+            out.push(ch);
+        } else if code <= 0xFFFF {
+            out.push_str(&format!("\\u{:04x}", code));
+        } else {
+            let adj = code - 0x1_0000;
+            out.push_str(&format!("\\u{:04x}\\u{:04x}", 0xD800 + (adj >> 10), 0xDC00 + (adj & 0x3FF)));
+        }
+    }
+    out
+}
+
+fn canonical_schema_sha256(val: Option<&Value>) -> String {
+    let empty = Value::Object(Default::default());
+    let target = val.unwrap_or(&empty);
+    let compact = serde_json::to_string(target).unwrap_or_else(|_| "{}".to_string());
+    let ascii = escape_json_ascii(&compact);
+    let mut hasher = Sha256::new();
+    hasher.update(ascii.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+fn lookup_approved_sha<'a>(
+    policy: &'a Value,
+    server: &str,
+    tool_name: &str,
+    raw_tool_name: &str,
+) -> Option<&'a str> {
+    let approved = policy.get("approved_tools")?.as_object()?;
+    let candidates = [
+        if server.is_empty() {
+            tool_name.to_string()
+        } else {
+            format!("{}::{}", server, tool_name)
+        },
+        tool_name.to_string(),
+        if server.is_empty() {
+            raw_tool_name.to_string()
+        } else {
+            format!("{}::{}", server, raw_tool_name)
+        },
+        raw_tool_name.to_string(),
+    ];
+    for k in candidates {
+        if let Some(sha) = approved.get(&k).and_then(|e| e.get("sha256")).and_then(|v| v.as_str()) {
+            return Some(sha);
+        }
+    }
+    None
+}
+
+fn effective_mcp_mode(workspace_root: &Path, policy: &Value) -> String {
+    let pol_mode = policy
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_ascii_lowercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "balanced".to_string());
+    if pol_mode != "balanced" {
+        pol_mode
+    } else {
+        read_p0_mcp_mode(workspace_root)
+    }
+}
+
+fn deny_quarantined_mcp(
+    workspace_root: &Path,
+    sid: &str,
+    server: &str,
+    tool_name: &str,
+    tier: &str,
+    corrupt: bool,
+) -> RouteOutcome {
+    if corrupt {
+        if tdq_log_enabled() {
+            eprintln!("[{}] tdq-dispatch: deny READONLY corrupt mcp-policy.json tool={}::{}", now_iso_utc(), server, tool_name);
+        }
+        return deny_with_block(
+            workspace_root,
+            sid,
+            "READONLY",
+            "Project mcp-policy.json is corrupt; write/destructive MCP tool blocked",
+        );
+    }
+    let srv_arg = if server.is_empty() { "_" } else { server };
+    let key = if server.is_empty() {
+        tool_name.to_string()
+    } else {
+        format!("{}::{}", server, tool_name)
+    };
+    if tdq_log_enabled() {
+        eprintln!("[{}] tdq-dispatch: deny READONLY quarantined tool={} tier={}", now_iso_utc(), key, tier);
+    }
+    deny_with_block(
+        workspace_root,
+        sid,
+        "READONLY",
+        &format!(
+            "MCP tool '{}' requires policy approval or schema hash changed. Run: py -3 scripts/mcp_policy.py approve {} {}",
+            key, srv_arg, tool_name
+        ),
+    )
+}
+
+/// Evaluate balanced MCP quarantine policy matching `scripts/mcp_policy.py`.
+pub(crate) fn evaluate_non_lsp_mcp_rust(
+    workspace_root: &Path,
+    norm: &NormalizedToolCall,
+    sid: &str,
+) -> Option<RouteOutcome> {
+    if !read_p0_bool(workspace_root, "mcp_quarantine_enabled", true) {
+        return None;
+    }
+    let (policy, corrupt) = load_mcp_policy_merged(workspace_root);
+    let (server, tool_name) = extract_mcp_server_and_tool(norm, &policy);
+    let tier = classify_mcp_tier_rust(&server, &tool_name, &policy);
+    let mode = effective_mcp_mode(workspace_root, &policy);
+    let srv_low = server.trim().to_ascii_lowercase();
+    let trusted = json_lower_list(&policy, "trusted_servers");
+    if mode == "balanced" && (trusted.iter().any(|t| t == &srv_low) || srv_low.contains("lsp") || tier == "read") {
+        return None;
+    }
+    if corrupt {
+        return Some(deny_quarantined_mcp(workspace_root, sid, &server, &tool_name, tier, true));
+    }
+    let sha = canonical_schema_sha256(norm.args.get("_mcp_schema"));
+    if lookup_approved_sha(&policy, &server, &tool_name, &norm.tool_name) == Some(sha.as_str()) {
+        return None;
+    }
+    Some(deny_quarantined_mcp(workspace_root, sid, &server, &tool_name, tier, false))
+}
+
 fn collect_required_git_grants(violations: &[GitPolicyViolation]) -> Vec<&'static str> {
     let mut keys = Vec::new();
     for v in violations {
@@ -527,6 +1116,13 @@ fn handle_edit_tool(
     let Some(rel_target) = resolve_rel_in_project(raw_target, workspace_root) else {
         return RouteOutcome::DelegatePython;
     };
+    let low_rel = rel_target.to_ascii_lowercase();
+    let in_docs = low_rel == "docs" || low_rel.starts_with("docs/");
+    if !in_docs {
+        if let Some(deny) = check_p0_runtime_guard(workspace_root, sid) {
+            return deny;
+        }
+    }
     let Some(state) = read_tdq_state(workspace_root) else {
         append_turn_row(
             workspace_root,
@@ -549,8 +1145,6 @@ fn handle_edit_tool(
     if role_opt.is_some() || state.implement_mode.as_deref() == Some("subagent") {
         return RouteOutcome::DelegatePython;
     }
-    let low_rel = rel_target.to_ascii_lowercase();
-    let in_docs = low_rel == "docs" || low_rel.starts_with("docs/");
     if !in_docs {
         if let Some(gate) = cong_dang_cho(&state) {
             return deny_with_block(
@@ -629,6 +1223,11 @@ fn handle_command_tool(
             "GIT",
             &format!("AI-prefixed branch `{}` is banned.", bad_branch),
         );
+    }
+    if !is_p0_unlock_command(&cmd) {
+        if let Some(deny) = check_p0_runtime_guard(workspace_root, sid) {
+            return deny;
+        }
     }
     if let Some(state) = read_tdq_state(workspace_root) {
         if !state
@@ -762,6 +1361,9 @@ fn handle_mcp_tool(workspace_root: &Path, norm: &NormalizedToolCall, sid: &str) 
             return RouteOutcome::DelegatePython;
         }
         return RouteOutcome::Decided(HookDecision::allow());
+    }
+    if let Some(deny) = evaluate_non_lsp_mcp_rust(workspace_root, norm, sid) {
+        return deny;
     }
     if matches!(
         op,
@@ -1177,6 +1779,248 @@ mod tests {
         assert!(
             matches!(handle_pre_tool_use(&step3b_ok, &tmp), RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny && d.reason.as_deref().unwrap_or("").contains("[TDQ:APPROVE]"))
         );
+
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn test_p0_mcp_quarantine_and_breaker_guard() {
+        let tmp = std::env::temp_dir().join(format!("tdq_p0_guard_rust_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(tmp.join("docs").join("tdq")).unwrap();
+
+        // 1. Unknown non-LSP read tool -> Allow
+        let read_mcp = HookPayload {
+            tool_name: Some("call_mcp_tool".to_string()),
+            tool_input: Some(json!({ "ServerName": "github", "ToolName": "get_issue", "Arguments": "{}" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&read_mcp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 2. Unapproved non-LSP write tool -> Deny [TDQ:READONLY] with approve CLI hint
+        let write_mcp = HookPayload {
+            tool_name: Some("mcp__github__create_issue".to_string()),
+            tool_input: Some(json!({ "title": "bug" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&write_mcp, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+                && d.reason.as_deref().unwrap_or("").contains("mcp_policy.py")
+        ));
+        let eager_lsp = HookPayload {
+            tool_name: Some("mcp_other_lsp_start_lsp".to_string()),
+            tool_input: Some(json!({ "root_dir": tmp.to_string_lossy() })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&eager_lsp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+        let eager_tavily = HookPayload {
+            tool_name: Some("mcp_tdq-workflow-agy_tavily-primary_tavily_search".to_string()),
+            tool_input: Some(json!({ "query": "tdq" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&eager_tavily, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+        let evil_lsp_bypass = HookPayload {
+            tool_name: Some("mcp_evil_delete_lsp_entry".to_string()),
+            tool_input: Some(json!({})),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&evil_lsp_bypass, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+
+        // 3. Approved baseline matching SHA-256 -> Allow
+        let norm_write = write_mcp.normalize_tool_call();
+        let mut hasher = Sha256::new();
+        hasher.update(b"{}");
+        let empty_sha = format!("{:x}", hasher.finalize());
+        let policy_json = json!({
+            "approved_tools": {
+                "github::create_issue": { "sha256": empty_sha, "tier": "write" },
+                "github::mcp__github__create_issue": { "sha256": empty_sha, "tier": "write" }
+            }
+        });
+        fs::write(tmp.join("docs/tdq/mcp-policy.json"), policy_json.to_string()).unwrap();
+        assert!(evaluate_non_lsp_mcp_rust(&tmp, &norm_write, "s1").is_none());
+        assert!(matches!(
+            handle_pre_tool_use(&write_mcp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 3b. Schema mutation re-quarantines approved write tool
+        let mutated_mcp = HookPayload {
+            tool_name: Some("mcp__github__create_issue".to_string()),
+            tool_input: Some(json!({ "title": "bug", "_mcp_schema": { "type": "object", "v": 2 } })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&mutated_mcp, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+
+        // 4. Corrupt project policy -> fail-closed [TDQ:READONLY] on write, Allow on read
+        fs::write(tmp.join("docs/tdq/mcp-policy.json"), "{corrupt").unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&write_mcp, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        assert!(matches!(
+            handle_pre_tool_use(&read_mcp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 5. Kill-switch mcp_quarantine_enabled=false -> Allow unapproved write
+        fs::write(
+            tmp.join("docs/tdq/config.json"),
+            r#"{"p0":{"mcp_quarantine_enabled":false,"breaker_enabled":true}}"#,
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&write_mcp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+
+        // 6. Circuit breaker open blocks source edit + normal shell, allows docs edit & reset-breaker
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"r1","phase":"implement","lane":"full","spec_approved":true,"plan_approved":true,"p0_runtime":{"breaker":{"open":true,"consecutive_failures":3},"budget":{"hard_stopped":false}}}"#,
+        )
+        .unwrap();
+        let src_edit = HookPayload {
+            tool_name: Some("edit_file".to_string()),
+            tool_input: Some(json!({ "TargetFile": tmp.join("scripts/app.py").to_string_lossy() })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        let shell_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 -m pytest" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&shell_cmd, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        let unlock_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 scripts/tdq_state.py reset-breaker" })),
+            ..Default::default()
+        };
+        assert!(!matches!(
+            handle_pre_tool_use(&unlock_cmd, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
+        let chained_unlock_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 scripts/tdq_state.py reset-breaker && rm -rf /" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&chained_unlock_cmd, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        for bypass_cmd in [
+            "py -3 scripts/tdq_state.py reset-breaker & rm -rf /",
+            "py -3 scripts/tdq_state.py reset-breaker\rrm -rf /",
+            "rm -rf / # tdq_state reset-breaker",
+            "py -3 scripts/tdq_state.py reset-breaker > evil.py",
+            "rm -rf / tdq_state.py reset-breaker",
+            r#"python -c "evil()" scripts/tdq_state.py reset-breaker"#,
+        ] {
+            let bypass_payload = HookPayload {
+                tool_name: Some("run_command".to_string()),
+                arguments: Some(json!({ "CommandLine": bypass_cmd })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(
+                    handle_pre_tool_use(&bypass_payload, &tmp),
+                    RouteOutcome::Decided(ref d)
+                        if d.decision == DecisionKind::Deny
+                        && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+                ),
+                "Expected unlock bypass denial for {}",
+                bypass_cmd
+            );
+        }
+        let approve_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 scripts/mcp_policy.py approve github create_issue" })),
+            ..Default::default()
+        };
+        assert!(!matches!(
+            handle_pre_tool_use(&approve_cmd, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
+
+        // 7. Budget hard_stopped blocks edits even when breaker is closed
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"r1","phase":"implement","lane":"full","spec_approved":true,"plan_approved":true,"p0_runtime":{"breaker":{"open":false,"consecutive_failures":0},"budget":{"hard_stopped":true}}}"#,
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+
+        // 8. Live telemetry exceeding hard_stop_tokens blocks edits and shell even when hard_stopped=false
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"r1","phase":"implement","lane":"full","spec_approved":true,"plan_approved":true,"p0_runtime":{"breaker":{"open":false,"consecutive_failures":0},"budget":{"hard_stopped":false}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/config.json"),
+            r#"{"p0":{"breaker_enabled":true,"budget_caps":{"soft_warn_ratio":0.8,"hard_stop_tokens":100,"hard_stop_usd":null}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/.tdq-agent-telemetry.jsonl"),
+            "{\"tokens\":200,\"cost_usd\":0.01}\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        assert!(matches!(
+            handle_pre_tool_use(&shell_cmd, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
 
         let _ = fs::remove_dir_all(&tmp);
     }

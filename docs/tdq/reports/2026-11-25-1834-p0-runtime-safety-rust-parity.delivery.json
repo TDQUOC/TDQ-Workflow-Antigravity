@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "0aa9af26-9c28-4db5-921d-8bd6e28c6c20",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity.caed96a6f1474ec189775d22af70368f.html",
+  "specification": {
+    "sha256": "5d98999b6ff67c68ee02f0b390dfcacb9862397cd72fac49d67653c2d25af245",
+    "bytes": 2969
+  },
+  "artifact": {
+    "sha256": "15d540e9cfc9cb464415ce9f403c057fa499abe16a88702a13197122de273cb2",
+    "bytes": 1588574
+  },
+  "explainer": {
+    "preparedSha256": "bb2bb6f91279e4784717486ac90538088c0900ce3114a94a1eb6fde37922e440",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "p0-before",
+        "inline": true,
+        "sha256": "b0e99722c2ae5dfabe0eadbd2dcbee2526d5478a805b2166e700bcdccaa1f06b",
+        "bytes": 1077
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p0-after",
+        "inline": true,
+        "sha256": "0d1d5792b4913bcea61a88f952050af2c45d553088eabc4a5a0e3c081465393c",
+        "bytes": 1138
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p0-tested",
+        "inline": true,
+        "sha256": "e3c338c09856a88160eb48a929df10bc01883bc6036aa5e985debdad8a1d3e9f",
+        "bytes": 1083
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p0-results",
+        "inline": true,
+        "sha256": "ccab8f639ba49625dedbe94cbe31231f11150d114d4dfe36a3a960a64c1c24d2",
+        "bytes": 1132
+      }
+    ]
+  }
+}

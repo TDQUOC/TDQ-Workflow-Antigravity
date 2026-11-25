@@ -1018,6 +1018,130 @@ def _check_bash_reminders(cmd, cwd, payload, rows, state, suppress_output_remind
         ], rows=rows)
 
 
+_P0_UNLOCK_FORBIDDEN = ("|", "`", "$(", "\n", "\r", "<", ">", "#")
+_P0_PY_RUNNERS = frozenset({"py", "python", "python3"})
+_P0_PY_ZERO_FLAGS = frozenset({"-3", "-2", "-B", "-E", "-I", "-O", "-OO", "-S", "-s", "-u", "-v", "-q"})
+
+
+def _split_p0_unlock_tokens(seg):
+    """Split one shell segment into unquoted tokens, returning [] on parse error."""
+    import shlex
+
+    try:
+        raw = shlex.split(seg, comments=False, posix=False)
+    except ValueError:
+        return []
+    return [tok[1:-1] if len(tok) >= 2 and tok[0] == tok[-1] and tok[0] in ("'", '"') else tok for tok in raw]
+
+
+def _has_valid_p0_subcmd(script_name, args):
+    """Verify the first positional CLI subcommand matches a valid P0 unlock action."""
+    pos = []
+    skip_next = False
+    for arg in args:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg in ("--cwd", "--project"):
+            skip_next = True
+            continue
+        if arg.startswith("-"):
+            continue
+        pos.append(arg.lower())
+        break
+    if not pos:
+        return False
+    if script_name == "tdq_state.py":
+        return pos[0] == "reset-breaker"
+    return pos[0] in ("approve", "reset")
+
+
+def _p0_python_unlock_target(tokens):
+    """Validate argv starts with a Python interpreter, P0 unlock script, and subcommand."""
+    runner = os.path.basename(tokens[0]).lower()
+    runner = runner[:-4] if runner.endswith(".exe") else runner
+    if not (runner in _P0_PY_RUNNERS or runner.startswith("python3.")):
+        return False
+    idx = 1
+    while idx < len(tokens):
+        tok = tokens[idx]
+        if tok in _P0_PY_ZERO_FLAGS or (tok.startswith("-X") and len(tok) > 2):
+            idx += 1
+        elif tok == "-X" and idx + 1 < len(tokens):
+            idx += 2
+        else:
+            break
+    if idx >= len(tokens):
+        return False
+    script_name = tokens[idx].replace("\\", "/").rsplit("/", 1)[-1].lower()
+    if script_name not in ("tdq_state.py", "mcp_policy.py"):
+        return False
+    return _has_valid_p0_subcmd(script_name, tokens[idx + 1 :])
+
+
+def _is_p0_unlock_cmd(cmd):
+    """Return True only when every standalone shell segment is `cd` or a P0 unlock CLI."""
+    if not cmd or any(tok in cmd for tok in _P0_UNLOCK_FORBIDDEN):
+        return False
+    segments = [seg.strip() for seg in re.split(r"(?:&&|;)", cmd) if seg.strip()]
+    if not segments:
+        return False
+    has_unlock = False
+    for seg in segments:
+        if "&" in seg:
+            return False
+        tokens = _split_p0_unlock_tokens(seg)
+        if not tokens:
+            return False
+        head = os.path.basename(tokens[0]).lower()
+        if head == "cd" and (len(tokens) == 2 or (len(tokens) == 3 and tokens[1].lower() == "/d")):
+            continue
+        if not _p0_python_unlock_target(tokens):
+            return False
+        has_unlock = True
+    return has_unlock
+
+
+def _kiem_p0_bash_guard(cwd, payload, cmd, state):
+    """Block shell commands when P0 circuit breaker is open or budget hard-stopped."""
+    if _is_p0_unlock_cmd(cmd):
+        return False
+    p0_rt = (state or {}).get("p0_runtime") or {}
+    breaker = p0_rt.get("breaker") or {}
+    cfg = __import__("tdq_config").load_config(cwd)
+    if (cfg.get("p0") or {}).get("breaker_enabled", True) and breaker.get("open"):
+        reason = str(breaker.get("reason") or "circuit breaker is open")
+        __import__("_common").block(
+            cwd,
+            payload,
+            "TDQ:READONLY",
+            [
+                f"P0 Circuit Breaker open ({reason}) — shell commands blocked.",
+                "How: py -3 scripts/tdq_state.py reset-breaker",
+            ],
+            day_du=True,
+        )
+        return True
+    budget = p0_rt.get("budget") or {}
+    hard_stopped = bool(budget.get("hard_stopped"))
+    if not hard_stopped:
+        status = __import__("tdq_timing").check_budget_status(cwd, config=cfg)
+        hard_stopped = status.get("state") == "hard_stop"
+    if hard_stopped:
+        __import__("_common").block(
+            cwd,
+            payload,
+            "TDQ:READONLY",
+            [
+                "P0 Budget hard stop reached — shell commands blocked.",
+                "How: adjust budget caps or reset state before continuing.",
+            ],
+            day_du=True,
+        )
+        return True
+    return False
+
+
 def eval_bash(payload, suppress_output_remind=False):
     """Evaluate bash gate rules for an already-read payload; return True to allow continuing."""
     cmd = (payload.get("tool_input") or {}).get("command") or ""
@@ -1028,6 +1152,8 @@ def eval_bash(payload, suppress_output_remind=False):
         return False
     rows = turn_rows(cwd, payload)  # P0-3: read once, reused by every check below
     state = __import__("tdq_state").load(cwd) or {}
+    if _kiem_p0_bash_guard(cwd, payload, cmd, state):
+        return False
     parts = _split_shell_segments(cmd, seps=(";", "&"))
     mutates_outside_docs = any(
         (SHELL_MUTATOR.search(part) and (not DOCS_ARTIFACT.search(part) or ".." in part))
