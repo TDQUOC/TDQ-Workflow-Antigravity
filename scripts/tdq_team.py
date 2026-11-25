@@ -26,13 +26,15 @@ import ast
 import contextlib
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
 import sys
 import tempfile
 import time
-from datetime import datetime
+from collections import deque
+from datetime import datetime, timezone
 
 GIT_TIMEOUT = 120
 
@@ -97,6 +99,9 @@ TEN_CAM = ("claude", "antigravity", "gemini", "codex")
 # 4 agents is 6 points, 10 agents is already 45 (research round 1, section 4). This is an
 # UPPER cap — fewer ready tasks means fewer launched, never wait to fill up to 4.
 TRAN_SONG_SONG = 4
+# Dispatch burst share before promoting 1 globally oldest task across tiers.
+OLDEST_DISPATCH_SHARE = 4
+_PRIORITY_TIERS = {"high": 0, "normal": 1, "low": 2}
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, SCRIPTS_DIR)
@@ -739,6 +744,200 @@ def _chia_dot_theo_phase(tasks, project_root="."):
 def _khoa_phase(ten):
     so = re.findall(r"\d+", ten)
     return (int(so[0]) if so else 0, ten)
+
+
+# ------------------------------------------------------------- 3-tier queue
+def _validate_oldest_share(oldest_share: int | None) -> int:
+    share = OLDEST_DISPATCH_SHARE if oldest_share is None else oldest_share
+    if isinstance(share, bool) or not isinstance(share, int) or share < 0:
+        raise ValueError("oldest_share must be a non-negative integer")
+    return share
+
+
+def _dedupe_idempotency(tasks) -> list[dict]:
+    """Deduplicate non-empty idempotency keys while preserving first arrival."""
+    seen: set[str] = set()
+    unique: list[dict] = []
+    for task in tasks:
+        raw_key = task.get("idempotency_key")
+        key = raw_key.strip() if isinstance(raw_key, str) else ""
+        if key:
+            if key in seen:
+                continue
+            seen.add(key)
+        unique.append(task)
+    return unique
+
+
+def _normalize_priority(raw_priority) -> int:
+    if isinstance(raw_priority, str):
+        return _PRIORITY_TIERS.get(raw_priority.strip().lower(), 1)
+    return 1
+
+
+def _parse_iso_timestamp(text: str) -> float | None:
+    iso = f"{text[:-1]}+00:00" if text.endswith("Z") else text
+    try:
+        dt = datetime.fromisoformat(iso)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+def _parse_enqueued_string(text: str) -> tuple[int, int, float | str]:
+    stripped = text.strip()
+    if not stripped:
+        return (1, 0, 0.0)
+    ts = _parse_iso_timestamp(stripped)
+    if ts is not None:
+        return (0, 0, ts)
+    try:
+        num = float(stripped)
+        if math.isfinite(num):
+            return (0, 0, num)
+    except ValueError:
+        pass
+    return (0, 1, stripped)
+
+
+def _parse_enqueued_at(raw) -> tuple[int, int, float | str]:
+    if raw is None or isinstance(raw, bool):
+        return (1, 0, 0.0)
+    if isinstance(raw, (int, float)):
+        val = float(raw)
+        return (0, 0, val) if math.isfinite(val) else (1, 0, 0.0)
+    if isinstance(raw, datetime):
+        dt = raw if raw.tzinfo is not None else raw.replace(tzinfo=timezone.utc)
+        return (0, 0, dt.timestamp())
+    if isinstance(raw, str):
+        return _parse_enqueued_string(raw)
+    return (1, 0, 0.0)
+
+
+def _task_age_key(task: dict, fifo_seq: int) -> tuple:
+    raw_age = task.get("age")
+    age_val = 0.0
+    if isinstance(raw_age, (int, float)) and not isinstance(raw_age, bool):
+        candidate = float(raw_age)
+        if math.isfinite(candidate):
+            age_val = candidate
+    return (_parse_enqueued_at(task.get("enqueued_at")), -age_val, fifo_seq)
+
+
+def _pop_highest_tier(tiers: tuple[deque, ...]) -> dict | None:
+    for queue in tiers:
+        if queue:
+            return queue.popleft()[3]
+    return None
+
+
+def _pop_oldest_task(tiers: tuple[deque, ...]) -> dict | None:
+    candidates = (entry for queue in tiers for entry in queue)
+    oldest = min(candidates, key=lambda entry: entry[0], default=None)
+    if oldest is None:
+        return None
+    tiers[oldest[2]].remove(oldest)
+    return oldest[3]
+
+
+def prioritize_tasks(
+    tasks, oldest_share: int = OLDEST_DISPATCH_SHARE
+) -> list[dict]:
+    """Order unique tasks across 3 FIFO tiers with aging anti-starvation."""
+    share = _validate_oldest_share(oldest_share)
+    unique = _dedupe_idempotency(tasks)
+    tiers: tuple[deque, ...] = (deque(), deque(), deque())
+    for seq, task in enumerate(unique):
+        tier = _normalize_priority(task.get("priority"))
+        tiers[tier].append((_task_age_key(task, seq), seq, tier, task))
+
+    ordered: list[dict] = []
+    while any(tiers):
+        for _ in range(share):
+            item = _pop_highest_tier(tiers)
+            if item is None:
+                break
+            ordered.append(item)
+        promoted = _pop_oldest_task(tiers)
+        if promoted is not None:
+            ordered.append(promoted)
+    return ordered
+
+
+def _is_task_ready(task: dict, done_set: set) -> bool:
+    task_id = task.get("id")
+    if task_id is not None and task_id != "" and task_id in done_set:
+        return False
+    raw_deps = task.get("blocked_by")
+    if not raw_deps:
+        return True
+    deps = (raw_deps,) if isinstance(raw_deps, str) else raw_deps
+    return all(dep in done_set for dep in deps)
+
+
+def _task_files(task: dict) -> list[str]:
+    raw = task.get("files") or task.get("vung_file") or ()
+    if isinstance(raw, str):
+        return [raw] if raw else []
+    return [str(item) for item in raw if item]
+
+
+def _wave_collides(
+    wave: list[dict], task_files: list[str], project_root: str
+) -> bool:
+    for other in wave:
+        collided, _ = detect_tcas_collision(
+            _task_files(other), task_files, project_root
+        )
+        if collided:
+            return True
+    return False
+
+
+def _pack_ready_waves(ordered: list[dict], project_root: str) -> list[list[dict]]:
+    waves: list[list[dict]] = []
+    for task in ordered:
+        t_files = _task_files(task)
+        target_wave = next(
+            (
+                w for w in waves
+                if len(w) < TRAN_SONG_SONG
+                and not _wave_collides(w, t_files, project_root)
+            ),
+            None,
+        )
+        if target_wave is None:
+            waves.append([task])
+        else:
+            target_wave.append(task)
+    return waves
+
+
+def dispatch_ready_waves(
+    tasks,
+    done_ids=None,
+    project_root: str = ".",
+    oldest_share: int = OLDEST_DISPATCH_SHARE,
+) -> list[list[dict]]:
+    """Deduplicate, filter satisfied blocked_by deps, and pack non-colliding waves."""
+    share = _validate_oldest_share(oldest_share)
+    unique = _dedupe_idempotency(tasks)
+    done_set = set(done_ids or ())
+    ready = [t for t in unique if _is_task_ready(t, done_set)]
+    if not ready:
+        _log(
+            f"dispatch-queue -> unique={len(unique)} ready=0 waves=0 share={share}"
+        )
+        return []
+    ordered = prioritize_tasks(ready, oldest_share=share)
+    waves = _pack_ready_waves(ordered, project_root)
+    _log(
+        f"dispatch-queue -> unique={len(unique)} ready={len(ready)} "
+        f"waves={len(waves)} share={share}"
+    )
+    return waves
 
 
 # ------------------------------------------------------------- the map
