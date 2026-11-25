@@ -1,0 +1,54 @@
+{
+  "passed_checks": 7,
+  "failed_checks": 0,
+  "failed_names": [],
+  "checks": {
+    "evidence_bounds_and_citations": {
+      "ok": true,
+      "rows": 26,
+      "bounds_errors": [],
+      "uncited_in_corpus": [],
+      "uncited_in_plan_docs": []
+    },
+    "json_fences_valid": {
+      "ok": true,
+      "blocks": 11,
+      "errors": []
+    },
+    "disk_paths_and_symbols": {
+      "ok": true,
+      "existing_symbols_checked": 90,
+      "new_targets_checked": 16,
+      "anchor_errors": [],
+      "new_target_errors": []
+    },
+    "import_layer_invariant": {
+      "ok": true,
+      "scripts_scanned": 78,
+      "violations": [],
+      "rule_documented": true
+    },
+    "wave_non_overlap": {
+      "ok": true,
+      "waves_checked": 11,
+      "tasks_checked": 24,
+      "dependency_edges_checked": 32,
+      "overlaps": [],
+      "parallel_cap_errors": [],
+      "intra_wave_dep_errors": []
+    },
+    "decisions_and_bans_covered": {
+      "ok": true,
+      "missing_tokens": [],
+      "placeholders": []
+    },
+    "counterfactual_negative_selftest": {
+      "ok": true,
+      "detected_bad_json": true,
+      "detected_wave_overlap": true,
+      "detected_intra_wave_dep": true,
+      "detected_missing_symbol": true,
+      "bounds_probe_valid": true
+    }
+  }
+}
