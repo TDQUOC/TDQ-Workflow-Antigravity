@@ -681,6 +681,28 @@ class TestGitApprovalAndRuntimeGuards(unittest.TestCase):
         self.assertFalse(self.mod.mutates_tdq_state("<# note #> echo ok"))
         self.assertIsNone(self.mod.inspect_git_command_safety("$note = @'\n# comment\ngit push --force origin dev\n'@\nWrite-Host $note"))
 
+    def test_qc2_p0_unlock_cmd_token_and_operator_hardening(self):
+        for valid in (
+            "py -3 scripts/tdq_state.py reset-breaker",
+            "python -X utf8 scripts/tdq_state.py --cwd . reset-breaker --json",
+            "cd C:\\repo && py -3 scripts/mcp_policy.py approve github create_issue",
+            "py -3 scripts/mcp_policy.py reset",
+        ):
+            with self.subTest(valid=valid):
+                self.assertTrue(self.mod._is_p0_unlock_cmd(valid))
+        for bypass in (
+            "py -3 scripts/tdq_state.py reset-breaker & rm -rf /",
+            "py -3 scripts/tdq_state.py reset-breaker\rrm -rf /",
+            "rm -rf / # tdq_state reset-breaker",
+            "py -3 scripts/tdq_state.py reset-breaker > evil.py",
+            "py -3 scripts/tdq_state.py reset-breaker < in.txt",
+            "rm -rf / tdq_state.py reset-breaker",
+            'python -c "import os" scripts/tdq_state.py reset-breaker',
+            "py -3 scripts/tdq_state.py set phase=idle",
+        ):
+            with self.subTest(bypass=bypass):
+                self.assertFalse(self.mod._is_p0_unlock_cmd(bypass))
+
 
 if __name__ == "__main__":
     unittest.main()

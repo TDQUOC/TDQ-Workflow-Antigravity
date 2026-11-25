@@ -338,6 +338,93 @@ fn read_p0_mcp_mode(workspace_root: &Path) -> String {
         .unwrap_or_else(|| "balanced".to_string())
 }
 
+fn split_p0_unlock_tokens(seg: &str) -> Option<Vec<String>> {
+    let mut tokens = Vec::new();
+    let mut cur = String::new();
+    let mut quote: Option<char> = None;
+    let mut in_tok = false;
+    for ch in seg.chars() {
+        match quote {
+            Some(q) if ch == q => quote = None,
+            Some(_) => cur.push(ch),
+            None if ch == '\'' || ch == '"' => {
+                quote = Some(ch);
+                in_tok = true;
+            }
+            None if ch.is_whitespace() => {
+                if in_tok {
+                    tokens.push(std::mem::take(&mut cur));
+                    in_tok = false;
+                }
+            }
+            None => {
+                cur.push(ch);
+                in_tok = true;
+            }
+        }
+    }
+    if quote.is_some() {
+        return None;
+    }
+    if in_tok {
+        tokens.push(cur);
+    }
+    if tokens.is_empty() { None } else { Some(tokens) }
+}
+
+fn has_valid_p0_subcmd(script_name: &str, args: &[String]) -> bool {
+    let mut pos: Option<String> = None;
+    let mut skip_next = false;
+    for arg in args {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if arg == "--cwd" || arg == "--project" {
+            skip_next = true;
+            continue;
+        }
+        if arg.starts_with('-') {
+            continue;
+        }
+        pos = Some(arg.to_ascii_lowercase());
+        break;
+    }
+    matches!(
+        (script_name, pos.as_deref()),
+        ("tdq_state.py", Some("reset-breaker")) | ("mcp_policy.py", Some("approve" | "reset"))
+    )
+}
+
+fn is_p0_python_unlock_target(tokens: &[String]) -> bool {
+    let base = tokens[0].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+    let runner = base.strip_suffix(".exe").unwrap_or(&base);
+    if !matches!(runner, "py" | "python" | "python3") && !runner.starts_with("python3.") {
+        return false;
+    }
+    let mut idx = 1usize;
+    while idx < tokens.len() {
+        let tok = tokens[idx].as_str();
+        if matches!(tok, "-3" | "-2" | "-B" | "-E" | "-I" | "-O" | "-OO" | "-S" | "-s" | "-u" | "-v" | "-q")
+            || (tok.starts_with("-X") && tok.len() > 2)
+        {
+            idx += 1;
+        } else if tok == "-X" && idx + 1 < tokens.len() {
+            idx += 2;
+        } else {
+            break;
+        }
+    }
+    if idx >= tokens.len() {
+        return false;
+    }
+    let script_name = tokens[idx].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+    if script_name != "tdq_state.py" && script_name != "mcp_policy.py" {
+        return false;
+    }
+    has_valid_p0_subcmd(&script_name, &tokens[idx + 1..])
+}
+
 fn is_p0_unlock_command(cmd: &str) -> bool {
     let trimmed = cmd.trim();
     if trimmed.is_empty()
@@ -346,6 +433,9 @@ fn is_p0_unlock_command(cmd: &str) -> bool {
         || trimmed.contains("$(")
         || trimmed.contains('\n')
         || trimmed.contains('\r')
+        || trimmed.contains('<')
+        || trimmed.contains('>')
+        || trimmed.contains('#')
     {
         return false;
     }
@@ -359,13 +449,14 @@ fn is_p0_unlock_command(cmd: &str) -> bool {
         if seg.contains('&') {
             return false;
         }
-        let low = seg.to_ascii_lowercase();
-        if low.starts_with("cd ") || low.starts_with("cd\t") {
+        let Some(tokens) = split_p0_unlock_tokens(seg) else {
+            return false;
+        };
+        let head = tokens[0].rsplit(['/', '\\']).next().unwrap_or("").to_ascii_lowercase();
+        if head == "cd" && (tokens.len() == 2 || (tokens.len() == 3 && tokens[1].eq_ignore_ascii_case("/d"))) {
             continue;
         }
-        let is_reset_breaker = low.contains("tdq_state") && low.contains("reset-breaker");
-        let is_mcp_approve = low.contains("mcp_policy") && (low.contains(" approve") || low.contains(" reset"));
-        if !(is_reset_breaker || is_mcp_approve) {
+        if !is_p0_python_unlock_target(&tokens) {
             return false;
         }
         has_unlock = true;
@@ -373,13 +464,84 @@ fn is_p0_unlock_command(cmd: &str) -> bool {
     has_unlock
 }
 
-/// Evaluate P0 Circuit Breaker & Budget hard_stop state from `docs/tdq/state.json`.
+fn json_finite_nonneg(val: Option<&Value>) -> Option<f64> {
+    let v = val?;
+    if v.is_boolean() {
+        return None;
+    }
+    v.as_f64().filter(|n| n.is_finite() && *n >= 0.0)
+}
+
+fn load_budget_caps_rust(workspace_root: &Path) -> (Option<f64>, Option<f64>) {
+    let cfg_path = workspace_root.join("docs").join("tdq").join("config.json");
+    let Ok(Some(cfg)) = read_json_object(&cfg_path) else {
+        return (None, None);
+    };
+    let caps = if let Some(p0) = cfg.get("p0") {
+        p0.get("budget_caps").and_then(|v| v.as_object())
+    } else {
+        cfg.get("budget_caps").and_then(|v| v.as_object())
+    };
+    let Some(caps_obj) = caps else {
+        return (None, None);
+    };
+    let token_cap = json_finite_nonneg(caps_obj.get("hard_stop_tokens")).filter(|n| *n > 0.0);
+    let usd_cap = json_finite_nonneg(caps_obj.get("hard_stop_usd")).filter(|n| *n > 0.0);
+    (token_cap, usd_cap)
+}
+
+fn sum_telemetry_usage_rust(telemetry_path: &Path) -> (f64, f64) {
+    let Ok(raw) = fs::read_to_string(telemetry_path) else {
+        return (0.0, 0.0);
+    };
+    let (mut total_tokens, mut total_usd) = (0.0_f64, 0.0_f64);
+    for line in raw.lines().map(str::trim).filter(|l| !l.is_empty()) {
+        let Ok(Value::Object(row)) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        let row_toks = json_finite_nonneg(row.get("tokens"))
+            .or_else(|| json_finite_nonneg(row.get("total_tokens")))
+            .unwrap_or_else(|| {
+                json_finite_nonneg(row.get("input_tokens")).unwrap_or(0.0)
+                    + json_finite_nonneg(row.get("output_tokens")).unwrap_or(0.0)
+            });
+        let row_usd = json_finite_nonneg(row.get("cost_usd"))
+            .or_else(|| json_finite_nonneg(row.get("usd")))
+            .unwrap_or(0.0);
+        total_tokens += row_toks;
+        total_usd += row_usd;
+    }
+    (total_tokens, total_usd)
+}
+
+fn is_budget_hard_stop_reached(workspace_root: &Path) -> bool {
+    let (token_cap, usd_cap) = load_budget_caps_rust(workspace_root);
+    if token_cap.is_none() && usd_cap.is_none() {
+        return false;
+    }
+    let tel_path = workspace_root.join("docs").join("tdq").join(".tdq-agent-telemetry.jsonl");
+    let (total_tokens, raw_usd) = sum_telemetry_usage_rust(&tel_path);
+    let total_usd = (raw_usd * 1_000_000_000.0).round() / 1_000_000_000.0;
+    let mut max_ratio = 0.0_f64;
+    if let Some(tc) = token_cap {
+        max_ratio = max_ratio.max(total_tokens / tc);
+    }
+    if let Some(uc) = usd_cap {
+        max_ratio = max_ratio.max(total_usd / uc);
+    }
+    ((max_ratio * 1_000_000_000.0).round() / 1_000_000_000.0) >= 1.0
+}
+
+/// Evaluate P0 Circuit Breaker & Budget hard_stop state from `docs/tdq/state.json` and telemetry.
 pub(crate) fn check_p0_runtime_guard(workspace_root: &Path, sid: &str) -> Option<RouteOutcome> {
     let spath = workspace_root.join("docs").join("tdq").join("state.json");
-    let state_val = read_json_object(&spath).ok().flatten()?;
-    let p0_rt = state_val.get("p0_runtime").and_then(|v| v.as_object())?;
+    let state_val = read_json_object(&spath).ok().flatten();
+    let p0_rt = state_val
+        .as_ref()
+        .and_then(|v| v.get("p0_runtime"))
+        .and_then(|v| v.as_object());
     let breaker_open = p0_rt
-        .get("breaker")
+        .and_then(|rt| rt.get("breaker"))
         .and_then(|b| b.get("open"))
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
@@ -392,11 +554,11 @@ pub(crate) fn check_p0_runtime_guard(workspace_root: &Path, sid: &str) -> Option
         ));
     }
     let hard_stopped = p0_rt
-        .get("budget")
+        .and_then(|rt| rt.get("budget"))
         .and_then(|b| b.get("hard_stopped"))
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    if hard_stopped {
+    if hard_stopped || is_budget_hard_stop_reached(workspace_root) {
         return Some(deny_with_block(
             workspace_root,
             sid,
@@ -1784,6 +1946,39 @@ mod tests {
                 if d.decision == DecisionKind::Deny
                 && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
         ));
+        for bypass_cmd in [
+            "py -3 scripts/tdq_state.py reset-breaker & rm -rf /",
+            "py -3 scripts/tdq_state.py reset-breaker\rrm -rf /",
+            "rm -rf / # tdq_state reset-breaker",
+            "py -3 scripts/tdq_state.py reset-breaker > evil.py",
+            "rm -rf / tdq_state.py reset-breaker",
+            r#"python -c "evil()" scripts/tdq_state.py reset-breaker"#,
+        ] {
+            let bypass_payload = HookPayload {
+                tool_name: Some("run_command".to_string()),
+                arguments: Some(json!({ "CommandLine": bypass_cmd })),
+                ..Default::default()
+            };
+            assert!(
+                matches!(
+                    handle_pre_tool_use(&bypass_payload, &tmp),
+                    RouteOutcome::Decided(ref d)
+                        if d.decision == DecisionKind::Deny
+                        && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+                ),
+                "Expected unlock bypass denial for {}",
+                bypass_cmd
+            );
+        }
+        let approve_cmd = HookPayload {
+            tool_name: Some("run_command".to_string()),
+            arguments: Some(json!({ "CommandLine": "py -3 scripts/mcp_policy.py approve github create_issue" })),
+            ..Default::default()
+        };
+        assert!(!matches!(
+            handle_pre_tool_use(&approve_cmd, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Deny
+        ));
 
         // 7. Budget hard_stopped blocks edits even when breaker is closed
         fs::write(
@@ -1793,6 +1988,35 @@ mod tests {
         .unwrap();
         assert!(matches!(
             handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+
+        // 8. Live telemetry exceeding hard_stop_tokens blocks edits and shell even when hard_stopped=false
+        fs::write(
+            tmp.join("docs/tdq/state.json"),
+            r#"{"active_request":"r1","phase":"implement","lane":"full","spec_approved":true,"plan_approved":true,"p0_runtime":{"breaker":{"open":false,"consecutive_failures":0},"budget":{"hard_stopped":false}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/config.json"),
+            r#"{"p0":{"breaker_enabled":true,"budget_caps":{"soft_warn_ratio":0.8,"hard_stop_tokens":100,"hard_stop_usd":null}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            tmp.join("docs/tdq/.tdq-agent-telemetry.jsonl"),
+            "{\"tokens\":200,\"cost_usd\":0.01}\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            handle_pre_tool_use(&src_edit, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
+        ));
+        assert!(matches!(
+            handle_pre_tool_use(&shell_cmd, &tmp),
             RouteOutcome::Decided(ref d)
                 if d.decision == DecisionKind::Deny
                 && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
