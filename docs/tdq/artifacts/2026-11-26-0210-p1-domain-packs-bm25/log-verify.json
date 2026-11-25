@@ -1,0 +1,187 @@
+{
+  "task": "T5.1",
+  "branch": "feat/p1-domain-packs-bm25",
+  "verified_at": "2026-11-26T03:56:18+07:00",
+  "domains_err0_bytes": 0,
+  "router_err0_bytes": 0,
+  "hooks_imports_in_scripts": 0,
+  "skill_router_imports_in_hooks": 0,
+  "all_agy_codes_count": 23,
+  "schema_version": 6,
+  "overall_pass": true,
+  "tdq_log_checks": {
+    "tdq_domains": {
+      "cmd": "py -3 -X utf8 scripts/tdq_domains.py route --prompt \"fix bug\"",
+      "tdq_log_1": {
+        "returncode": 0,
+        "stdout_bytes": 54,
+        "stderr_bytes": 208,
+        "has_iso_timestamp_in_stderr": true,
+        "stderr_sample": "[2026-11-26T03:56:17+07:00] tdq_domains: command=route cwd=C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\r\n[2026-11-26T03:56:17+07:00] tdq_domains: route domain=code-build reason=keyword_score=2\r\n"
+      },
+      "tdq_log_0": {
+        "returncode": 0,
+        "stdout_bytes": 54,
+        "stderr_bytes": 0,
+        "has_iso_timestamp_in_stderr": false,
+        "stderr_sample": ""
+      },
+      "pass": true
+    },
+    "skill_router": {
+      "cmd": "py -3 -X utf8 scripts/skill_router.py --tra \"fix bug\" --domain code-build",
+      "tdq_log_1": {
+        "returncode": 0,
+        "stdout_bytes": 304,
+        "stderr_bytes": 69,
+        "has_iso_timestamp_in_stderr": true,
+        "stderr_sample": "[2026-11-26T03:56:18+07:00] skill_router · --tra domain=code-build\r\n"
+      },
+      "tdq_log_0": {
+        "returncode": 0,
+        "stdout_bytes": 304,
+        "stderr_bytes": 0,
+        "has_iso_timestamp_in_stderr": false,
+        "stderr_sample": ""
+      },
+      "pass": true
+    },
+    "extra": {
+      "tdq_state": {
+        "cmd": "py -3 -X utf8 scripts/tdq_state.py get phase",
+        "tdq_log_1": {
+          "returncode": 0,
+          "stdout_bytes": 11,
+          "stderr_bytes": 1475,
+          "has_iso_timestamp_in_stderr": true
+        },
+        "tdq_log_0": {
+          "returncode": 0,
+          "stdout_bytes": 11,
+          "stderr_bytes": 0,
+          "has_iso_timestamp_in_stderr": false
+        },
+        "pass": true
+      },
+      "tdq_config": {
+        "cmd": "py -3 -X utf8 scripts/tdq_config.py show",
+        "tdq_log_1": {
+          "returncode": 0,
+          "stdout_bytes": 345,
+          "stderr_bytes": 117,
+          "has_iso_timestamp_in_stderr": true
+        },
+        "tdq_log_0": {
+          "returncode": 0,
+          "stdout_bytes": 345,
+          "stderr_bytes": 0,
+          "has_iso_timestamp_in_stderr": false
+        },
+        "pass": true
+      },
+      "tdq_dispatch_plugin_bin": {
+        "cmd": "plugins/tdq-workflow-agy/bin/tdq-dispatch.exe --event UnknownNoop",
+        "stdin": "{}",
+        "sha256_prefix": "0d02944a30e0",
+        "tdq_log_1": {
+          "returncode": 0,
+          "stdout_bytes": 3,
+          "stderr_bytes": 85,
+          "has_iso_timestamp_in_stderr": true,
+          "stderr_sample": "[2026-11-25T20:56:18Z] tdq-dispatch: event=UnknownNoop route=hot sid=default ms=0.21\n"
+        },
+        "tdq_log_0": {
+          "returncode": 0,
+          "stdout_bytes": 3,
+          "stderr_bytes": 0,
+          "has_iso_timestamp_in_stderr": false
+        },
+        "pass": true
+      },
+      "tdq_dispatch_release_bin": {
+        "cmd": "hooks/rust/tdq-dispatch/target/release/tdq-dispatch.exe --event UnknownNoop",
+        "stdin": "{}",
+        "sha256_prefix": "da36a43ad12d",
+        "tdq_log_0": {
+          "returncode": 0,
+          "stderr_bytes": 0
+        },
+        "pass": true
+      }
+    }
+  },
+  "ruff_checks": {
+    "p1_targets": {
+      "cmd": "py -3 -X utf8 -m ruff check scripts/tdq_domains.py tests/test_tdq_domains.py tests/test_p1_zero_downgrade_gate.py",
+      "returncode": 0,
+      "output": "All checks passed!",
+      "pass": true
+    },
+    "skill_router": {
+      "cmd": "py -3 -X utf8 -m ruff check scripts/skill_router.py",
+      "returncode": 0,
+      "output": "All checks passed!",
+      "pass": true
+    }
+  },
+  "i18n_check": {
+    "cmd": "py -3 -X utf8 scripts/i18n_check.py scripts/tdq_domains.py scripts/defaults/domains/code-build.json scripts/defaults/domains/research-rca.json scripts/defaults/domains/pm-ba-content.json scripts/defaults/domains/ops-checklist.json tests/test_tdq_domains.py tests/test_p1_zero_downgrade_gate.py",
+    "files": [
+      "scripts/tdq_domains.py",
+      "scripts/defaults/domains/code-build.json",
+      "scripts/defaults/domains/research-rca.json",
+      "scripts/defaults/domains/pm-ba-content.json",
+      "scripts/defaults/domains/ops-checklist.json",
+      "tests/test_tdq_domains.py",
+      "tests/test_p1_zero_downgrade_gate.py"
+    ],
+    "returncode": 0,
+    "files_scanned": 7,
+    "vietnamese_lines": 0,
+    "output": "[2026-11-26T03:55:32] i18n_check: scan 7 file(s), kind=all\n[2026-11-26T03:55:32] i18n_check: done — 0 line(s), exit 0\n0 Vietnamese line(s) in 7 file(s)",
+    "pass": true
+  },
+  "ast_layer_invariants": {
+    "scripts_py_count": 81,
+    "hooks_scripts_py_count": 21,
+    "hooks_imports_in_scripts": 0,
+    "hooks_imports_matches": [],
+    "skill_router_imports_in_hooks": 0,
+    "skill_router_imports_matches": [],
+    "static_utf8_io_imports": {
+      "scripts/tdq_domains.py": {
+        "line": 27,
+        "top_level": true,
+        "kind": "Import",
+        "name": "utf8_io"
+      },
+      "scripts/skill_router.py": {
+        "line": 40,
+        "top_level": true,
+        "kind": "Import",
+        "name": "utf8_io"
+      },
+      "scripts/tdq_state.py": {
+        "line": 32,
+        "top_level": true,
+        "kind": "Import",
+        "name": "utf8_io"
+      },
+      "scripts/tdq_config.py": {
+        "line": 30,
+        "top_level": true,
+        "kind": "Import",
+        "name": "utf8_io"
+      }
+    },
+    "pass": true
+  },
+  "schema_and_codes_invariants": {
+    "gate_guidance_path": "tools/patches/gate_guidance.json",
+    "all_agy_codes_count": 23,
+    "expected_all_agy_codes_count": 23,
+    "tdq_state_default_schema_version": 6,
+    "expected_schema_version": 6,
+    "pass": true
+  }
+}
