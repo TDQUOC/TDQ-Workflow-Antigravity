@@ -467,7 +467,7 @@ fn load_mcp_policy_merged(workspace_root: &Path) -> (Value, bool) {
     }
 }
 
-fn extract_mcp_server_and_tool(norm: &NormalizedToolCall) -> (String, String) {
+fn extract_mcp_server_and_tool(norm: &NormalizedToolCall, policy: &Value) -> (String, String) {
     let srv_raw = norm
         .server_name
         .as_deref()
@@ -482,6 +482,32 @@ fn extract_mcp_server_and_tool(norm: &NormalizedToolCall) -> (String, String) {
         }
     }
     if let Some(rest) = norm.tool_name.strip_prefix("mcp_") {
+        if let Some((srv, tool)) = rest.split_once("__") {
+            return (srv.to_string(), tool.to_string());
+        }
+        let mut trusted = json_lower_list(policy, "trusted_servers");
+        trusted.sort_by_key(|s| std::cmp::Reverse(s.len()));
+        let rest_low = rest.to_ascii_lowercase();
+        for srv in trusted {
+            let prefix_low = format!("{}_", srv);
+            if rest_low.starts_with(&prefix_low)
+                && rest.len() > prefix_low.len()
+                && rest.is_char_boundary(srv.len())
+                && rest.is_char_boundary(srv.len() + 1)
+            {
+                return (rest[..srv.len()].to_string(), rest[srv.len() + 1..].to_string());
+            }
+        }
+        if let Some(idx) = rest_low.find("_lsp_") {
+            if rest.is_char_boundary(idx)
+                && rest.is_char_boundary(idx + 4)
+                && rest.is_char_boundary(idx + 5)
+                && !rest[..idx].contains('_')
+                && idx + 5 < rest.len()
+            {
+                return (rest[..idx + 4].to_string(), rest[idx + 5..].to_string());
+            }
+        }
         if let Some((srv, tool)) = rest.split_once('_') {
             return (srv.to_string(), tool.to_string());
         }
@@ -674,7 +700,7 @@ pub(crate) fn evaluate_non_lsp_mcp_rust(
         return None;
     }
     let (policy, corrupt) = load_mcp_policy_merged(workspace_root);
-    let (server, tool_name) = extract_mcp_server_and_tool(norm);
+    let (server, tool_name) = extract_mcp_server_and_tool(norm, &policy);
     let tier = classify_mcp_tier_rust(&server, &tool_name, &policy);
     let mode = effective_mcp_mode(workspace_root, &policy);
     let srv_low = server.trim().to_ascii_lowercase();
@@ -1624,6 +1650,35 @@ mod tests {
                 if d.decision == DecisionKind::Deny
                 && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
                 && d.reason.as_deref().unwrap_or("").contains("mcp_policy.py")
+        ));
+        let eager_lsp = HookPayload {
+            tool_name: Some("mcp_other_lsp_start_lsp".to_string()),
+            tool_input: Some(json!({ "root_dir": tmp.to_string_lossy() })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&eager_lsp, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+        let eager_tavily = HookPayload {
+            tool_name: Some("mcp_tdq-workflow-agy_tavily-primary_tavily_search".to_string()),
+            tool_input: Some(json!({ "query": "tdq" })),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&eager_tavily, &tmp),
+            RouteOutcome::Decided(ref d) if d.decision == DecisionKind::Allow
+        ));
+        let evil_lsp_bypass = HookPayload {
+            tool_name: Some("mcp_evil_delete_lsp_entry".to_string()),
+            tool_input: Some(json!({})),
+            ..Default::default()
+        };
+        assert!(matches!(
+            handle_pre_tool_use(&evil_lsp_bypass, &tmp),
+            RouteOutcome::Decided(ref d)
+                if d.decision == DecisionKind::Deny
+                && d.reason.as_deref().unwrap_or("").contains("[TDQ:READONLY]")
         ));
 
         // 3. Approved baseline matching SHA-256 -> Allow

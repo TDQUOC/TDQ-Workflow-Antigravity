@@ -10,7 +10,6 @@ import argparse
 import contextlib
 import copy
 import hashlib
-import importlib
 import json
 import os
 import sys
@@ -21,18 +20,12 @@ from pathlib import Path
 from typing import Any
 
 SCRIPT_ROOT = Path(__file__).resolve().parent
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
 
-
-def _load_siblings() -> tuple[Any, Any]:
-    scripts_dir = str(SCRIPT_ROOT)
-    if scripts_dir not in sys.path:
-        sys.path.insert(0, scripts_dir)
-    with contextlib.suppress(ImportError):
-        importlib.import_module("utf8_io")
-    return importlib.import_module("tdq_config"), importlib.import_module("tdq_lease")
-
-
-tdq_config, tdq_lease = _load_siblings()
+import tdq_config
+import tdq_lease
+import utf8_io  # noqa: F401
 
 POLICY_DEFAULT_REL = "scripts/defaults/mcp-policy.default.json"
 POLICY_PROJECT_REL = "docs/tdq/mcp-policy.json"
@@ -60,11 +53,16 @@ _BUILTIN_DEFAULT_POLICY: dict[str, Any] = {
         "tdq-lsp",
         "tdq-workflow-agy_lsp",
         "gemini-api_gemini-api-docs",
+        "chrome-devtools",
+        "tdq-workflow-agy_chrome-devtools",
+        "tavily-primary",
+        "tdq-workflow-agy_tavily-primary",
     ],
     "read_prefixes": [
         "read_",
         "get_",
         "list_",
+        "select_",
         "search_",
         "find_",
         "inspect_",
@@ -317,6 +315,45 @@ def _deny_result(
     if hint is not None:
         payload["hint"] = hint
     return payload
+
+
+def is_denied(result: Any) -> bool:
+    """Return True when an evaluate_tool_call result represents a quarantine deny."""
+    return isinstance(result, dict) and result.get("decision") == "deny"
+
+
+def split_eager_mcp_name(
+    tool_name: str, policy: dict[str, Any] | None = None
+) -> tuple[str | None, str | None]:
+    """Split an MCP tool name (`mcp__srv__tool` or eager `mcp_srv_tool`) cleanly."""
+    if not tool_name:
+        return None, None
+    if tool_name.startswith("mcp__"):
+        parts = tool_name[5:].split("__", 1)
+        return (parts[0], parts[1]) if len(parts) == 2 and parts[0] and parts[1] else (None, None)
+    if not tool_name.startswith("mcp_"):
+        return None, None
+    rest = tool_name[4:]
+    if "__" in rest:
+        parts = rest.split("__", 1)
+        return (parts[0], parts[1]) if len(parts) == 2 and parts[0] and parts[1] else (None, None)
+    src_policy = policy if isinstance(policy, dict) else _BUILTIN_DEFAULT_POLICY
+    trusted_raw = src_policy.get("trusted_servers")
+    trusted_items = (
+        [str(s).strip() for s in trusted_raw if isinstance(s, str) and str(s).strip()]
+        if isinstance(trusted_raw, list)
+        else []
+    )
+    rest_low = rest.lower()
+    for srv in sorted(trusted_items, key=len, reverse=True):
+        prefix_low = f"{srv.lower()}_"
+        if rest_low.startswith(prefix_low) and len(rest) > len(prefix_low):
+            return rest[: len(srv)], rest[len(srv) + 1 :]
+    lsp_idx = rest_low.find("_lsp_")
+    if lsp_idx > 0 and "_" not in rest[:lsp_idx] and lsp_idx + 5 < len(rest):
+        return rest[: lsp_idx + 4], rest[lsp_idx + 5 :]
+    parts = rest.split("_", 1)
+    return (parts[0], parts[1]) if len(parts) == 2 and parts[0] and parts[1] else (None, None)
 
 
 def _evaluate_approved_entry(

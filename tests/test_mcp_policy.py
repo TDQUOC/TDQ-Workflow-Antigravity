@@ -289,6 +289,34 @@ class TestMcpPolicyEvaluationAndCli(unittest.TestCase):
             )
             self.assertEqual(proc_bad_json.returncode, 2)
 
+    def test_split_eager_mcp_name_trusted_and_lsp_guards(self) -> None:
+        mcp_policy = _load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            policy, _corrupt = mcp_policy.load_policy(tmp)
+            self.assertEqual(
+                mcp_policy.split_eager_mcp_name("mcp_other_lsp_start_lsp", policy),
+                ("other_lsp", "start_lsp"),
+            )
+            self.assertEqual(
+                mcp_policy.split_eager_mcp_name(
+                    "mcp_tdq-workflow-agy_tavily-primary_tavily_search", policy
+                ),
+                ("tdq-workflow-agy_tavily-primary", "tavily_search"),
+            )
+            self.assertEqual(
+                mcp_policy.split_eager_mcp_name(
+                    "mcp_gemini-api_gemini-api-docs_gemini_search_docs", policy
+                ),
+                ("gemini-api_gemini-api-docs", "gemini_search_docs"),
+            )
+            self.assertEqual(
+                mcp_policy.split_eager_mcp_name("mcp_evil_delete_lsp_entry", policy),
+                ("evil", "delete_lsp_entry"),
+            )
+            bypass = mcp_policy.evaluate_tool_call(tmp, "evil", "delete_lsp_entry")
+            self.assertTrue(mcp_policy.is_denied(bypass))
+            self.assertEqual(bypass["code"], "READONLY")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,7 +11,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import errno
-import importlib
 import json
 import math
 import os
@@ -24,18 +23,10 @@ from pathlib import Path
 from typing import Any
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+if SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, SCRIPTS_DIR)
 
-
-def _init_utf8_io() -> Any:
-    if SCRIPTS_DIR not in sys.path:
-        sys.path.insert(0, SCRIPTS_DIR)
-    try:
-        return importlib.import_module("utf8_io")
-    except ImportError:
-        return None
-
-
-utf8_io = _init_utf8_io()
+import utf8_io  # noqa: F401
 
 _SAFE_ID_CHARS_RE = re.compile(r"[^A-Za-z0-9._-]+")
 _MULTI_UNDERSCORE_RE = re.compile(r"_+")
@@ -79,28 +70,25 @@ def _close_quietly(fd: int) -> None:
         pass
 
 
-def _lock_fd(fd: int) -> None:
+def _flock_fd(fd: int, unlock: bool) -> None:
+    """Lock or unlock a file descriptor via msvcrt on Windows or flock on POSIX."""
     if os.name == "nt":
         import msvcrt
 
         os.lseek(fd, 0, os.SEEK_SET)
-        msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        msvcrt.locking(fd, msvcrt.LK_UNLCK if unlock else msvcrt.LK_NBLCK, 1)
     else:
         import fcntl
 
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(fd, fcntl.LOCK_UN if unlock else fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _lock_fd(fd: int) -> None:
+    _flock_fd(fd, False)
 
 
 def _unlock_fd(fd: int) -> None:
-    if os.name == "nt":
-        import msvcrt
-
-        os.lseek(fd, 0, os.SEEK_SET)
-        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
-    else:
-        import fcntl
-
-        fcntl.flock(fd, fcntl.LOCK_UN)
+    _flock_fd(fd, True)
 
 
 def _is_lock_contention(exc: OSError) -> bool:

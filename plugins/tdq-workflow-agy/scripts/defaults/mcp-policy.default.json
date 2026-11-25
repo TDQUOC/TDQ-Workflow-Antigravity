@@ -4,12 +4,17 @@
   "trusted_servers": [
     "tdq-lsp",
     "tdq-workflow-agy_lsp",
-    "gemini-api_gemini-api-docs"
+    "gemini-api_gemini-api-docs",
+    "chrome-devtools",
+    "tdq-workflow-agy_chrome-devtools",
+    "tavily-primary",
+    "tdq-workflow-agy_tavily-primary"
   ],
   "read_prefixes": [
     "read_",
     "get_",
     "list_",
+    "select_",
     "search_",
     "find_",
     "inspect_",

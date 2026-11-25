@@ -276,11 +276,15 @@ class ProtocolTest(unittest.TestCase):
         # permission decision and cannot route through `block()`; `tdq_codex.py` only names
         # "deny" as one of the four verdict states it reads back. Neither touches Claude Code's
         # hook path either.
+        # `mcp_policy.py` is a policy verdict library that returns `"decision": "allow"|"deny"`
+        # (analogous to `tdq_codex.py`) and never emits Claude Code hook JSON directly; hooks
+        # route blocks strictly through `_common.block()`.
         deny_allowed = {
             os.path.join(ROOT, "hooks", "scripts", "_common.py"),
             os.path.join(ROOT, "hooks", "scripts", "agy_pretooluse_gate.py"),
             os.path.join(ROOT, "hooks", "scripts", "codex_edit_gate.py"),
             os.path.join(ROOT, "scripts", "build_portable.py"),
+            os.path.join(ROOT, "scripts", "mcp_policy.py"),
             os.path.join(ROOT, "scripts", "tdq_codex.py"),
         }
         hits = []
