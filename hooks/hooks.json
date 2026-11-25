@@ -73,7 +73,7 @@
         ]
       },
       {
-        "matcher": "mcp__(plugin_tdq-workflow_)?lsp__(start_lsp|blast_radius)",
+        "matcher": "mcp__.*|call_mcp_tool",
         "hooks": [
           {
             "type": "command",
