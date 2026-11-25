@@ -25,7 +25,7 @@ from typing import Any
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, SCRIPTS_DIR)
-import utf8_io  # noqa: E402,F401 — forces UTF-8 stdio on Windows
+import utf8_io  # noqa: F401 — forces UTF-8 stdio on Windows
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MAX_QC_SUBAGENTS = 5
@@ -89,6 +89,20 @@ DEFAULT_CONFIG: dict[str, Any] = {
                 "use_for": "bao-mat-va-leo-thang",
             },
         ],
+    },
+    "p0": {
+        "lease_enabled": True,
+        "lease_ttl_sec": 300,
+        "breaker_enabled": True,
+        "breaker_consecutive_failures": 3,
+        "mcp_quarantine_enabled": True,
+        "mcp_mode": "balanced",
+        "oldest_dispatch_share": 4,
+        "budget_caps": {
+            "soft_warn_ratio": 0.8,
+            "hard_stop_tokens": None,
+            "hard_stop_usd": None,
+        },
     },
 }
 
