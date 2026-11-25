@@ -1,0 +1,609 @@
+{
+  "task_id": "T5.1",
+  "generated_at": "2026-11-25T17:11:42+00:00",
+  "branch": "feat/p0-runtime-safety-rust-parity",
+  "base_commit": "68b38e73",
+  "head_commit": "c2aadfac",
+  "ruff_new_p0_files": {
+    "command": "py -3 -X utf8 -m ruff check scripts/tdq_lease.py scripts/mcp_policy.py scripts/tdq_config.py tests/test_tdq_lease.py tests/test_mcp_policy.py tests/test_tdq_timing_budget.py tests/test_tdq_queue.py",
+    "files": [
+      "scripts/tdq_lease.py",
+      "scripts/mcp_policy.py",
+      "scripts/tdq_config.py",
+      "tests/test_tdq_lease.py",
+      "tests/test_mcp_policy.py",
+      "tests/test_tdq_timing_budget.py",
+      "tests/test_tdq_queue.py"
+    ],
+    "returncode": 0,
+    "issue_count": 0,
+    "stdout": "All checks passed!"
+  },
+  "ruff_legacy_edited_files": {
+    "ef_command": "py -3 -X utf8 -m ruff check --select E,F --ignore E501,E741 scripts/tdq_state.py scripts/tdq_team.py scripts/tdq_timing.py hooks/scripts/lsp_gate.py hooks/scripts/edit_gate.py hooks/scripts/bash_gate.py",
+    "files": [
+      "scripts/tdq_state.py",
+      "scripts/tdq_team.py",
+      "scripts/tdq_timing.py",
+      "hooks/scripts/lsp_gate.py",
+      "hooks/scripts/edit_gate.py",
+      "hooks/scripts/bash_gate.py"
+    ],
+    "ef_returncode": 0,
+    "ef_issue_count": 0,
+    "ef_added_line_violations_since_68b38e73": [],
+    "bare_command": "py -3 -X utf8 -m ruff check scripts/tdq_state.py scripts/tdq_team.py scripts/tdq_timing.py hooks/scripts/lsp_gate.py hooks/scripts/edit_gate.py hooks/scripts/bash_gate.py",
+    "bare_returncode": 1,
+    "bare_total_issues": 107,
+    "bare_counts_by_file": {
+      "hooks/scripts/bash_gate.py": 3,
+      "hooks/scripts/edit_gate.py": 11,
+      "hooks/scripts/lsp_gate.py": 5,
+      "scripts/tdq_state.py": 60,
+      "scripts/tdq_team.py": 22,
+      "scripts/tdq_timing.py": 6
+    },
+    "bare_counts_by_code": {
+      "I001": 5,
+      "RUF100": 15,
+      "PIE810": 4,
+      "ISC004": 40,
+      "SIM102": 3,
+      "UP017": 6,
+      "TRY004": 1,
+      "PLW1510": 2,
+      "SIM115": 2,
+      "BLE001": 15,
+      "S110": 1,
+      "FURB105": 3,
+      "FURB167": 4,
+      "RUF059": 1,
+      "FURB188": 1,
+      "UP012": 1,
+      "SIM117": 1,
+      "RUF046": 1,
+      "FURB162": 1
+    },
+    "bare_added_line_violations_since_68b38e73": [
+      {
+        "file": "scripts/tdq_team.py",
+        "row": 785,
+        "code": "UP017",
+        "message": "Use `datetime.UTC` alias"
+      },
+      {
+        "file": "scripts/tdq_team.py",
+        "row": 812,
+        "code": "UP017",
+        "message": "Use `datetime.UTC` alias"
+      },
+      {
+        "file": "hooks/scripts/bash_gate.py",
+        "row": 934,
+        "code": "PIE810",
+        "message": "Call `startswith` once with a `tuple`"
+      }
+    ]
+  },
+  "ast_reverse_import_audit": {
+    "scanned_dir": "scripts",
+    "scanned_file_count": 80,
+    "scanned_files": [
+      "scripts/archify_artifacts.py",
+      "scripts/archify_delivery.py",
+      "scripts/archify_model.py",
+      "scripts/archify_portal.py",
+      "scripts/archify_registry.py",
+      "scripts/build_portable.py",
+      "scripts/canvas_a4_ch4_ch7.py",
+      "scripts/canvas_a4_rebuild.py",
+      "scripts/canvas_draw.py",
+      "scripts/canvas_layout_apply.py",
+      "scripts/canvas_move_block.py",
+      "scripts/caveman_config.py",
+      "scripts/check_canvas_layout.py",
+      "scripts/claude_export.py",
+      "scripts/context_surface.py",
+      "scripts/doc_dup.py",
+      "scripts/doc_index.py",
+      "scripts/doc_lint.py",
+      "scripts/i18n_check.py",
+      "scripts/kiem_no_marker.py",
+      "scripts/lsp_module.py",
+      "scripts/luat_phan_loai.py",
+      "scripts/mcp_policy.py",
+      "scripts/plugin_tiers.py",
+      "scripts/rtk_integration.py",
+      "scripts/scan_block_symbols.py",
+      "scripts/search_replay.py",
+      "scripts/search_rules.py",
+      "scripts/setup_status.py",
+      "scripts/setup_status_render.py",
+      "scripts/skill_inventory.py",
+      "scripts/skill_router.py",
+      "scripts/skill_tokens.py",
+      "scripts/step_audit.py",
+      "scripts/tdq_archify.py",
+      "scripts/tdq_bench.py",
+      "scripts/tdq_ccr.py",
+      "scripts/tdq_checkportable.py",
+      "scripts/tdq_checkstatus.py",
+      "scripts/tdq_codex.py",
+      "scripts/tdq_codex_mcp.py",
+      "scripts/tdq_config.py",
+      "scripts/tdq_devtool_mcp.py",
+      "scripts/tdq_eval.py",
+      "scripts/tdq_eval_contract.py",
+      "scripts/tdq_eval_hosts.py",
+      "scripts/tdq_finish.py",
+      "scripts/tdq_graphify.py",
+      "scripts/tdq_harvest.py",
+      "scripts/tdq_knowledge.py",
+      "scripts/tdq_lease.py",
+      "scripts/tdq_lsp.py",
+      "scripts/tdq_mcp_shrink.py",
+      "scripts/tdq_meta_gate.py",
+      "scripts/tdq_no.py",
+      "scripts/tdq_plan_scaffold.py",
+      "scripts/tdq_readiness.py",
+      "scripts/tdq_runtime_bench.py",
+      "scripts/tdq_setup.py",
+      "scripts/tdq_setup_state.py",
+      "scripts/tdq_simulate_verify.py",
+      "scripts/tdq_skill_eval.py",
+      "scripts/tdq_state.py",
+      "scripts/tdq_team.py",
+      "scripts/tdq_ten_lenh.py",
+      "scripts/tdq_test.py",
+      "scripts/tdq_test_manifest.py",
+      "scripts/tdq_test_process.py",
+      "scripts/tdq_test_receipt.py",
+      "scripts/tdq_test_report.py",
+      "scripts/tdq_test_result.py",
+      "scripts/tdq_timing.py",
+      "scripts/tdq_transcript.py",
+      "scripts/tdq_transcript_cache.py",
+      "scripts/tdq_vision_diff.py",
+      "scripts/tdq_vungfile.py",
+      "scripts/tdq_worktree_registry.py",
+      "scripts/token_audit.py",
+      "scripts/token_budget.py",
+      "scripts/utf8_io.py"
+    ],
+    "forbidden_targets": [
+      "hooks",
+      "hooks.*",
+      "_common"
+    ],
+    "reverse_imports_scripts_to_hooks": [],
+    "hooks_imports_in_scripts": 0
+  },
+  "runtime_log_checks": [
+    {
+      "module": "scripts/tdq_lease.py",
+      "scenario": "status --cwd <TEMPDIR>",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_lease.py status --cwd <TEMPDIR>",
+          "returncode": 0,
+          "stdout_bytes": 37,
+          "stderr_bytes": 113,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:44+00:00] tdq_lease: status checked cwd=C:\\Users\\admin\\AppData\\Local\\Temp\\tmpwigs4zms count=0"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_lease.py status --cwd <TEMPDIR>",
+          "returncode": 0,
+          "stdout_bytes": 37,
+          "stderr_bytes": 113,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:44+00:00] tdq_lease: status checked cwd=C:\\Users\\admin\\AppData\\Local\\Temp\\tmpm00ms36r count=0"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_lease.py status --cwd <TEMPDIR>",
+          "returncode": 0,
+          "stdout_bytes": 37,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/mcp_policy.py",
+      "scenario": "check github get_issue --cwd <TEMPDIR> --json",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github get_issue --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 187,
+          "stderr_bytes": 102,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:44+00:00] mcp_policy: allow server='github' tool='get_issue' tier=read fast_path=1"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github get_issue --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 187,
+          "stderr_bytes": 102,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:44+00:00] mcp_policy: allow server='github' tool='get_issue' tier=read fast_path=1"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github get_issue --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 187,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/mcp_policy.py",
+      "scenario": "check github create_issue --cwd <TEMPDIR> --json (quarantine deny)",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github create_issue --cwd <TEMPDIR> --json",
+          "returncode": 1,
+          "stdout_bytes": 319,
+          "stderr_bytes": 118,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:44+00:00] mcp_policy: deny server='github' tool='create_issue' tier=write key=github::create_issue"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github create_issue --cwd <TEMPDIR> --json",
+          "returncode": 1,
+          "stdout_bytes": 319,
+          "stderr_bytes": 118,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:10:45+00:00] mcp_policy: deny server='github' tool='create_issue' tier=write key=github::create_issue"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/mcp_policy.py check github create_issue --cwd <TEMPDIR> --json",
+          "returncode": 1,
+          "stdout_bytes": 319,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_state.py",
+      "scenario": "reset-breaker --json with TDQ_PROJECT_DIR=<TEMPDIR>",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_state.py reset-breaker --json",
+          "returncode": 0,
+          "stdout_bytes": 249,
+          "stderr_bytes": 94,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45+07:00] ℹ️ P0 circuit breaker reset (open=False, hard_stopped=False)"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_state.py reset-breaker --json",
+          "returncode": 0,
+          "stdout_bytes": 249,
+          "stderr_bytes": 94,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45+07:00] ℹ️ P0 circuit breaker reset (open=False, hard_stopped=False)"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_state.py reset-breaker --json",
+          "returncode": 0,
+          "stdout_bytes": 249,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_team.py",
+      "scenario": "wave (read-only on repo)",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_team.py wave",
+          "returncode": 0,
+          "stdout_bytes": 174,
+          "stderr_bytes": 172,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45] wave · project=C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\r\n[2026-11-26T00:10:45] cum → launch 0 · hold 1 · waiting for a slot 0"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_team.py wave",
+          "returncode": 0,
+          "stdout_bytes": 174,
+          "stderr_bytes": 172,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45] wave · project=C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\r\n[2026-11-26T00:10:45] cum → launch 0 · hold 1 · waiting for a slot 0"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_team.py wave",
+          "returncode": 0,
+          "stdout_bytes": 174,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_timing.py",
+      "scenario": "roles --project <TEMPDIR> --json",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py roles --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 160,
+          "stderr_bytes": 80,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45+07:00] telemetry: summarized 1 record(s) across 1 role(s)"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py roles --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 160,
+          "stderr_bytes": 80,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:45+07:00] telemetry: summarized 1 record(s) across 1 role(s)"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py roles --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 160,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_timing.py",
+      "scenario": "show --project <TEMPDIR> --json",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py show --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1740680,
+          "stderr_bytes": 1177611,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:10:46+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-26T00:10:46+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-26T00:10:46+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py show --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1740680,
+          "stderr_bytes": 1177611,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:11:04+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-26T00:11:04+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-26T00:11:04+07:00] transcript-cache: miss: parsed-current-snapshot\r\n[2026-11-"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_timing.py show --project <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1740680,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_timing.py",
+      "scenario": "check_budget_status(<TEMPDIR>, soft_warn)",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 -c import json, sys; sys.path.insert(0, 'scripts'); import tdq_timing; print(json.dumps(tdq_timing.check_budget_status('C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\tmptrpi32_n', config={'p0': {'budget_caps': {'soft_warn_ratio': 0.8, 'hard_stop_tokens': 1000}}})))",
+          "returncode": 0,
+          "stdout_bytes": 70,
+          "stderr_bytes": 81,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:11:40+07:00] budget soft_warn: ratio=0.9 tokens=900 cost_usd=0.0"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 -c import json, sys; sys.path.insert(0, 'scripts'); import tdq_timing; print(json.dumps(tdq_timing.check_budget_status('C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\tmpy6zvctbp', config={'p0': {'budget_caps': {'soft_warn_ratio': 0.8, 'hard_stop_tokens': 1000}}})))",
+          "returncode": 0,
+          "stdout_bytes": 70,
+          "stderr_bytes": 81,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:11:40+07:00] budget soft_warn: ratio=0.9 tokens=900 cost_usd=0.0"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 -c import json, sys; sys.path.insert(0, 'scripts'); import tdq_timing; print(json.dumps(tdq_timing.check_budget_status('C:\\\\Users\\\\admin\\\\AppData\\\\Local\\\\Temp\\\\tmpyzavzfjh', config={'p0': {'budget_caps': {'soft_warn_ratio': 0.8, 'hard_stop_tokens': 1000}}})))",
+          "returncode": 0,
+          "stdout_bytes": 70,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "scripts/tdq_config.py",
+      "scenario": "show --cwd <TEMPDIR> --json",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_config.py show --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1931,
+          "stderr_bytes": 104,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:11:41+07:00] tdq_config: command=show cwd=C:\\Users\\admin\\AppData\\Local\\Temp\\tmpgk28hxrn"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_config.py show --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1931,
+          "stderr_bytes": 104,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-26T00:11:41+07:00] tdq_config: command=show cwd=C:\\Users\\admin\\AppData\\Local\\Temp\\tmppezpapgh"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 scripts/tdq_config.py show --cwd <TEMPDIR> --json",
+          "returncode": 0,
+          "stdout_bytes": 1931,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "hooks/scripts/lsp_gate.py",
+      "scenario": "stdin mcp__github__get_issue (read fast-path)",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 187,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:11:41+00:00] mcp_policy: allow server='github' tool='get_issue' tier=read fast_path=1\r\n[2026-11-26T00:11:41] lsp_gate: non-tdq-lsp tool='mcp__github__get_issue' — allow"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 187,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:11:41+00:00] mcp_policy: allow server='github' tool='get_issue' tier=read fast_path=1\r\n[2026-11-26T00:11:41] lsp_gate: non-tdq-lsp tool='mcp__github__get_issue' — allow"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "hooks/scripts/lsp_gate.py",
+      "scenario": "stdin mcp__github__create_issue (write quarantine deny)",
+      "expects_default_log": true,
+      "note": null,
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 280,
+          "stderr_bytes": 292,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:11:41+00:00] mcp_policy: deny server='github' tool='create_issue' tier=write key=github::create_issue\r\n[2026-11-26T00:11:41] lsp_gate: non-tdq-lsp mcp deny server=github tool=create_issue reason=MCP tool 'github::create_issue"
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 280,
+          "stderr_bytes": 292,
+          "has_iso_timestamp": true,
+          "stderr_sample": "[2026-11-25T17:11:41+00:00] mcp_policy: deny server='github' tool='create_issue' tier=write key=github::create_issue\r\n[2026-11-26T00:11:41] lsp_gate: non-tdq-lsp mcp deny server=github tool=create_issue reason=MCP tool 'github::create_issue"
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/lsp_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 280,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "hooks/scripts/edit_gate.py",
+      "scenario": "stdin Edit src/a.py (clean active state, breaker closed)",
+      "expects_default_log": false,
+      "note": "edit_gate.py has no _log helper and emits hook decisions/reminders on stdout JSON; stderr is 0B unless tdq_state.load hits corrupt state.",
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/edit_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 384,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/edit_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 384,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/edit_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 384,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    },
+    {
+      "module": "hooks/scripts/bash_gate.py",
+      "scenario": "stdin Bash echo hi (clean active state, breaker closed)",
+      "expects_default_log": false,
+      "note": "bash_gate.py only logs conditionally via tdq_state._info on approve/set-phase turn signal mismatch (line 124); benign echo hi emits 0B stderr.",
+      "modes": {
+        "default_unset": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/bash_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        },
+        "TDQ_LOG=1": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/bash_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        },
+        "TDQ_LOG=0": {
+          "command": "C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.exe -X utf8 hooks/scripts/bash_gate.py",
+          "returncode": 0,
+          "stdout_bytes": 0,
+          "stderr_bytes": 0,
+          "has_iso_timestamp": false,
+          "stderr_sample": ""
+        }
+      }
+    }
+  ],
+  "summary": {
+    "ruff_new_p0_pass": true,
+    "ruff_legacy_ef_pass": true,
+    "hooks_imports_in_scripts": 0,
+    "lease_err0_bytes": 0,
+    "mcp_err0_bytes": 0,
+    "all_checked_modules_0B_on_TDQ_LOG_0": true,
+    "all_logging_modules_iso_on_default_and_TDQ_LOG_1": true,
+    "overall_pass": true
+  }
+}

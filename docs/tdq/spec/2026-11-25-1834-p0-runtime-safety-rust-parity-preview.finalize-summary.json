@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-25-1834-p0-runtime-safety-rust-parity\\truoc-sau.archify.md",
+    "sha256": "df5adcf76a55917e667a51e6e2caf3a5b73b1bacb521c9e9a5d3ce54e20dc7ad",
+    "bytes": 2588
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity-preview.974ad766621b4abab84172bf8c2c9296.html",
+    "sha256": "d80ded8c6753b06b4199c87a51315372f01503a9875f881ef30467c790af7afa",
+    "bytes": 1583397
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity-preview.974ad766621b4abab84172bf8c2c9296.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-25-1834-p0-runtime-safety-rust-parity-preview.974ad766621b4abab84172bf8c2c9296.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2649,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

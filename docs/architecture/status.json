@@ -5,11 +5,16 @@
     "Source file modified: hooks/hooks.json",
     "Source file modified: hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
     "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs",
+    "Source file modified: hooks/scripts/bash_gate.py",
+    "Source file modified: hooks/scripts/edit_gate.py",
+    "Source file modified: hooks/scripts/lsp_gate.py",
     "Source file modified: scripts/tdq_config.py",
     "Source file modified: scripts/tdq_state.py",
+    "Source file modified: scripts/tdq_team.py",
+    "Source file modified: scripts/tdq_timing.py",
     "Source file added: scripts/defaults/mcp-policy.default.json",
     "Source file added: scripts/mcp_policy.py",
     "Source file added: scripts/tdq_lease.py"
   ],
-  "checked_at": "2026-11-25T16:53:09Z"
+  "checked_at": "2026-11-25T18:16:01Z"
 }
