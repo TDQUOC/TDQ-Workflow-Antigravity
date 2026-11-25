@@ -1,14 +1,14 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-26T02:08:43+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-26T02:33:51+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
-| Request | 2026-11-25-1834-p0-runtime-safety-rust-parity |
+| Request | 2026-11-26-0210-p1-domain-packs-bm25 |
 | Work kind | build |
 | Lane | full |
-| Phase | idle |
-| Spec | docs/tdq/spec/2026-11-25-1834-p0-runtime-safety-rust-parity.md — ✔ approved |
-| Plan | docs/tdq/plan/2026-11-25-1834-p0-runtime-safety-rust-parity.md — ✔ approved |
+| Phase | implement |
+| Spec | docs/tdq/spec/2026-11-26-0210-p1-domain-packs-bm25.md — ✔ approved |
+| Plan | docs/tdq/plan/2026-11-26-0210-p1-domain-packs-bm25.md — ✔ approved |
 | Quick approval | (not applicable) |
 | Doc language | vi |
 | Lean level | full |
@@ -16,13 +16,13 @@ Updated: 2026-11-26T02:08:43+07:00 · Project: C:\Users\admin\Documents\Projects
 | Run mode | subagent |
 
 ## Where we are
-Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.
+plan_approved = true and implement_mode = subagent. Forbidden: Doing a task the map marked as dispatched yourself on main; merging before `check` passes; leaving several tasks marked [~].
 
 ## What comes next
-Wait for a new request from the user.
+Assign the WHOLE plan first (step 0), then release wave by wave to sub-agents, merging one wave before releasing the next — the leader only does what cannot be split.
 ```
-python3 scripts/tdq_state.py init <YYYY-MM-DD-HHMM-slug> <nhanh|chuyen-sau> [--lang <code>]
+python3 scripts/tdq_state.py set phase=qc
 ```
-Done when: A new request is open
+Done when: Every task in the plan is ticked [x] and no leftover worktree remains
 
 > Write state only through `python3 scripts/tdq_state.py …`. Unsure where you stand → run `tdq_state.py next`.
