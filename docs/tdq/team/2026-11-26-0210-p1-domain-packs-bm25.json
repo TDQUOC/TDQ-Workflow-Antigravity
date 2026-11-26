@@ -1,0 +1,121 @@
+{
+  "slug": "2026-11-26-0210-p1-domain-packs-bm25",
+  "plan_file": "docs\\tdq\\plan\\2026-11-26-0210-p1-domain-packs-bm25.md",
+  "plan_sha": "487cb858d448cae28631f7f05134bbb1adc74412c57241e1b89b7c2e0948a284",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "bd6721d1b94e3bf9f2d56f931a7b7fb39abb0961cd5a8a781fa895f78cd63a25",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_config.py",
+        "tdq-config.json"
+      ],
+      "dot": 1
+    },
+    "T1.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/build_portable.py"
+      ],
+      "dot": 1
+    },
+    "T1.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/defaults/domains/code-build.json",
+        "scripts/defaults/domains/research-rca.json",
+        "scripts/defaults/domains/pm-ba-content.json",
+        "scripts/defaults/domains/ops-checklist.json",
+        "scripts/tdq_domains.py",
+        "tests/test_tdq_domains.py"
+      ],
+      "dot": 2
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/skill_router.py",
+        "tests/test_skill_router.py"
+      ],
+      "dot": 3
+    },
+    "T2.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "scripts/tdq_state.py",
+        "tests/test_state.py"
+      ],
+      "dot": 4
+    },
+    "T2.3": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_build_portable.py"
+      ],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/scripts/edit_gate.py",
+        "skills/tdq-intake/SKILL.md",
+        "tests/test_p1_zero_downgrade_gate.py"
+      ],
+      "dot": 5
+    },
+    "T3.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "hooks/rust/tdq-dispatch/src/storage.rs",
+        "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs"
+      ],
+      "dot": 5
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tests/test_investigate_workflow.py"
+      ],
+      "dot": 6
+    },
+    "T5.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-26-0210-p1-domain-packs-bm25/log-verify.json"
+      ],
+      "dot": 7,
+      "worktree_required": false
+    },
+    "T5.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/qc/2026-11-26-0210-p1-domain-packs-bm25.md",
+        "docs/tdq/reports/2026-11-26-0210-p1-domain-packs-bm25.md",
+        "docs/tdq/reports/2026-11-26-0210-p1-domain-packs-bm25.html"
+      ],
+      "dot": 8
+    },
+    "QC1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        "skills/tdq-intake/SKILL.md",
+        "scripts/doc_index.py"
+      ],
+      "dot": 1
+    }
+  }
+}
