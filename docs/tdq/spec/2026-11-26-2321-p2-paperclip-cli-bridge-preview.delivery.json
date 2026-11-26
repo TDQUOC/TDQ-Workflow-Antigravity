@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "e301edb5-2af0-4514-85c0-7f4f5a85196b",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge-preview.3c8d45ba5d914ca8ab18ec34b0c8a471.html",
+  "specification": {
+    "sha256": "ef4924506f9de2ca9ff2afb3c73c05b18321f02225c4f9fe6c6fa30cbe978aba",
+    "bytes": 2811
+  },
+  "artifact": {
+    "sha256": "886d4d9fe9abdb2a7c8e1823c87a8a9ea21fb10acd53beeea75de9255975174f",
+    "bytes": 1591581
+  },
+  "explainer": {
+    "preparedSha256": "117857c0b4cd07638198f41bd27f3a82b1f74ed62dbef3254b05fd5dca0258e6",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "p2-cli-before",
+        "inline": true,
+        "sha256": "d5b0290a4025f009bfac2d9f9cba86c8532c16b72f475057a2e5d118f1428265",
+        "bytes": 1056
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p2-cli-after",
+        "inline": true,
+        "sha256": "9cb337875bd662929cb50e8f2c70df729142f64c029677ebfa85fafe41f6b094",
+        "bytes": 1042
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p2-pack-before",
+        "inline": true,
+        "sha256": "b80072b62d3edbcb88930d135b8f1ec00993e03386793a29dd8ddc70eb356f07",
+        "bytes": 1033
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p2-pack-after",
+        "inline": true,
+        "sha256": "14b3f0039e95e33ad1f6833a75e38cbf3bee164d11e424aeb99f914dc0794cc4",
+        "bytes": 1025
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "transport": "cli-one-way",
+  "base_url": "http://127.0.0.1:3100/api",
+  "token_env_var": "PAPERCLIP_API_TOKEN",
+  "timeout_sec": 5,
+  "default_lane": "full",
+  "endpoints": {
+    "health": "/health",
+    "issue": "/issues/{issue_id}",
+    "comments": "/issues/{issue_id}/comments"
+  }
+}
