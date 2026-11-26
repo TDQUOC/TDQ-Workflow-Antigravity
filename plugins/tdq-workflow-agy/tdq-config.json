@@ -78,5 +78,8 @@
   "p1": {
     "domain_router_enabled": true,
     "zero_downgrade_enabled": true
+  },
+  "paperclip_bridge": {
+    "enabled": false
   }
 }

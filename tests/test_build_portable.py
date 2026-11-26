@@ -46,6 +46,8 @@ APPROVED_RUNTIME_MODULES = PHASE1_RUNTIME_MODULES | {
     "tdq_lease", "mcp_policy",
     # Approved 2026-11-26-0210-p1-domain-packs-bm25 domain packs & BM25 skill router
     "skill_router", "tdq_domains",
+    # Approved 2026-11-26-2321-p2-paperclip-cli-bridge one-way Paperclip CLI bridge
+    "tdq_paperclip_bridge",
 }
 APPROVED_RELEASE_DOCS = {
     "skills/tdq-build/references/skill-eval.md",
@@ -78,6 +80,8 @@ APPROVED_RELEASE_DOCS = {
     "scripts/defaults/domains/research-rca.json",
     "scripts/defaults/domains/pm-ba-content.json",
     "scripts/defaults/domains/ops-checklist.json",
+    # Approved 2026-11-26-2321-p2-paperclip-cli-bridge default bridge config
+    "scripts/defaults/paperclip-bridge.default.json",
 }
 
 
@@ -597,6 +601,8 @@ class TestSinhNhanhRelease(TempDest):
             "scripts/skill_router.py",
             "scripts/tdq_domains.py",
             "scripts/defaults/domains/code-build.json",
+            "scripts/tdq_paperclip_bridge.py",
+            "scripts/defaults/paperclip-bridge.default.json",
         )
         for duong in duoc_giu:
             self.assertTrue(build_portable.la_duong_dan_release(duong),

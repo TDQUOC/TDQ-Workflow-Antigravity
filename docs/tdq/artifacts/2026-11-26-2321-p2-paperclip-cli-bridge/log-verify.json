@@ -1,0 +1,64 @@
+{
+  "task": "T4.1",
+  "branch": "feat/p2-paperclip-cli-bridge",
+  "verified_at": "2026-11-27T01:04:32+07:00",
+  "bridge_err0_bytes": 0,
+  "agy_bridge_err0_bytes": 0,
+  "config_err0_bytes": 0,
+  "hooks_imports_in_scripts": 0,
+  "scripts_py_count": 82,
+  "max_func_lines_bridge": {
+    "lines": 46,
+    "name": "run_pull"
+  },
+  "all_agy_codes_count": 23,
+  "schema_version": 6,
+  "ruff_new_p2_rc": 0,
+  "i18n_p2_rc": 0,
+  "i18n_p2_out": "0 Vietnamese line(s) in 3 file(s)",
+  "tdq_log_checks": {
+    "tdq_paperclip_bridge": {
+      "tdq_log_1": {
+        "returncode": 3,
+        "stdout_bytes": 0,
+        "stderr_bytes": 260,
+        "has_iso_timestamp_in_stderr": true
+      },
+      "tdq_log_0": {
+        "returncode": 3,
+        "stdout_bytes": 0,
+        "stderr_bytes": 0,
+        "has_iso_timestamp_in_stderr": false
+      }
+    },
+    "agy_tdq_paperclip_bridge": {
+      "tdq_log_1": {
+        "returncode": 3,
+        "stdout_bytes": 0,
+        "stderr_bytes": 260,
+        "has_iso_timestamp_in_stderr": true
+      },
+      "tdq_log_0": {
+        "returncode": 3,
+        "stdout_bytes": 0,
+        "stderr_bytes": 0,
+        "has_iso_timestamp_in_stderr": false
+      }
+    },
+    "tdq_config": {
+      "tdq_log_1": {
+        "returncode": 0,
+        "stdout_bytes": 345,
+        "stderr_bytes": 117,
+        "has_iso_timestamp_in_stderr": true
+      },
+      "tdq_log_0": {
+        "returncode": 0,
+        "stdout_bytes": 345,
+        "stderr_bytes": 0,
+        "has_iso_timestamp_in_stderr": false
+      }
+    }
+  },
+  "overall_pass": true
+}

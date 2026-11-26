@@ -6,11 +6,13 @@ Usage:
     python3 scripts/tdq_config.py max-qc [--json] [--cwd <path>]
 
 Env:
-    TDQ_MAX_QC_SUBAGENTS        Override qc.ultra_max_subagents (positive int or unlimited/0/none).
-    TDQ_DOMAIN_ROUTER_ENABLED   Override p1.domain_router_enabled (0/false/no/off or 1/true/yes/on).
-    TDQ_ZERO_DOWNGRADE_ENABLED  Override p1.zero_downgrade_enabled (0/false/no/off or 1/true/yes/on).
-    TDQ_PROJECT_DIR             Fallback project root when --cwd is omitted.
-    TDQ_LOG=0                   Disable ISO-timestamped diagnostics on stderr.
+    TDQ_MAX_QC_SUBAGENTS          Override qc.ultra_max_subagents (positive int or unlimited/0/none).
+    TDQ_DOMAIN_ROUTER_ENABLED     Override p1.domain_router_enabled (0/false/no/off or 1/true/yes/on).
+    TDQ_ZERO_DOWNGRADE_ENABLED    Override p1.zero_downgrade_enabled (0/false/no/off or 1/true/yes/on).
+    PAPERCLIP_BRIDGE_ENABLED      Override paperclip_bridge.enabled (1/0).
+    TDQ_PAPERCLIP_BRIDGE_ENABLED  Override paperclip_bridge.enabled (1/0, takes precedence).
+    TDQ_PROJECT_DIR               Fallback project root when --cwd is omitted.
+    TDQ_LOG=0                     Disable ISO-timestamped diagnostics on stderr.
 """
 
 from __future__ import annotations
@@ -43,9 +45,15 @@ _BOOL_STR_MAP: dict[str, bool] = {
     "no": False,
     "off": False,
 }
-_P1_ENV_OVERRIDES: tuple[tuple[str, str], ...] = (
-    ("TDQ_DOMAIN_ROUTER_ENABLED", "domain_router_enabled"),
-    ("TDQ_ZERO_DOWNGRADE_ENABLED", "zero_downgrade_enabled"),
+_SECTION_BOOL_KEYS: dict[str, tuple[str, ...]] = {
+    "p1": ("domain_router_enabled", "zero_downgrade_enabled"),
+    "paperclip_bridge": ("enabled",),
+}
+_SECTION_BOOL_ENV_OVERRIDES: tuple[tuple[str, str, str], ...] = (
+    ("TDQ_DOMAIN_ROUTER_ENABLED", "p1", "domain_router_enabled"),
+    ("TDQ_ZERO_DOWNGRADE_ENABLED", "p1", "zero_downgrade_enabled"),
+    ("PAPERCLIP_BRIDGE_ENABLED", "paperclip_bridge", "enabled"),
+    ("TDQ_PAPERCLIP_BRIDGE_ENABLED", "paperclip_bridge", "enabled"),
 )
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -123,6 +131,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "p1": {
         "domain_router_enabled": True,
         "zero_downgrade_enabled": True,
+    },
+    "paperclip_bridge": {
+        "enabled": False,
     },
 }
 
@@ -206,20 +217,24 @@ def _parse_bool_value(raw: Any, label: str) -> bool | None:
     return None
 
 
-def _normalize_p1_booleans(
-    config: dict[str, Any], prev_p1: dict[str, Any], layer_p1: dict[str, Any]
+def _normalize_section_booleans(
+    config: dict[str, Any],
+    prev_section: dict[str, Any],
+    layer_section: dict[str, Any],
+    section: str,
+    keys: tuple[str, ...],
 ) -> None:
-    p1_cfg = config.setdefault("p1", {})
-    if not isinstance(p1_cfg, dict):
+    target = config.setdefault(section, {})
+    if not isinstance(target, dict):
         return
-    for key in ("domain_router_enabled", "zero_downgrade_enabled"):
-        if key not in layer_p1:
+    for key in keys:
+        if key not in layer_section:
             continue
-        parsed = _parse_bool_value(layer_p1[key], f"p1.{key}")
+        parsed = _parse_bool_value(layer_section[key], f"{section}.{key}")
         if parsed is not None:
-            p1_cfg[key] = parsed
-        elif key in prev_p1:
-            p1_cfg[key] = prev_p1[key]
+            target[key] = parsed
+        elif key in prev_section:
+            target[key] = prev_section[key]
 
 
 def _apply_flat_p1_fallback(config: dict[str, Any], layer: dict[str, Any]) -> None:
@@ -237,25 +252,29 @@ def _apply_flat_p1_fallback(config: dict[str, Any], layer: dict[str, Any]) -> No
 
 
 def _merge_config_layer(config: dict[str, Any], layer: dict[str, Any]) -> None:
-    prev_p1 = copy.deepcopy(config.get("p1")) if isinstance(config.get("p1"), dict) else {}
+    prev_sections = {
+        sec: copy.deepcopy(config.get(sec)) if isinstance(config.get(sec), dict) else {}
+        for sec in _SECTION_BOOL_KEYS
+    }
     _deep_merge(config, layer)
-    layer_p1 = layer.get("p1")
-    if isinstance(layer_p1, dict):
-        _normalize_p1_booleans(config, prev_p1, layer_p1)
+    for sec, keys in _SECTION_BOOL_KEYS.items():
+        layer_sec = layer.get(sec)
+        if isinstance(layer_sec, dict):
+            _normalize_section_booleans(config, prev_sections[sec], layer_sec, sec, keys)
     _apply_flat_p1_fallback(config, layer)
 
 
-def _apply_p1_env_overrides(config: dict[str, Any]) -> None:
-    p1_cfg = config.setdefault("p1", {})
-    if not isinstance(p1_cfg, dict):
-        return
-    for env_name, key in _P1_ENV_OVERRIDES:
+def _apply_section_bool_env_overrides(config: dict[str, Any]) -> None:
+    for env_name, section, key in _SECTION_BOOL_ENV_OVERRIDES:
         raw_env = os.environ.get(env_name)
         if raw_env is None or not raw_env.strip():
             continue
+        section_cfg = config.setdefault(section, {})
+        if not isinstance(section_cfg, dict):
+            continue
         parsed = _parse_bool_value(raw_env, env_name)
         if parsed is not None:
-            p1_cfg[key] = parsed
+            section_cfg[key] = parsed
 
 
 def _apply_env_override(config: dict[str, Any]) -> None:
@@ -266,7 +285,7 @@ def _apply_env_override(config: dict[str, Any]) -> None:
             qc_cfg = config.setdefault("qc", {})
             if isinstance(qc_cfg, dict):
                 qc_cfg["ultra_max_subagents"] = _parse_env_value(stripped)
-    _apply_p1_env_overrides(config)
+    _apply_section_bool_env_overrides(config)
 
 
 def load_config(cwd: str | Path | None = None) -> dict[str, Any]:

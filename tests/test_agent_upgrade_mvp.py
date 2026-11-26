@@ -33,6 +33,8 @@ def _clean_env(**updates: str) -> dict[str, str]:
     """Return a copy of os.environ without config overrides, then apply updates."""
     env = dict(os.environ)
     env.pop("TDQ_MAX_QC_SUBAGENTS", None)
+    env.pop("PAPERCLIP_BRIDGE_ENABLED", None)
+    env.pop("TDQ_PAPERCLIP_BRIDGE_ENABLED", None)
     env.pop("TDQ_PROJECT_DIR", None)
     env.pop("TDQ_LOG", None)
     env.update(updates)
@@ -267,6 +269,53 @@ class TestTdqConfig(unittest.TestCase):
             self.assertEqual(show_text.returncode, 0, show_text.stderr)
             self.assertIn("gemini-3.8-flash", show_text.stdout)
             self.assertIn("gemini-4-carbon", show_text.stdout)
+
+    def test_p2_paperclip_bridge_defaults_and_env_overrides(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project_dir = Path(tmp)
+            with mock.patch.dict(os.environ, _clean_env(TDQ_LOG="0"), clear=True):
+                cfg = tdq_config.load_config(project_dir)
+                self.assertIn("paperclip_bridge", tdq_config.DEFAULT_CONFIG)
+                self.assertFalse(tdq_config.DEFAULT_CONFIG["paperclip_bridge"]["enabled"])
+                self.assertFalse(cfg["paperclip_bridge"]["enabled"])
+
+                root_cfg = json.loads((ROOT / "tdq-config.json").read_text(encoding="utf-8"))
+                self.assertEqual(root_cfg, tdq_config.DEFAULT_CONFIG)
+
+                _write_json(
+                    project_dir / "docs" / "tdq" / "config.json",
+                    {"paperclip_bridge": {"enabled": True}},
+                )
+                proj_cfg = tdq_config.load_config(project_dir)
+                self.assertTrue(proj_cfg["paperclip_bridge"]["enabled"])
+
+            _write_json(
+                project_dir / "docs" / "tdq" / "config.json",
+                {"paperclip_bridge": {"enabled": "maybe"}},
+            )
+            err = io.StringIO()
+            with mock.patch.dict(os.environ, _clean_env(TDQ_LOG="1"), clear=True), redirect_stderr(err):
+                bad_cfg = tdq_config.load_config(project_dir)
+            self.assertFalse(bad_cfg["paperclip_bridge"]["enabled"])
+            self.assertIn("paperclip_bridge.enabled", err.getvalue())
+
+            with mock.patch.dict(
+                os.environ,
+                _clean_env(TDQ_LOG="0", PAPERCLIP_BRIDGE_ENABLED="1"),
+                clear=True,
+            ):
+                self.assertTrue(tdq_config.load_config(project_dir)["paperclip_bridge"]["enabled"])
+
+            with mock.patch.dict(
+                os.environ,
+                _clean_env(
+                    TDQ_LOG="0",
+                    PAPERCLIP_BRIDGE_ENABLED="1",
+                    TDQ_PAPERCLIP_BRIDGE_ENABLED="off",
+                ),
+                clear=True,
+            ):
+                self.assertFalse(tdq_config.load_config(project_dir)["paperclip_bridge"]["enabled"])
 
 
 class TestPythonHooksSecurity(unittest.TestCase):
