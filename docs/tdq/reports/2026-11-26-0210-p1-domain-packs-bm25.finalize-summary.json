@@ -11,7 +11,7 @@
     "bytes": 2939
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
     "sha256": "a69f0755f140ce00b64e1a68bc650bcf338e81a8bb5adf4aa8b73775a2080782",
     "bytes": 1575326
   },
@@ -28,11 +28,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2696,
+  "durationMs": 2652,
   "browserCheck": {
     "requested": false,
     "ran": false

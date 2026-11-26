@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "6e86e59c-b8d9-447b-840f-a127696a9537",
+  "receiptId": "7630614d-9c2d-4134-b47d-df239bd977ce",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
   "specification": {
     "sha256": "4de41070f1ead69f36695786d8cd6974d172f6d62213ea907fd756c80b2bdadb",
     "bytes": 2939
@@ -15,7 +15,7 @@
     "bytes": 1575326
   },
   "explainer": {
-    "preparedSha256": "7a90162fd3835d04441aacad68eda5630f3e2177dd4ab3e4fee5f31469bb3a35",
+    "preparedSha256": "be761bd5573c0b23c5db9c1df4d50a0c3c9017e0e6225944397e6146adfd071b",
     "dependencies": [
       {
         "kind": "diagram-spec",

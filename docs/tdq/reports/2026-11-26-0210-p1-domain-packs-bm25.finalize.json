@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-25T21:39:39.510Z",
+  "startedAt": "2026-11-26T16:18:37.439Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
     "sha256": "4de41070f1ead69f36695786d8cd6974d172f6d62213ea907fd756c80b2bdadb",
     "bytes": 2939
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
     "sha256": "a69f0755f140ce00b64e1a68bc650bcf338e81a8bb5adf4aa8b73775a2080782",
     "bytes": 1575326
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\14380_1795642777712\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13700_1795709915733\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1416,
+      "durationMs": 1384,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\14380_1795642777712\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13700_1795709915733\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "6e86e59c-b8d9-447b-840f-a127696a9537",
+        "receiptId": "7630614d-9c2d-4134-b47d-df239bd977ce",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
         "explainer": {
-          "preparedSha256": "7a90162fd3835d04441aacad68eda5630f3e2177dd4ab3e4fee5f31469bb3a35",
+          "preparedSha256": "be761bd5573c0b23c5db9c1df4d50a0c3c9017e0e6225944397e6146adfd071b",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -147,17 +147,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 754,
+      "durationMs": 734,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\14380_1795642777712\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\13700_1795709915733\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.html",
         "family": "explainer",
         "artifact": {
           "sha256": "a69f0755f140ce00b64e1a68bc650bcf338e81a8bb5adf4aa8b73775a2080782",
@@ -208,7 +208,7 @@
               "id": "p1-before",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ekDskK\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-lzTQOl\\child.html",
                 "artifact": {
                   "sha256": "269b0b80b9dc0d1cd149f5dcf40d138ed90f55832506e75d88be299abb9e8b3c",
                   "bytes": 808656
@@ -333,7 +333,7 @@
               "id": "p1-after",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-guWaqu\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-TbR9nm\\child.html",
                 "artifact": {
                   "sha256": "042200458ef62cc2221a049db421240a5f4955e600be587d843943e5d7cacc21",
                   "bytes": 808384
@@ -458,7 +458,7 @@
               "id": "p1-tested",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-iiYFbR\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Cz1NtW\\child.html",
                 "artifact": {
                   "sha256": "16616993a804647002b887f787fe0132288d93b7f6a7af2d74a9e703701dfd87",
                   "bytes": 808646
@@ -583,7 +583,7 @@
               "id": "p1-results",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-SktAdn\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-j6xKE8\\child.html",
                 "artifact": {
                   "sha256": "139c1828e56d5f248dd0aba74173418deb5058c1869ddf0c395f668cad315cf2",
                   "bytes": 808939
@@ -708,7 +708,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "6e86e59c-b8d9-447b-840f-a127696a9537"
+        "deliveryReceiptId": "7630614d-9c2d-4134-b47d-df239bd977ce"
       }
     }
   },
@@ -718,12 +718,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.de01723d5a0a489dbbf1284554e99e74.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-25T21:39:42.206Z",
-  "durationMs": 2696,
+  "finishedAt": "2026-11-26T16:18:40.092Z",
+  "durationMs": 2652,
   "update": {
     "status": "unavailable",
     "installedVersion": null,
