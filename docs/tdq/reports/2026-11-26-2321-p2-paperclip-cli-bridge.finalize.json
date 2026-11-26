@@ -5,14 +5,14 @@
   "status": "pass",
   "type": "explainer",
   "quality": "showcase",
-  "startedAt": "2026-11-26T18:37:44.514Z",
+  "startedAt": "2026-11-26T18:43:48.755Z",
   "specification": {
     "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\bao-cao.archify.md",
     "sha256": "e8991ae3e040cd7899d5427445955ede8bd6cd50b3faa501725daa75b59845ca",
     "bytes": 3225
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
     "sha256": "cce57c51e87ad90004a15b546bcb573cc8c149369122d9a7e6202653e04bd1f9",
     "bytes": 1590242
   },
@@ -27,12 +27,12 @@
       "durationMs": null,
       "execution": "embedded-in-deliver",
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39792_1795718262671\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38044_1795718627006\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -60,14 +60,14 @@
     "deliver": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 1377,
+      "durationMs": 1401,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39792_1795718262671\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38044_1795718627006\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "deliver",
         "explainer",
         "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\bao-cao.archify.md",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
         "--quality",
         "showcase",
         "--repo-root",
@@ -76,14 +76,14 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "receiptId": "0767b531-0527-40d9-88a1-e92069673d2c",
+        "receiptId": "dcb90c90-04d1-40ed-8d71-a26cdbed4052",
         "ok": true,
         "command": "deliver",
         "type": "explainer",
         "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\bao-cao.archify.md",
-        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+        "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
         "explainer": {
-          "preparedSha256": "0f2df37dcd73a8ccf57b8a88863c6082fded812a513d6a354ee7c1ce2e692f54",
+          "preparedSha256": "a0e7ae7fc18941312d8ccf6bdb958c46fce3f8c9715574580c7222d39778daf3",
           "dependencies": [
             {
               "kind": "diagram-spec",
@@ -147,17 +147,17 @@
     "check": {
       "status": "pass",
       "exitCode": 0,
-      "durationMs": 726,
+      "durationMs": 735,
       "command": [
-        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\39792_1795718262671\\node.EXE",
+        "C:\\Users\\admin\\AppData\\Local\\fnm_multishells\\38044_1795718627006\\node.EXE",
         "C:\\Users\\admin\\Documents\\archify\\archify\\bin\\archify.mjs",
         "check",
-        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+        "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
         "--require-provenance"
       ],
       "receipt": {
         "ok": true,
-        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+        "file": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
         "family": "explainer",
         "artifact": {
           "sha256": "cce57c51e87ad90004a15b546bcb573cc8c149369122d9a7e6202653e04bd1f9",
@@ -208,7 +208,7 @@
               "id": "p2-before",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-Qkywyk\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-GdBhqi\\child.html",
                 "artifact": {
                   "sha256": "ab86624277d5eba04a270e2f1e0fa1a750387fde37b28d62ff778738f34adf80",
                   "bytes": 809588
@@ -333,7 +333,7 @@
               "id": "p2-after",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-yta14n\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-r8LbJA\\child.html",
                 "artifact": {
                   "sha256": "330d4fbf5ac1bead1ed93d8ef66f2723f072bd8dd2e05371dcee9e2b8ceb5953",
                   "bytes": 809798
@@ -458,7 +458,7 @@
               "id": "p2-tested",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-UbMgpd\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-XFhK6G\\child.html",
                 "artifact": {
                   "sha256": "f7cdef11dcc24080152325ca084cefa5362ac77a6f91bdd8bbca460ca83005c7",
                   "bytes": 809417
@@ -583,7 +583,7 @@
               "id": "p2-results",
               "receipt": {
                 "ok": true,
-                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-fBUGQG\\child.html",
+                "file": "C:\\Users\\admin\\AppData\\Local\\Temp\\archify-explainer-check-ahSyEp\\child.html",
                 "artifact": {
                   "sha256": "4019eef7bb530e8842652338e2c461cfdedd8de5627a9319e845160f02862913",
                   "bytes": 809651
@@ -708,7 +708,7 @@
         },
         "diagnostics": [],
         "provenance": "current",
-        "deliveryReceiptId": "0767b531-0527-40d9-88a1-e92069673d2c"
+        "deliveryReceiptId": "dcb90c90-04d1-40ed-8d71-a26cdbed4052"
       }
     }
   },
@@ -718,12 +718,12 @@
   },
   "diagnostics": [],
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "finishedAt": "2026-11-26T18:37:47.119Z",
-  "durationMs": 2604,
+  "finishedAt": "2026-11-26T18:43:51.437Z",
+  "durationMs": 2682,
   "update": {
     "status": "unavailable",
     "installedVersion": null,

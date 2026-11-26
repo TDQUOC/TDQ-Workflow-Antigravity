@@ -11,7 +11,7 @@
     "bytes": 3225
   },
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
     "sha256": "cce57c51e87ad90004a15b546bcb573cc8c149369122d9a7e6202653e04bd1f9",
     "bytes": 1590242
   },
@@ -28,11 +28,11 @@
     "truncated": false
   },
   "evidence": {
-    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize.json",
-    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize-summary.json"
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize-summary.json"
   },
   "visualReview": "not-requested",
-  "durationMs": 2604,
+  "durationMs": 2682,
   "browserCheck": {
     "requested": false,
     "ran": false

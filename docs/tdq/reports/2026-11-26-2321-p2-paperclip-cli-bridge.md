@@ -35,7 +35,7 @@ Soul: chất lượng > runtime > context cost · luật gốc: skills/tdq-conve
 
 **Lệch spec chờ duyệt:** không có (`tdq_state.py lech list` → `0 item(s), 0 pending`).
 
-**Git:** Chưa commit — mọi thay đổi đang ở nhánh `feat/p2-paperclip-cli-bridge` tách từ `dev@24acb575` (`0` trailer `Co-Authored-By:`), chờ xác nhận chốt từ người dùng.
+**Git:** Đã commit `77126b11` trên `feat/p2-paperclip-cli-bridge`, hợp nhất `--no-ff` (`fb88116e`) vào `dev` và xóa nhánh `feat/p2-paperclip-cli-bridge` (chưa push).
 
 ---
 
@@ -86,5 +86,5 @@ Host metrics unavailable (5 hidden: api_request_seconds, tool_call_seconds, back
 **Rủi ro hồi quy:** Luồng Windows mặc định không thay đổi vì `paperclip_bridge.enabled` là `false` (thoát mã `3`, `0` socket mở); không chỉnh `hooks/` hay Rust `tdq-dispatch` (giữ `schema_version=6` và `23` mã cổng AGY); xóa 3 tệp P2 giữ nguyên hoàn toàn `P0`/`P1` (`test_state.py`, `tdq_domains.py`, `tdq_config.py` đều xanh).
 <!-- tdq-archify-binding:start -->
 <!-- manifest: 2026-11-26-2321-p2-paperclip-cli-bridge.manifest.json -->
-<!-- manifest_digest: ed5cdc6e3cd7911b754caf565761e8f4dc1f00b13042a8930ef584a55427d8cd -->
+<!-- manifest_digest: b2c205598a179961cc37db407d4e25f239fbfe561dab30196e99eb9d5ea73960 -->
 <!-- tdq-archify-binding:end -->

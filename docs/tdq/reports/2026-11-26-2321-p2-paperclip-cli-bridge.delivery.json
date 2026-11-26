@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "receiptId": "0767b531-0527-40d9-88a1-e92069673d2c",
+  "receiptId": "dcb90c90-04d1-40ed-8d71-a26cdbed4052",
   "status": "current",
   "command": "deliver",
   "type": "explainer",
   "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-2321-p2-paperclip-cli-bridge\\bao-cao.archify.md",
-  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
   "specification": {
     "sha256": "e8991ae3e040cd7899d5427445955ede8bd6cd50b3faa501725daa75b59845ca",
     "bytes": 3225
@@ -15,7 +15,7 @@
     "bytes": 1590242
   },
   "explainer": {
-    "preparedSha256": "0f2df37dcd73a8ccf57b8a88863c6082fded812a513d6a354ee7c1ce2e692f54",
+    "preparedSha256": "a0e7ae7fc18941312d8ccf6bdb958c46fce3f8c9715574580c7222d39778daf3",
     "dependencies": [
       {
         "kind": "diagram-spec",

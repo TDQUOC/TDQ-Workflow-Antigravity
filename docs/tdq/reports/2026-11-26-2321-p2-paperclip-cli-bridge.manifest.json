@@ -5,7 +5,7 @@
   "evidence_kind": "working-tree",
   "revision": null,
   "document_path": "docs/tdq/reports/2026-11-26-2321-p2-paperclip-cli-bridge.md",
-  "document_digest": "96400a46281363094dd9b35a7f849e8201a6fea7bf1c961ce7c6ad713e908c72",
+  "document_digest": "f04c155502a31dadaf058ae56f6a716afb8946c58e4d241f967c96ab716cac49",
   "candidate_path": "docs/tdq/artifacts/2026-11-26-2321-p2-paperclip-cli-bridge/bao-cao.archify.md",
   "candidate_digest": "e8991ae3e040cd7899d5427445955ede8bd6cd50b3faa501725daa75b59845ca",
   "artifact_path": "docs/tdq/reports/2026-11-26-2321-p2-paperclip-cli-bridge.html",
@@ -1584,7 +1584,7 @@
     "plugins/tdq-workflow-agy/hooks/scripts/stop_gate.py": "0bcd8ef054c7507b51e2d4d1de4481db0f77a0edf7e10aff11de1ac77c18b76a",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_dispatch_gate.py": "fe34c689f956599a738425dbd2be432d8ba20334eb75ded442059eb47f71fb59",
     "plugins/tdq-workflow-agy/hooks/scripts/subagent_stop.py": "232e6118b647194390799b48667c5f867ae20f34cda1a8ab998f325017008767",
-    "plugins/tdq-workflow-agy/manifest.json": "9f478a2db0fe014a642f625951347bd662a273a753c50ac2c0fca6d36f7cc6f1",
+    "plugins/tdq-workflow-agy/manifest.json": "49f32f88a2b6596f7343256052ef5b14e0b06a256d6d612f0afd71a94d2e7b85",
     "plugins/tdq-workflow-agy/mcp_config.json": "d48655e7e33ffd5eb7f6bb3202ea28b7f16a7680edfc199672742eb5a1d3471b",
     "plugins/tdq-workflow-agy/plugin.json": "6190cb7587a8bcb5ba9d2c3e0db406db278583299477caf3a678dd3993b36447",
     "plugins/tdq-workflow-agy/rules/AGENTS.md": "89c8572d9b898f28f782629a6ba6d032cd68ecbdfddfcc89d3b639560a00acd6",
@@ -1612,7 +1612,7 @@
     "plugins/tdq-workflow-agy/scripts/defaults/domains/pm-ba-content.json": "c839f4510ea9146a40d8a90d78a5e28911a6f6f3b13e367c3e47c8d164fa1eaf",
     "plugins/tdq-workflow-agy/scripts/defaults/domains/research-rca.json": "62345dd2129d12a186ad4c88be1c018d0598f51e898e198a6687649ae41e3ae3",
     "plugins/tdq-workflow-agy/scripts/defaults/mcp-policy.default.json": "3178ecd9b199df8e1171295b222bfaf46748c023f0edfcd16315afcaa4d866a8",
-    "plugins/tdq-workflow-agy/scripts/defaults/paperclip-bridge.default.json": "8ca48fa5e85fe9faedfcafb990d07ea23da52f11b58c0dbaac29c3816d55378c",
+    "plugins/tdq-workflow-agy/scripts/defaults/paperclip-bridge.default.json": "86609fc7a7cd8a9fb02841628125db756f70ecc88685acd0cd06316f12e9cfcd",
     "plugins/tdq-workflow-agy/scripts/doc_dup.py": "7cea19cf1a28189a32f9c2bf45e05cc9b772f582dfc24a426eae53247d41e267",
     "plugins/tdq-workflow-agy/scripts/doc_index.py": "18a03b322d94d9f1dae66848a1b537e8cf3261e9e6fbd13077d419ca11a7f3ec",
     "plugins/tdq-workflow-agy/scripts/doc_lint.py": "da73e5b47ba0caa9af87706512bd4363e28e36ca6586fc4fc619d1032c458a30",
@@ -1657,7 +1657,7 @@
     "plugins/tdq-workflow-agy/scripts/tdq_mcp_shrink.py": "4a4bdb85ded6a9602778bc109c7250f0ff6208a29ac20cc845dd5df9e210b529",
     "plugins/tdq-workflow-agy/scripts/tdq_meta_gate.py": "490d86596b95be555e71be21645d0de663730f23ff33abfe86062e098fec5cf7",
     "plugins/tdq-workflow-agy/scripts/tdq_no.py": "74f9c44e4c717973bc9f999334cd8cdfb51854447059fc2348c6fb2ae839d46b",
-    "plugins/tdq-workflow-agy/scripts/tdq_paperclip_bridge.py": "b7e9351fc3e8402bf75a49815300b43499fa24c71db98e9004feaa502446c559",
+    "plugins/tdq-workflow-agy/scripts/tdq_paperclip_bridge.py": "1efaa1d6d8b96fb5bc0f5c1f4f784a472ca6bed31e7f342ed83f030020f11a20",
     "plugins/tdq-workflow-agy/scripts/tdq_plan_scaffold.py": "59a8075fb2fdb5070af78f444c6f9895ff7e18216fc7b1b91f5fcb03720ab409",
     "plugins/tdq-workflow-agy/scripts/tdq_readiness.py": "9eee5c8cc4106290c149bea9d4b81c3a5c18c1c3336f190a3d91f0b98476603b",
     "plugins/tdq-workflow-agy/scripts/tdq_runtime_bench.py": "823516f691fcaf1831f87d281395c77037228d1f58e85ba0bfea87f98e30e367",
@@ -1791,7 +1791,7 @@
     "scripts/defaults/domains/pm-ba-content.json": "c839f4510ea9146a40d8a90d78a5e28911a6f6f3b13e367c3e47c8d164fa1eaf",
     "scripts/defaults/domains/research-rca.json": "62345dd2129d12a186ad4c88be1c018d0598f51e898e198a6687649ae41e3ae3",
     "scripts/defaults/mcp-policy.default.json": "3178ecd9b199df8e1171295b222bfaf46748c023f0edfcd16315afcaa4d866a8",
-    "scripts/defaults/paperclip-bridge.default.json": "8ca48fa5e85fe9faedfcafb990d07ea23da52f11b58c0dbaac29c3816d55378c",
+    "scripts/defaults/paperclip-bridge.default.json": "86609fc7a7cd8a9fb02841628125db756f70ecc88685acd0cd06316f12e9cfcd",
     "scripts/doc_dup.py": "12d49544c03078ae5d159c38c177d0bc80eaa86f6d38171da32230b842a5094f",
     "scripts/doc_index.py": "18a03b322d94d9f1dae66848a1b537e8cf3261e9e6fbd13077d419ca11a7f3ec",
     "scripts/doc_lint.py": "da73e5b47ba0caa9af87706512bd4363e28e36ca6586fc4fc619d1032c458a30",
@@ -1834,7 +1834,7 @@
     "scripts/tdq_mcp_shrink.py": "4a4bdb85ded6a9602778bc109c7250f0ff6208a29ac20cc845dd5df9e210b529",
     "scripts/tdq_meta_gate.py": "490d86596b95be555e71be21645d0de663730f23ff33abfe86062e098fec5cf7",
     "scripts/tdq_no.py": "af5981ce57bca5e3e51b70c939eb5f0511289063b671ab47cd4599db563b7197",
-    "scripts/tdq_paperclip_bridge.py": "b7e9351fc3e8402bf75a49815300b43499fa24c71db98e9004feaa502446c559",
+    "scripts/tdq_paperclip_bridge.py": "1efaa1d6d8b96fb5bc0f5c1f4f784a472ca6bed31e7f342ed83f030020f11a20",
     "scripts/tdq_plan_scaffold.py": "59a8075fb2fdb5070af78f444c6f9895ff7e18216fc7b1b91f5fcb03720ab409",
     "scripts/tdq_readiness.py": "9eee5c8cc4106290c149bea9d4b81c3a5c18c1c3336f190a3d91f0b98476603b",
     "scripts/tdq_runtime_bench.py": "823516f691fcaf1831f87d281395c77037228d1f58e85ba0bfea87f98e30e367",
@@ -2116,7 +2116,7 @@
     "tests/test_optimize_contracts.py": "9f96cab3d00dd60fd07881986a74425ae0edb922a4b2155c5662c292397cd16a",
     "tests/test_optimize_logging.py": "e3dccbd2dc7a2261fa32ff9fec7623d50e7ff295aa0d57162a6e657594a3c550",
     "tests/test_p1_zero_downgrade_gate.py": "3e2f479a53d9df36be931fb72add05383f44d2e28a9c2b63088a6b06e81b97c5",
-    "tests/test_paperclip_bridge.py": "930e7d748a999f4a535c0d38e47fd4d373fb8fa9c7b244d0da9114cfd42d2ba8",
+    "tests/test_paperclip_bridge.py": "e4d67cec098a4a7bab2fd936e88d7dc723db8a3c6f1be2971b5808b717d6786e",
     "tests/test_phase1_contract.py": "0d5b1d9202d5f9cf8d4283b5003153b0f7545cbf0158cc058c3cf247be770dc6",
     "tests/test_phase1_logging.py": "d85487bbb367c5e702deda23950267fb84b6ad511f86ec4473f30e713ecb6238",
     "tests/test_phase_table.py": "3f7faf001cc25ba0577c2ec141e7f13a8be500b0d39bc139838797bb9184d517",
@@ -2269,7 +2269,7 @@
       "bytes": 3225
     },
     "artifact": {
-      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.html",
+      "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.html",
       "sha256": "cce57c51e87ad90004a15b546bcb573cc8c149369122d9a7e6202653e04bd1f9",
       "bytes": 1590242
     },
@@ -2286,11 +2286,11 @@
       "truncated": false
     },
     "evidence": {
-      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize.json",
-      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.2f489aafc2d444b1b073e299b1b9d48c.finalize-summary.json"
+      "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize.json",
+      "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-2321-p2-paperclip-cli-bridge.8b2ec89d8a274c728551cb3079c8ce96.finalize-summary.json"
     },
     "visualReview": "not-requested",
-    "durationMs": 2604,
+    "durationMs": 2682,
     "browserCheck": {
       "requested": false,
       "ran": false
