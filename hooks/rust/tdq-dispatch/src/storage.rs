@@ -31,6 +31,8 @@ pub struct TdqState {
     pub implement_pause: Option<Value>,
     pub doc_lang: Option<String>,
     pub work_kind: Option<String>,
+    pub domain_id: Option<String>,
+    pub downgrade_locked: Option<bool>,
     pub updated_at: Option<String>,
 }
 
@@ -968,5 +970,24 @@ mod tests {
             resolve_setup_state_dir_with(None, None, Some("/real/plugin_data"), None, Some(&home)),
             Some(PathBuf::from("/real/plugin_data"))
         );
+    }
+
+    #[test]
+    fn test_tdq_state_p1_domain_fields_and_legacy_deserialization() {
+        let with_p1 = r#"{
+            "schema_version": 6,
+            "active_request": "2026-11-26-p1-demo",
+            "work_kind": "build",
+            "domain_id": "research-rca",
+            "downgrade_locked": true
+        }"#;
+        let parsed: TdqState = serde_json::from_str(with_p1).unwrap();
+        assert_eq!(parsed.domain_id.as_deref(), Some("research-rca"));
+        assert_eq!(parsed.downgrade_locked, Some(true));
+
+        let legacy = r#"{"schema_version":6,"active_request":"2026-11-25-legacy","work_kind":"investigate"}"#;
+        let parsed_legacy: TdqState = serde_json::from_str(legacy).unwrap();
+        assert_eq!(parsed_legacy.domain_id, None);
+        assert_eq!(parsed_legacy.downgrade_locked, None);
     }
 }

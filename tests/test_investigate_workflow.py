@@ -632,3 +632,169 @@ def test_sim_ca4_1953_bugfix_two_stage_escalation(tmp_path: Path) -> None:
     assert lint_build.returncode == 1 and "[R10]" in lint_build.stdout
     app_build = _run_cli(STATE_CLI, ["approve", "spec", "--by", "duyet"], repo, home)
     assert app_build.returncode != 0 and "Archify" in app_build.stderr
+
+
+def _setup_p1_parity_repo(
+    root: Path,
+    *,
+    mode: str,
+    domain_id: str | None,
+    work_kind: str,
+    with_plan: bool = True,
+) -> tuple[Path, Path]:
+    """Create isolated repo with optional [~] plan task, today log, and P1 state fields."""
+    repo, home = _setup_inv_repo(root)
+    (repo / "src").mkdir(exist_ok=True)
+    (repo / "src" / "app.py").write_text("x = 1\n", encoding="utf-8")
+    (repo / "docs" / "tdq" / "research" / "note.md").write_text("# Note\n", encoding="utf-8")
+    log_path = repo / tdq_state.today_log_rel()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("# Log\n\n## 01:00 — setup\n", encoding="utf-8")
+    state = tdq_state.load(str(repo), heal=False)
+    assert state is not None
+    state["implement_mode"] = mode
+    state["domain_id"] = domain_id
+    state["work_kind"] = work_kind
+    if with_plan:
+        plan_rel = f"docs/tdq/plan/{SLUG_PARITY}.md"
+        plan_path = repo / plan_rel
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        plan_path.write_text(
+            "# Plan\n\n"
+            "## Model & Effort\n\n"
+            "| Phase | Role | Model | Effort |\n|---|---|---|---|\n"
+            "| implement | self | inherit | high |\n"
+            "| qc | tdq-qc-tester | inherit | high |\n"
+            "| report | self | inherit | medium |\n\n"
+            "- [~] **T1.1** Fix bug — Test: `py -3 -c \"print('ok')\"`\n",
+            encoding="utf-8",
+        )
+        state["plan_file"] = plan_rel
+    tdq_state.save(str(repo), state)
+    return repo, home
+
+
+def _assert_edit_parity(
+    r_repo: Path,
+    r_home: Path,
+    p_repo: Path,
+    p_home: Path,
+    target: str,
+    expected_decision: str,
+    *,
+    expected_tag: str = "",
+    expected_sub: str = "",
+    agent_type: str | None = None,
+) -> None:
+    """Assert identical Rust and Python PreToolUse edit decision and diagnostic markers."""
+    sid = "p1-impl" if agent_type else "p1-main"
+    payload: dict[str, object] = {
+        "conversationId": sid,
+        "toolName": "write_to_file",
+        "toolInput": {"TargetFile": target},
+    }
+    if agent_type:
+        payload["agent_type"] = agent_type
+    _, r_out = _run_hook_engine("rust", {**payload, "cwd": str(r_repo)}, r_repo, r_home)
+    _, p_out = _run_hook_engine("python", {**payload, "cwd": str(p_repo)}, p_repo, p_home)
+    assert r_out.get("decision") == expected_decision
+    assert p_out.get("decision") == expected_decision
+    if expected_tag:
+        assert expected_tag in r_out.get("reason", "")
+        assert expected_tag in p_out.get("reason", "")
+    if expected_sub:
+        assert expected_sub in r_out.get("reason", "")
+        assert expected_sub in p_out.get("reason", "")
+
+
+def _check_p1_locked_pair(
+    base: Path,
+    *,
+    mode: str,
+    domain_id: str | None,
+    work_kind: str,
+    with_plan: bool = True,
+) -> tuple[Path, Path, Path, Path]:
+    """Set up Rust/Python repo pair and verify zero-downgrade deny + docs allow."""
+    r_repo, r_home = _setup_p1_parity_repo(
+        base / "r", mode=mode, domain_id=domain_id, work_kind=work_kind, with_plan=with_plan
+    )
+    p_repo, p_home = _setup_p1_parity_repo(
+        base / "p", mode=mode, domain_id=domain_id, work_kind=work_kind, with_plan=with_plan
+    )
+    _assert_edit_parity(
+        r_repo, r_home, p_repo, p_home, "src/app.py", "deny",
+        expected_tag="[TDQ:APPROVE]", expected_sub="escalate-to-build",
+    )
+    if mode == "subagent":
+        _assert_edit_parity(
+            r_repo, r_home, p_repo, p_home, "src/app.py", "deny",
+            expected_tag="[TDQ:APPROVE]", expected_sub="escalate-to-build",
+            agent_type="tdq-implementer",
+        )
+    _assert_edit_parity(r_repo, r_home, p_repo, p_home, "docs/tdq/research/note.md", "allow")
+    return r_repo, r_home, p_repo, p_home
+
+
+def _check_p1_full_escalation(base: Path) -> None:
+    """Verify full-lane escalate-to-build, downgrade lock, plan re-approval, and allow parity."""
+    r_repo, r_home, p_repo, p_home = _check_p1_locked_pair(
+        base, mode="main", domain_id="research-rca", work_kind="investigate"
+    )
+    for repo, home in ((r_repo, r_home), (p_repo, p_home)):
+        esc = _run_cli(STATE_CLI, ["escalate-to-build", "--by", "fix bug"], repo, home)
+        assert esc.returncode == 0, esc.stderr
+        st = tdq_state.load(str(repo), heal=False)
+        assert st is not None and st["work_kind"] == "build"
+        assert st["domain_id"] == "code-build" and st["downgrade_locked"] is True
+        assert _run_cli(STATE_CLI, ["set", "domain_id=research-rca"], repo, home).returncode != 0
+        assert _run_cli(STATE_CLI, ["set", "work_kind=investigate"], repo, home).returncode != 0
+    _assert_edit_parity(
+        r_repo, r_home, p_repo, p_home, "src/app.py", "deny", expected_tag="[TDQ:APPROVE]"
+    )
+    for repo, home in ((r_repo, r_home), (p_repo, p_home)):
+        app = _run_cli(STATE_CLI, ["approve", "plan", "--mode", "main", "--by", "fix bug"], repo, home)
+        assert app.returncode == 0, app.stderr
+    _assert_edit_parity(r_repo, r_home, p_repo, p_home, "src/app.py", "allow")
+
+
+def test_p1_zero_downgrade_edit_parity_and_rollback(tmp_path: Path) -> None:
+    """Verify Rust/Python parity for P1 zero-downgrade lock, escalation, and rollback."""
+    for idx, (mode, domain_id, work_kind) in enumerate([
+        ("main", "research-rca", "build"),
+        ("main", None, "investigate"),
+        ("subagent", "research-rca", "build"),
+        ("subagent", None, "investigate"),
+    ]):
+        _check_p1_locked_pair(
+            tmp_path / f"lock_{idx}", mode=mode, domain_id=domain_id, work_kind=work_kind
+        )
+    _check_p1_full_escalation(tmp_path / "esc_full")
+    for name, mode, with_plan, exp_dec, exp_tag in [
+        ("esc_inline_main", "main", True, "allow", ""),
+        ("esc_inline_sub_noplan", "subagent", False, "allow", ""),
+        ("esc_inline_sub_plan", "subagent", True, "deny", "[TDQ:TEAM]"),
+    ]:
+        rr, rh, pr, ph = _check_p1_locked_pair(
+            tmp_path / name, mode=mode, domain_id="research-rca",
+            work_kind="investigate", with_plan=with_plan,
+        )
+        for repo, home in ((rr, rh), (pr, ph)):
+            esc_in = _run_cli(
+                STATE_CLI, ["escalate-to-build", "--by", "fix bug", "--inline-fix"], repo, home
+            )
+            assert esc_in.returncode == 0, esc_in.stderr
+        _assert_edit_parity(rr, rh, pr, ph, "src/app.py", exp_dec, expected_tag=exp_tag)
+    for name, mode, domain_id, work_kind, with_plan in [
+        ("rb_dom_main", "main", "research-rca", "build", True),
+        ("rb_inv_main", "main", None, "investigate", True),
+        ("rb_sub", "subagent", "research-rca", "investigate", False),
+    ]:
+        rr, rh, pr, ph = _check_p1_locked_pair(
+            tmp_path / name, mode=mode, domain_id=domain_id,
+            work_kind=work_kind, with_plan=with_plan,
+        )
+        cfg_text = json.dumps({"p1": {"zero_downgrade_enabled": False}})
+        (rr / "docs" / "tdq" / "config.json").write_text(cfg_text, encoding="utf-8")
+        (pr / "docs" / "tdq" / "config.json").write_text(cfg_text, encoding="utf-8")
+        _assert_edit_parity(rr, rh, pr, ph, "src/app.py", "allow")

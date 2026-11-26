@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\bao-cao.archify.md",
+    "sha256": "4de41070f1ead69f36695786d8cd6974d172f6d62213ea907fd756c80b2bdadb",
+    "bytes": 2939
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.html",
+    "sha256": "a69f0755f140ce00b64e1a68bc650bcf338e81a8bb5adf4aa8b73775a2080782",
+    "bytes": 1575326
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-26-0210-p1-domain-packs-bm25.86040ead01a94453aa822bd338280e02.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2696,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

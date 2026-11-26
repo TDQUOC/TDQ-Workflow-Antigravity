@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "domain_id": "pm-ba-content",
+  "title": "Product Specification, BA Briefs and Technical Writing",
+  "default_work_kind": "investigate",
+  "allow_downgrade": false,
+  "escalate_on_code_edit": true,
+  "preferred_lane": "full",
+  "default_muc_qc": "standard",
+  "preferred_skills": [
+    "tdq-intake",
+    "tdq-spec",
+    "tdq-plan"
+  ],
+  "keywords_en": [
+    "spec",
+    "roadmap",
+    "prd",
+    "backlog",
+    "user story",
+    "documentation",
+    "plan"
+  ],
+  "keywords_vi_ascii": [
+    "tai lieu",
+    "ke hoach",
+    "dac ta",
+    "bao cao",
+    "noi dung"
+  ]
+}

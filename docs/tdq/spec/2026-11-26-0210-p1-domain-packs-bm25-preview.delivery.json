@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "df4ad162-3e8c-4be8-a945-e6f6c25ffe58",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-26-0210-p1-domain-packs-bm25-preview.2fc6a2fb08764e519822ab3fe6d85ecb.html",
+  "specification": {
+    "sha256": "ec06b680335108f068350818537600e0d6c92eb28a76b2b8d7e5e714534f695a",
+    "bytes": 2977
+  },
+  "artifact": {
+    "sha256": "3a70490bafe4a4f5114dbed25484729ff53c2717a829974bb12d5a34873811fd",
+    "bytes": 1597414
+  },
+  "explainer": {
+    "preparedSha256": "1969f7aa13bd76edb17c15421dfaec6454a571a2e169ce0baad32ee3045c9cd2",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "p1-router-before",
+        "inline": true,
+        "sha256": "b151ec6d9ecaf49c7b85d984412b2cef99d00f5d277837eb331211ae36544cd5",
+        "bytes": 1069
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p1-router-after",
+        "inline": true,
+        "sha256": "8ab44a7af97f9097fd6c3af8273951b2bc38c1ca986fafa576ef7abad61bda47",
+        "bytes": 1117
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p1-lock-before",
+        "inline": true,
+        "sha256": "31b73679f588d2c49c9aea5e031a53ddf2de214b7b94ae746f8854bed8508b55",
+        "bytes": 1125
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "p1-lock-after",
+        "inline": true,
+        "sha256": "610f890ce97539de7c6bea9b98000c3a1dfadc003b93df176c36972cb6b2cf0d",
+        "bytes": 1104
+      }
+    ]
+  }
+}

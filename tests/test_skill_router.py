@@ -11,11 +11,16 @@ Bộ prompt mẫu dưới đây cố ý KHÔNG toàn ca dễ. Ba nhóm:
 Nhóm `khó` là nhóm phản ánh đúng cách người ta gõ prompt thật. Bỏ nó ra thì tỉ lệ
 trúng đẹp lên nhưng con số hết nghĩa.
 """
+import ast
 import json
 import os
+import re
 import subprocess
 import sys
+import tempfile
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import helper  # noqa: F401  — chèn scripts/ vào sys.path
 import skill_router
@@ -71,8 +76,8 @@ MAU = [
 
 
 def chay(*args, env=None):
-    proc = subprocess.run([sys.executable, SCRIPT, *args], capture_output=True,
-                          encoding="utf-8", text=True, timeout=300,
+    proc = subprocess.run([sys.executable, SCRIPT, *args], check=False,
+                          capture_output=True, encoding="utf-8", text=True, timeout=300,
                           env=dict(os.environ, TDQ_LOG="0", **(env or {})))
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -141,9 +146,10 @@ class KhoTest(unittest.TestCase):
         # thẳng `doc_kho` với đường dẫn không tồn tại trong tiến trình con.
         rc2 = subprocess.run(
             [sys.executable, "-c",
-             "import sys; sys.path.insert(0, %r); import skill_router;"
-             "skill_router.doc_kho('/khong/he/co.json')" % os.path.join(ROOT, "scripts")],
-            capture_output=True, encoding="utf-8", text=True, timeout=120,
+             "import sys; sys.path.insert(0, {!r}); import skill_router;"
+             "skill_router.doc_kho('/khong/he/co.json')".format(
+                 os.path.join(ROOT, "scripts"))],
+            check=False, capture_output=True, encoding="utf-8", text=True, timeout=120,
             env=dict(os.environ, TDQ_LOG="0"))
         self.assertEqual(rc2.returncode, skill_router.EXIT_THIEU_KHO)
         self.assertIn("--dung-kho", rc2.stderr)
@@ -297,6 +303,220 @@ class TiLeTrungTest(unittest.TestCase):
         ti_le = sum(1 for r in de if r[3]) / len(de) * 100
         self.assertGreaterEqual(ti_le, 80.0,
                                 f"nhóm dễ chỉ trúng {ti_le:.1f}% — chỉ mục có vấn đề")
+
+
+class DomainBoostTest(unittest.TestCase):
+    """Domain-aware BM25 boosting, tra_cuu() signatures, and CLI --domain behavior."""
+
+    @staticmethod
+    def _synthetic_records():
+        return [
+            {
+                "ten": "generic-alpha",
+                "mo_ta": "deploy release verify workflow",
+                "nguon": "test",
+                "duong_dan": "skills/generic-alpha/SKILL.md",
+            },
+            {
+                "ten": "tdq-status",
+                "mo_ta": "report current tdq status and verify workflow next step",
+                "nguon": "test",
+                "duong_dan": "skills/tdq-status/SKILL.md",
+            },
+            {
+                "ten": "tdq-setup",
+                "mo_ta": "install and verify workflow setup dependencies",
+                "nguon": "test",
+                "duong_dan": "skills/tdq-setup/SKILL.md",
+            },
+            {
+                "ten": "tdq-checkportable",
+                "mo_ta": "verify portable packaging manifest",
+                "nguon": "test",
+                "duong_dan": "skills/tdq-checkportable/SKILL.md",
+            },
+            {
+                "ten": "extra-unrelated",
+                "mo_ta": "unrelated frontend styling helper",
+                "nguon": "test",
+                "duong_dan": "skills/extra-unrelated/SKILL.md",
+            },
+        ]
+
+    def test_tra_preferred_skills_boosts_1_25x_and_preserves_default(self):
+        kho = skill_router.KhoBM25(self._synthetic_records())
+        base = kho.tra("verify workflow", 5)
+        self.assertEqual(base[0][1]["ten"], "generic-alpha")
+        base_map = {b["ten"]: s for s, b in base}
+
+        boosted = kho.tra("verify workflow", 5, preferred_skills=["tdq-setup", "tdq-status"])
+        boosted_map = {b["ten"]: s for s, b in boosted}
+        self.assertAlmostEqual(boosted_map["tdq-setup"], base_map["tdq-setup"] * 1.25)
+        self.assertAlmostEqual(boosted_map["tdq-status"], base_map["tdq-status"] * 1.25)
+        self.assertAlmostEqual(boosted_map["generic-alpha"], base_map["generic-alpha"])
+        self.assertEqual([b["ten"] for _, b in boosted[:2]], ["tdq-setup", "tdq-status"])
+
+    def test_tra_preferred_skills_floor_0_05_on_zero_match(self):
+        kho = skill_router.KhoBM25(self._synthetic_records())
+        self.assertEqual(kho.tra("zzzqqqxxx", 5), [])
+        fallback = kho.tra(
+            "zzzqqqxxx",
+            2,
+            preferred_skills=["tdq-setup", "tdq-status", "tdq-checkportable"],
+        )
+        self.assertEqual(len(fallback), 2)
+        self.assertEqual([b["ten"] for _, b in fallback], ["tdq-checkportable", "tdq-setup"])
+        self.assertTrue(all(abs(score - 0.05) < 1e-9 for score, _ in fallback))
+
+    def test_tra_cuu_supports_spec_and_helper_signatures(self):
+        records = self._synthetic_records()
+        with tempfile.TemporaryDirectory() as tmp:
+            res_spec = skill_router.tra_cuu(
+                "verify workflow",
+                records,
+                domain_id="ops-checklist",
+                top_k=3,
+                cwd=tmp,
+            )
+            self.assertIsInstance(res_spec, list)
+            self.assertTrue(all(isinstance(item, dict) for item in res_spec))
+            self.assertIn(res_spec[0]["ten"], ("tdq-setup", "tdq-status", "tdq-checkportable"))
+            self.assertNotIn("score", records[0])
+
+            res_helper = skill_router.tra_cuu(
+                "project status",
+                k=3,
+                domain_id="ops-checklist",
+                project=tmp,
+            )
+            self.assertEqual(res_helper[0]["ten"], "tdq-status")
+
+            res_pos = skill_router.tra_cuu("project status", 3, "ops-checklist", tmp)
+            self.assertEqual(res_pos[0]["ten"], "tdq-status")
+
+    def test_tra_cuu_respects_override_and_router_disabled_rollback(self):
+        records = self._synthetic_records()
+        with tempfile.TemporaryDirectory() as tmp:
+            dom_dir = Path(tmp) / "docs" / "tdq" / "domains"
+            dom_dir.mkdir(parents=True, exist_ok=True)
+            (dom_dir / "custom-ops.json").write_text(
+                json.dumps({
+                    "domain_id": "custom-ops",
+                    "preferred_skills": ["tdq-checkportable"],
+                }),
+                encoding="utf-8",
+            )
+            res_custom = skill_router.tra_cuu(
+                "zzzqqqxxx", records, domain_id="custom-ops", top_k=2, cwd=tmp
+            )
+            self.assertEqual([item["ten"] for item in res_custom], ["tdq-checkportable"])
+
+            cfg_path = Path(tmp) / "docs" / "tdq" / "config.json"
+            cfg_path.write_text(
+                json.dumps({"p1": {"domain_router_enabled": False}}),
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                skill_router.tra_cuu("zzzqqqxxx", records, domain_id="custom-ops", cwd=tmp),
+                [],
+            )
+            base_real = skill_router.tra_cuu("project status", k=3)
+            disabled_real = skill_router.tra_cuu(
+                "project status", k=3, domain_id="ops-checklist", project=tmp
+            )
+            self.assertEqual(
+                [item["ten"] for item in disabled_real],
+                [item["ten"] for item in base_real],
+            )
+            self.assertEqual(disabled_real[0]["ten"], "sonar-quality-gate")
+
+            cfg_path.write_text(json.dumps({"domain_router_enabled": False}), encoding="utf-8")
+            self.assertEqual(
+                skill_router.tra_cuu(
+                    "project status", k=3, domain_id="ops-checklist", project=tmp
+                )[0]["ten"],
+                "sonar-quality-gate",
+            )
+
+            cfg_path.unlink()
+            with mock.patch.dict(os.environ, {"TDQ_DOMAIN_ROUTER_ENABLED": "0"}):
+                self.assertEqual(
+                    skill_router.tra_cuu(
+                        "project status", k=3, domain_id="ops-checklist", project=tmp
+                    )[0]["ten"],
+                    "sonar-quality-gate",
+                )
+
+    def test_cli_domain_boost_unknown_domain_and_logging(self):
+        rc_base, out_base, _ = chay("--tra", "project status", "-k", "3")
+        self.assertEqual(rc_base, 0)
+        self.assertIn("| 1 | sonar-quality-gate |", out_base)
+
+        rc_boost, out_boost, err_boost = chay(
+            "--tra", "project status", "-k", "3", "--domain", "ops-checklist"
+        )
+        self.assertEqual(rc_boost, 0)
+        self.assertEqual(err_boost, "")
+        self.assertIn("| 1 | tdq-status |", out_boost)
+
+        rc_unk, out_unk, _ = chay(
+            "--tra", "project status", "-k", "3", "--domain", "khong-ton-tai"
+        )
+        self.assertEqual(rc_unk, 0)
+        self.assertEqual(out_unk, out_base)
+
+        rc_floor, out_floor, _ = chay(
+            "--tra", "zzzqqqxxx", "-k", "3", "--domain", "ops-checklist"
+        )
+        self.assertEqual(rc_floor, 0)
+        self.assertIn("| 1 | tdq-status | 0.05 |", out_floor)
+
+        proc_log = subprocess.run(
+            [sys.executable, "-X", "utf8", SCRIPT, "--tra", "project status",
+             "--domain", "ops-checklist"],
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
+            timeout=60,
+            env=dict(os.environ, TDQ_LOG="1"),
+        )
+        self.assertEqual(proc_log.returncode, 0)
+        self.assertRegex(
+            proc_log.stderr,
+            r"^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[^\]]*\]\s+skill_router",
+        )
+
+        proc_quiet = subprocess.run(
+            [sys.executable, "-X", "utf8", SCRIPT, "--tra", "project status",
+             "--domain", "ops-checklist"],
+            check=False,
+            capture_output=True,
+            env=dict(os.environ, TDQ_LOG="0"),
+            timeout=60,
+        )
+        self.assertEqual(proc_quiet.returncode, 0)
+        self.assertEqual(proc_quiet.stderr, b"")
+
+    def test_module_static_invariants_utf8_io_hooks_and_line_cap(self):
+        src = (Path(ROOT) / "scripts" / "skill_router.py").read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        top_imports = set()
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                top_imports.update(a.name.split(".")[0] for a in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                top_imports.add(node.module.split(".")[0])
+        self.assertIn("utf8_io", top_imports)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    self.assertNotIn("hooks", alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                self.assertNotIn("hooks", node.module or "")
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                span = (node.end_lineno or node.lineno) - node.lineno + 1
+                self.assertLessEqual(span, 50, f"{node.name} is {span} lines (> 50)")
+        self.assertIsNotNone(re.search(r"utf8_io\.force_utf8\(", src))
 
 
 if __name__ == "__main__":

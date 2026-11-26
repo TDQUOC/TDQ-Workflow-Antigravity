@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "domain_id": "code-build",
+  "title": "Engineering Code and Feature Delivery",
+  "default_work_kind": "build",
+  "allow_downgrade": false,
+  "escalate_on_code_edit": false,
+  "preferred_lane": "full",
+  "default_muc_qc": "standard",
+  "preferred_skills": [
+    "tdq-intake",
+    "tdq-spec",
+    "tdq-plan",
+    "tdq-build"
+  ],
+  "keywords_en": [
+    "implement",
+    "fix",
+    "refactor",
+    "feature",
+    "bug",
+    "test",
+    "api",
+    "script"
+  ],
+  "keywords_vi_ascii": [
+    "sua loi",
+    "tinh nang",
+    "viet code",
+    "nang cap",
+    "tai cau truc"
+  ]
+}

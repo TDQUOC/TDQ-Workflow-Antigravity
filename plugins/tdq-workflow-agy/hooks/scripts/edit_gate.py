@@ -160,6 +160,26 @@ def _kiem_p0_runtime_guard(cwd, payload, state):
     return False
 
 
+def _kiem_p1_zero_downgrade(cwd, payload, state):
+    """Block source edits outside docs/ when active domain or work_kind requires escalation."""
+    from tdq_domains import should_block_code_edit
+
+    blocked, reason = should_block_code_edit(cwd, state)
+    if not blocked:
+        return False
+    block(
+        cwd,
+        payload,
+        "TDQ:APPROVE",
+        [
+            f"P1 Zero-Downgrade Lock: {reason}",
+            'How: py -3 -X utf8 scripts/tdq_state.py escalate-to-build --by "<user request words>"',
+        ],
+        day_du=True,
+    )
+    return True
+
+
 def main():
     payload = read_payload()
     cwd = payload_cwd(payload)
@@ -224,6 +244,8 @@ def main():
     if within(abs_target, os.path.realpath(os.path.join(cwd, "docs"))):
         return  # docs/** needs no reminder: brief/spec/plan/research/log
     if _kiem_p0_runtime_guard(cwd, payload, state):
+        return
+    if within(abs_target, os.path.realpath(cwd)) and _kiem_p1_zero_downgrade(cwd, payload, state):
         return
 
     # A sub-agent (Claude Code puts `agent_id` on hook input only inside one) is a reader until

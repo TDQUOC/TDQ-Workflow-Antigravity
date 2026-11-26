@@ -921,3 +921,269 @@ class WorkKindAndInvestigateV2Test(unittest.TestCase):
                 cwd=self.cwd,
             )
         )
+
+
+class DomainAndZeroDowngradeLockTest(unittest.TestCase):
+    """P1 T2.2: v6 domain_id/downgrade_locked fields and zero-downgrade lock."""
+
+    SLUG = "2026-11-26-0210-domain-lock"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.cwd = self._tmp.name
+        self.addCleanup(self._tmp.cleanup)
+
+    def _run_raw(self, *args, log="0"):
+        env = dict(os.environ, TDQ_PROJECT_DIR=self.cwd, TDQ_LOG=log)
+        return subprocess.run(
+            [
+                sys.executable,
+                "-X",
+                "utf8",
+                os.path.join(ROOT, "scripts", "tdq_state.py"),
+                *args,
+            ],
+            check=False,
+            capture_output=True,
+            encoding="utf-8",
+            text=True,
+            timeout=60,
+            env=env,
+        )
+
+    def test_default_state_and_legacy_v6_backfill(self):
+        defaults = tdq_state.default_state()
+        self.assertEqual(defaults["schema_version"], 6)
+        self.assertIn("domain_id", defaults)
+        self.assertIsNone(defaults["domain_id"])
+        self.assertIn("downgrade_locked", defaults)
+        self.assertIs(defaults["downgrade_locked"], False)
+
+        tdq_dir = Path(self.cwd) / "docs" / "tdq"
+        tdq_dir.mkdir(parents=True, exist_ok=True)
+        (tdq_dir / "state.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 6,
+                    "active_request": self.SLUG,
+                    "lane": "full",
+                    "phase": "analyze",
+                    "work_kind": "investigate",
+                    "custom_tag": "keep-me",
+                    "downgrade_locked": None,
+                }
+            ),
+            encoding="utf-8",
+        )
+        loaded = tdq_state.load(self.cwd)
+        self.assertEqual(loaded["schema_version"], 6)
+        self.assertIsNone(loaded["domain_id"])
+        self.assertIs(loaded["downgrade_locked"], False)
+        self.assertEqual(loaded["custom_tag"], "keep-me")
+
+    def test_set_domain_id_allowed_before_approval_and_with_override(self):
+        run_state_cli(self.cwd, "init", self.SLUG, "full", "--kind", "investigate")
+        run_state_cli(self.cwd, "set", "phase=analyze")
+
+        proc = self._run_raw("set", "domain_id=research-rca", log="0")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(proc.stderr, "")
+        self.assertEqual(read_state(self.cwd)["domain_id"], "research-rca")
+
+        rc_peer, _, err_peer = run_state_cli(
+            self.cwd, "set", "domain_id=pm-ba-content"
+        )
+        self.assertEqual(rc_peer, 0, err_peer)
+        self.assertEqual(read_state(self.cwd)["domain_id"], "pm-ba-content")
+
+        override_dir = Path(self.cwd) / "docs" / "tdq" / "domains"
+        override_dir.mkdir(parents=True, exist_ok=True)
+        (override_dir / "security-audit.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "domain_id": "security-audit",
+                    "title": "Security Audit",
+                    "default_work_kind": "investigate",
+                    "allow_downgrade": False,
+                    "escalate_on_code_edit": True,
+                }
+            ),
+            encoding="utf-8",
+        )
+        rc_ov, _, err_ov = run_state_cli(
+            self.cwd, "set", "domain_id=security-audit"
+        )
+        self.assertEqual(rc_ov, 0, err_ov)
+        self.assertEqual(read_state(self.cwd)["domain_id"], "security-audit")
+
+        for bad in ("unknown-pack", "null", "true", ""):
+            with self.subTest(bad=bad):
+                rc_bad, _, _ = run_state_cli(self.cwd, "set", f"domain_id={bad}")
+                self.assertNotEqual(rc_bad, 0)
+                self.assertEqual(
+                    read_state(self.cwd)["domain_id"], "security-audit"
+                )
+
+    def test_escalate_to_build_sets_code_build_and_locks_downgrade(self):
+        write_state(
+            self.cwd,
+            active_request=self.SLUG,
+            lane="full",
+            phase="implement",
+            work_kind="investigate",
+            domain_id="research-rca",
+            downgrade_locked=False,
+            spec_approved=True,
+            plan_approved=True,
+            implement_mode="main",
+        )
+        proc = self._run_raw(
+            "escalate-to-build", "--by", "fix bug", "--json", log="1"
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertRegex(
+            proc.stderr, r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+        )
+        payload = json.loads(proc.stdout)
+        self.assertEqual(payload["schema_version"], 6)
+        self.assertEqual(payload["work_kind"], "build")
+        self.assertEqual(payload["domain_id"], "code-build")
+        self.assertIs(payload["downgrade_locked"], True)
+
+        write_state(
+            self.cwd,
+            active_request=self.SLUG,
+            lane="full",
+            phase="implement",
+            work_kind="build",
+            domain_id="research-rca",
+            downgrade_locked=False,
+            spec_approved=True,
+            plan_approved=True,
+        )
+        proc_dom = self._run_raw(
+            "escalate-to-build", "--by", "need code edit", "--inline-fix", log="0"
+        )
+        self.assertEqual(proc_dom.returncode, 0, proc_dom.stderr)
+        self.assertEqual(proc_dom.stderr, "")
+        state_dom = read_state(self.cwd)
+        self.assertEqual(state_dom["work_kind"], "build")
+        self.assertEqual(state_dom["domain_id"], "code-build")
+        self.assertIs(state_dom["downgrade_locked"], True)
+
+    def test_zero_downgrade_lock_blocks_domain_work_kind_and_unlock(self):
+        write_state(
+            self.cwd,
+            active_request=self.SLUG,
+            lane="full",
+            phase="implement",
+            work_kind="investigate",
+            domain_id="research-rca",
+            spec_approved=True,
+            plan_approved=True,
+        )
+        rc, _, err = run_state_cli(
+            self.cwd, "escalate-to-build", "--by", "fix bug", "--inline-fix"
+        )
+        self.assertEqual(rc, 0, err)
+
+        for target in ("research-rca", "pm-ba-content", "ops-checklist"):
+            with self.subTest(target=target):
+                rc_d, _, err_d = run_state_cli(
+                    self.cwd, "set", f"domain_id={target}"
+                )
+                self.assertNotEqual(rc_d, 0)
+                self.assertTrue(err_d.strip())
+                self.assertEqual(read_state(self.cwd)["domain_id"], "code-build")
+
+        rc_same, _, err_same = run_state_cli(
+            self.cwd, "set", "domain_id=code-build"
+        )
+        self.assertEqual(rc_same, 0, err_same)
+
+        rc_wk, _, err_wk = run_state_cli(
+            self.cwd, "set", "work_kind=investigate"
+        )
+        self.assertNotEqual(rc_wk, 0)
+        self.assertTrue(err_wk.strip())
+        self.assertEqual(read_state(self.cwd)["work_kind"], "build")
+
+        rc_unlock, _, _ = run_state_cli(
+            self.cwd, "set", "downgrade_locked=false"
+        )
+        self.assertNotEqual(rc_unlock, 0)
+        self.assertIs(read_state(self.cwd)["downgrade_locked"], True)
+
+        rc_atomic, _, _ = run_state_cli(
+            self.cwd, "set", "phase=qc", "domain_id=research-rca"
+        )
+        self.assertNotEqual(rc_atomic, 0)
+        after = read_state(self.cwd)
+        self.assertEqual(after["phase"], "implement")
+        self.assertEqual(after["domain_id"], "code-build")
+
+    def test_direct_validators_reject_downgrade_without_mutating_state(self):
+        locked_analyze = {
+            "active_request": self.SLUG,
+            "lane": "full",
+            "phase": "analyze",
+            "work_kind": "build",
+            "domain_id": "code-build",
+            "downgrade_locked": True,
+        }
+        with self.assertRaises(SystemExit) as ctx_wk:
+            tdq_state._validate_work_kind_set(locked_analyze, "investigate")
+        self.assertNotEqual(ctx_wk.exception.code, 0)
+        self.assertEqual(locked_analyze["work_kind"], "build")
+
+        escalated_only = {
+            "active_request": self.SLUG,
+            "lane": "full",
+            "phase": "analyze",
+            "work_kind": "build",
+            "escalated_from_investigate": {"by": "ok", "at": "now"},
+            "downgrade_locked": False,
+        }
+        with self.assertRaises(SystemExit) as ctx_esc:
+            tdq_state._validate_work_kind_set(escalated_only, "investigate")
+        self.assertNotEqual(ctx_esc.exception.code, 0)
+        self.assertEqual(escalated_only["work_kind"], "build")
+
+        with self.assertRaises(SystemExit) as ctx_dom:
+            tdq_state._validate_domain_id_set(
+                self.cwd, locked_analyze, "research-rca"
+            )
+        self.assertNotEqual(ctx_dom.exception.code, 0)
+        self.assertEqual(locked_analyze["domain_id"], "code-build")
+
+        locked_non_code = {
+            "active_request": self.SLUG,
+            "lane": "full",
+            "phase": "analyze",
+            "work_kind": "investigate",
+            "domain_id": "research-rca",
+            "downgrade_locked": True,
+        }
+        with self.assertRaises(SystemExit) as ctx_peer:
+            tdq_state._validate_domain_id_set(
+                self.cwd, locked_non_code, "pm-ba-content"
+            )
+        self.assertNotEqual(ctx_peer.exception.code, 0)
+        self.assertEqual(locked_non_code["domain_id"], "research-rca")
+
+        midflight_build = {
+            "active_request": self.SLUG,
+            "lane": "full",
+            "phase": "implement",
+            "work_kind": "build",
+            "domain_id": None,
+            "downgrade_locked": False,
+        }
+        with self.assertRaises(SystemExit) as ctx_mid:
+            tdq_state._validate_domain_id_set(
+                self.cwd, midflight_build, "research-rca"
+            )
+        self.assertNotEqual(ctx_mid.exception.code, 0)
+        self.assertIsNone(midflight_build["domain_id"])
+

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-26-0210-p1-domain-packs-bm25\\truoc-sau.archify.md",
+    "sha256": "ec06b680335108f068350818537600e0d6c92eb28a76b2b8d7e5e714534f695a",
+    "bytes": 2977
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-26-0210-p1-domain-packs-bm25-preview.2fc6a2fb08764e519822ab3fe6d85ecb.html",
+    "sha256": "3a70490bafe4a4f5114dbed25484729ff53c2717a829974bb12d5a34873811fd",
+    "bytes": 1597414
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-26-0210-p1-domain-packs-bm25-preview.2fc6a2fb08764e519822ab3fe6d85ecb.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-26-0210-p1-domain-packs-bm25-preview.2fc6a2fb08764e519822ab3fe6d85ecb.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2707,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}
