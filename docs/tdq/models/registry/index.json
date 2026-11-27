@@ -334,12 +334,12 @@
       "hydration_tier": "eager_l1_l2",
       "evidence_kind": "working-tree",
       "symbol_ref": "hooks/scripts/edit_gate.py:main",
-      "ast_symbol_sha256": "533eca80d42b2f637d4a496a89762a73167c4db1be27fcb58b9f0849d5433002",
+      "ast_symbol_sha256": "2b8bd30e79be689819c8afb83eaa180fdc77250c587114458d6813c792a9c328",
       "hash_mode": "tree_sitter_ast",
       "span_binding": {
         "path": "hooks/scripts/edit_gate.py",
-        "line": 109,
-        "end_line": 338
+        "line": 176,
+        "end_line": 409
       },
       "summary_sha256": "d3f0b4d2edfa6798593f8fe4883cc822125c1c588c38852b26a4d119072f0036",
       "sub_flow_slice_id": "slice-gate-edit-guard",
