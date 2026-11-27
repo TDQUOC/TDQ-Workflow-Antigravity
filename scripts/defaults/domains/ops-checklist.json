@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "domain_id": "ops-checklist",
+  "title": "Operations Runbook, Packaging and Release Verification",
+  "default_work_kind": "investigate",
+  "allow_downgrade": false,
+  "escalate_on_code_edit": true,
+  "preferred_lane": "quick",
+  "default_muc_qc": "standard",
+  "preferred_skills": [
+    "tdq-setup",
+    "tdq-checkportable",
+    "tdq-status"
+  ],
+  "keywords_en": [
+    "release",
+    "deploy",
+    "packaging",
+    "verify",
+    "runbook",
+    "ops",
+    "setup"
+  ],
+  "keywords_vi_ascii": [
+    "dong goi",
+    "phat hanh",
+    "kiem tra",
+    "van hanh",
+    "cai dat"
+  ]
+}
