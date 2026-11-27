@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d2eef02f-babd-456a-9de8-0030195c4adc",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-27-0157-nang-version-release-commit-push\\bao-cao.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\reports\\.tmp.2026-11-27-0157-nang-version-release-commit-push.0c0c4898e9e24355aebc84db918f12f1.html",
+  "specification": {
+    "sha256": "70473a2beef65c88340ffa98f4aea0d970c0fef2720e86a67e7e9fb9a038fb6a",
+    "bytes": 2160
+  },
+  "artifact": {
+    "sha256": "03718132f4bf819f806e279e95f666fb6957581052b98d5e6d9a3d079b62db29",
+    "bytes": 1227127
+  },
+  "explainer": {
+    "preparedSha256": "9fd55c9dc09f27856b092b6787133765115a2206bf93db545cdc2e56da6123cd",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-before-report",
+        "inline": true,
+        "sha256": "799cc39db5662d9e5b410b96573829d07fe1fcd96a10a7cdd49cb733360e715f",
+        "bytes": 1031
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-after-report",
+        "inline": true,
+        "sha256": "e10847ad101dd9ec5a66fd439e7b6942e8f04a4c923d6917724d0317f2cb086e",
+        "bytes": 1070
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-qc-pipeline",
+        "inline": true,
+        "sha256": "e07aecfa7e2527abdf0b3aa02fe1a494857db7e5f5b9ecf7b3ed4be3e0b0214d",
+        "bytes": 1003
+      }
+    ]
+  }
+}

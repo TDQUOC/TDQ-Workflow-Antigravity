@@ -1,12 +1,12 @@
 # TDQ STATE (generated — do not hand-edit)
-Updated: 2026-11-27T10:34:50+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
+Updated: 2026-11-27T12:41:44+07:00 · Project: C:\Users\admin\Documents\Projects\TDQ-Workflow-Antigravity · schema 3
 
 | Field | Value |
 |---|---|
 | Request | 2026-11-27-0157-nang-version-release-commit-push |
 | Work kind | build |
 | Lane | full |
-| Phase | implement |
+| Phase | idle |
 | Spec | docs/tdq/spec/2026-11-27-0157-nang-version-release-commit-push.md — ✔ approved |
 | Plan | docs/tdq/plan/2026-11-27-0157-nang-version-release-commit-push.md — ✔ approved |
 | Quick approval | (not applicable) |
@@ -16,13 +16,13 @@ Updated: 2026-11-27T10:34:50+07:00 · Project: C:\Users\admin\Documents\Projects
 | Run mode | subagent |
 
 ## Where we are
-plan_approved = true and implement_mode = subagent. Forbidden: Doing a task the map marked as dispatched yourself on main; merging before `check` passes; leaving several tasks marked [~].
+Finished, or no request opened yet. Forbidden: Overwriting an unfinished request without asking the user.
 
 ## What comes next
-Assign the WHOLE plan first (step 0), then release wave by wave to sub-agents, merging one wave before releasing the next — the leader only does what cannot be split.
+Wait for a new request from the user.
 ```
-python3 scripts/tdq_state.py set phase=qc
+python3 scripts/tdq_state.py init <YYYY-MM-DD-HHMM-slug> <nhanh|chuyen-sau> [--lang <code>]
 ```
-Done when: Every task in the plan is ticked [x] and no leftover worktree remains
+Done when: A new request is open
 
 > Write state only through `python3 scripts/tdq_state.py …`. Unsure where you stand → run `tdq_state.py next`.

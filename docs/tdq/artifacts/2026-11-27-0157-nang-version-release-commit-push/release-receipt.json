@@ -1,0 +1,16 @@
+{
+  "version": "0.108.0",
+  "released_at": "2026-11-27T12:36:39+07:00",
+  "remote": "origin",
+  "remote_url": "https://github.com/TDQUOC/TDQ-Workflow-Antigravity.git",
+  "dev_sha": "89e9f159f7e0569085c039fb02e8ebfe389ee019",
+  "main_sha": "bb9af8e6f1288d92359ac9fb4683bf05f0a0e912",
+  "release_agy_sha": "b2c0183bdb1feef5a9a0ceaa4d5f4ff2eee5f06c",
+  "tag": "v0.108.0",
+  "tag_sha": "317e8bcff3b33e14d7662314eae9acd81736d994",
+  "tag_peeled_sha": "bb9af8e6f1288d92359ac9fb4683bf05f0a0e912",
+  "tag_points_to_main": true,
+  "local_install_dir": "C:/Users/admin/.gemini/config/plugins/tdq-workflow-agy",
+  "local_install_version": "0.108.0",
+  "local_install_files": 281
+}
