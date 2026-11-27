@@ -57,7 +57,7 @@
         ]
       },
       {
-        "matcher": "mcp_.*lsp_.*|call_mcp_tool",
+        "matcher": "mcp_.*|call_mcp_tool",
         "hooks": [
           {
             "type": "command",
