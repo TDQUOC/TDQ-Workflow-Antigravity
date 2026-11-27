@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a5914640-2ea9-4459-b781-6e08a0f23584",
+  "status": "current",
+  "command": "deliver",
+  "type": "explainer",
+  "input": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-27-0157-nang-version-release-commit-push\\truoc-sau.archify.md",
+  "output": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-27-0157-nang-version-release-commit-push-preview.706e9a692bec4343bf1b764cadbe4efe.html",
+  "specification": {
+    "sha256": "727e1d96c6e96f3bda955a884506c140917f953919e8b7bd94058d9fff26a11b",
+    "bytes": 2989
+  },
+  "artifact": {
+    "sha256": "58c371fce5c68853b33334b5a677aa5f0dc0c9e1a998509adc3d62748b859eaf",
+    "bytes": 1592496
+  },
+  "explainer": {
+    "preparedSha256": "e6459c53be24ce59d64fad76a1bc6278d54d8c6b8db0c974e3531d44ce66f5d7",
+    "dependencies": [
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-dev-before",
+        "inline": true,
+        "sha256": "258bc526d8e8931f08de15aa883457cb3b651a255b260431b39b9826ce32ce1b",
+        "bytes": 1074
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-dev-after",
+        "inline": true,
+        "sha256": "63c2d4200298fa0c835b966543e5c2f39c44e966018115033fc3f683225497a2",
+        "bytes": 1161
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-push-before",
+        "inline": true,
+        "sha256": "f08567f2881930fc4e97172d6cd5554a63469c21501eefa46780a7c2c635f320",
+        "bytes": 847
+      },
+      {
+        "kind": "diagram-spec",
+        "id": "v0108-push-after",
+        "inline": true,
+        "sha256": "12bd1368935e24abb5a6bf2644bef17483ead66c6d30e9d24fc93bf59b785910",
+        "bytes": 1224
+      }
+    ]
+  }
+}

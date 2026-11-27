@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "explainer",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\artifacts\\2026-11-27-0157-nang-version-release-commit-push\\truoc-sau.archify.md",
+    "sha256": "727e1d96c6e96f3bda955a884506c140917f953919e8b7bd94058d9fff26a11b",
+    "bytes": 2989
+  },
+  "artifact": {
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-27-0157-nang-version-release-commit-push-preview.706e9a692bec4343bf1b764cadbe4efe.html",
+    "sha256": "58c371fce5c68853b33334b5a677aa5f0dc0c9e1a998509adc3d62748b859eaf",
+    "bytes": 1592496
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "not-run"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-27-0157-nang-version-release-commit-push-preview.706e9a692bec4343bf1b764cadbe4efe.finalize.json",
+    "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\tdq\\spec\\.tmp.2026-11-27-0157-nang-version-release-commit-push-preview.706e9a692bec4343bf1b764cadbe4efe.finalize-summary.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2655,
+  "browserCheck": {
+    "requested": false,
+    "ran": false
+  }
+}

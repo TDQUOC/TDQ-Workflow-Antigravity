@@ -1,0 +1,70 @@
+{
+  "slug": "2026-11-27-0157-nang-version-release-commit-push",
+  "plan_file": "docs\\tdq\\plan\\2026-11-27-0157-nang-version-release-commit-push.md",
+  "plan_sha": "af54bb08193b8a96e1911d7151c0107a3d171aad2fa6b4d09ce52074f8669ecb",
+  "projection_version": "v1",
+  "projection_mode": "explicit",
+  "plan_assignment_sha": "7e255328b8067a61216a090411064e9b25b7c985e1140c2d90beea6e88a80ff2",
+  "tasks": {
+    "T1.1": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "file-luat",
+      "vung_file": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        "docs/tdq/.tdq-phat-hanh.json",
+        "hooks/rust/tdq-dispatch/Cargo.toml",
+        "hooks/rust/tdq-dispatch/Cargo.lock"
+      ],
+      "dot": 1
+    },
+    "T2.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "tools/patches/agy_manifests.py",
+        "tools/patches/__init__.py",
+        "tools/build_agy_plugin.py"
+      ],
+      "dot": 2
+    },
+    "T2.2": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 2
+    },
+    "T2.3": {
+      "quyet_dinh": "tu_lam",
+      "ly_do": "vung-khoa",
+      "vung_file": [],
+      "dot": 3
+    },
+    "T3.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-27-0157-nang-version-release-commit-push/log-verify.json"
+      ],
+      "dot": 4,
+      "worktree_required": false
+    },
+    "T3.2": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/verification_evidence.json"
+      ],
+      "dot": 5
+    },
+    "T4.1": {
+      "quyet_dinh": "giao",
+      "ly_do": "",
+      "vung_file": [
+        "docs/tdq/artifacts/2026-11-27-0157-nang-version-release-commit-push/release-receipt.json"
+      ],
+      "dot": 6,
+      "worktree_required": false
+    }
+  }
+}
