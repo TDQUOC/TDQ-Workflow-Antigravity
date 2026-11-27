@@ -6,9 +6,9 @@
   "status": "pass",
   "visualReview": "not-requested",
   "provenance": "current",
-  "deliveryReceiptId": "3da44f0b-e08c-4577-92ad-1bd078e8adc2",
+  "deliveryReceiptId": "60eca249-e2db-4d99-8352-cade0e72cf86",
   "artifact": {
-    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.html",
+    "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\pipeline-lifecycle.html",
     "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
     "bytes": 824757
   },
