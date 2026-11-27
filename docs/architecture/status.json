@@ -3,6 +3,8 @@
   "status": "stale",
   "reasons": [
     "Source file modified: hooks/hooks.json",
+    "Source file modified: hooks/rust/tdq-dispatch/Cargo.lock",
+    "Source file modified: hooks/rust/tdq-dispatch/Cargo.toml",
     "Source file modified: hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs",
     "Source file modified: hooks/rust/tdq-dispatch/src/lock.rs",
     "Source file modified: hooks/rust/tdq-dispatch/src/storage.rs",
@@ -27,5 +29,5 @@
     "Source file added: scripts/tdq_lease.py",
     "Source file added: scripts/tdq_paperclip_bridge.py"
   ],
-  "checked_at": "2026-11-26T18:43:54Z"
+  "checked_at": "2026-11-27T03:39:09Z"
 }
