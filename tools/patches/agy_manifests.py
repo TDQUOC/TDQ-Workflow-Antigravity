@@ -1,12 +1,10 @@
 """Generate Antigravity-native plugin manifests, hooks.json, mcp_config.json, and 2-tier rules."""
 import json
 from pathlib import Path
-from typing import Dict
 
 from .common_utils import EXCLUDED_SCRIPTS, make_rule_markdown, write_utf8
 
-
-PLUGIN_VERSION = "0.107.0"
+PLUGIN_VERSION = "0.108.0"
 
 
 def generate_plugin_json(plugin_root: Path) -> None:
@@ -53,7 +51,7 @@ def generate_logo_svg(plugin_root: Path) -> None:
     write_utf8(plugin_root / "assets" / "logo.svg", svg)
 
 
-def _hook_cmd(script_name: str, event_name: str) -> Dict[str, str]:
+def _hook_cmd(script_name: str, event_name: str) -> dict[str, str]:
     """Return cross-platform unquoted Node.js launcher command for hooks.json."""
     _ = script_name
     return {
@@ -186,18 +184,18 @@ Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-
 
     lang_specs = [
         ("lang-python.md", "**/*.py", "Python Rules (PEP 8 / UTF-8 / Stdlib & Logging)",
-         "- Import `utf8_io` or pass `encoding='utf-8'` on every file open.\n"
-         "- Set `creationflags=subprocess.CREATE_NO_WINDOW` on Windows subprocess calls; never use `shell=True` with untrusted inputs.\n"
-         "- Annotate boundary functions, keep functions <= 50 lines, wrap atomic writes cleanly with retry on Windows `PermissionError`."),
+         ("- Import `utf8_io` or pass `encoding='utf-8'` on every file open.\n"
+          "- Set `creationflags=subprocess.CREATE_NO_WINDOW` on Windows subprocess calls; never use `shell=True` with untrusted inputs.\n"
+          "- Annotate boundary functions, keep functions <= 50 lines, wrap atomic writes cleanly with retry on Windows `PermissionError`.")),
         ("lang-typescript.md", "**/*.ts, **/*.tsx, **/*.js, **/*.jsx", "TypeScript & JS Rules",
-         "- Call `open_document` via LSP before symbol queries on TS/JS projects.\n"
-         "- Keep strict types (`no any` in new contracts), validate runtime JSON schemas at module boundaries, dispose listeners cleanly."),
+         ("- Call `open_document` via LSP before symbol queries on TS/JS projects.\n"
+          "- Keep strict types (`no any` in new contracts), validate runtime JSON schemas at module boundaries, dispose listeners cleanly.")),
         ("lang-go.md", "**/*.go", "Go Rules",
-         "- Handle all returned errors explicitly (`if err != nil`); never discard errors silently with `_`.\n"
-         "- Run `go test ./...` per task; keep packages cohesive and race-clean (`-race` in QC)."),
+         ("- Handle all returned errors explicitly (`if err != nil`); never discard errors silently with `_`.\n"
+          "- Run `go test ./...` per task; keep packages cohesive and race-clean (`-race` in QC).")),
         ("lang-rust.md", "**/*.rs", "Rust Rules",
-         "- Avoid `.unwrap()` / `.expect()` in library or production paths; propagate `Result<T, E>` with clear context.\n"
-         "- Run `cargo check` and targeted `cargo test` on every task transition."),
+         ("- Avoid `.unwrap()` / `.expect()` in library or production paths; propagate `Result<T, E>` with clear context.\n"
+          "- Run `cargo check` and targeted `cargo test` on every task transition.")),
         ("lang-csharp.md", "**/*.cs", "C# / .NET Rules",
          "- Respect nullable reference types, `async`/`await` with `CancellationToken` propagation, and `using` disposal for unmanaged handles."),
         ("lang-sql-migration.md", "**/*.sql", "SQL & Migration Safety",
@@ -213,14 +211,14 @@ Before creating any symbol, file, or test: climb the 7-rung ladder (`skills/tdq-
         ("domain-mcp-first.md",
          "When choosing tools for web research, browser testing, code navigation, AST architecture diagrams, or external integrations.",
          "Domain Rule: MCP-First & Companion Extensions",
-         "- Prioritize MCP tools over shell workarounds: `lsp` (65 tools via agent-lsp), `chrome-devtools` (E2E browser inspection), `tavily-primary` (external web search).\n"
-         "- Use Archify (`tdq_archify.py`) for Spec preview & Report HTML manifests, Graphify (`tdq_graphify.py`) for blast-radius graphs, Vision Diff (`tdq_vision_diff.py`) for pixel comparisons, and Codex CLI (`tdq_codex.py`) when `--mode codex` is active."),
+         ("- Prioritize MCP tools over shell workarounds: `lsp` (65 tools via agent-lsp), `chrome-devtools` (E2E browser inspection), `tavily-primary` (external web search).\n"
+          "- Use Archify (`tdq_archify.py`) for Spec preview & Report HTML manifests, Graphify (`tdq_graphify.py`) for blast-radius graphs, Vision Diff (`tdq_vision_diff.py`) for pixel comparisons, and Codex CLI (`tdq_codex.py`) when `--mode codex` is active.")),
         ("domain-git-safety.md",
          "When creating branches, worktrees, commits, merges, or running git cleanup operations in TDQ Workflow.",
          "Domain Rule: Git Isolation & Forbidden Prefixes",
-         "- NEVER start branch or worktree names with `claude`, `antigravity`, `gemini`, or `codex`.\n"
-         "- NEVER include `Co-Authored-By:` or AI attribution trailers in commit messages.\n"
-         "- On Windows, pass `-c core.longpaths=true` when creating deep worktrees under `.tdq-worktrees/`. Only auto-carry clean docs (`docs/**`, `*.md`, `logs/**`, `graphify-out/**`)."),
+         ("- NEVER start branch or worktree names with `claude`, `antigravity`, `gemini`, or `codex`.\n"
+          "- NEVER include `Co-Authored-By:` or AI attribution trailers in commit messages.\n"
+          "- On Windows, pass `-c core.longpaths=true` when creating deep worktrees under `.tdq-worktrees/`. Only auto-carry clean docs (`docs/**`, `*.md`, `logs/**`, `graphify-out/**`).")),
     ]
     for fname, desc, title, body in domain_specs:
         content = make_rule_markdown(fname, {"trigger": "model_decision", "description": desc}, f"# {title}\n\n{body}")

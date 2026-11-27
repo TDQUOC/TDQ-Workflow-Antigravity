@@ -7,11 +7,11 @@
   "evidence_kind": "working-tree",
   "fingerprint": {
     "symbol_ref": "hooks/scripts/edit_gate.py:main",
-    "ast_symbol_sha256": "533eca80d42b2f637d4a496a89762a73167c4db1be27fcb58b9f0849d5433002",
+    "ast_symbol_sha256": "2b8bd30e79be689819c8afb83eaa180fdc77250c587114458d6813c792a9c328",
     "span_binding": {
       "path": "hooks/scripts/edit_gate.py",
-      "line": 109,
-      "end_line": 338
+      "line": 176,
+      "end_line": 409
     },
     "render_slice_sha256": null,
     "cache_status": "clean",
@@ -40,8 +40,8 @@
   "sources": [
     {
       "path": "hooks/scripts/edit_gate.py",
-      "line": 109,
-      "end_line": 338
+      "line": 176,
+      "end_line": 409
     }
   ],
   "reused_by": [

@@ -2,6 +2,14 @@
 
 Mới nhất trên cùng. Ngày theo múi giờ máy phát hành.
 
+## 0.108.0 — 2026-11-27
+
+Hoàn thiện lộ trình 3 pha chắt lọc cơ chế điều phối và bảo vệ runtime từ Paperclip cho `TDQ-Workflow-Antigravity`. Toàn bộ `P0`–`P2` giữ nguyên `schema_version=6` và `23` mã cổng AGY, đồng bộ phát hành `0.108.0` đa nền tảng.
+
+- **Pha P0 — An toàn Runtime & Đồng bộ Python–Rust (`scripts/tdq_lease.py`, `scripts/mcp_policy.py`, `scripts/tdq_timing.py`, `scripts/tdq_team.py`, `hooks/rust/tdq-dispatch/`):** Bổ sung khóa sidecar NTFS cố định và lease `O_EXCL` tự thu hồi hết TTL (`300s`), kèm hàng đợi 3 tầng chống bỏ đói (`oldest_dispatch_share=4`). Thêm cảnh báo/chặn ngân sách (`soft_warn 80%` / `hard_stop 100%`), Circuit Breaker (`3` lỗi) kèm `reset-breaker` và chính sách MCP cân bằng (`READONLY`), đồng bộ giữa Python và `tdq-dispatch.exe`.
+- **Pha P1 — Bộ 4 Domain Pack, KhoBM25 & Khóa Chống Hạ Cấp (`scripts/tdq_domains.py`, `scripts/defaults/domains/*.json`, `scripts/skill_router.py`, `scripts/tdq_state.py`, `hooks/scripts/edit_gate.py`):** Thêm `4` gói Domain Pack ASCII (`code-build`, `ops-checklist`, `pm-ba-content`, `research-rca`) và đưa `skill_router.py` (`--domain` tăng `1.25`) vào nhánh `main`. Áp đặt khóa một chiều `Zero-Downgrade Lock` (`escalate-to-build` / `TDQ:APPROVE`) đồng nhất trên cả Python lẫn Rust.
+- **Pha P2 & Phát hành 0.108.0 (`scripts/tdq_paperclip_bridge.py`, `scripts/defaults/paperclip-bridge.default.json`, `tdq-config.json`, `plugins/tdq-workflow-agy/`):** Bổ sung cầu nối CLI 1 chiều thuần stdlib tắt mặc định (`paperclip_bridge.enabled: false`, `status`/`pull`/`push-report`) nối `route_domain()` và `tdq_state.py`. Đồng bộ `0.108.0` cả `Cargo.toml`, `README.md` (`5012 passed`), Master Map và xuất bản nhánh sạch `main` + `release/antigravity`.
+
 ## 0.107.0 — 2026-11-24
 
 Triển khai kiến trúc **Archify No-Fork Hybrid 4 tầng** gồm Logic Node Registry băm AST hai lớp qua `tree-sitter`, Portal lười `< 300 KB` chạy cả offline và tích hợp `tree-sitter` vào `tdq_setup` (`2026-11-24-1308-implement-archify-drilldown-registry`).

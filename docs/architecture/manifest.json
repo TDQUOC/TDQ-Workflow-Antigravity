@@ -9,7 +9,7 @@
   "candidate_path": "docs/tdq/models/master.model.json",
   "candidate_digest": "2d36058b49f5c8e98566a97b45c93d84ed05953b28f0b21987e0da41a68c9afd",
   "artifact_path": "docs/architecture/index.html",
-  "artifact_digest": "86386d0a89653167c1e46a19076d9ba7760b6ef719971785456fc6f37a23b284",
+  "artifact_digest": "9922321cddec07f47d9281c4b5258edf18fcfde3dfbd41ed6eaa40246533d9a3",
   "source_paths": [
     "scripts",
     "hooks",
@@ -75,7 +75,7 @@
     "docs/tdq/models/optimization-report.json": "ef83b7effbcb1c3b7062f61cad2b58a9a3f657ee3b5add9ed9d4b2fc4acce2ac",
     "docs/tdq/models/overview.json": "36422966c09ac48c600469ed0ceb2646dc6de7506a1397018ea71ed0da95b746",
     "docs/tdq/models/pipeline-lifecycle.json": "15c8bdede572f4eebed294b93d2c2a3545c85d87b9811dd1305b8bf4d2574bc1",
-    "docs/tdq/models/registry/index.json": "f70329fdb53006ff9f210511954bd00ebd6ea2b093945cd2df17c58d1bce69cc",
+    "docs/tdq/models/registry/index.json": "b4182eb5742c9ef0ff493e7ce5c5f3e21670b5b49ba8ca65855fad162218008f",
     "docs/tdq/models/registry/nodes/arch_incremental_sync.json": "e0689c7983bd444db04e6e3884467231ed1d95088ac507ab9b52dd1afa69a92d",
     "docs/tdq/models/registry/nodes/arch_lsp_ladder.json": "1fb80ea0a979ffefaf2d201f4b2a0136388ebafefbcfc9df97f703569495564c",
     "docs/tdq/models/registry/nodes/arch_model_validate.json": "410694a0827dcb17c4b1e3215dfccae02d36d9cc2fea8cc82cb4b89f782b3e20",
@@ -89,7 +89,7 @@
     "docs/tdq/models/registry/nodes/flow_search_archify.json": "9129d418ef7950af4d028b212070665febc7603f64f96d97bbabaeb8d8ac87d5",
     "docs/tdq/models/registry/nodes/gate_command_rtk.json": "27377be0c478aa33eaece451282f610ce96b4f43b434834dfdf47b092b4091de",
     "docs/tdq/models/registry/nodes/gate_deny_handler.json": "ae4bb21648bdebe70024d97fa0cffd0a2c5880c6101939bc3bf174fe3b916511",
-    "docs/tdq/models/registry/nodes/gate_edit_guard.json": "13567f002cb077401d9fc78defc04ab14636b4a7de058ed7e2ca917b80ec3e69",
+    "docs/tdq/models/registry/nodes/gate_edit_guard.json": "0016d2760cd07bcfc6ef37832154a40c6dbb28e0b0523cec8526673a41a1b4fb",
     "docs/tdq/models/registry/nodes/gate_search_order.json": "ee17c3588e0f3626e86852ba76663ed332621f861a999323c539fe6263c1eeef",
     "docs/tdq/models/registry/nodes/gate_stop_verify.json": "5f4a200b55cca215c4107dd2ff91a228c62d488275fc8025652444c56a09b478",
     "docs/tdq/models/registry/nodes/op_ast_dirty_compute.json": "03acdd05245e37a359660b134ae292a6df5076d16e7959525f75a5629d232caf",
@@ -98,35 +98,35 @@
     "docs/tdq/models/registry/nodes/stop_disk_diff_check.json": "45a465bc2a1c90c1c6ecc9c91b2a9afe50d5f4253a1bb1e26d58e99b552b3b49",
     "docs/tdq/models/runtime-verification.json": "6cdfbc0286fe2098905d2ca3fc35f267482d34a17e2148faed1971d93cd0e90e",
     "docs/tdq/models/search-and-archify.json": "da28a34fe219d0ad42fac31aa775d95a84fa17834b6bc6be714232df14d1906a",
-    "hooks/hooks.json": "7a2b18dc62e3fca9eb08c9fa27de7ffb7a5020ccf2984e13cbca2b1ea5097dbb",
+    "hooks/hooks.json": "cb480171166e89ca5d65eb7d7b1fb6ed9f9ac0c0932dfb50f244c27233ea9eb2",
     "hooks/rust/tdq-dispatch/.cargo/config.toml": "e36953627875c7fb2dd175c5540807ba093659baf907c6a9723fa01b02b3b195",
-    "hooks/rust/tdq-dispatch/Cargo.lock": "6a6f79337c83e028358f332a59e042ae8f5dfc187ae92b7adc955fae42ff086a",
-    "hooks/rust/tdq-dispatch/Cargo.toml": "88c57b0ec4d8f7798563f9b54dd974dc895525c5e184caf0cbefc402bad1e1f3",
+    "hooks/rust/tdq-dispatch/Cargo.lock": "27a501f1da9b82b7943f2f8ff599104faf1c981415bce56d3aabf0fcbef9f4d8",
+    "hooks/rust/tdq-dispatch/Cargo.toml": "07ed651fc7920492baf425552ddbedb3bba9bed22ea26e84ae80da0f7cfa1519",
     "hooks/rust/tdq-dispatch/src/command_parser.rs": "d2949aa28d2cadf513077a69275823ea9af9e5eccccce854f257c4aa2ef1c602",
     "hooks/rust/tdq-dispatch/src/events/mod.rs": "fc843df6f4b16a641c40f1a331c9f6c0db4d742e01223a5ba3262aee7a5095e1",
     "hooks/rust/tdq-dispatch/src/events/notification.rs": "41a36d41de8320050e31fb595a660048ee5d3670ac01317c33fb266adddecd28",
     "hooks/rust/tdq-dispatch/src/events/post_invocation.rs": "14260fd01b68e44ca66bdc12772a4b91fdd625fda82a8ad19a4666f569e898fe",
     "hooks/rust/tdq-dispatch/src/events/post_tool_use.rs": "08be89bf31968d9e0010d8a4cad89d45509694eb3a4d1c63064a7eb3fe50b74d",
     "hooks/rust/tdq-dispatch/src/events/pre_invocation.rs": "f7c93e2418c6ce0e8e1ea479191721120b066a0f3b14bb0a101d2c9859ab366f",
-    "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs": "a40bc1e1208278808db98eb75c1ad7f7868e4c8a2e3e3814c9e7935b499237cd",
+    "hooks/rust/tdq-dispatch/src/events/pre_tool_use.rs": "615f45ef5dd28101caf416376ff9a7428b461563ea9f7f63a3b150bf5c592fa5",
     "hooks/rust/tdq-dispatch/src/events/session_start.rs": "383d667db1e256510f147cee158ca1b887200fec92187f8828a7c0733546993a",
     "hooks/rust/tdq-dispatch/src/events/stop_streak.rs": "66bc98d9438f928c82bce280ff06ca2baa11a97424e4686a69f9ad3e04d1c381",
     "hooks/rust/tdq-dispatch/src/events/user_prompt_submit.rs": "284aaca38f461f9c0def42c7c351fa211ac344eeb55754a182c641e78b67f60c",
     "hooks/rust/tdq-dispatch/src/lib.rs": "bbbe74df738c831a69b9f0f133dfca86ee4aa5aa116e72f943fbf06b1a8c2cd8",
-    "hooks/rust/tdq-dispatch/src/lock.rs": "724dfa64b1506c955efcb421295830d51bb9c32f66274067a155419df090b649",
+    "hooks/rust/tdq-dispatch/src/lock.rs": "51c39351ff3ca8471f6c66bb7661c23c82c852c5832780715a84e8e51eabce22",
     "hooks/rust/tdq-dispatch/src/main.rs": "db348e04b10949742f47224af420a8839c262010c3b868821a605f98deee7c11",
     "hooks/rust/tdq-dispatch/src/protocol.rs": "91b97928b22c7ae16493c5f8473281cf12cef7ce981dd0c587fc5f7891a7c9ae",
-    "hooks/rust/tdq-dispatch/src/storage.rs": "7d09b54d5a00d4ca267ef66ab6098ec122a2dddb75b52a3f2496ffc948c73aaa",
+    "hooks/rust/tdq-dispatch/src/storage.rs": "4ba1f8bcc888ee9ae217de5e27da0a166334f17aa3569900ed9b9f53a5a658b2",
     "hooks/scripts/_common.py": "e2a57299d4b68c30310d06c8d29a53552f35e002ab5708f5ddc077c769b03c47",
     "hooks/scripts/agy_pretooluse_gate.py": "8d447f8eaca9bd84eb35510c22986c4d354d151f04ae52b0d3ff313c714988a8",
     "hooks/scripts/agy_stop_gate.py": "1b4c2907505ab7c54e579bd6a7ec063f10db41e91d8c522a650bcced833b4513",
     "hooks/scripts/ask_gate.py": "3c63e7b37890cbcf8273e32a90966fe5201fefe45ef501286fb155b3dead7f95",
-    "hooks/scripts/bash_gate.py": "622733764eaed7bad6bdfaaf70a800c3ffb98c8a07ffd0247cc86538f18e3718",
+    "hooks/scripts/bash_gate.py": "6fffb7978edbcfa1b72c2b7d399f1b703a41cac174d21c38cedf8c842c11cc85",
     "hooks/scripts/codex_edit_gate.py": "6c60f42b3893e1722d7f0c835239f795e96c4a8753b3e4ec5d3b28e478cac8c1",
     "hooks/scripts/command_gate.py": "de0d5b093fdc1cfd7d643b1521548680c00cc00c66a98bcd476b8f1c5a80bced",
     "hooks/scripts/doc_file_gate.py": "76b698ae4a51722754206c3d61fef807400e894ca405fef03b04699e147d29e0",
-    "hooks/scripts/edit_gate.py": "f96038cd5f04c7bb0f789d5a11ea5bf04cb6008b816640ee6b921d3e41d13fe1",
-    "hooks/scripts/lsp_gate.py": "f24f529ee1e4cb3207612a812a03b14a0d9cc9534aa8d4cb2aade86e92914396",
+    "hooks/scripts/edit_gate.py": "6bd4de939e29e0e625edb767baf1d197d1fb3f93f6e3c1d5ed5f1f8b3d69d742",
+    "hooks/scripts/lsp_gate.py": "00ed1b0faf2e8aa7d273701caf5e4ad1a181309ff4393a10ad43208cbff31375",
     "hooks/scripts/luat_gon.py": "def3f2a7b748d69fcd22cbd8864eb1d6349cb8be005697e5205fcc75b2546c86",
     "hooks/scripts/prompt_context.py": "30b810636beac0a2c4295ed79671d9bba71241fa5e2de546b67392fe21ec2693",
     "hooks/scripts/read_gate.py": "d321eb5a264990bb45e64ef7a8fe7045c8b2847f1010b305db6d6e1cd7f7435e",
@@ -145,7 +145,7 @@
     "scripts/archify_registry.py": "08467da9affad53c9ff64ffe0fafc9053b3e2b0d1bbd8fedb141ff849a44689a",
     "scripts/bootstrap.ps1": "9bc3a3644113f63f02884d72a78fe43b625a55ca2d32aff120aed12d44389fc3",
     "scripts/bootstrap.sh": "bc0f031262e77c87446f51d5fed21fc733a7dce28f8022f3da96faa57f08651f",
-    "scripts/build_portable.py": "7d35fcd4a07ff6efb791c5726b3e3081ed2538d516a7f01b2a77b9864dd30577",
+    "scripts/build_portable.py": "e26eaa8682134c45357ff6d16834acc95029371010a97d0d39acb839d48e4306",
     "scripts/canvas_a4_ch4_ch7.py": "bb27e9bd859dd4fea7226f4afd9810b205dad9721503bb906f4073b71851b944",
     "scripts/canvas_a4_rebuild.py": "3e11ced6b7258f8b4ed4ff4a7281cc7d48af6f4090136c690754fc3191ba3d6c",
     "scripts/canvas_draw.py": "3ed05f0a14b448efa10cbc00db3114094e6598fc629c0a3d7c3a63a7557a8757",
@@ -155,6 +155,12 @@
     "scripts/check_canvas_layout.py": "71b1a101f84675ba64f5004c7f5018dd7923b1069f4b838b3414e09546bdaa62",
     "scripts/claude_export.py": "d0ed606b598d4312e22468fd9839a8fe547e5a0e9389fa2a1522def57ba5d65e",
     "scripts/context_surface.py": "76169b9ed286ea31f70602880557c19aa7a7eb7fbd197f0436a8e77877ac490b",
+    "scripts/defaults/domains/code-build.json": "5eb213085ebb60a07eb472fea1054762f3823830c2d89d1f4387bd0715cb92ab",
+    "scripts/defaults/domains/ops-checklist.json": "c735201c1dc56ef83466c633cea268e8709428ff43b28fb46ee37c1fa3572345",
+    "scripts/defaults/domains/pm-ba-content.json": "c839f4510ea9146a40d8a90d78a5e28911a6f6f3b13e367c3e47c8d164fa1eaf",
+    "scripts/defaults/domains/research-rca.json": "62345dd2129d12a186ad4c88be1c018d0598f51e898e198a6687649ae41e3ae3",
+    "scripts/defaults/mcp-policy.default.json": "3178ecd9b199df8e1171295b222bfaf46748c023f0edfcd16315afcaa4d866a8",
+    "scripts/defaults/paperclip-bridge.default.json": "86609fc7a7cd8a9fb02841628125db756f70ecc88685acd0cd06316f12e9cfcd",
     "scripts/doc_dup.py": "12d49544c03078ae5d159c38c177d0bc80eaa86f6d38171da32230b842a5094f",
     "scripts/doc_index.py": "18a03b322d94d9f1dae66848a1b537e8cf3261e9e6fbd13077d419ca11a7f3ec",
     "scripts/doc_lint.py": "da73e5b47ba0caa9af87706512bd4363e28e36ca6586fc4fc619d1032c458a30",
@@ -162,6 +168,7 @@
     "scripts/kiem_no_marker.py": "fa7f88870dfadfd0c070fc5a25ff0a58c5860f3fd11b6487796a1e1c8d2b621c",
     "scripts/lsp_module.py": "bc7ad7122ab48461f5a2fcef010adc01b510992aa99952175f52869ad7364a29",
     "scripts/luat_phan_loai.py": "105eec3baea367cded9cac52a81287ffbe172852a5638c79706a9bec632be809",
+    "scripts/mcp_policy.py": "5cf4b5a545588cdbd4d6f092eb0d72c0eb0eb490a1e91dfdd08d2119a22fe187",
     "scripts/plugin_tiers.py": "618f34eaf7cc759ef3e566ae90bdfc6424796d2fdad950758dd076b9f756b841",
     "scripts/rtk_integration.py": "dc58944e4807aca1b05e1842a02187ed4d9a2c29ee033182dc658386eafea17e",
     "scripts/samples/transcript-step-audit.jsonl": "0c027ee9ed37512db10b14428e07d7ec96b499c15ccd82dfa953d0b196af0bd6",
@@ -171,7 +178,7 @@
     "scripts/setup_status.py": "4273aad2fb45e4f8c4f369f4645bf15dcc1319cd9c33fecc1b3c6aa60d14e94f",
     "scripts/setup_status_render.py": "92ed6e0ee3fbc0ff9636dfbc9bea0254074a67d1f958d060c78ad34a9a9a76b4",
     "scripts/skill_inventory.py": "3a46264837129c05aa15c95196c686f38ad36afb0924d3e9482ed95d2750ce72",
-    "scripts/skill_router.py": "83ef04ffd76117e5eafc127bd8b7fc6c84a7bcd8b93165dbe90056d05e0a740c",
+    "scripts/skill_router.py": "83baa076ed9867b4ec5ae21af49ccc6fe260730ba90076eb4b6b830f514efe6d",
     "scripts/skill_tokens.py": "1126f553519eb8eda701e48a0292890dbf98a5bb05ab40d25bcd7f3e690306f7",
     "scripts/step_audit.py": "834bb7735883d23ff6ac1e924534ac29d13cf4fa2129d2a15a8ed0e0e7f93b05",
     "scripts/tdq_archify.py": "e68aad5a0088b969b3097e0687ed20aa2f245a4ca0f22e092c25215d921ee045",
@@ -181,8 +188,9 @@
     "scripts/tdq_checkstatus.py": "5f2292c91b10c25d3ffd5fcf7d5567c88d6037f5c2a90e14d8fcf257e78b798a",
     "scripts/tdq_codex.py": "cce66bc17f42d056938af4a341715217fed6d465d6888aada0d7735e73bb5f39",
     "scripts/tdq_codex_mcp.py": "7ae5a5f6ad052f8bf02a8ef8d7af976026d42d72af98089ccc26d755b2f0f95b",
-    "scripts/tdq_config.py": "6a38659e7f160bafb0fc7d64b64e2b5f4625d3b44b1c8e49ba92a34905830a3e",
+    "scripts/tdq_config.py": "ee49b6190ff3bb630d5a5b3e373c42f606368a96634434ea598d5511973a6e37",
     "scripts/tdq_devtool_mcp.py": "fe85b5c0535b2847cee5844c1a75f892da61fa797cff37e18b3e40bfcea16718",
+    "scripts/tdq_domains.py": "06ad3a89229fd7b14ffcdce3951f6b49aa6376057737cdc33587387aa94583b5",
     "scripts/tdq_eval.py": "da755a56462c029e80421bcc42303a060a4ee8493490083c788f6522e260b6d1",
     "scripts/tdq_eval_contract.py": "8c04d49a6b2e8989c5bc095d3dc1b6720aac73700a0135e222aa7ac3dd2a5594",
     "scripts/tdq_eval_hosts.py": "d3bbfa5f8bd96fba525027f17d89b6a21b50114c53b8dc2d37e3c20a5a2111cf",
@@ -190,10 +198,12 @@
     "scripts/tdq_graphify.py": "1a28616755a8a6f1698f63fadd6d510ab73b7a5634b74356194b391ba0c74ac7",
     "scripts/tdq_harvest.py": "5919454b75f021b14ed0f794214e7203e4f4c8d09b80aa308c74ab3b34c9de87",
     "scripts/tdq_knowledge.py": "61e7bf7ccd3191ad294a4ba68e0922277494a6fcf1448f3a2a927c0d06a4900f",
+    "scripts/tdq_lease.py": "6aa786228fd342d88650a5934f377dcf07f5e0d9e5ed4eba2b4c1f1a73baf182",
     "scripts/tdq_lsp.py": "a6f63cd5822625c7c1f72598cca4c76cd89cb7adabeb1cc6a774424c52a9b42f",
     "scripts/tdq_mcp_shrink.py": "4a4bdb85ded6a9602778bc109c7250f0ff6208a29ac20cc845dd5df9e210b529",
     "scripts/tdq_meta_gate.py": "490d86596b95be555e71be21645d0de663730f23ff33abfe86062e098fec5cf7",
     "scripts/tdq_no.py": "af5981ce57bca5e3e51b70c939eb5f0511289063b671ab47cd4599db563b7197",
+    "scripts/tdq_paperclip_bridge.py": "1efaa1d6d8b96fb5bc0f5c1f4f784a472ca6bed31e7f342ed83f030020f11a20",
     "scripts/tdq_plan_scaffold.py": "59a8075fb2fdb5070af78f444c6f9895ff7e18216fc7b1b91f5fcb03720ab409",
     "scripts/tdq_readiness.py": "9eee5c8cc4106290c149bea9d4b81c3a5c18c1c3336f190a3d91f0b98476603b",
     "scripts/tdq_runtime_bench.py": "823516f691fcaf1831f87d281395c77037228d1f58e85ba0bfea87f98e30e367",
@@ -202,8 +212,8 @@
     "scripts/tdq_setup_state.py": "417e39f755d2ba8b334c493b398e09175a84f893006ed7faa8d2fe5d99505b66",
     "scripts/tdq_simulate_verify.py": "0735ce82574be92f80b1be28c9f6df75c357cfbeb335ed091f9d4033397a2d5a",
     "scripts/tdq_skill_eval.py": "fe001638eeae5764bdd428d679d1234a64030b7a392b19154f62b54bba45ea36",
-    "scripts/tdq_state.py": "059729e9d13d0d8cdce6fb42fc12e1390313193caf7522eb70ac35f8626baa4f",
-    "scripts/tdq_team.py": "5b3f5be85f9d8f7d83cdeb8a4598f84995572ac2f58749940fb789cb9bf2403a",
+    "scripts/tdq_state.py": "ca7c94bb9f33850be7d22dcd2e5cb07bb5730973676d8b35645c7762d556ff62",
+    "scripts/tdq_team.py": "6dffac2639714f761b77eafef3a433e2f3b492d07e9f6502b43d3cd7ac1f65cf",
     "scripts/tdq_ten_lenh.py": "4fdc76d44eac63da6294e8b848e803a68322fc6d10a1f1004876cfbdc4091a79",
     "scripts/tdq_test.py": "92d09f2416cb3ab4e4b6932f3ee1b84fa47725f098afdf4a1463f6e8d916ebd3",
     "scripts/tdq_test_manifest.py": "95cbc392bef7c87ecad518c0ec08e06aa6b247a8afd2f00c195222236d5efaa4",
@@ -211,7 +221,7 @@
     "scripts/tdq_test_receipt.py": "6db62454c099cb4d4f861b9e43fa9f1a821e405c24bd9cb9dc68d450b3c4970f",
     "scripts/tdq_test_report.py": "439056315b9a8e5a94a06ae53e0f468d723d9d2a9d5b7f78d1fbec80eb590860",
     "scripts/tdq_test_result.py": "5398b501123402c78cf3aea457a348e2633095d1294da5064337670ec2517620",
-    "scripts/tdq_timing.py": "88c20badca967b33dae7582ee34c35dbd53ff78979d0bf6619fcd49f4041f61a",
+    "scripts/tdq_timing.py": "15c3c09690cef947bec3b721bc7ad50fee59850e98e8dd349b58b9e155b36064",
     "scripts/tdq_transcript.py": "2bf7653a4418e37fcc8ac0355cbdc20416acb00964af3ca1c308b28e09061c61",
     "scripts/tdq_transcript_cache.py": "67a419929e5368839078e823a585656fcd6b5bd311e17b342cd50bfb2a16f286",
     "scripts/tdq_vision_diff.py": "a2027cdedf89554478b3c3f483fd031a8465b065fac034375c47db404ad94f97",
@@ -267,7 +277,7 @@
     "skills/tdq-conventions/references/user-facing-block-vi-du.md": "c98f469cd27860c29b3c8225aeb2a245f39a588c43a3f37f4ae16be333145677",
     "skills/tdq-conventions/references/user-facing-block.md": "52ce224a23699a628b5f7c6b3b56b2755cdac3d23d802a5bd5a86f35ba91e12d",
     "skills/tdq-conventions/references/worklog-images.md": "dc462cb48316d8cbf33e31f30066d718d50734c9779b0a18350ec363297a902a",
-    "skills/tdq-intake/SKILL.md": "b0db21a71b1e958f68a54102a40271f1d66209eed22ab207019c1515b294234d",
+    "skills/tdq-intake/SKILL.md": "0ebfe1a08d8dd7f969dc1c339e3586e9e2a616a123a0ee31a309f4e219641745",
     "skills/tdq-intake/references/analyze-full.md": "75e9272ac2ac2b89fd3ab1df7abce5cfca3938f504b6111a4e5b3428b04de6e6",
     "skills/tdq-intake/references/archify-quick.md": "f19da7dc1724a97b1aada79530a79ea93ceb32a9009e313a38ae35cf41b0f9d0",
     "skills/tdq-intake/references/interview.md": "290c490f3d02c65f61fedb461d321b89cbfbde943e8cba099a21b0732d182f40",
@@ -392,14 +402,14 @@
     "nodes/flow_search_archify.json": "9129d418ef7950af4d028b212070665febc7603f64f96d97bbabaeb8d8ac87d5",
     "nodes/gate_command_rtk.json": "27377be0c478aa33eaece451282f610ce96b4f43b434834dfdf47b092b4091de",
     "nodes/gate_deny_handler.json": "ae4bb21648bdebe70024d97fa0cffd0a2c5880c6101939bc3bf174fe3b916511",
-    "nodes/gate_edit_guard.json": "13567f002cb077401d9fc78defc04ab14636b4a7de058ed7e2ca917b80ec3e69",
+    "nodes/gate_edit_guard.json": "0016d2760cd07bcfc6ef37832154a40c6dbb28e0b0523cec8526673a41a1b4fb",
     "nodes/gate_search_order.json": "ee17c3588e0f3626e86852ba76663ed332621f861a999323c539fe6263c1eeef",
     "nodes/gate_stop_verify.json": "5f4a200b55cca215c4107dd2ff91a228c62d488275fc8025652444c56a09b478",
     "nodes/op_ast_dirty_compute.json": "03acdd05245e37a359660b134ae292a6df5076d16e7959525f75a5629d232caf",
     "nodes/op_stage_slices_svg.json": "fd1a34514c24b0ac4cc04e34490de4ee40a771d0abdb993464bdccba913b504f",
     "nodes/rtk_probe_rewrite.json": "98caf9b1f68bdaf657f54fcc85831209155654331a8ec890cbe2ffe94a00f849",
     "nodes/stop_disk_diff_check.json": "45a465bc2a1c90c1c6ecc9c91b2a9afe50d5f4253a1bb1e26d58e99b552b3b49",
-    "registry-bundle.js": "669026b0e7ce79c8213a6724cdc958c7b98b280e64eb7feb6eaa1c5ee3124525"
+    "registry-bundle.js": "e1b617ab0efcd335fb68984f6e25af3da3677c7f5e835797ced6f30f8a995b56"
   },
   "views": [
     {
@@ -500,7 +510,7 @@
         "bytes": 4128
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\pipeline-lifecycle.html",
         "sha256": "71a30a835c55ce430f5bde38452b25f274ad8f6bfe56c42b819648f13f522b8d",
         "bytes": 824757
       },
@@ -517,12 +527,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\pipeline-lifecycle.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\pipeline-lifecycle.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\pipeline-lifecycle.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\pipeline-lifecycle.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2756,
+      "durationMs": 2864,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -541,7 +551,7 @@
         "bytes": 4663
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\search-and-archify.html",
         "sha256": "b8c61b7c7b928309fe3c274247065ea51be1e87721553f9fef2c33758219f33e",
         "bytes": 824633
       },
@@ -558,12 +568,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\search-and-archify.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\search-and-archify.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\search-and-archify.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\search-and-archify.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2805,
+      "durationMs": 2699,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -582,7 +592,7 @@
         "bytes": 4898
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\hooks-and-gates.html",
         "sha256": "0ca5b4587ec82c90fd4076bf6912c389e0028289f9b648ad14815ca835f7b2d3",
         "bytes": 823078
       },
@@ -599,12 +609,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\hooks-and-gates.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\hooks-and-gates.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\hooks-and-gates.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\hooks-and-gates.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 3331,
+      "durationMs": 3191,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -623,7 +633,7 @@
         "bytes": 4891
       },
       "artifact": {
-        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.html",
+        "path": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\runtime-verification.html",
         "sha256": "1baa8767763441c77436fba4151fe3ec992831404dceae7643a23b0548bc679a",
         "bytes": 822816
       },
@@ -665,12 +675,12 @@
         "truncated": false
       },
       "evidence": {
-        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.finalize.json",
-        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.finalize-summary.json",
-        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.b295696db41848439fe1af3df10a85ba\\runtime-verification.browser-check.json"
+        "receipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\runtime-verification.finalize.json",
+        "summaryReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\runtime-verification.finalize-summary.json",
+        "browserCheckReceipt": "C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity\\docs\\.staging.c7b587156bcc4efe8cdcf312d138d5ba\\runtime-verification.browser-check.json"
       },
       "visualReview": "not-requested",
-      "durationMs": 2943,
+      "durationMs": 2941,
       "browserCheck": {
         "requested": true,
         "ran": true
@@ -798,7 +808,7 @@
       "hash": "36d4c7fcdef10cfdcb1adf7ecf1f9cc2935652a3186dd5f70572db3dfb9d280e"
     },
     "slice-gate-edit-guard": {
-      "hash": "644599a7ddc591c00f3bb015c4e4fba8dfa6de8b8f9f81fdeeeebed54d02a547"
+      "hash": "bbe400278acae7f3204588d9caaf98c40c54c8c2679bc158d9e41176ab290b7a"
     },
     "slice-gate-search-order": {
       "hash": "9d699ead5422fa5c0602bf3c8c4461b382eecd8ffc1dd3157840776bfabd2493"

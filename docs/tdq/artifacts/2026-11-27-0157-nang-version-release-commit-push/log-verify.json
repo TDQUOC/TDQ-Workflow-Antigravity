@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "task": "T3.1",
+  "target_version": "0.108.0",
+  "verified_at": "2026-11-27T10:51:35+07:00",
+  "red_check": {
+    "installed_plugin_json_exists": true,
+    "pre_install_version": "0.105.0",
+    "pre_install_log_verify_exists": false,
+    "red_confirmed": true
+  },
+  "local_install": {
+    "command": "py -3 -X utf8 tools/install_agy_plugin.py",
+    "sync_local_mcp_used": false,
+    "installed_to": "C:\\Users\\admin\\.gemini\\config\\plugins\\tdq-workflow-agy",
+    "backup_path": "C:\\Users\\admin\\.gemini\\antigravity\\plugin_data\\tdq-workflow-agy\\backups\\20261127-105058",
+    "files_copied": 281,
+    "synced_servers": [],
+    "plugin_json_version": "0.108.0",
+    "manifest_json_version": "0.108.0",
+    "exe_sha256_prefix": "ce609ea1dcf10ede",
+    "exe_sha256_matches_repo_bundle": true,
+    "caveman_preserved": true,
+    "caveman_wrapped_servers": [
+      "lsp",
+      "chrome-devtools",
+      "tavily-primary"
+    ],
+    "rtk_valid": true,
+    "rtk_version": "1.2.0",
+    "rg_present": true,
+    "pass": true
+  },
+  "log_checks": {
+    "build_portable_dry_run": {
+      "command": "py -3 -X utf8 scripts/build_portable.py --sinh-main --dry-run",
+      "tdq_log_0": {
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stdout_bytes": 0
+      },
+      "tdq_log_1": {
+        "returncode": 0,
+        "stderr_bytes": 98,
+        "stdout_bytes": 0,
+        "iso_timestamp_lines": 1,
+        "sample_stderr": "[2026-11-27T10:51:06+07:00] build_portable: dry-run dev@42467fe -> main · kept=211 dropped=7787"
+      },
+      "pass": true
+    },
+    "install_agy_plugin_dry_run": {
+      "command": "py -3 -X utf8 tools/install_agy_plugin.py --dry-run",
+      "tdq_log_0": {
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stdout_bytes": 771
+      },
+      "tdq_log_1": {
+        "returncode": 0,
+        "stderr_bytes": 195,
+        "stdout_bytes": 771,
+        "iso_timestamp_lines": 2,
+        "sample_stderr": "[2026-11-27T10:51:06] install_agy_plugin: python probe ok (C:\\Users\\admin\\AppData\\Local\\Programs\\Python\\Python313\\python.EXE)"
+      },
+      "pass": true
+    },
+    "build_agy_plugin_help": {
+      "command": "py -3 -X utf8 tools/build_agy_plugin.py --help",
+      "tdq_log_0": {
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stdout_bytes": 317
+      },
+      "tdq_log_1": {
+        "returncode": 0,
+        "stderr_bytes": 0,
+        "stdout_bytes": 317,
+        "note": "argparse --help exits 0 before build() invokes _log()"
+      },
+      "pass": true
+    },
+    "build_agy_plugin_temp_build": {
+      "command": "py -3 -B -X utf8 tools/build_agy_plugin.py --output <temp_dir>",
+      "tdq_log_0": {
+        "returncode": 0,
+        "stderr_bytes": 0
+      },
+      "tdq_log_1": {
+        "returncode": 0,
+        "stderr_bytes": 898,
+        "iso_timestamp_lines": 5,
+        "sample_stderr": "[2026-11-27T10:51:24] build_agy_plugin: compiling bundle upstream=C:\\Users\\admin\\Documents\\Projects\\TDQ-Workflow-Antigravity sha=b90abd69 -> <temp_dir>\\out_1"
+      },
+      "pass": true
+    }
+  },
+  "i18n_check": {
+    "command": "py -3 -X utf8 scripts/i18n_check.py tools/patches/agy_manifests.py tools/patches/__init__.py tools/build_agy_plugin.py",
+    "files_scanned": 3,
+    "vietnamese_lines": 0,
+    "returncode": 0,
+    "pass": true
+  },
+  "overall_pass": true
+}
